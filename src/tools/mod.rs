@@ -10,13 +10,12 @@ use serde::Deserialize;
 
 use crate::store::MemoryStore;
 
-pub mod evolve;
 pub mod forget;
-pub mod inject;
 pub mod link;
 pub mod query;
+pub mod recall;
 pub mod reflect;
-pub mod store_node;
+pub mod store_resource;
 
 #[derive(Clone)]
 pub struct MemoryGraphServer {
@@ -36,79 +35,76 @@ impl MemoryGraphServer {
 // --- Parameter structs ---
 
 #[derive(Debug, Deserialize, JsonSchema)]
-pub struct StoreNodeParams {
-    /// Node type: Person, Project, Component, Resource, Technology, Concept, Decision, Problem, Change, Preference, Constraint, Pattern
-    pub node_type: String,
-    /// The name/label for this node
-    pub name: String,
-    /// Optional properties as key-value pairs (e.g. description, path, url, role, etc.)
+pub struct StoreResourceParams {
+    /// Resource model: Person, Project, Company, Task, Technology, Decision, Pattern
+    pub model: String,
+    /// Scalar properties as key-value pairs (e.g. name, email, role, description)
+    pub properties: HashMap<String, String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct StoreConceptParams {
+    /// Concept type: Skill, Concept, Constraint, Preference
+    pub concept_type: String,
+    /// Label for this concept
+    pub label: String,
+    /// Optional properties (e.g. description, proficiency)
     pub properties: Option<HashMap<String, String>>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
-pub struct QueryParams {
-    /// SPARQL query (SELECT, CONSTRUCT, or ASK)
-    pub sparql: String,
-}
-
-#[derive(Debug, Deserialize, JsonSchema)]
 pub struct LinkParams {
-    /// IRI of the source node
-    pub source_iri: String,
-    /// IRI of the target node
-    pub target_iri: String,
-    /// Relationship name (e.g. 'partOf') or full IRI
+    /// Name of the source resource (looked up by model+name)
+    pub source_model: String,
+    pub source_name: String,
+    /// Name of the target resource (looked up by model+name)
+    pub target_model: String,
+    pub target_name: String,
+    /// Relationship type (e.g. worksOn, uses, employedBy, assignedTo)
     pub relation: String,
-    /// Whether to reify this relationship with metadata
-    pub reify: Option<bool>,
-    /// Optional metadata for reified relationships (e.g. rationale, confidence)
+    /// Optional metadata on the link (e.g. since, role)
     pub metadata: Option<HashMap<String, String>>,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct UnlinkParams {
-    /// IRI of the source node
-    pub source_iri: String,
-    /// IRI of the target node
-    pub target_iri: String,
-    /// Relationship name or full IRI
+    pub source_model: String,
+    pub source_name: String,
+    pub target_model: String,
+    pub target_name: String,
     pub relation: String,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
+pub struct RecallParams {
+    /// Resource model type
+    pub model: String,
+    /// Resource name
+    pub name: String,
+    /// Traversal depth (1 = direct links, 2 = two hops). Default: 1
+    pub depth: Option<u32>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
 pub struct ForgetParams {
-    /// IRI of the node to invalidate
-    pub node_iri: String,
-    /// Reason for invalidation
+    /// Resource model type
+    pub model: String,
+    /// Resource name
+    pub name: String,
+    /// Reason for forgetting
     pub reason: String,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
+pub struct QueryParams {
+    /// SPARQL query (SELECT, CONSTRUCT, or ASK). Prefixes rdf, rdfs, xsd, mem are pre-loaded.
+    pub sparql: String,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
 pub struct ReflectParams {
-    /// Optional project path to filter results
-    pub project: Option<String>,
-}
-
-#[derive(Debug, Deserialize, JsonSchema)]
-pub struct EvolveEdgeParams {
-    /// Name for the new relationship (e.g. 'blockedBy')
-    pub name: String,
-    /// Description of what this relationship means
-    pub description: String,
-    /// Domain node type (e.g. 'Problem')
-    pub domain: String,
-    /// Range node type (e.g. 'Constraint')
-    pub range: String,
-    /// Whether to apply immediately (true) or just record as proposal (false)
-    pub apply: Option<bool>,
-}
-
-#[derive(Debug, Deserialize, JsonSchema)]
-pub struct InjectParams {
-    /// Source label (e.g. 'README.md', 'architecture doc')
-    pub source_label: String,
-    /// Triples to insert, each with subject, predicate, object IRIs/literals
-    pub triples: Vec<inject::TripleInput>,
+    /// Optional: filter by resource model type
+    pub model: Option<String>,
 }
 
 // --- Tool implementations ---
@@ -116,21 +112,106 @@ pub struct InjectParams {
 #[tool_router]
 impl MemoryGraphServer {
     #[tool(
-        name = "memory_store_node",
-        description = "Insert or update a node in the memory graph. If a node with matching type+name already exists, its properties are updated. Returns the node IRI."
+        name = "memory_store_resource",
+        description = "Create or update a resource instance (Person, Project, Company, Task, Technology, Decision, Pattern). Each resource gets its own named graph. If a resource with matching model+name exists, its properties are updated."
     )]
-    async fn memory_store_node(
+    async fn memory_store_resource(
         &self,
-        params: Parameters<StoreNodeParams>,
+        params: Parameters<StoreResourceParams>,
     ) -> Result<CallToolResult, McpError> {
         let p = params.0;
-        store_node::handle(&self.store, p.node_type, p.name, p.properties)
+        store_resource::handle_resource(&self.store, p.model, p.properties)
+            .map_err(|e| McpError::internal_error(e.to_string(), None))
+    }
+
+    #[tool(
+        name = "memory_store_concept",
+        description = "Create a shared concept node (Skill, Concept, Constraint, Preference). Concepts are lightweight shared nodes that enable traversal between resource graphs."
+    )]
+    async fn memory_store_concept(
+        &self,
+        params: Parameters<StoreConceptParams>,
+    ) -> Result<CallToolResult, McpError> {
+        let p = params.0;
+        store_resource::handle_concept(
+            &self.store,
+            p.concept_type,
+            p.label,
+            p.properties.unwrap_or_default(),
+        )
+        .map_err(|e| McpError::internal_error(e.to_string(), None))
+    }
+
+    #[tool(
+        name = "memory_link",
+        description = "Create a cross-graph relationship between two resources. Valid relations: worksOn, employedBy, owns, uses, madeBy, affects, assignedTo, partOf, relatesTo, supersedes, resolves, appliesTo, hasSkill, hasConcept, hasConstraint, hasPreference."
+    )]
+    async fn memory_link(
+        &self,
+        params: Parameters<LinkParams>,
+    ) -> Result<CallToolResult, McpError> {
+        let p = params.0;
+        link::handle_link(
+            &self.store,
+            &p.source_model,
+            &p.source_name,
+            &p.target_model,
+            &p.target_name,
+            &p.relation,
+            &p.metadata.unwrap_or_default(),
+        )
+        .map_err(|e| McpError::internal_error(e.to_string(), None))
+    }
+
+    #[tool(
+        name = "memory_unlink",
+        description = "Remove a cross-graph relationship between two resources."
+    )]
+    async fn memory_unlink(
+        &self,
+        params: Parameters<UnlinkParams>,
+    ) -> Result<CallToolResult, McpError> {
+        let p = params.0;
+        link::handle_unlink(
+            &self.store,
+            &p.source_model,
+            &p.source_name,
+            &p.target_model,
+            &p.target_name,
+            &p.relation,
+        )
+        .map_err(|e| McpError::internal_error(e.to_string(), None))
+    }
+
+    #[tool(
+        name = "memory_recall",
+        description = "Recall all relevant context for a resource. Returns the resource's properties, all linked resources (with their properties), and optionally follows links to depth 2 for multi-hop context discovery."
+    )]
+    async fn memory_recall(
+        &self,
+        params: Parameters<RecallParams>,
+    ) -> Result<CallToolResult, McpError> {
+        let p = params.0;
+        recall::handle(&self.store, p.model, p.name, p.depth.unwrap_or(1))
+            .map_err(|e| McpError::internal_error(e.to_string(), None))
+    }
+
+    #[tool(
+        name = "memory_forget",
+        description = "Soft-delete a resource by marking it as invalidated. The data is preserved for provenance."
+    )]
+    async fn memory_forget(
+        &self,
+        params: Parameters<ForgetParams>,
+    ) -> Result<CallToolResult, McpError> {
+        let p = params.0;
+        forget::handle(&self.store, p.model, p.name, p.reason)
             .map_err(|e| McpError::internal_error(e.to_string(), None))
     }
 
     #[tool(
         name = "memory_query",
-        description = "Execute a SPARQL query against the memory graph. Standard prefixes (rdf, rdfs, xsd, skos, prov, foaf, dc, dct, doap, mem) are pre-loaded. Returns JSON for SELECT, Turtle for CONSTRUCT, boolean for ASK."
+        description = "Execute a SPARQL query against the memory graph. Prefixes rdf, rdfs, xsd, mem are pre-loaded. Returns JSON for SELECT, N-Triples for CONSTRUCT, boolean for ASK."
     )]
     async fn memory_query(
         &self,
@@ -141,93 +222,14 @@ impl MemoryGraphServer {
     }
 
     #[tool(
-        name = "memory_link",
-        description = "Create a relationship between two nodes. Use built-in relations (partOf, contains, uses, responsibleFor, worksOn, prefers, madeBy, resolves, causes, implements, supersedes, affects, relatesTo, about, appliesTo, instanceOf, documentedIn) or any custom relation IRI."
-    )]
-    async fn memory_link(
-        &self,
-        params: Parameters<LinkParams>,
-    ) -> Result<CallToolResult, McpError> {
-        let p = params.0;
-        link::handle_link(
-            &self.store,
-            p.source_iri,
-            p.target_iri,
-            p.relation,
-            p.reify.unwrap_or(false),
-            p.metadata,
-        )
-        .map_err(|e| McpError::internal_error(e.to_string(), None))
-    }
-
-    #[tool(
-        name = "memory_unlink",
-        description = "Remove a relationship between two nodes."
-    )]
-    async fn memory_unlink(
-        &self,
-        params: Parameters<UnlinkParams>,
-    ) -> Result<CallToolResult, McpError> {
-        let p = params.0;
-        link::handle_unlink(&self.store, p.source_iri, p.target_iri, p.relation)
-            .map_err(|e| McpError::internal_error(e.to_string(), None))
-    }
-
-    #[tool(
-        name = "memory_forget",
-        description = "Soft-delete a node by marking it as invalidated. The node and its triples are preserved for provenance."
-    )]
-    async fn memory_forget(
-        &self,
-        params: Parameters<ForgetParams>,
-    ) -> Result<CallToolResult, McpError> {
-        let p = params.0;
-        forget::handle(&self.store, p.node_iri, p.reason)
-            .map_err(|e| McpError::internal_error(e.to_string(), None))
-    }
-
-    #[tool(
         name = "memory_reflect",
-        description = "Get diagnostics about the memory graph: node counts by type, relationship counts, orphan nodes, stale nodes, recently added, and suggested missing links."
+        description = "Get diagnostics about the memory graph: resource counts by model, concept counts, link counts, and recently added resources."
     )]
     async fn memory_reflect(
         &self,
         params: Parameters<ReflectParams>,
     ) -> Result<CallToolResult, McpError> {
-        reflect::handle(&self.store, params.0.project)
-            .map_err(|e| McpError::internal_error(e.to_string(), None))
-    }
-
-    #[tool(
-        name = "memory_evolve_edge",
-        description = "Propose a new relationship type for the memory graph. Node types are fixed, but new edge types can be added."
-    )]
-    async fn memory_evolve_edge(
-        &self,
-        params: Parameters<EvolveEdgeParams>,
-    ) -> Result<CallToolResult, McpError> {
-        let p = params.0;
-        evolve::handle(
-            &self.store,
-            p.name,
-            p.description,
-            p.domain,
-            p.range,
-            p.apply.unwrap_or(false),
-        )
-        .map_err(|e| McpError::internal_error(e.to_string(), None))
-    }
-
-    #[tool(
-        name = "memory_inject",
-        description = "Bulk-insert structured triples from external content into the injected knowledge graph."
-    )]
-    async fn memory_inject(
-        &self,
-        params: Parameters<InjectParams>,
-    ) -> Result<CallToolResult, McpError> {
-        let p = params.0;
-        inject::handle(&self.store, p.source_label, p.triples)
+        reflect::handle(&self.store, params.0.model)
             .map_err(|e| McpError::internal_error(e.to_string(), None))
     }
 }
@@ -237,12 +239,12 @@ impl ServerHandler for MemoryGraphServer {
     fn get_info(&self) -> ServerInfo {
         let mut info = ServerInfo::default();
         info.instructions = Some(
-            "RDF-based long-term memory graph for Claude Code. \
-            Stores granular knowledge nodes (Person, Project, Component, Resource, Technology, Concept, \
-            Decision, Problem, Change, Preference, Constraint, Pattern) connected by typed relationships. \
-            Use memory_store_node to create/update nodes, memory_link to connect them, \
-            memory_query with SPARQL to search, memory_reflect for diagnostics, \
-            memory_evolve_edge to add new relationship types, and memory_inject for external knowledge."
+            "Arches-inspired knowledge graph for Claude Code long-term memory. \
+            Each resource (Person, Project, Company, Task, Technology, Decision, Pattern) \
+            is its own named graph with scalar properties. Shared concepts (Skill, Concept, \
+            Constraint, Preference) enable multi-hop traversal between resources. \
+            Use memory_store_resource to create entities, memory_link to connect them, \
+            memory_recall to retrieve context with traversal, and memory_query for SPARQL."
                 .into(),
         );
         info.capabilities = ServerCapabilities::builder().enable_tools().build();

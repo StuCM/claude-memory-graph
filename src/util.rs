@@ -2,16 +2,30 @@ use chrono::Utc;
 use oxigraph::model::{Literal, NamedNode};
 use uuid::Uuid;
 
-use crate::namespaces::{MEM, XSD};
+use crate::namespaces::{self, MEM, XSD};
 
-pub fn new_node_iri() -> NamedNode {
-    let id = Uuid::new_v4();
-    NamedNode::new(format!("{MEM}node/{id}")).expect("Invalid IRI")
+/// Generate a new UUID-based IRI for a resource instance root node.
+pub fn new_resource_iri() -> (String, NamedNode) {
+    let id = Uuid::new_v4().to_string();
+    let iri = NamedNode::new(format!("{MEM}resource/{id}")).expect("Invalid IRI");
+    (id, iri)
 }
 
-pub fn new_reification_iri() -> NamedNode {
+/// Generate a new UUID-based IRI for a concept node.
+pub fn new_concept_iri() -> NamedNode {
     let id = Uuid::new_v4();
-    NamedNode::new(format!("{MEM}reification/{id}")).expect("Invalid IRI")
+    NamedNode::new(format!("{MEM}concept/{id}")).expect("Invalid IRI")
+}
+
+/// Generate a new UUID-based IRI for a cross-link.
+pub fn new_link_iri() -> NamedNode {
+    let id = Uuid::new_v4();
+    NamedNode::new(format!("{MEM}link/{id}")).expect("Invalid IRI")
+}
+
+/// Get the resource graph IRI for a given resource ID.
+pub fn resource_graph(id: &str) -> NamedNode {
+    namespaces::resource_graph_iri(id)
 }
 
 pub fn now_literal() -> Literal {

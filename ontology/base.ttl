@@ -2,242 +2,221 @@
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
 @prefix owl:  <http://www.w3.org/2002/07/owl#> .
-@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 @prefix prov: <http://www.w3.org/ns/prov#> .
-@prefix foaf: <http://xmlns.com/foaf/0.1/> .
-@prefix dc:   <http://purl.org/dc/elements/1.1/> .
-@prefix dct:  <http://purl.org/dc/terms/> .
-@prefix doap: <http://usefulinc.com/ns/doap#> .
 @prefix mem:  <https://memory.claude.local/ontology#> .
 
 # --- Ontology metadata ---
 mem: a owl:Ontology ;
     rdfs:label "Claude Memory Graph Ontology" ;
-    rdfs:comment "Granular knowledge graph for Claude Code long-term memory." ;
-    dct:created "2026-03-26"^^xsd:date .
+    rdfs:comment "Arches-inspired hybrid knowledge graph for Claude Code long-term memory. Each resource instance gets its own named graph. Scalar attributes are flat properties; shared concepts are traversable nodes enabling multi-hop recall." ;
+    owl:versionInfo "0.2.0" .
 
 # ============================================================
-# ENTITY NODE TYPES (nouns — things that exist)
+# RESOURCE MODELS (graph types — each instance is a named graph)
 # ============================================================
+
+mem:ResourceModel a rdfs:Class ;
+    rdfs:label "Resource Model" ;
+    rdfs:comment "A schema definition for a type of resource graph." .
 
 mem:Person a rdfs:Class ;
+    rdfs:subClassOf mem:ResourceModel ;
     rdfs:label "Person" ;
     rdfs:comment "A person: user, teammate, stakeholder." .
 
 mem:Project a rdfs:Class ;
+    rdfs:subClassOf mem:ResourceModel ;
     rdfs:label "Project" ;
     rdfs:comment "A codebase, repository, or initiative." .
 
-mem:Component a rdfs:Class ;
-    rdfs:label "Component" ;
-    rdfs:comment "An architectural piece: module, service, API, subsystem." .
+mem:Company a rdfs:Class ;
+    rdfs:subClassOf mem:ResourceModel ;
+    rdfs:label "Company" ;
+    rdfs:comment "An organisation or business." .
 
-mem:Resource a rdfs:Class ;
-    rdfs:label "Resource" ;
-    rdfs:comment "A specific artifact: file, config, endpoint, document." .
+mem:Task a rdfs:Class ;
+    rdfs:subClassOf mem:ResourceModel ;
+    rdfs:label "Task" ;
+    rdfs:comment "A work item, ticket, or objective." .
 
 mem:Technology a rdfs:Class ;
+    rdfs:subClassOf mem:ResourceModel ;
     rdfs:label "Technology" ;
-    rdfs:comment "A language, framework, tool, or library." .
-
-mem:Concept a rdfs:Class ;
-    rdfs:label "Concept" ;
-    rdfs:comment "An abstract topic, pattern, or domain term." .
-
-# ============================================================
-# EVENT NODE TYPES (things that happened)
-# ============================================================
+    rdfs:comment "A language, framework, tool, or platform." .
 
 mem:Decision a rdfs:Class ;
+    rdfs:subClassOf mem:ResourceModel ;
     rdfs:label "Decision" ;
     rdfs:comment "A choice that was made, with rationale." .
 
-mem:Problem a rdfs:Class ;
-    rdfs:label "Problem" ;
-    rdfs:comment "Something that went wrong or was difficult." .
-
-mem:Change a rdfs:Class ;
-    rdfs:label "Change" ;
-    rdfs:comment "A modification that occurred." .
-
-mem:Conversation a rdfs:Class ;
-    rdfs:subClassOf prov:Activity ;
-    rdfs:label "Conversation" ;
-    rdfs:comment "A Claude Code conversation session (provenance)." .
+mem:Pattern a rdfs:Class ;
+    rdfs:subClassOf mem:ResourceModel ;
+    rdfs:label "Pattern" ;
+    rdfs:comment "A recurring approach, anti-pattern, or best practice." .
 
 # ============================================================
-# QUALITY NODE TYPES (characteristics)
+# CONCEPT TYPES (shared nodes — lightweight, traversable)
 # ============================================================
 
-mem:Preference a rdfs:Class ;
-    rdfs:label "Preference" ;
-    rdfs:comment "How someone likes to work." .
+mem:ConceptType a rdfs:Class ;
+    rdfs:label "Concept Type" ;
+    rdfs:comment "Base class for shared concept nodes." .
+
+mem:Skill a rdfs:Class ;
+    rdfs:subClassOf mem:ConceptType ;
+    rdfs:label "Skill" ;
+    rdfs:comment "Links a Person to a Technology or domain with proficiency." .
+
+mem:Concept a rdfs:Class ;
+    rdfs:subClassOf mem:ConceptType ;
+    rdfs:label "Concept" ;
+    rdfs:comment "An abstract topic, domain term, or architectural idea." .
 
 mem:Constraint a rdfs:Class ;
+    rdfs:subClassOf mem:ConceptType ;
     rdfs:label "Constraint" ;
-    rdfs:comment "A limitation or requirement." .
+    rdfs:comment "A limitation, requirement, or compliance rule." .
 
-mem:Pattern a rdfs:Class ;
-    rdfs:label "Pattern" ;
-    rdfs:comment "A recurring approach or anti-pattern." .
-
-# ============================================================
-# REIFICATION
-# ============================================================
-
-mem:ReifiedRelation a rdfs:Class ;
-    rdfs:label "Reified Relation" ;
-    rdfs:comment "A relationship promoted to a node to carry metadata." .
-
-mem:SchemaProposal a rdfs:Class ;
-    rdfs:label "Schema Proposal" ;
-    rdfs:comment "A proposed new edge type for the ontology." .
+mem:Preference a rdfs:Class ;
+    rdfs:subClassOf mem:ConceptType ;
+    rdfs:label "Preference" ;
+    rdfs:comment "How someone likes to work or a favoured approach." .
 
 # ============================================================
-# NODE PROPERTIES (data properties)
+# SCALAR PROPERTIES (flat on resource instances — fast, one hop)
 # ============================================================
 
-# Common
+# Common to all resources
 mem:name a rdf:Property ; rdfs:label "name" ;
-    rdfs:comment "Primary name for entity nodes." .
-
-mem:label a rdf:Property ; rdfs:label "label" ;
-    rdfs:comment "Primary label for event/quality nodes." .
-
+    rdfs:comment "Primary name identifier for any resource." .
 mem:description a rdf:Property ; rdfs:label "description" .
-mem:createdAt a rdf:Property ; rdfs:label "created at" ; rdfs:range xsd:dateTime .
-mem:updatedAt a rdf:Property ; rdfs:label "updated at" ; rdfs:range xsd:dateTime .
+mem:createdAt a rdf:Property ; rdfs:range xsd:dateTime .
+mem:updatedAt a rdf:Property ; rdfs:range xsd:dateTime .
 
-# Person
-mem:email a rdf:Property ; rdfs:domain mem:Person ; rdfs:label "email" .
-mem:role a rdf:Property ; rdfs:domain mem:Person ; rdfs:label "role" .
-mem:organisation a rdf:Property ; rdfs:domain mem:Person ; rdfs:label "organisation" .
-mem:notes a rdf:Property ; rdfs:label "notes" .
+# Person scalars
+mem:email a rdf:Property ; rdfs:domain mem:Person .
+mem:role a rdf:Property ; rdfs:domain mem:Person .
+mem:address a rdf:Property ; rdfs:domain mem:Person .
 
-# Project
-mem:path a rdf:Property ; rdfs:label "path" .
-mem:url a rdf:Property ; rdfs:label "url" .
-mem:status a rdf:Property ; rdfs:label "status" .
+# Project scalars
+mem:projectType a rdf:Property ; rdfs:domain mem:Project ;
+    rdfs:comment "e.g. code, design, research" .
+mem:startDate a rdf:Property ; rdfs:domain mem:Project ; rdfs:range xsd:date .
+mem:status a rdf:Property .
+mem:progress a rdf:Property ; rdfs:domain mem:Project .
+mem:path a rdf:Property ; rdfs:comment "File system path." .
+mem:url a rdf:Property .
 
-# Component
-mem:language a rdf:Property ; rdfs:domain mem:Component ; rdfs:label "language" .
+# Company scalars
+mem:industry a rdf:Property ; rdfs:domain mem:Company .
+mem:website a rdf:Property ; rdfs:domain mem:Company .
 
-# Resource
-mem:format a rdf:Property ; rdfs:domain mem:Resource ; rdfs:label "format" .
+# Task scalars
+mem:deadline a rdf:Property ; rdfs:domain mem:Task ; rdfs:range xsd:date .
+mem:priority a rdf:Property ; rdfs:domain mem:Task .
 
-# Technology
-mem:version a rdf:Property ; rdfs:domain mem:Technology ; rdfs:label "version" .
+# Technology scalars
+mem:version a rdf:Property ; rdfs:domain mem:Technology .
+mem:category a rdf:Property ; rdfs:domain mem:Technology ;
+    rdfs:comment "e.g. language, framework, tool, platform" .
 
-# Decision
-mem:rationale a rdf:Property ; rdfs:domain mem:Decision ; rdfs:label "rationale" .
+# Decision scalars
+mem:rationale a rdf:Property ; rdfs:domain mem:Decision .
+mem:outcome a rdf:Property ; rdfs:domain mem:Decision .
+mem:date a rdf:Property ; rdfs:range xsd:date .
 
-# Problem
-mem:severity a rdf:Property ; rdfs:domain mem:Problem ; rdfs:label "severity" .
+# Pattern scalars
+mem:example a rdf:Property ; rdfs:domain mem:Pattern .
 
-# Constraint
-mem:source a rdf:Property ; rdfs:domain mem:Constraint ; rdfs:label "source" .
+# Concept scalars
+mem:label a rdf:Property ; rdfs:comment "Display label for concepts." .
 
-# Pattern
-mem:example a rdf:Property ; rdfs:domain mem:Pattern ; rdfs:label "example" .
-
-# Reification metadata
-mem:confidence a rdf:Property ; rdfs:domain mem:ReifiedRelation ; rdfs:range xsd:float .
-
-# Schema proposal
-mem:proposalStatus a rdf:Property ; rdfs:domain mem:SchemaProposal ; rdfs:label "proposal status" .
-mem:proposedProperty a rdf:Property ; rdfs:domain mem:SchemaProposal ; rdfs:label "proposed property" .
+# Skill metadata (on the link, not the concept itself)
+mem:proficiency a rdf:Property ;
+    rdfs:comment "Proficiency level on a skill link (beginner, intermediate, advanced, expert)." .
 
 # Soft delete
-mem:invalidated a rdf:Property ; rdfs:range xsd:boolean ; rdfs:label "invalidated" .
-mem:invalidatedAt a rdf:Property ; rdfs:range xsd:dateTime ; rdfs:label "invalidated at" .
-mem:invalidationReason a rdf:Property ; rdfs:label "invalidation reason" .
-
-# Conversation provenance
-mem:sessionId a rdf:Property ; rdfs:domain mem:Conversation ; rdfs:label "session id" .
-
-# Injection provenance
-mem:Injection a rdfs:Class ;
-    rdfs:subClassOf prov:Activity ;
-    rdfs:label "Injection" ;
-    rdfs:comment "External content injection activity." .
+mem:invalidated a rdf:Property ; rdfs:range xsd:boolean .
+mem:invalidatedAt a rdf:Property ; rdfs:range xsd:dateTime .
+mem:invalidationReason a rdf:Property .
 
 # ============================================================
-# RELATIONSHIP TYPES (object properties — edges)
+# CROSS-GRAPH RELATIONSHIPS (stored in links graph)
 # ============================================================
 
-# Structural
-mem:partOf a rdf:Property ;
-    rdfs:label "part of" ;
-    rdfs:comment "Component is part of Project." ;
-    rdfs:domain mem:Component ; rdfs:range mem:Project .
+mem:CrossLink a rdfs:Class ;
+    rdfs:label "Cross Link" ;
+    rdfs:comment "A relationship between two resource instances, stored separately." .
 
-mem:contains a rdf:Property ;
-    rdfs:label "contains" ;
-    rdfs:comment "Project contains Component." ;
-    rdfs:domain mem:Project ; rdfs:range mem:Component .
+mem:linkSource a rdf:Property ; rdfs:domain mem:CrossLink ;
+    rdfs:comment "Source resource IRI." .
+mem:linkTarget a rdf:Property ; rdfs:domain mem:CrossLink ;
+    rdfs:comment "Target resource IRI." .
+mem:linkRelation a rdf:Property ; rdfs:domain mem:CrossLink ;
+    rdfs:comment "Relationship type name." .
+mem:linkCreatedAt a rdf:Property ; rdfs:domain mem:CrossLink ; rdfs:range xsd:dateTime .
+
+# Relationship types (used as values of mem:linkRelation)
+mem:worksOn a rdf:Property ;
+    rdfs:label "works on" ;
+    rdfs:comment "Person works on Project." .
+
+mem:employedBy a rdf:Property ;
+    rdfs:label "employed by" ;
+    rdfs:comment "Person employed by Company." .
+
+mem:owns a rdf:Property ;
+    rdfs:label "owns" ;
+    rdfs:comment "Company owns Project." .
 
 mem:uses a rdf:Property ;
     rdfs:label "uses" ;
-    rdfs:comment "Project uses Technology." ;
-    rdfs:domain mem:Project ; rdfs:range mem:Technology .
-
-# People
-mem:responsibleFor a rdf:Property ;
-    rdfs:label "responsible for" ;
-    rdfs:domain mem:Person ; rdfs:range mem:Project .
-
-mem:worksOn a rdf:Property ;
-    rdfs:label "works on" ;
-    rdfs:domain mem:Person ; rdfs:range mem:Component .
-
-mem:prefers a rdf:Property ;
-    rdfs:label "prefers" ;
-    rdfs:domain mem:Person .
+    rdfs:comment "Project uses Technology." .
 
 mem:madeBy a rdf:Property ;
     rdfs:label "made by" ;
-    rdfs:domain mem:Decision ; rdfs:range mem:Person .
-
-# Causal / temporal
-mem:resolves a rdf:Property ;
-    rdfs:label "resolves" ;
-    rdfs:domain mem:Decision ; rdfs:range mem:Problem .
-
-mem:causes a rdf:Property ;
-    rdfs:label "causes" ;
-    rdfs:domain mem:Change ; rdfs:range mem:Problem .
-
-mem:implements a rdf:Property ;
-    rdfs:label "implements" ;
-    rdfs:domain mem:Change ; rdfs:range mem:Decision .
-
-mem:supersedes a rdf:Property ;
-    rdfs:label "supersedes" ;
-    rdfs:comment "This node replaces an earlier one." .
+    rdfs:comment "Decision made by Person." .
 
 mem:affects a rdf:Property ;
     rdfs:label "affects" ;
-    rdfs:domain mem:Decision ; rdfs:range mem:Component .
+    rdfs:comment "Decision affects Project/Task." .
 
-# Knowledge
+mem:assignedTo a rdf:Property ;
+    rdfs:label "assigned to" ;
+    rdfs:comment "Task assigned to Person." .
+
+mem:partOf a rdf:Property ;
+    rdfs:label "part of" ;
+    rdfs:comment "Task part of Project." .
+
 mem:relatesTo a rdf:Property ;
     rdfs:label "relates to" ;
-    rdfs:comment "General association between any two nodes." .
+    rdfs:comment "General association between any two resources." .
 
-mem:about a rdf:Property ;
-    rdfs:label "about" ;
-    rdfs:comment "Conversation is about a node." ;
-    rdfs:domain mem:Conversation .
+mem:supersedes a rdf:Property ;
+    rdfs:label "supersedes" ;
+    rdfs:comment "This resource replaces an earlier one." .
+
+mem:resolves a rdf:Property ;
+    rdfs:label "resolves" ;
+    rdfs:comment "Decision resolves Task." .
 
 mem:appliesTo a rdf:Property ;
     rdfs:label "applies to" ;
-    rdfs:domain mem:Constraint .
+    rdfs:comment "Pattern/Constraint applies to Project." .
 
-mem:instanceOf a rdf:Property ;
-    rdfs:label "instance of" ;
-    rdfs:comment "Component follows a Pattern." ;
-    rdfs:domain mem:Component ; rdfs:range mem:Pattern .
+mem:hasSkill a rdf:Property ;
+    rdfs:label "has skill" ;
+    rdfs:comment "Person has Skill concept." .
 
-mem:documentedIn a rdf:Property ;
-    rdfs:label "documented in" ;
-    rdfs:range mem:Resource .
+mem:hasConcept a rdf:Property ;
+    rdfs:label "has concept" ;
+    rdfs:comment "Resource links to a Concept." .
+
+mem:hasConstraint a rdf:Property ;
+    rdfs:label "has constraint" ;
+    rdfs:comment "Resource has a Constraint." .
+
+mem:hasPreference a rdf:Property ;
+    rdfs:label "has preference" ;
+    rdfs:comment "Person has a Preference." .
