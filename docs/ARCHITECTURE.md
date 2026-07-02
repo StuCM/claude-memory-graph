@@ -106,7 +106,7 @@ Every tool output is consumed by an LLM, so tokens are the real cost. The rules:
 **Claude Code plugin**: the repo is its own marketplace ([.claude-plugin/](../.claude-plugin/)). The plugin bundles:
 - the MCP server, launched as `uvx --from ${CLAUDE_PLUGIN_ROOT} claude-memory-graph` — the plugin's bundled source is the package, so users need only `uv`;
 - a SessionStart hook ([hooks/](../hooks/)) that creates `~/.claude/context/` dirs and injects the recall-first + context-writing protocol into every session;
-- skills [`/memory-graph:distill`](../skills/distill/SKILL.md) (context files → graph nodes) and [`/memory-graph:reflect`](../skills/reflect/SKILL.md) (find missing links, orphans, stale nodes).
+- skills [`/memory-graph:distill`](../skills/distill/SKILL.md) (context files → graph nodes), [`/memory-graph:ingest`](../skills/ingest/SKILL.md) (arbitrary markdown documents — issue reports, ADRs, notes — → graph nodes, source files never modified), and [`/memory-graph:reflect`](../skills/reflect/SKILL.md) (find missing links, orphans, stale nodes).
 
 Note the plugin's MCP config is `mcp-servers.json`, *not* `.mcp.json` — the latter at a repo root is also read as project-scope MCP config, which would double-register the server for anyone working in this repo.
 

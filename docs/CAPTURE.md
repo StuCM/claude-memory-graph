@@ -85,6 +85,29 @@ Distill stays the default promotion path deliberately: hindsight is the cheapest
 have. The end-of-session view knows which mid-session "decisions" survived; a write-as-you-go
 graph would capture the churn.
 
+## Ingesting existing documents — capture beyond sessions
+
+Sessions are not the only source of durable knowledge: issue-report repos, ADRs, postmortems,
+and notes hold exactly the decisions/gotchas/constraints the graph exists for. The extraction
+discipline is source-agnostic — the rubric, naming conventions, and property shapes above apply
+unchanged — but documents differ from context files in two ways that change the mechanics
+(implemented as [/memory-graph:ingest](../skills/ingest/SKILL.md)):
+
+- **We don't own their lifecycle.** Context files get frontmatter flipped and are archived;
+  foreign documents must never be modified. Ingestion state therefore lives in the graph: every
+  ingested node carries `sourceDocument` (repo + relative path), which doubles as the re-ingest
+  ledger — "has this file been processed?" is a SPARQL query, not a sidecar file.
+- **They overlap with session capture.** An issue report often describes a gotcha a past session
+  already stored, so document ingestion leans harder on pre-write dedup: check the graph first,
+  update the existing node (appending the new `sourceDocument`) rather than minting a twin. A
+  node accumulating several sources is corroboration — exactly the trust signal federation wants.
+
+Document-type mapping for the common case (an issues repo): recurring problem + root cause →
+Pattern; unresolved issue future work must respect → Task; ADR-shaped reasoning → Decision;
+hard limits → Constraint concepts. A fixed typo is not a memory; quality over quantity holds
+even more for bulk sources, since one over-eager ingest of a large repo can pollute every future
+recall.
+
 ## Write-time dedup
 
 `memory_store_resource` should check for near-matches before creating (not upserting) a node:
