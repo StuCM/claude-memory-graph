@@ -83,6 +83,37 @@ prompt ──► extract ──► match ──► score ──► (below thresh
 directory and user identity, so the hook recalls the Project node (cwd basename) and Person node
 and injects those results. The session begins already primed, again with no model involvement.
 
+### How a no-LLM analyzer makes correct decisions
+
+The analyzer never needs to *understand* the prompt — only to answer a far narrower question:
+**does this prompt mention anything the graph knows about?** The graph's vocabulary (node names,
+concept labels, aliases) is small and known, and matching free text against a known vocabulary
+is classic pre-LLM information retrieval (TF-IDF/BM25 territory), not language understanding.
+Correctness comes from stacking cheap signals, each mechanical on its own:
+
+- **Distinctive-term weighting** — a hit on "pyoxigraph" is near-certain relevance; a hit on
+  "project" is noise. Weight by token rarity against a general English frequency list plus the
+  graph's own vocabulary. One rare-term match outweighs many common-word matches.
+- **Signal stacking** — independent matches multiply confidence: a technology term *plus* a node
+  in the current project's neighbourhood clears the threshold; a lone fuzzy hit stays silent.
+- **Structural priors from the graph itself** — the cwd identifies the Project node, and graph
+  distance from it is a relevance prior: a Pattern two hops from the active project outranks an
+  identical lexical match linked only to a dormant one. The graph supplies the context-awareness
+  an LLM judge would otherwise provide.
+- **Type, recency, degree priors** — Decisions/Patterns/Constraints over Tasks; recently updated
+  and well-linked nodes rank higher.
+
+**Aliases: spend intelligence at write time, not read time.** The lexical gap is paraphrase —
+"the database locking issue" won't string-match `Pattern "RocksDB exclusive lock"`. But at
+*capture* time an LLM is already in session, so the capture protocol has it store an `aliases`
+property: the two or three phrasings a future prompt would plausibly use. The semantic work is
+done once, by the model that's already there, and persisted — read-time matching stays dumb,
+fast, and deterministic. (This is a capture rule in service of retrieval — the tracks meet here.)
+
+**The built-in miss detector.** If the model explicitly calls `memory_recall`/`memory_search`
+right after the analyzer stayed silent, that is a logged false negative — free training data for
+threshold tuning from real transcripts, no labelling effort.
+
 ### Precision, and failing quietly
 
 The failure economics are asymmetric. A **miss** costs what the status quo already costs (the
