@@ -1,3 +1,12 @@
+# Memory Graph: Recall First (memory-graph plugin)
+
+Before re-deriving knowledge with codebase searches, big greps, or re-investigation, check the memory graph:
+
+- **At the start of substantive work**: `memory_recall` the current project (model Project, name = working-directory basename, depth 2) and the user. This surfaces past decisions, known gotchas, constraints, and preferences in one call.
+- **Before investigating a problem**: `memory_recall`/`memory_query` for related Patterns and Decisions — a gotcha may already be recorded with its fix and rationale.
+- **Scope discipline**: the graph answers *why/what-do-we-know* questions (decisions, rationale, gotchas, preferences, project relationships). Code-structure questions (where is X defined, who calls Y) still belong to code search tools.
+- If recall returns nothing relevant, proceed normally — and consider whether what you then learn belongs in the graph.
+
 # Conversation Context Tracking (memory-graph plugin)
 
 Maintain a running context file during every conversation. It serves two purposes:

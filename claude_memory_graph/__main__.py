@@ -22,8 +22,13 @@ INSTRUCTIONS = (
     "Each resource (Person, Project, Company, Task, Technology, Decision, Pattern) "
     "is its own named graph with scalar properties. Shared concepts (Skill, Concept, "
     "Constraint, Preference) enable multi-hop traversal between resources. "
+    "RECALL FIRST: before re-deriving knowledge about a project, person, or past "
+    "problem via searches or re-investigation, call memory_recall (depth 2) — "
+    "decisions, rationale, gotchas, and preferences may already be recorded. "
+    "The graph answers why/what-do-we-know questions; code-structure questions "
+    "still belong to code search. "
     "Use memory_store_resource to create entities, memory_link to connect them, "
-    "memory_recall to retrieve context with traversal, and memory_query for SPARQL."
+    "and memory_query for SPARQL."
 )
 
 
