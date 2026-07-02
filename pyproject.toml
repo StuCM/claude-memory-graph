@@ -1,0 +1,19 @@
+[project]
+name = "claude-memory-graph"
+version = "0.1.0"
+description = "Arches-inspired knowledge graph MCP server for Claude Code long-term memory"
+requires-python = ">=3.11"
+dependencies = [
+    "pyoxigraph>=0.4",
+    "mcp>=1.0",
+]
+
+[project.scripts]
+claude-memory-graph = "claude_memory_graph.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["claude_memory_graph"]

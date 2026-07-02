@@ -1,3 +1,5 @@
 target/
 *.db
 .claude/context/
+__pycache__/
+dist/

@@ -1,0 +1,14 @@
+{
+  "name": "claude-memory-graph",
+  "owner": {
+    "name": "Stuart Marshall"
+  },
+  "plugins": [
+    {
+      "name": "memory-graph",
+      "source": "./",
+      "description": "RDF knowledge-graph long-term memory for Claude Code: MCP server, session context-file protocol, and /distill skill",
+      "version": "0.1.0"
+    }
+  ]
+}

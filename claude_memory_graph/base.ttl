@@ -9,7 +9,7 @@
 mem: a owl:Ontology ;
     rdfs:label "Claude Memory Graph Ontology" ;
     rdfs:comment "Arches-inspired hybrid knowledge graph for Claude Code long-term memory. Each resource instance gets its own named graph. Scalar attributes are flat properties; shared concepts are traversable nodes enabling multi-hop recall." ;
-    owl:versionInfo "0.2.0" .
+    owl:versionInfo "0.3.0" .
 
 # ============================================================
 # RESOURCE MODELS (graph types — each instance is a named graph)
@@ -156,67 +156,73 @@ mem:linkRelation a rdf:Property ; rdfs:domain mem:CrossLink ;
     rdfs:comment "Relationship type name." .
 mem:linkCreatedAt a rdf:Property ; rdfs:domain mem:CrossLink ; rdfs:range xsd:dateTime .
 
-# Relationship types (used as values of mem:linkRelation)
-mem:worksOn a rdf:Property ;
+# Relationship types (used as values of mem:linkRelation).
+# mem:RelationType is the marker the store queries for valid relations;
+# LLM-defined relations are added to the schema graph with the same shape.
+mem:RelationType a rdfs:Class ;
+    rdfs:label "Relation Type" ;
+    rdfs:comment "A named relationship usable in cross-graph links." .
+
+mem:worksOn a rdf:Property, mem:RelationType ;
     rdfs:label "works on" ;
     rdfs:comment "Person works on Project." .
 
-mem:employedBy a rdf:Property ;
+mem:employedBy a rdf:Property, mem:RelationType ;
     rdfs:label "employed by" ;
     rdfs:comment "Person employed by Company." .
 
-mem:owns a rdf:Property ;
+mem:owns a rdf:Property, mem:RelationType ;
     rdfs:label "owns" ;
     rdfs:comment "Company owns Project." .
 
-mem:uses a rdf:Property ;
+mem:uses a rdf:Property, mem:RelationType ;
     rdfs:label "uses" ;
     rdfs:comment "Project uses Technology." .
 
-mem:madeBy a rdf:Property ;
+mem:madeBy a rdf:Property, mem:RelationType ;
     rdfs:label "made by" ;
     rdfs:comment "Decision made by Person." .
 
-mem:affects a rdf:Property ;
+mem:affects a rdf:Property, mem:RelationType ;
     rdfs:label "affects" ;
     rdfs:comment "Decision affects Project/Task." .
 
-mem:assignedTo a rdf:Property ;
+mem:assignedTo a rdf:Property, mem:RelationType ;
     rdfs:label "assigned to" ;
     rdfs:comment "Task assigned to Person." .
 
-mem:partOf a rdf:Property ;
+mem:partOf a rdf:Property, mem:RelationType ;
     rdfs:label "part of" ;
     rdfs:comment "Task part of Project." .
 
-mem:relatesTo a rdf:Property ;
+mem:relatesTo a rdf:Property, mem:RelationType ;
     rdfs:label "relates to" ;
     rdfs:comment "General association between any two resources." .
 
-mem:supersedes a rdf:Property ;
+mem:supersedes a rdf:Property, mem:RelationType ;
     rdfs:label "supersedes" ;
     rdfs:comment "This resource replaces an earlier one." .
 
-mem:resolves a rdf:Property ;
+mem:resolves a rdf:Property, mem:RelationType ;
     rdfs:label "resolves" ;
     rdfs:comment "Decision resolves Task." .
 
-mem:appliesTo a rdf:Property ;
+mem:appliesTo a rdf:Property, mem:RelationType ;
     rdfs:label "applies to" ;
     rdfs:comment "Pattern/Constraint applies to Project." .
 
-mem:hasSkill a rdf:Property ;
+mem:hasSkill a rdf:Property, mem:RelationType ;
     rdfs:label "has skill" ;
     rdfs:comment "Person has Skill concept." .
 
-mem:hasConcept a rdf:Property ;
+mem:hasConcept a rdf:Property, mem:RelationType ;
     rdfs:label "has concept" ;
     rdfs:comment "Resource links to a Concept." .
 
-mem:hasConstraint a rdf:Property ;
+mem:hasConstraint a rdf:Property, mem:RelationType ;
     rdfs:label "has constraint" ;
     rdfs:comment "Resource has a Constraint." .
 
-mem:hasPreference a rdf:Property ;
+mem:hasPreference a rdf:Property, mem:RelationType ;
     rdfs:label "has preference" ;
     rdfs:comment "Person has a Preference." .

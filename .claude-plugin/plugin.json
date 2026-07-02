@@ -1,0 +1,11 @@
+{
+  "name": "memory-graph",
+  "description": "Arches-inspired RDF knowledge-graph memory: MCP server + context-file protocol + distill skill",
+  "version": "0.1.0",
+  "author": {
+    "name": "Stuart Marshall"
+  },
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "mcpServers": "./mcp-servers.json"
+}

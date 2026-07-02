@@ -1,0 +1,98 @@
+import argparse
+import asyncio
+import logging
+import os
+from pathlib import Path
+
+from mcp.server import Server
+from mcp.server.stdio import stdio_server
+
+from .store import MemoryStore
+from . import tools
+
+log = logging.getLogger(__name__)
+
+SERVER_INFO = {
+    "name": "claude-memory-graph",
+    "version": "0.1.0",
+}
+
+INSTRUCTIONS = (
+    "Arches-inspired knowledge graph for Claude Code long-term memory. "
+    "Each resource (Person, Project, Company, Task, Technology, Decision, Pattern) "
+    "is its own named graph with scalar properties. Shared concepts (Skill, Concept, "
+    "Constraint, Preference) enable multi-hop traversal between resources. "
+    "Use memory_store_resource to create entities, memory_link to connect them, "
+    "memory_recall to retrieve context with traversal, and memory_query for SPARQL."
+)
+
+
+def _store_path() -> Path:
+    env = os.environ.get("MEMORY_GRAPH_PATH")
+    if env:
+        return Path(env)
+    home = Path.home()
+    return home / ".claude" / "memory-graph" / "store"
+
+
+async def _run() -> None:
+    store_path = _store_path()
+    log.info("Opening memory store at: %s", store_path)
+    store = MemoryStore.open_or_create(store_path)
+
+    server = Server(SERVER_INFO["name"])
+    server.instructions = INSTRUCTIONS
+    tools.register(server, store)
+
+    log.info("Starting MCP server (stdio)")
+    async with stdio_server() as (read_stream, write_stream):
+        await server.run(
+            read_stream,
+            write_stream,
+            server.create_initialization_options(),
+        )
+
+    log.info("Shutting down, saving graph...")
+    store.save()
+    log.info("Done")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog="claude-memory-graph",
+        description="MCP memory graph server. With no subcommand, serves MCP over stdio. "
+        "Subcommands are read-only terminal helpers (writes must go through the MCP "
+        "server so a live session's save does not overwrite them).",
+    )
+    sub = parser.add_subparsers(dest="cmd")
+    p = sub.add_parser("recall", help="recall a resource and its links")
+    p.add_argument("model", help="e.g. Person, Project")
+    p.add_argument("name")
+    p.add_argument("--depth", type=int, default=1, choices=[1, 2])
+    p = sub.add_parser("reflect", help="graph overview: counts, relations, recent")
+    p.add_argument("model", nargs="?", default=None)
+    p = sub.add_parser("query", help="run a SPARQL query")
+    p.add_argument("sparql")
+    args = parser.parse_args()
+
+    if args.cmd is None:
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s %(levelname)s %(name)s %(message)s",
+        )
+        asyncio.run(_run())
+        return
+
+    from .tools import recall, reflect, query
+
+    store = MemoryStore.open_or_create(_store_path())
+    if args.cmd == "recall":
+        print(recall.handle(store, args.model, args.name, args.depth))
+    elif args.cmd == "reflect":
+        print(reflect.handle(store, args.model))
+    elif args.cmd == "query":
+        print(query.handle(store, args.sparql))
+
+
+if __name__ == "__main__":
+    main()

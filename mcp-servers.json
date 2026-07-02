@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "memory-graph": {
+      "command": "uvx",
+      "args": ["--from", "${CLAUDE_PLUGIN_ROOT}", "claude-memory-graph"]
+    }
+  }
+}
