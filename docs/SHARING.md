@@ -1,6 +1,7 @@
 # Sharing memories with a team — design exploration
 
-Status: **exploration, not yet implemented.**
+Status: **exploration, not yet implemented.** See [FEDERATION.md](FEDERATION.md) for the larger
+vision this feeds into: hosted per-person DBs connected into a live, policy-gated memory network.
 
 The problem: knowledge linked to a project — decisions, gotchas, patterns — is useful to other
 people on that project, but each person's memory graph is *theirs*. It also contains things they
