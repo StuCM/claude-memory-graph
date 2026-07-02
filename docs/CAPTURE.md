@@ -140,12 +140,27 @@ then shows the chain — *what we decided, and what we used to think* — which 
 valuable memory of all. Distill and reflect both need to know this flow: distill when a context
 file records a reversal, reflect when it finds contradictory decisions on the same subject.
 
+## Enforcement layers
+
+The rules above split into two layers with different guarantees:
+
+- **Soft (LLM-followed):** the rubric, "would future-you act differently", property shapes,
+  write-path choices — these live in the context protocol, the distill/ingest skills, and tool
+  descriptions. They make capture *good* but decay with context and vary by client.
+- **Hard (server-enforced, in [capture_rules.py](../claude_memory_graph/capture_rules.py)):**
+  the checkable subset the write path refuses to violate, regardless of who is writing —
+  required properties per model (Decision→`rationale`, Pattern→`description`, creation-only so
+  legacy nodes still accept updates), name lint (normalization, length cap, placeholder-name
+  rejection), the near-duplicate guard on create (similar names error with candidates unless
+  `force`), case/whitespace-insensitive concept identity, and `capturedBy` provenance stamped
+  server-side from the MCP client identity.
+
 ## Phasing
 
-1. **Phase 1:** rubric + naming conventions + recommended shapes written into tool descriptions
-   and the distill/context protocols; provenance properties stamped server-side; `supersedes`
-   added to base.ttl.
-2. **Phase 2:** write-time dedup via `memory_search`; distill becomes two-pass (extract
-   candidates → search graph for near-matches → write/update).
+1. **Phase 1 — implemented:** hard rules above enforced in the write path; naming conventions +
+   recommended shapes in tool descriptions and the distill skill; `sourceContext` provenance
+   passed by distill; `supersedes` relation (already in base.ttl).
+2. **Phase 2:** the duplicate guard's matcher unifies with `memory_search` (RETRIEVAL.md);
+   distill becomes two-pass (extract candidates → search graph for near-matches → write/update).
 3. **Ongoing:** reflect skill audits against the rubric (orphans, fragment-valued properties,
    contradictory decisions) — the retroactive half of capture quality.

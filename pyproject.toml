@@ -11,6 +11,9 @@ dependencies = [
 [project.scripts]
 claude-memory-graph = "claude_memory_graph.__main__:main"
 
+[dependency-groups]
+dev = ["pytest>=8"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

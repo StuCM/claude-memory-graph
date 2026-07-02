@@ -14,6 +14,7 @@ from .namespaces import (
     mem_node, resource_graph_node,
 )
 from . import ontology
+from .capture_rules import names_similar, normalize_name
 
 log = logging.getLogger(__name__)
 
@@ -45,6 +46,9 @@ class MemoryStore:
     def __init__(self, store: ox.Store, data_path: Optional[Path] = None):
         self._store = store
         self._data_path = data_path
+        # Set per-request by the MCP layer (client name/version); stamped as
+        # mem:capturedBy provenance on every node created while set.
+        self.capture_client: Optional[str] = None
 
     @classmethod
     def open_or_create(cls, data_dir: Path) -> "MemoryStore":
@@ -135,6 +139,8 @@ class MemoryStore:
         self._add(iri, RDF_TYPE, mem_node(model), graph)
         self._add(iri, mem_node("createdAt"), now, graph)
         self._add(iri, mem_node("updatedAt"), now, graph)
+        if self.capture_client:
+            self._add(iri, mem_node("capturedBy"), ox.Literal(self.capture_client), graph)
 
         for key, value in properties.items():
             self._check_key(key)
@@ -182,6 +188,31 @@ class MemoryStore:
                     graph_id = g.value.removeprefix(GRAPH_RESOURCE_BASE)
                     return graph_id, node
         return None
+
+    def resource_names(self, model: str) -> list[str]:
+        """Names of all live (non-invalidated) resources of a model."""
+        name_prop = ontology.name_property(model)
+        sparql = (
+            f'SELECT ?name WHERE {{\n'
+            f'    GRAPH ?g {{\n'
+            f'        ?node rdf:type mem:{model} .\n'
+            f'        ?node mem:{name_prop} ?name .\n'
+            f'        FILTER NOT EXISTS {{ ?node mem:invalidated ?inv }}\n'
+            f'    }}\n'
+            f'    FILTER(STRSTARTS(STR(?g), "{GRAPH_RESOURCE_BASE}"))\n'
+            f'}}'
+        )
+        names = []
+        for solution in self._query(sparql):
+            name = solution["name"]
+            if isinstance(name, ox.Literal):
+                names.append(name.value)
+        return names
+
+    def find_similar_resources(self, model: str, name: str) -> list[str]:
+        """Names of live resources of `model` whose names are near-duplicates
+        of `name` (used by the write-time duplicate guard)."""
+        return [n for n in self.resource_names(model) if names_similar(n, name)]
 
     def get_resource_properties(
         self, resource_iri: ox.NamedNode, graph_id: str
@@ -240,6 +271,10 @@ class MemoryStore:
     def find_concept(
         self, concept_type: str, label: str
     ) -> Optional[ox.NamedNode]:
+        """Find a concept by label. Concept identity is case- and
+        whitespace-insensitive: an exact match wins, otherwise a normalized
+        match ('Rust' finds 'rust') — so store and link resolve consistently
+        and near-duplicate concept nodes don't accumulate."""
         sparql = (
             f'SELECT ?node WHERE {{\n'
             f'    GRAPH <{GRAPH_CONCEPTS}> {{\n'
@@ -254,6 +289,24 @@ class MemoryStore:
                 node = solution["node"]
                 if isinstance(node, ox.NamedNode):
                     return node
+
+        wanted = normalize_name(label).casefold()
+        sparql = (
+            f'SELECT ?node ?label WHERE {{\n'
+            f'    GRAPH <{GRAPH_CONCEPTS}> {{\n'
+            f'        ?node rdf:type mem:{concept_type} .\n'
+            f'        ?node mem:label ?label .\n'
+            f'    }}\n'
+            f'}}'
+        )
+        for solution in self._query(sparql):
+            node, existing = solution["node"], solution["label"]
+            if (
+                isinstance(node, ox.NamedNode)
+                and isinstance(existing, ox.Literal)
+                and normalize_name(existing.value).casefold() == wanted
+            ):
+                return node
         return None
 
     # ================================================================
