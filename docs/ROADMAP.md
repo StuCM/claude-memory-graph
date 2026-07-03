@@ -10,9 +10,11 @@ a network of stores. The loop breaks into four subsystems, worked on independent
 | **2b. Distill creation** | How is knowledge promoted into the graph so retrieval can be dumb? | [DISTILL-CREATION.md](DISTILL-CREATION.md), [CAPTURE.md](CAPTURE.md) |
 | **3. Orchestration** | How do the loops fire reliably — hooks, prompt counting, nudges? | [ORCHESTRATION.md](ORCHESTRATION.md) |
 
-Beyond the loop sits the horizon: **sharing and federation** ([SHARING.md](SHARING.md) →
+Beyond the loop sit the horizons: **sharing and federation** ([SHARING.md](SHARING.md) →
 [FEDERATION.md](FEDERATION.md)) — hosted per-person DBs, cross-model persistence, and a
-policy-gated network of stores.
+policy-gated network of stores — and **code knowledge** ([CODE-GRAPH.md](CODE-GRAPH.md)) — the
+semantic *why* overlay in memory, joined via code anchors to a mechanically derived,
+commit-regenerated structural graph.
 
 Creation is deliberately split in two: **context creation optimises for completeness** (a
 lossy-tolerant write-ahead log — losing a decision is the failure) while **distill creation

@@ -67,6 +67,11 @@ session-local shorthand (property text is a retrieval matching surface).
 - **Verb forms on new relations** — when extending the ontology, supply the natural-language
   verb forms alongside the description (`worksOn` → *"works on", "working on"*), so the query
   planner ([QUERY-PLANNING.md](QUERY-PLANNING.md)) can ground them with zero code changes.
+- **Code anchors** — a memory *about code* carries `anchorPath` (repo-relative),
+  `anchorSymbol`, and `anchorCommit`, enabling staleness flagging when the code drifts and,
+  later, joins to the derived code graph ([CODE-GRAPH.md](CODE-GRAPH.md)). Structural facts
+  themselves (where X is defined, who calls Y) stay out of the graph — derivable, so they fail
+  the rubric.
 
 ## 5. Dedup (hard guard, soft preference)
 
