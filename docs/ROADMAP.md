@@ -6,7 +6,7 @@ a network of stores. That breaks into three workstreams, each with its own desig
 | Track | Question | Doc |
 |---|---|---|
 | **A. The bigger vision** | Where do memories live and who can traverse them? | [SHARING.md](SHARING.md) → [FEDERATION.md](FEDERATION.md) |
-| **B. Retrieval instigation** | *When and how* does recall actually happen? | [RETRIEVAL.md](RETRIEVAL.md) |
+| **B. Retrieval instigation** | *When and how* does recall actually happen? | [RETRIEVAL.md](RETRIEVAL.md), [QUERY-PLANNING.md](QUERY-PLANNING.md) |
 | **C. Capture refinement** | What gets written, in what shape, with what quality gates? | [CAPTURE.md](CAPTURE.md) |
 
 ## How the tracks interlock

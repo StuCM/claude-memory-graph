@@ -131,6 +131,18 @@ encoder, and the scoring/threshold/budget machinery is unchanged. Federation lat
 same way: remote stores' shared subsets contribute index entries; injection attribution
 ("shared by alice") comes from provenance.
 
+## Beyond neighbourhood injection: the query planner
+
+Entity-anchored neighbourhood injection is the right answer for statement-shaped prompts
+(working context), but it answers every question with the same shape — which is RAG's limitation
+wearing our clothes. For **question-shaped** prompts, retrieval should instead *compose* a
+SPARQL query from the language — nouns → type constraints and entity anchors, verbs → relations,
+adjectives → filters and modifiers, wh-words → projections — so "what decisions affect the
+projects Stuart works on?" becomes a two-edge chain query, not a similarity lookup. That
+component is specified in [QUERY-PLANNING.md](QUERY-PLANNING.md); it shares the grounding
+lexicon (names, aliases, verb forms) and the silence-on-low-confidence discipline with the
+ambient injector, and degrades to neighbourhood recall when grounding is weak.
+
 ## Secondary paths (the model-driven ones)
 
 Ambient injection is the default path, not the only one:
