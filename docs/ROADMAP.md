@@ -1,5 +1,8 @@
 # Roadmap — the system in four subsystems
 
+> New here? Read [GLOSSARY.md](GLOSSARY.md) (terminology) and [SYSTEM.md](SYSTEM.md)
+> (diagrams, technologies, patterns, requirements, test strategy) first.
+
 The project is one loop — **capture → store → retrieve** — that we eventually want to run across
 a network of stores. The loop breaks into four subsystems, worked on independently:
 
