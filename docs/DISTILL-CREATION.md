@@ -50,7 +50,14 @@ session-local shorthand (property text is a retrieval matching surface).
 - **Aliases** — every node gets an `aliases` property: the two or three phrasings a future
   prompt would plausibly use (`Pattern "RocksDB exclusive lock"` → aliases *"db locking",
   "database lock", "rocksdb lock"*). This closes the paraphrase gap so read-time matching can
-  stay lexical.
+  stay lexical. Scope note: per-node aliases are worth it *here* because our instances are
+  descriptive phrases (where paraphrase bites), volume is a few nodes per session, and the LLM
+  is already present. They are **not** the scale strategy — for bulk ingest or pre-existing
+  corpora (CIDOC/Arches), the retrieval index is built mechanically from existing text and
+  aliasing shifts to the vocabulary layer, where SKOS `altLabel`s and ontology labels usually
+  already exist (see RETRIEVAL.md, "Aliases vs the index"). Aliases live in the graph because
+  they are knowledge (shareable, inspectable); indexes are derived and disposable — the index
+  indexes the aliases, they never compete.
 - **Concept hubs** — link every node to at least one concept. Concepts are the associative
   index: any entry point reaching `Concept "coffee"` fans out to every coffee memory, even ones
   sharing no tokens. A node linked to no concept is invisible to associative recall.

@@ -121,6 +121,20 @@ wrote down — names carrying distinctive tokens, aliases, concept-hub links
 ([DISTILL-CREATION.md](DISTILL-CREATION.md)). Association is precomputed at write time;
 retrieval walks it.
 
+**Aliases vs the index — different layers, weight shifts with scale.** The index (lexical now,
+FTS + embedding/ANN at scale) is *derived* data, built mechanically from whatever text exists —
+rebuildable, stored outside the graph, no authoring. Aliases are *content*: vocabulary that
+isn't in the data (no index over "RocksDB exclusive lock" matches "db locking"). Where the
+bridging vocabulary comes from depends on corpus shape: in a personal store, instances are
+descriptive phrases with a real paraphrase gap, volume is tiny, and the LLM is present at write
+time — per-node aliases are cheap and effective. In a large pre-existing corpus (CIDOC/Arches),
+instances are mostly proper nouns (their own best token — the index covers them unaided), and
+the paraphrase gap lives in the small conceptual vocabulary — where SKOS
+`prefLabel`/`altLabel`/`hiddenLabel` and thesauri like Getty AAT already provide curated
+aliases. Rule: **index everything mechanically; alias the vocabulary layer always; alias
+instances only where they're phrases, low-volume, and an LLM is already present.** The index
+indexes aliases along with everything else — they feed it, they don't compete with it.
+
 **The built-in miss detector.** If the model explicitly calls `memory_recall`/`memory_search`
 right after the analyzer stayed silent, that is a logged false negative — free training data for
 threshold tuning from real transcripts, no labelling effort.
