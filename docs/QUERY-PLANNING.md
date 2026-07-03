@@ -48,6 +48,34 @@ The schema graph is the planner's lexicon, and it's already machine-readable:
   `?x mem:status "…"`; *forgotten/old* → invalidation flags; *"about auth"* →
   `CONTAINS(LCASE(?text), "auth")` over property values.
 
+**Lexicon entries map phrases to *path templates*, not single predicates.** Our reified
+CrossLinks already mean "X affects Y" compiles to a multi-triple pattern through a link node —
+so the composer is path-native from day one. That generalisation is exactly what larger
+ontologies need: in CIDOC CRM, "painted by" is not a property but a path
+(`?work ← P108i_was_produced_by → E12_Production → P14_carried_out_by → E39_Actor`), i.e. a
+longer template through typed intermediates. Same machinery, longer templates.
+
+## Scaling to large ontologies (CIDOC CRM, Arches)
+
+The lexicon-first design survives scale because big ontologies are *more* self-describing, not
+less: CIDOC ships natural-language labels and scope notes for every class and property — the
+verb-form lexicon pre-built by a standards committee. What scale actually changes:
+
+- **Ground against the projection layer, compose against the ontology.** Nobody speaks in E/P
+  numbers. Arches already builds the needed mapping: resource models and cards are
+  human-vocabulary projections ("Artist", "Production date") over CIDOC paths, and its SKOS
+  thesauri are our concepts graph at industrial strength. The planner grounds user language in
+  that layer and emits CIDOC-path SPARQL underneath. Our seven-model ontology is a degenerate
+  case of the same pattern — path templates harvested from resource-model definitions instead of
+  hand-written.
+- **Entity grounding needs a real index** — millions of resources means a text index (FTS side
+  index, or the hosted store's) behind the same matching contract.
+- **Ambiguity becomes normal** — many resources share labels; disambiguate by the question's
+  type constraints and graph proximity to context anchors, and below confidence, refuse rather
+  than guess (unchanged discipline, higher stakes).
+- **Class hierarchies need expansion** — "actors" must match E21 Person and E74 Group:
+  `rdfs:subClassOf*` property paths, which SPARQL evaluates natively.
+
 ## Pipeline
 
 ```

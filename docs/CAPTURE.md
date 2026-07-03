@@ -1,6 +1,11 @@
 # Capture refinement — what gets written, in what shape
 
-Status: **exploration, not yet implemented.** Track C of [ROADMAP.md](ROADMAP.md).
+Status: **partially implemented; superseded as the entry point.** Creation has since been split
+into two independent subsystems with opposite objectives — completeness vs. quality:
+[CONTEXT-CREATION.md](CONTEXT-CREATION.md) (the session write-ahead log) and
+[DISTILL-CREATION.md](DISTILL-CREATION.md) (the consolidated write-for-retrieval ruleset,
+including the retrieval-serving enrichment rules — aliases, concept hubs, verb forms). Start
+there; this document remains for the original analysis and the enforcement-layer detail.
 
 ## Current state, and what's undefined
 

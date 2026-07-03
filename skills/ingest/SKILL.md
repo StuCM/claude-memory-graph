@@ -54,6 +54,8 @@ substantially updated from a document**:
 
 - `sourceDocument`: `<repo-or-dir-name>/<relative-path>` — this is also the re-ingest ledger
 - `sourceKind`: e.g. `issue-report`, `adr`, `postmortem`, `notes`
+- `aliases`: the 2–3 phrasings a future prompt would plausibly use for this knowledge — and link
+  every node to at least one concept (concepts are the associative index for future recall)
 
 Before creating any node, check for near-duplicates the graph may already hold from sessions
 (`memory_recall` the obvious names; `memory_query` with `CONTAINS` on key terms) — an issue

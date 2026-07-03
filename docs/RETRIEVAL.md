@@ -110,6 +110,17 @@ property: the two or three phrasings a future prompt would plausibly use. The se
 done once, by the model that's already there, and persisted — read-time matching stays dumb,
 fast, and deterministic. (This is a capture rule in service of retrieval — the tracks meet here.)
 
+**The analyzer nominates; the model disposes.** The final relevance judgement was never the
+analyzer's job — there *is* an LLM in the loop: the main model reading the injection. The
+analyzer over-fetches slightly within its precision threshold and token budget; the model, which
+knows the conversation and the user's situation, uses or ignores what arrived. The split is
+*cheap mechanical recall of candidates* (analyzer) + *free contextual judgement* (the model
+that's already there). What we refuse to add is a second LLM whose only job is deciding whether
+to look. Corollary: the associations the analyzer surfaces are only as good as what capture
+wrote down — names carrying distinctive tokens, aliases, concept-hub links
+([DISTILL-CREATION.md](DISTILL-CREATION.md)). Association is precomputed at write time;
+retrieval walks it.
+
 **The built-in miss detector.** If the model explicitly calls `memory_recall`/`memory_search`
 right after the analyzer stayed silent, that is a logged false negative — free training data for
 threshold tuning from real transcripts, no labelling effort.

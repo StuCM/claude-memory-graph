@@ -1,39 +1,50 @@
-# Roadmap — three workstreams
+# Roadmap — the system in four subsystems
 
 The project is one loop — **capture → store → retrieve** — that we eventually want to run across
-a network of stores. That breaks into three workstreams, each with its own design doc:
+a network of stores. The loop breaks into four subsystems, worked on independently:
 
-| Track | Question | Doc |
+| Subsystem | Question | Doc |
 |---|---|---|
-| **A. The bigger vision** | Where do memories live and who can traverse them? | [SHARING.md](SHARING.md) → [FEDERATION.md](FEDERATION.md) |
-| **B. Retrieval instigation** | *When and how* does recall actually happen? | [RETRIEVAL.md](RETRIEVAL.md), [QUERY-PLANNING.md](QUERY-PLANNING.md) |
-| **C. Capture refinement** | What gets written, in what shape, with what quality gates? | [CAPTURE.md](CAPTURE.md) |
+| **1. Retrieval** | How do memories reach the context window, unasked? | [RETRIEVAL.md](RETRIEVAL.md) (ambient injector), [QUERY-PLANNING.md](QUERY-PLANNING.md) (dynamic SPARQL) |
+| **2a. Context creation** | How is in-session knowledge logged so nothing is lost? | [CONTEXT-CREATION.md](CONTEXT-CREATION.md) |
+| **2b. Distill creation** | How is knowledge promoted into the graph so retrieval can be dumb? | [DISTILL-CREATION.md](DISTILL-CREATION.md), [CAPTURE.md](CAPTURE.md) |
+| **3. Orchestration** | How do the loops fire reliably — hooks, prompt counting, nudges? | [ORCHESTRATION.md](ORCHESTRATION.md) |
 
-## How the tracks interlock
+Beyond the loop sits the horizon: **sharing and federation** ([SHARING.md](SHARING.md) →
+[FEDERATION.md](FEDERATION.md)) — hosted per-person DBs, cross-model persistence, and a
+policy-gated network of stores.
 
-- **C gates B.** Retrieval is only as good as what's in the graph: sloppy names defeat lookup,
-  near-duplicate nodes split the signal, unlinked nodes are unreachable by traversal. Capture
-  discipline is a retrieval feature.
-- **B and C share a primitive.** The fuzzy entry-point finder (`memory_search`, proposed in
-  RETRIEVAL.md) is the same machinery capture needs for write-time dedup ("a similar Decision
-  already exists — update it instead?"). Build it once, use it on both sides of the loop.
-- **C feeds A.** Provenance captured at write time (source session, capturing model, timestamps)
-  is exactly the attribution/trust data the federated network needs. Cheap to record now,
-  impossible to reconstruct later.
-- **B constrains A's shape.** Whatever triggers retrieval must survive the move to hosted,
-  multi-model stores — so triggering logic belongs in server instructions and tool descriptions
-  (which travel with MCP to any client), with Claude Code hooks as one adapter, not the mechanism.
+Creation is deliberately split in two: **context creation optimises for completeness** (a
+lossy-tolerant write-ahead log — losing a decision is the failure) while **distill creation
+optimises for quality** (the graph is forever — a junk node is the failure). One blurred
+pipeline can't serve both objectives; two subsystems with opposite biases can.
+
+## How the subsystems interlock
+
+- **Creation gates retrieval.** The analyzer is deterministic and cheap *only because* every
+  association it needs was precomputed at write time — names carrying distinctive tokens,
+  aliases closing paraphrase, concept hubs as the associative index, verb forms grounding the
+  query planner. Retrieval is only allowed to be dumb because distillation is smart.
+- **Retrieval and distill share primitives.** The fuzzy matcher serves prompt grounding on the
+  read side and the duplicate guard on the write side; the grounding lexicon is read from the
+  graph itself.
+- **Orchestration carries both loops.** The injection loop (analyzer on every prompt) and the
+  capture loop (staleness nudges, flush at compaction/session-end) run on the same hook
+  adapters, session state, and prompt counting.
+- **Creation feeds the horizon.** Provenance stamped at write time (`capturedBy`,
+  `sourceContext`, `sourceDocument`) is the attribution and trust substrate sharing/federation
+  are built on.
 
 ## Sequencing
 
 Validate the loop on one person's store before scaling it to a network — a federation of
 low-quality, rarely-recalled memories is just distributed noise.
 
-1. **Now:** B phase 1 + C phase 1 (small, immediately felt): session-start auto-priming,
-   `memory_search`, capture rubric + naming conventions + provenance properties.
-2. **Next:** A phase 1 (share bundles) — first contact with the boundary/manifest model, using
-   the provenance C added.
-3. **Then:** B phase 2 (prompt-time retrieval hints), C phase 2 (write-time dedup, supersedes
-   flow), A phase 2 (hosted store, cross-model persistence).
-4. **Later:** semantic retrieval (embeddings), federation gatekeeper — each justified by observed
-   pain, not speculation.
+1. **Now:** orchestration phase 1 (session state, prompt counting, session-start priming) +
+   distill-creation rules into the skills and tool descriptions (hard subset already
+   implemented) + `memory_search`.
+2. **Next:** the ambient injector (lexical analyzer, thresholds, injection log) + context
+   nudge loop + measure grounding coverage on real prompts.
+3. **Then:** query planner v0; sharing phase 1 (bundles); distill two-pass dedup.
+4. **Later, justified by observed pain:** local embeddings; hosted store; federation
+   gatekeeper; larger-ontology grounding (CIDOC/Arches path templates).
