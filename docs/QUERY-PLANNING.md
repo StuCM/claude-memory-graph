@@ -47,6 +47,12 @@ The schema graph is the planner's lexicon, and it's already machine-readable:
   lexicon: *recent/latest* → `ORDER BY DESC(?updatedAt) LIMIT n`; *active/open/superseded* →
   `?x mem:status "…"`; *forgotten/old* → invalidation flags; *"about auth"* →
   `CONTAINS(LCASE(?text), "auth")` over property values.
+- **Temporal words become valid-time filters** once links carry the two-clock model
+  (DISTILL-CREATION.md §8): *currently* → open edges only (`linkValidUntil` unbound — also the
+  default); *used to / previously / former* → closed edges (`linkValidUntil` bound, kind
+  `worldChange`); *last year / in February / before the rewrite* → valid-time overlap
+  `FILTER(?from <= <end> && (!BOUND(?until) || ?until >= <start>))`. "Who used to work on
+  quartz?" becomes mechanically answerable — tense is just another modifier lexicon.
 
 **Lexicon entries map phrases to *path templates*, not single predicates.** Our reified
 CrossLinks already mean "X affects Y" compiles to a multi-triple pattern through a link node —

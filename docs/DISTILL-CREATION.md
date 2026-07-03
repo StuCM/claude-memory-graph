@@ -94,6 +94,37 @@ A reversed decision: write the new Decision, link `new supersedes old`, set
 the chain — what we decided *and what we used to think*. Applies at distill time (a context file
 records a reversal) and at reflect time (contradictory decisions found).
 
+## 8. Temporal validity — facts carry two clocks (adopted from Zep/Graphiti)
+
+Bi-temporal modelling (temporal databases, SQL:2011) separates **valid time** (when a fact was
+true in the world) from **transaction time** (when we believed it). Our reified CrossLinks are
+already the structure this needs — an edge is a node that can carry properties — so adoption is
+four additions per link:
+
+- `linkValidFrom` / `linkValidUntil` — the world clock (`validFrom` defaults to recording time;
+  backdate when the source says "since 2019")
+- `linkInvalidatedAt` — when belief was revised
+- `invalidationKind` — **`worldChange`** (was true, stopped being true: a job change) vs
+  **`correction`** (was never true: mis-captured). The distinction our current `invalidated`
+  flag conflates — and they answer historical queries differently: a superseded fact *should*
+  appear in "what was true last spring?"; a corrected one should not.
+
+**The contradiction-closure rule (write path):** when a new link contradicts an existing one —
+same source, same effectively-single-valued relation, different target (`worksAt A` vs
+`worksAt B`) — **close the old edge** (`linkValidUntil = now`, `worldChange`) instead of
+deleting it or leaving both equally current. Nothing is ever deleted; facts get bounded. This is
+the duplicate guard's sibling: the guard stops identity twins, closure stops *temporal* twins.
+
+**Retrieval defaults to "true now":** recall and the ambient injector filter to open edges, so a
+stale `worksAt` is never injected as confidently as a live one. Point-in-time questions are the
+query planner's job (temporal modifiers, QUERY-PLANNING.md). Bounds travel with share bundles,
+so consumers of shared knowledge see whether it is still operative.
+
+**Deliberate limit:** links get the full treatment (relationships are where "no longer true"
+happens); scalar properties keep current-value semantics — full bi-temporal property versioning
+is compliance-database machinery, not personal memory. Decisions, where history *is* the point,
+already have the `supersedes` chain.
+
 ## Two promotion paths, one ruleset
 
 - **[/memory-graph:distill](../skills/distill/SKILL.md)** — from session context files, with
