@@ -9,7 +9,7 @@ every N_TURNS injects a reminder at exactly the moment it's actionable.
 The WRITING stays the model's job — only it has the conversation.
 """
 
-from . import Context, check, terms
+from .runtime import Context, check, terms
 
 N_TURNS = 3  # nudge every N significant prompts (protocol's "3+")
 

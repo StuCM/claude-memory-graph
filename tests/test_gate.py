@@ -4,7 +4,7 @@ import json
 import pytest
 
 import claude_memory_graph.gate as gate
-from claude_memory_graph.gate import Context, nudge, recall
+from claude_memory_graph.gate import Context, nudge, recall, runtime
 from claude_memory_graph.store import MemoryStore
 
 
@@ -13,7 +13,7 @@ def graph(tmp_path, monkeypatch):
     """Seeded store + isolated state dir; the gate reads via MEMORY_GRAPH_PATH."""
     store_dir = tmp_path / "store"
     monkeypatch.setenv("MEMORY_GRAPH_PATH", str(store_dir))
-    monkeypatch.setattr(gate, "_STATE_DIR", tmp_path / "state")
+    monkeypatch.setattr(runtime, "_STATE_DIR", tmp_path / "state")
     store = MemoryStore.open_or_create(store_dir)
     store.create_resource("Decision", {
         "name": "Use pyoxigraph over rdflib",
@@ -33,14 +33,14 @@ def test_terms_keep_distinctive_words():
     assert "pyoxigraph" in gate.terms("why did we pick pyoxigraph?")
 
 def test_main_swallows_garbage_stdin(monkeypatch, capsys, tmp_path):
-    monkeypatch.setattr(gate, "_STATE_DIR", tmp_path)
+    monkeypatch.setattr(runtime, "_STATE_DIR", tmp_path)
     monkeypatch.setattr("sys.stdin", io.StringIO("{not json"))
     gate.main()  # must not raise
     assert capsys.readouterr().out == ""
 
 def test_crashing_check_is_isolated(monkeypatch, capsys, tmp_path):
     """One broken check -> errors.log entry; other checks still answer."""
-    monkeypatch.setattr(gate, "_STATE_DIR", tmp_path)
+    monkeypatch.setattr(runtime, "_STATE_DIR", tmp_path)
 
     def boom(ctx):
         raise RuntimeError("kaput")
@@ -48,7 +48,7 @@ def test_crashing_check_is_isolated(monkeypatch, capsys, tmp_path):
     def fine(ctx):
         return "still here"
 
-    monkeypatch.setattr(gate, "CHECKS", [boom, fine])
+    monkeypatch.setattr(runtime, "CHECKS", [boom, fine])
     monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(
         {"prompt": "anything meaningful here", "session_id": "iso"})))
     gate.main()
@@ -56,13 +56,13 @@ def test_crashing_check_is_isolated(monkeypatch, capsys, tmp_path):
     assert "kaput" in (tmp_path / "errors.log").read_text()
 
 def test_runtime_persists_state_between_prompts(monkeypatch, tmp_path):
-    monkeypatch.setattr(gate, "_STATE_DIR", tmp_path)
+    monkeypatch.setattr(runtime, "_STATE_DIR", tmp_path)
 
     def remember(ctx):
         ctx.state["seen"] = ctx.state.get("seen", 0) + 1
         return None
 
-    monkeypatch.setattr(gate, "CHECKS", [remember])
+    monkeypatch.setattr(runtime, "CHECKS", [remember])
     for _ in range(2):
         monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(
             {"prompt": "hello there world", "session_id": "persist"})))
@@ -104,7 +104,7 @@ def test_session_memo_prevents_reinjection(graph):
 
 def test_decisions_logged(graph):
     recall.recall_memories(Context("pyoxigraph rdflib quad store", "s3"))
-    lines = (gate._STATE_DIR / "injections.jsonl").read_text().strip().splitlines()
+    lines = (runtime._STATE_DIR / "injections.jsonl").read_text().strip().splitlines()
     assert any(json.loads(line)["fired"] for line in lines)
 
 

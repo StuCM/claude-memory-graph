@@ -20,7 +20,7 @@ thresholds can be tuned from real sessions.
 
 import math
 
-from . import Context, check, log_decision, store_dir, terms
+from .runtime import Context, check, log_decision, store_dir, terms
 
 ABS_MIN = 3.0   # tune: absolute score floor
 MARGIN = 1.5    # tune: top must beat 2nd by this factor
