@@ -123,6 +123,51 @@ def test_injection_carries_neighbourhood_links(graph):
     out = recall.recall_memories(Context("pyoxigraph rdflib quad store", "s5"))
     assert out is not None and "affects→ Project 'claude-memory-graph'" in out
 
+def test_two_concept_prompt_prefers_memory_covering_both_no_cwd(graph):
+    """'arches and the memory graph' must pick the memory that knows BOTH
+    concepts — via phrase + coverage evidence, with no cwd relied on."""
+    graph.create_resource("Project", {
+        "name": "claude-memory-graph",
+        "description": "arches inspired memory graph for claude",
+    })
+    graph.create_resource("Pattern", {
+        "name": "arches quartz post_save gotcha",
+        "description": "arches graph restore recreates rows, arches signal quirk",
+    })
+    graph.save()
+    out = recall.recall_memories(
+        Context("what did we decide about arches and the memory graph?", "s8"))
+    assert out is not None and "claude-memory-graph" in out
+    assert "quartz" not in out
+
+def test_project_proximity_outranks_other_projects_lexical_match(graph):
+    """Regression for the live false positive: 'arches' typed inside the
+    memory-graph project injected another project's arches gotcha. A memory
+    linked to the CURRENT project must outrank an equally-matching one from
+    elsewhere — and shed it from the injection."""
+    graph.create_resource("Project", {"name": "claude-memory-graph"})
+    graph.create_resource("Pattern", {
+        "name": "arches inspired design",
+        "description": "arches heritage platform shapes the graph model",
+    })
+    graph.create_resource("Pattern", {
+        "name": "arches quartz gotcha",
+        "description": "arches heritage platform post_save quirk elsewhere",
+    })
+    _, project = graph.find_resource("Project", "claude-memory-graph")
+    _, design = graph.find_resource("Pattern", "arches inspired design")
+    graph.create_link(design, project, "appliesTo", {})
+    graph.save()
+    ctx = Context("tell me about the arches heritage platform design",
+                  "s6", cwd="claude-memory-graph")
+    out = recall.recall_memories(ctx)
+    assert out is not None and "arches inspired design" in out
+    assert "arches quartz gotcha" not in out
+
+def test_no_project_node_means_no_boost(graph):
+    ctx = Context("pyoxigraph rdflib quad store", "s7", cwd="unknown-dir")
+    assert recall.recall_memories(ctx) is not None  # prior absent, gate unaffected
+
 def test_decisions_logged(graph):
     recall.recall_memories(Context("pyoxigraph rdflib quad store", "s3"))
     lines = (runtime._STATE_DIR / "injections.jsonl").read_text().strip().splitlines()

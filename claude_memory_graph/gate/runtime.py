@@ -57,6 +57,7 @@ _STOP = {
     "the", "a", "an", "and", "or", "to", "of", "in", "on", "for", "with", "is",
     "are", "this", "that", "it", "be", "can", "could", "would", "how", "what",
     "when", "i", "you", "we", "do", "does", "make", "get", "set", "use",
+    "about", "did", "was", "were", "they", "them", "our", "your", "just", "some",
     # acknowledgement words: bare "thanks"/"yes"/"ok" must reduce to no terms
     "thanks", "thank", "yes", "yep", "ok", "okay", "sure", "no", "nope", "please",
 }
@@ -76,9 +77,11 @@ def store_dir() -> Path:
 
 @dataclass
 class Context:
-    """What every check gets: the prompt, who's asking, and shared memory."""
+    """What every check gets: the prompt, who's asking, where they are,
+    and shared memory."""
     prompt: str
     session_id: str
+    cwd: str = ""  # basename of the working directory = current Project name
     state: dict = field(default_factory=dict)
 
 
@@ -139,6 +142,7 @@ def main() -> None:
         ctx = Context(
             prompt=(data.get("prompt") if data else raw) or "",
             session_id=data.get("session_id", "") if data else "",
+            cwd=Path(data.get("cwd", "")).name if data else "",
         )
         if ctx.session_id:
             ctx.state = _load_state(ctx.session_id)
