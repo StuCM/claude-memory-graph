@@ -7,7 +7,10 @@
 See runtime.py's docstring for the full how-it-works and debugging notes.
 """
 
-from .runtime import CHECKS, Context, check, log_decision, main, store_dir, terms
+from .runtime import (
+    CHECKS, Context, check, config, log_decision, main, store_dir, terms, terms_pos,
+)
 from . import recall, nudge  # noqa: E402,F401 — importing registers their @check functions
 
-__all__ = ["CHECKS", "Context", "check", "log_decision", "main", "store_dir", "terms"]
+__all__ = ["CHECKS", "Context", "check", "config", "log_decision", "main",
+           "store_dir", "terms", "terms_pos"]

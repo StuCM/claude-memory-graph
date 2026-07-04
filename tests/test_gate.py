@@ -82,7 +82,24 @@ def test_generic_prompt_stays_silent():
 
 def test_specific_prompt_scores():
     idf = {"dc03": 4.0, "harness": 3.0}
-    assert recall._score(set(gate.terms("fix the dc03 harness")), _doc(), idf) >= recall.ABS_MIN
+    score = recall._score(set(gate.terms("fix the dc03 harness")), _doc(), idf)
+    assert score >= runtime.config()["ABS_MIN"]
+
+def test_phrase_needs_original_adjacency():
+    """'memory graph' is a phrase; 'memory of the whole graph' is not —
+    stopword-stripping must not manufacture adjacency."""
+    assert ("memory", "graph") in recall._bigrams(gate.terms_pos("the memory graph"))
+    assert ("memory", "graph") not in recall._bigrams(
+        gate.terms_pos("memory of the whole graph"))
+
+def test_config_file_overrides_defaults(monkeypatch, tmp_path):
+    cfg_file = tmp_path / "gate.json"
+    cfg_file.write_text('{"N_TURNS": 1, "ABS_MIN": 99}')
+    monkeypatch.setattr(runtime, "_CONFIG_PATH", cfg_file)
+    monkeypatch.setattr(runtime, "_config", None)  # drop the cache
+    assert runtime.config()["N_TURNS"] == 1
+    assert runtime.config()["ABS_MIN"] == 99
+    assert runtime.config()["MARGIN"] == 1.5  # untouched keys keep defaults
 
 def test_gate_fires_on_distinct_entity(graph):
     out = recall.recall_memories(Context("remind me about pyoxigraph vs rdflib quad store", "s1"))
@@ -177,25 +194,17 @@ def test_decisions_logged(graph):
 # ================= nudge check =================
 
 def test_nudge_fires_on_third_significant_turn():
-    ctx = Context("", "sess-1")
-    for prompt, expect in [
-        ("design the dc03 harness merge", None),
-        ("fix the csv export path bug", None),
-    ]:
-        ctx.prompt = prompt
-        assert nudge.context_nudge(ctx) is expect
-    ctx.prompt = "add the print view route"
-    assert nudge.context_nudge(ctx) is not None  # 3rd -> nudge
-    ctx.prompt = "thanks"
-    assert nudge.context_nudge(ctx) is None  # trivial, no count
+    state = {}  # shared across prompts, like the runtime's state file
+    assert nudge.context_nudge(Context("design the dc03 harness merge", "sess-1", state=state)) is None
+    assert nudge.context_nudge(Context("fix the csv export path bug", "sess-1", state=state)) is None
+    assert nudge.context_nudge(Context("add the print view route", "sess-1", state=state)) is not None  # 3rd
+    assert nudge.context_nudge(Context("thanks", "sess-1", state=state)) is None  # trivial, no count
 
 def test_nudge_cadence_resets_after_firing():
-    ctx = Context("", "sess-2")
+    state = {}
     for p in ("alpha beta gamma", "delta epsilon", "zeta eta"):
-        ctx.prompt = p
-        nudge.context_nudge(ctx)
-    ctx.prompt = "theta iota"
-    assert nudge.context_nudge(ctx) is None  # 4th: fresh cycle
+        nudge.context_nudge(Context(p, "sess-2", state=state))
+    assert nudge.context_nudge(Context("theta iota", "sess-2", state=state)) is None  # 4th: fresh cycle
 
 def test_nudge_needs_session_id():
     assert nudge.context_nudge(Context("real words here", "")) is None

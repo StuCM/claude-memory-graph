@@ -25,12 +25,10 @@ thresholds can be tuned from real sessions.
 
 import math
 
-from .runtime import Context, check, log_decision, store_dir, terms
+from .runtime import Context, check, config, log_decision, store_dir, terms_pos
 
-ABS_MIN = 3.0     # tune: absolute score floor
-MARGIN = 1.5      # tune: group must beat the rest by this; members stay within it of top
-TOP_N = 2
-PROX_BOOST = 1.5  # tune: multiplier for the current project's node + its 1-hop neighbours
+# Tuning values (ABS_MIN, MARGIN, TOP_N, PROX_BOOST, PHRASE_GAP) come from
+# runtime.config() — edit ~/.claude/memory-graph/gate.json to tune.
 
 # Timestamps/provenance carry no retrieval signal — keep them out of the corpus.
 _SKIP_PROPS = {
@@ -73,25 +71,31 @@ def _corpus(store) -> list[dict]:
         if d["dead"]:
             continue
         body = " ".join(d["parts"])
-        name_seq = terms(d["name"])
-        all_seq = terms(f"{d['name']} {body}")
+        name_pos = terms_pos(d["name"])
+        all_pos = terms_pos(f"{d['name']} {body}")
         docs.append({
             "gid": gid,
             "iri": d["iri"],
             "name": d["name"],
             "desc": body[:300],
-            "name_terms": set(name_seq),
-            "terms": set(all_seq),
-            "name_bigrams": _bigrams(name_seq),
-            "bigrams": _bigrams(all_seq),
+            "name_terms": {w for _, w in name_pos},
+            "terms": {w for _, w in all_pos},
+            "name_bigrams": _bigrams(name_pos),
+            "bigrams": _bigrams(all_pos),
         })
     return docs
 
 
-def _bigrams(seq: list[str]) -> set[tuple[str, str]]:
-    """Adjacent term pairs — 'memory graph' as a phrase is far stronger
-    evidence than the two words scattered across a text."""
-    return set(zip(seq, seq[1:]))
+def _bigrams(pos_terms: list[tuple[int, str]]) -> set[tuple[str, str]]:
+    """Nearby term pairs — 'memory graph' as a phrase is far stronger evidence
+    than the two words scattered across a text. Pairs use ORIGINAL token
+    positions, so words that only became neighbours after stopword-stripping
+    ('memory of the whole graph') don't count as a phrase. PHRASE_GAP=2
+    allows one word between ('memory knowledge graph' still pairs the ends'
+    neighbours, 'quality of code' still reads as a phrase)."""
+    gap = config()["PHRASE_GAP"]
+    return {(a, b) for (i, a), (j, b) in zip(pos_terms, pos_terms[1:])
+            if j - i <= gap}
 
 
 def _project_neighbourhood(store, cwd_name: str) -> set[str]:
@@ -150,11 +154,11 @@ def _score(q_terms: set[str], d: dict, idf: dict[str, float],
 
 @check
 def recall_memories(ctx: Context) -> str | None:
-    q_seq = terms(ctx.prompt)
-    q = set(q_seq)
+    q = {w for _, w in ctx.terms}
     if not q:
         return None
-    q_bi = _bigrams(q_seq)
+    cfg = config()
+    q_bi = _bigrams(ctx.terms)
     from ..store import MemoryStore
     store = MemoryStore.open_or_create(store_dir())
     docs = _corpus(store)
@@ -163,21 +167,22 @@ def recall_memories(ctx: Context) -> str | None:
 
     idf = _idf(docs)
     near = _project_neighbourhood(store, ctx.cwd)
+    boost = cfg["PROX_BOOST"]
     ranked = sorted(
-        ((_score(q, d, idf, q_bi) * (PROX_BOOST if d["iri"] in near else 1.0), d)
+        ((_score(q, d, idf, q_bi) * (boost if d["iri"] in near else 1.0), d)
          for d in docs),
         key=lambda x: x[0], reverse=True)
     top = ranked[0][0]
     # Candidates: strong on their own (>= ABS_MIN) AND within the band of the
     # top (> top/MARGIN) — so a proximity-boosted winner sheds lexical-only
     # stragglers from other projects.
-    strong = [(s, d) for s, d in ranked[:TOP_N]
-              if s >= ABS_MIN and s > top / MARGIN]
+    strong = [(s, d) for s, d in ranked[:cfg["TOP_N"]]
+              if s >= cfg["ABS_MIN"] and s > top / cfg["MARGIN"]]
     # Margin: the injected GROUP must stand out from what's left behind —
     # not from each other. Two near-tied strong memories are both relevant;
     # the noise case is the group barely beating the rest of the graph.
     rest = ranked[len(strong)][0] if len(ranked) > len(strong) else 0.0
-    if not strong or top < MARGIN * (rest or 0.0001):
+    if not strong or top < cfg["MARGIN"] * (rest or 0.0001):
         log_decision({"fired": False, "top": round(top, 2),
                       "rest": round(rest, 2), "cwd": ctx.cwd, "terms": sorted(q)})
         return None  # not confident -> silent, zero tokens added

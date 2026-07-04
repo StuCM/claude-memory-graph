@@ -64,9 +64,18 @@ _STOP = {
 _WORD = re.compile(r"[a-z0-9]+")
 
 
+def terms_pos(text: str) -> list[tuple[int, str]]:
+    """Meaningful words with their ORIGINAL positions: (index-in-full-token-
+    stream, word). Positions let phrase matching tell 'memory graph' (adjacent)
+    from 'memory of the whole graph' (four words apart) even after stopwords
+    are stripped out of the sequence."""
+    return [(i, w) for i, w in enumerate(_WORD.findall(text.lower()))
+            if len(w) > 2 and w not in _STOP]
+
+
 def terms(text: str) -> list[str]:
     """Meaningful words in `text`: lowercase, no stopwords, length > 2."""
-    return [w for w in _WORD.findall(text.lower()) if len(w) > 2 and w not in _STOP]
+    return [w for _, w in terms_pos(text)]
 
 
 def store_dir() -> Path:
@@ -75,14 +84,51 @@ def store_dir() -> Path:
     return Path(env) if env else Path.home() / ".claude" / "memory-graph" / "store"
 
 
+# ================================================================
+# Tuning config — one file for every knob
+# ================================================================
+
+_DEFAULTS = {
+    "ABS_MIN": 3.0,     # recall: absolute score floor
+    "MARGIN": 1.5,      # recall: group must beat the rest by this; members stay within it of top
+    "TOP_N": 2,         # recall: max memories per injection
+    "PROX_BOOST": 1.5,  # recall: multiplier for current project's node + 1-hop neighbours
+    "PHRASE_GAP": 2,    # recall: max original-token distance for a bigram (2 = one word between)
+    "N_TURNS": 3,       # nudge: remind every N significant prompts
+}
+_CONFIG_PATH = Path.home() / ".claude" / "memory-graph" / "gate.json"
+_config: dict | None = None
+
+
+def config() -> dict:
+    """Tuning values: _DEFAULTS overlaid with ~/.claude/memory-graph/gate.json
+    (if present). Edit that file to tune — no code changes, next prompt picks
+    it up. Example: {"ABS_MIN": 4.0, "N_TURNS": 5}"""
+    global _config
+    if _config is None:
+        cfg = dict(_DEFAULTS)
+        try:
+            cfg.update(json.loads(_CONFIG_PATH.read_text()))
+        except Exception:
+            pass  # no file / bad JSON -> defaults
+        _config = cfg
+    return _config
+
+
 @dataclass
 class Context:
     """What every check gets: the prompt, who's asking, where they are,
-    and shared memory."""
+    and shared memory. `terms` is computed once here so every check works
+    from the same tokenization."""
     prompt: str
     session_id: str
     cwd: str = ""  # basename of the working directory = current Project name
     state: dict = field(default_factory=dict)
+    terms: list = None  # [(position, word)] from terms_pos(prompt)
+
+    def __post_init__(self):
+        if self.terms is None:
+            self.terms = terms_pos(self.prompt)
 
 
 CHECKS: list = []
