@@ -1,6 +1,6 @@
 # Task: deterministic context-write trigger (prompt counter)
 
-Status: **planned** · Owner: Stuart · Created: 2026-07-02
+Status: **done** · Owner: Stuart · Created: 2026-07-02
 Shares the `UserPromptSubmit` hook with [[prompt-gated-recall]].
 
 ## Goal

@@ -1,6 +1,6 @@
 # Task: prompt-gated ambient recall (deterministic injection)
 
-Status: **planned** · Owner: Stuart · Created: 2026-07-02
+Status: **done** · Owner: Stuart · Created: 2026-07-02
 
 ## Goal
 
