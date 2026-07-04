@@ -41,7 +41,7 @@ def _corpus(store) -> list[dict]:
     from ..namespaces import GRAPH_RESOURCE_BASE, MEM
 
     rows = store.query(
-        f'SELECT ?g ?p ?o WHERE {{ GRAPH ?g {{ ?s ?p ?o }} '
+        f'SELECT ?g ?s ?p ?o WHERE {{ GRAPH ?g {{ ?s ?p ?o }} '
         f'FILTER(STRSTARTS(STR(?g), "{GRAPH_RESOURCE_BASE}")) }}'
     )
     by: dict[str, dict] = {}
@@ -51,7 +51,8 @@ def _corpus(store) -> list[dict]:
             continue
         key = pred[len(MEM):]
         d = by.setdefault(r["g"].value.removeprefix(GRAPH_RESOURCE_BASE),
-                          {"name": "", "parts": [], "dead": False})
+                          {"name": "", "parts": [], "dead": False,
+                           "iri": r["s"].value})
         if key == "invalidated":
             d["dead"] = True
         elif key in _SKIP_PROPS or not isinstance(r["o"], ox.Literal):
@@ -68,6 +69,7 @@ def _corpus(store) -> list[dict]:
         body = " ".join(d["parts"])
         docs.append({
             "gid": gid,
+            "iri": d["iri"],
             "name": d["name"],
             "desc": body[:300],
             "name_terms": set(terms(d["name"])),
@@ -107,24 +109,45 @@ def recall_memories(ctx: Context) -> str | None:
     idf = _idf(docs)
     ranked = sorted(((_score(q, d, idf), d) for d in docs),
                     key=lambda x: x[0], reverse=True)
+    # Candidates: everything strong enough on its own (up to TOP_N).
+    strong = [(s, d) for s, d in ranked[:TOP_N] if s >= ABS_MIN]
+    # Margin: the injected GROUP must stand out from what's left behind —
+    # not from each other. Two near-tied strong memories are both relevant;
+    # the noise case is the group barely beating the rest of the graph.
+    rest = ranked[len(strong)][0] if len(ranked) > len(strong) else 0.0
     top = ranked[0][0]
-    second = ranked[1][0] if len(ranked) > 1 else 0.0
-    if top < ABS_MIN or top < MARGIN * (second or 0.0001):
+    if not strong or top < MARGIN * (rest or 0.0001):
         log_decision({"fired": False, "top": round(top, 2),
-                      "second": round(second, 2), "terms": sorted(q)})
+                      "rest": round(rest, 2), "terms": sorted(q)})
         return None  # not confident -> silent, zero tokens added
 
     injected = set(ctx.state.get("injected", []))
     lines, fresh = [], []
-    for score, d in ranked[:TOP_N]:
-        if score >= ABS_MIN and d["gid"] not in injected:
-            lines.append(f"- {d['name'] or d['gid']}: {d['desc']}")
+    for _unused, d in strong:
+        if d["gid"] not in injected:
+            lines.append(f"- {d['name'] or d['gid']}: {d['desc']}{_links(store, d)}")
             fresh.append(d["gid"])
     log_decision({"fired": bool(fresh), "top": round(top, 2),
-                  "second": round(second, 2), "terms": sorted(q),
-                  "nodes": [d["name"] for _, d in ranked[:TOP_N]]})
+                  "rest": round(rest, 2), "terms": sorted(q),
+                  "nodes": [d["name"] for _, d in strong]})
     if not fresh:
         return None  # everything relevant was already injected this session
     ctx.state["injected"] = sorted(injected | set(fresh))
     return ("Relevant memory (auto-recalled, may be stale — verify before acting):\n"
             + "\n".join(lines))
+
+
+def _links(store, d: dict) -> str:
+    """Second, targeted query: the winner's direct links, so the injection
+    carries the neighbourhood (decision + what it affects), not a bare match.
+    Built from the scoring result — this is the dynamic part of the gate."""
+    try:
+        import pyoxigraph as ox
+        result = store.recall(ox.NamedNode(d["iri"]), d["gid"], depth=1)
+        parts = [
+            f"{lr.relation}→ {lr.model} '{lr.properties.get('name') or lr.properties.get('label', '')}'"
+            for lr in result.linked[:3]
+        ]
+        return f" ({' · '.join(parts)})" if parts else ""
+    except Exception:
+        return ""

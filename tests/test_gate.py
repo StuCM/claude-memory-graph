@@ -102,6 +102,27 @@ def test_session_memo_prevents_reinjection(graph):
     assert recall.recall_memories(ctx) is not None
     assert recall.recall_memories(ctx) is None  # same session state -> memo hit
 
+def test_two_strong_memories_both_inject(graph):
+    """Regression for the logged false negative: two near-tied STRONG matches
+    are both relevant — the old margin rule read them as noise and went silent."""
+    graph.create_resource("Technology", {
+        "name": "pyoxigraph",
+        "role": "rdflib alternative, quad store bindings",
+    })
+    graph.save()
+    out = recall.recall_memories(Context("pyoxigraph rdflib quad store", "s4"))
+    assert out is not None
+    assert "Use pyoxigraph over rdflib" in out and "pyoxigraph:" in out
+
+def test_injection_carries_neighbourhood_links(graph):
+    graph.create_resource("Project", {"name": "claude-memory-graph"})
+    _, decision_iri = graph.find_resource("Decision", "Use pyoxigraph over rdflib")
+    _, project_iri = graph.find_resource("Project", "claude-memory-graph")
+    graph.create_link(decision_iri, project_iri, "affects", {})
+    graph.save()
+    out = recall.recall_memories(Context("pyoxigraph rdflib quad store", "s5"))
+    assert out is not None and "affects→ Project 'claude-memory-graph'" in out
+
 def test_decisions_logged(graph):
     recall.recall_memories(Context("pyoxigraph rdflib quad store", "s3"))
     lines = (runtime._STATE_DIR / "injections.jsonl").read_text().strip().splitlines()
