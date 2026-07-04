@@ -49,6 +49,7 @@ import sys
 import time
 import traceback
 from dataclasses import dataclass, field
+from functools import cached_property
 from pathlib import Path
 
 _STATE_DIR = Path.home() / ".claude" / "memory-graph" / "state"
@@ -118,17 +119,18 @@ def config() -> dict:
 @dataclass
 class Context:
     """What every check gets: the prompt, who's asking, where they are,
-    and shared memory. `terms` is computed once here so every check works
-    from the same tokenization."""
+    and shared memory."""
     prompt: str
     session_id: str
     cwd: str = ""  # basename of the working directory = current Project name
     state: dict = field(default_factory=dict)
-    terms: list = None  # [(position, word)] from terms_pos(prompt)
 
-    def __post_init__(self):
-        if self.terms is None:
-            self.terms = terms_pos(self.prompt)
+    @cached_property
+    def terms(self) -> list[tuple[int, str]]:
+        """[(position, word)] — tokenized LAZILY on first access: a check
+        that never touches ctx.terms costs nothing; checks that do all share
+        one tokenization."""
+        return terms_pos(self.prompt)
 
 
 CHECKS: list = []
