@@ -189,18 +189,51 @@ Compose: Decisions whose name/properties mention pyoxigraph, or linked to Techno
 *decisions* → type · *recent* → `ORDER BY DESC(?updatedAt) LIMIT 5` · *auth* (ungrounded
 leftover noun) → `CONTAINS` filter over name + property text.
 
-## Where this sits relative to RAG — and the ambient injector
+## Why the planner does NOT replace the gate
 
-The planner is the answer to "isn't this just RAG?": RAG's only primitive is *similarity* —
-"what stored text resembles the prompt?" The planner's primitive is *structure* — it represents
-joins, chains, aggregation ("how many projects use rust?"), and property projection. Similarity
-remains one grounding signal (finding the anchors), but the question's *shape* drives the query.
+The obvious question: once the planner exists, what's the point of the gate? Answer: **they
+accept different inputs and do different jobs — and the gate's input is far more common.**
+Watch two real prompts:
 
-The two retrieval modes share everything below the surface: the same grounding lexicon (names,
-aliases, verb forms), the same provenance-filtered graphs, the same silence-on-low-confidence
-discipline. Statement-shaped prompts get neighbourhood injection (ambient working context);
-question-shaped prompts get composed queries (answers). Both no-LLM, both falling back
-gracefully to the other.
+**"Refactor the dispatcher to batch saves instead of saving per mutation"** — a statement of
+work, not a question. There is nothing for a planner to translate: no wh-word, no relation
+expressed, no answer requested. But it's exactly where the gate earns its keep: "saves per
+mutation" matches `Decision "Save after every mutating tool call"` and its rationale arrives
+*unasked* — the difference between the model preserving the atomic-rename behaviour and
+breaking it. Background knowledge, surfaced while you work on something else.
+
+**"What decisions affect the projects Stuart works on?"** — where the gate is structurally
+weak: bag-of-words similarity cannot express the join. The planner's territory: an actual
+answer to an actual question.
+
+| | Gate (ambient injector) | Query planner |
+|---|---|---|
+| Input shape | any prompt — mostly statements of work | question-shaped prompts only |
+| Question it answers | *does this work touch anything we know?* | *what is the answer to what you asked?* |
+| Output | neighbourhood context, unasked | answer rows |
+| Frequency | every prompt, hundreds a day | the handful of genuine graph-questions a day |
+
+The desk analogy: the gate is a colleague who overhears what you're working on and silently
+slides a relevant note across the desk; the planner is the archivist you walk up to with a
+precise question. You don't fire the colleague because the archivist exists — they're useful
+at different moments, and the colleague is useful far more often.
+
+Two structural reasons this isn't duplication:
+
+- **They share parts, not jobs.** The planner's entity-grounding step *is* the gate's matcher —
+  same lexicon (names, aliases), same normalization, same scoring signals. The planner adds
+  relation/type/modifier grounding and composition on top; building it reuses the gate rather
+  than reimplementing it. And the planner *falls back to the gate* on weak grounding or empty
+  results — the gate is the planner's floor.
+- **Dropping the gate resurrects the original problem.** If retrieval only happened through
+  question-answering, memory would only surface when someone asks — the "model must remember to
+  ask" failure the entire ambient design exists to kill. The gate is what makes this a *memory*
+  (experience surfacing unbidden) rather than a database with a nice query interface. The
+  planner makes the database half excellent; the gate makes it memory.
+
+And versus RAG: RAG's only primitive is *similarity* — "what stored text resembles the prompt?"
+The planner's primitive is *structure* — joins, chains, aggregation, projection. Similarity
+remains one grounding signal (finding the anchors); the question's *shape* drives the query.
 
 Federation note: composed queries run against the local store plus imported shared graphs. They
 do **not** cross the network — remote stores still expose only the per-hop `expand` gatekeeper
