@@ -1,4 +1,7 @@
 from dataclasses import dataclass, field
+from functools import cached_property
+
+from .text import terms_pos
 
 # Claude Code hook event name -> handler method on HookExtension.
 EVENT_METHODS = {
@@ -17,8 +20,9 @@ class HookContext:
     - payload: the hook input JSON Claude Code passed on stdin
       (session_id, cwd, prompt, ... — fields vary per event)
     - core: read-only view of framework-maintained session state
-      (session_id, started_at, cwd, project, prompt_count, last_prompt_at,
-      event counts) — always present, extensions never maintain it
+      (session_id, started_at, cwd, project, prompt_count,
+      significant_prompt_count, last_prompt_at, event counts) — always
+      present, extensions never maintain it
     - state: this extension's own per-session dict — persisted after dispatch
     - global_state: this extension's cross-session dict — persisted after dispatch
     """
@@ -37,6 +41,22 @@ class HookContext:
     def cwd(self) -> str:
         return self.payload.get("cwd", "") or ""
 
+    @property
+    def project(self) -> str:
+        """Basename of the working directory = current Project name."""
+        return self.core.get("project", "") or ""
+
+    @cached_property
+    def terms_pos(self) -> list[tuple[int, str]]:
+        """[(position, word)] for the prompt — tokenized LAZILY on first
+        access: an extension that never touches it costs nothing; extensions
+        that do all share one tokenization."""
+        return terms_pos(self.prompt)
+
+    @property
+    def terms(self) -> list[str]:
+        return [w for _, w in self.terms_pos]
+
 
 class HookExtension:
     """Base class for hook extensions.
@@ -46,9 +66,14 @@ class HookExtension:
     string to inject it into the session context (SessionStart /
     UserPromptSubmit), or None to stay silent — silence is the default
     and the norm.
+
+    Set `enabled_by_default = True` for extensions that should run as soon
+    as their package is installed; the user's explicit enable/disable
+    choices (config.json) always win once made.
     """
 
     name: str = ""
+    enabled_by_default: bool = False
 
     def on_session_start(self, ctx: HookContext) -> str | None:
         return None

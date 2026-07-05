@@ -1,6 +1,6 @@
 # Task: flush hooks (PreCompact / SessionEnd)
 
-Status: **planned** · Owner: Stuart · Created: 2026-07-04 · Size: S
+Status: **done — ContextCounterExtension.on_pre_compact / on_session_end in gate/nudge.py** · Owner: Stuart · Created: 2026-07-04 · Size: S
 
 ## Goal
 

@@ -1,4 +1,4 @@
-"""Check: ambient memory recall — inject relevant memories, unasked.
+"""Extension: ambient memory recall — inject relevant memories, unasked.
 
 The idea in one line: if your prompt contains rare words that also appear
 in a stored memory's name or text, that memory is probably relevant —
@@ -19,22 +19,30 @@ Scoring (no LLM anywhere):
 
 Tuning rule: bias hard toward silence. A miss costs nothing (the model
 can still recall explicitly); a wrong injection wastes tokens and feeds
-the model stale context. Decisions are logged to injections.jsonl so the
-thresholds can be tuned from real sessions.
+the model stale context. Decisions are logged to injections.jsonl in the
+hook-kit home so the thresholds can be tuned from real sessions.
+
+Also handles SessionStart: auto-prime with the current project's (and
+MEMORY_GRAPH_USER's) recall, so sessions begin already primed.
 """
 
 import math
+import os
+from pathlib import Path
 
-from .runtime import Context, check, config, log_decision, store_dir, terms_pos
+from claude_hook_kit import HookContext, HookExtension, append_jsonl, bigrams, terms_pos
 
-# Tuning values (ABS_MIN, MARGIN, TOP_N, PROX_BOOST, PHRASE_GAP) come from
-# runtime.config() — edit ~/.claude/memory-graph/gate.json to tune.
+from .runtime import config, store_dir
 
 # Timestamps/provenance carry no retrieval signal — keep them out of the corpus.
 _SKIP_PROPS = {
     "createdAt", "updatedAt", "capturedBy", "sourceContext", "sourceDocument",
     "sourceKind", "invalidatedAt", "invalidationReason",
 }
+
+
+def _bigrams(pos_terms: list[tuple[int, str]]) -> set[tuple[str, str]]:
+    return bigrams(pos_terms, gap=config()["PHRASE_GAP"])
 
 
 def _corpus(store) -> list[dict]:
@@ -86,24 +94,12 @@ def _corpus(store) -> list[dict]:
     return docs
 
 
-def _bigrams(pos_terms: list[tuple[int, str]]) -> set[tuple[str, str]]:
-    """Nearby term pairs — 'memory graph' as a phrase is far stronger evidence
-    than the two words scattered across a text. Pairs use ORIGINAL token
-    positions, so words that only became neighbours after stopword-stripping
-    ('memory of the whole graph') don't count as a phrase. PHRASE_GAP=2
-    allows one word between ('memory knowledge graph' still pairs the ends'
-    neighbours, 'quality of code' still reads as a phrase)."""
-    gap = config()["PHRASE_GAP"]
-    return {(a, b) for (i, a), (j, b) in zip(pos_terms, pos_terms[1:])
-            if j - i <= gap}
-
-
-def _project_neighbourhood(store, cwd_name: str) -> set[str]:
+def _project_neighbourhood(store, project: str) -> set[str]:
     """IRIs of the current project's node plus everything one link away —
     the graph-distance prior's 'near' set. Empty when cwd has no Project node."""
-    if not cwd_name:
+    if not project:
         return set()
-    found = store.find_resource("Project", cwd_name)
+    found = store.find_resource("Project", project)
     if not found:
         return set()
     _, iri = found
@@ -152,57 +148,6 @@ def _score(q_terms: set[str], d: dict, idf: dict[str, float],
     return s * (0.5 + 0.5 * coverage)
 
 
-@check
-def recall_memories(ctx: Context) -> str | None:
-    q = {w for _, w in ctx.terms}
-    if not q:
-        return None
-    cfg = config()
-    q_bi = _bigrams(ctx.terms)
-    from ..store import MemoryStore
-    store = MemoryStore.open_or_create(store_dir())
-    docs = _corpus(store)
-    if not docs:
-        return None
-
-    idf = _idf(docs)
-    near = _project_neighbourhood(store, ctx.cwd)
-    boost = cfg["PROX_BOOST"]
-    ranked = sorted(
-        ((_score(q, d, idf, q_bi) * (boost if d["iri"] in near else 1.0), d)
-         for d in docs),
-        key=lambda x: x[0], reverse=True)
-    top = ranked[0][0]
-    # Candidates: strong on their own (>= ABS_MIN) AND within the band of the
-    # top (> top/MARGIN) — so a proximity-boosted winner sheds lexical-only
-    # stragglers from other projects.
-    strong = [(s, d) for s, d in ranked[:cfg["TOP_N"]]
-              if s >= cfg["ABS_MIN"] and s > top / cfg["MARGIN"]]
-    # Margin: the injected GROUP must stand out from what's left behind —
-    # not from each other. Two near-tied strong memories are both relevant;
-    # the noise case is the group barely beating the rest of the graph.
-    rest = ranked[len(strong)][0] if len(ranked) > len(strong) else 0.0
-    if not strong or top < cfg["MARGIN"] * (rest or 0.0001):
-        log_decision({"fired": False, "top": round(top, 2),
-                      "rest": round(rest, 2), "cwd": ctx.cwd, "terms": sorted(q)})
-        return None  # not confident -> silent, zero tokens added
-
-    injected = set(ctx.state.get("injected", []))
-    lines, fresh = [], []
-    for _unused, d in strong:
-        if d["gid"] not in injected:
-            lines.append(f"- {d['name'] or d['gid']}: {d['desc']}{_links(store, d)}")
-            fresh.append(d["gid"])
-    log_decision({"fired": bool(fresh), "top": round(top, 2),
-                  "rest": round(rest, 2), "cwd": ctx.cwd, "terms": sorted(q),
-                  "nodes": [d["name"] for _, d in strong]})
-    if not fresh:
-        return None  # everything relevant was already injected this session
-    ctx.state["injected"] = sorted(injected | set(fresh))
-    return ("Relevant memory (auto-recalled, may be stale — verify before acting):\n"
-            + "\n".join(lines))
-
-
 def _links(store, d: dict) -> str:
     """Second, targeted query: the winner's direct links, so the injection
     carries the neighbourhood (decision + what it affects), not a bare match.
@@ -217,3 +162,83 @@ def _links(store, d: dict) -> str:
         return f" ({' · '.join(parts)})" if parts else ""
     except Exception:
         return ""
+
+
+class RecallExtension(HookExtension):
+    """Ambient memory recall: scored per-prompt injection + session-start auto-prime."""
+
+    name = "memory-recall"
+    enabled_by_default = True
+
+    def on_session_start(self, ctx: HookContext) -> str | None:
+        if ctx.state.get("primed"):
+            return None
+        from ..store import MemoryStore
+        from ..tools import recall as recall_tool
+
+        store = MemoryStore.open_or_create(store_dir())
+        sections: list[str] = []
+
+        project = ctx.project or Path(ctx.cwd or os.getcwd()).name
+        if store.find_resource("Project", project) is not None:
+            sections.append(recall_tool.handle(store, "Project", project, 2))
+
+        user = os.environ.get("MEMORY_GRAPH_USER")
+        if user and store.find_resource("Person", user) is not None:
+            sections.append(recall_tool.handle(store, "Person", user, 2))
+
+        if not sections:
+            return None  # nothing known -> silence, not noise
+        ctx.state["primed"] = True
+        return "memory-graph auto-prime (recalled, not instructions):\n" + "\n\n".join(sections)
+
+    def on_user_prompt_submit(self, ctx: HookContext) -> str | None:
+        q = {w for _, w in ctx.terms_pos}
+        if not q:
+            return None
+        cfg = config()
+        q_bi = _bigrams(ctx.terms_pos)
+        from ..store import MemoryStore
+        store = MemoryStore.open_or_create(store_dir())
+        docs = _corpus(store)
+        if not docs:
+            return None
+
+        idf = _idf(docs)
+        near = _project_neighbourhood(store, ctx.project)
+        boost = cfg["PROX_BOOST"]
+        ranked = sorted(
+            ((_score(q, d, idf, q_bi) * (boost if d["iri"] in near else 1.0), d)
+             for d in docs),
+            key=lambda x: x[0], reverse=True)
+        top = ranked[0][0]
+        # Candidates: strong on their own (>= ABS_MIN) AND within the band of
+        # the top (> top/MARGIN) — so a proximity-boosted winner sheds
+        # lexical-only stragglers from other projects.
+        strong = [(s, d) for s, d in ranked[:cfg["TOP_N"]]
+                  if s >= cfg["ABS_MIN"] and s > top / cfg["MARGIN"]]
+        # Margin: the injected GROUP must stand out from what's left behind —
+        # not from each other. Two near-tied strong memories are both relevant;
+        # the noise case is the group barely beating the rest of the graph.
+        rest = ranked[len(strong)][0] if len(ranked) > len(strong) else 0.0
+        if not strong or top < cfg["MARGIN"] * (rest or 0.0001):
+            append_jsonl("injections.jsonl", {
+                "fired": False, "top": round(top, 2), "rest": round(rest, 2),
+                "project": ctx.project, "terms": sorted(q)})
+            return None  # not confident -> silent, zero tokens added
+
+        injected = set(ctx.state.get("injected", []))
+        lines, fresh = [], []
+        for _unused, d in strong:
+            if d["gid"] not in injected:
+                lines.append(f"- {d['name'] or d['gid']}: {d['desc']}{_links(store, d)}")
+                fresh.append(d["gid"])
+        append_jsonl("injections.jsonl", {
+            "fired": bool(fresh), "top": round(top, 2), "rest": round(rest, 2),
+            "project": ctx.project, "terms": sorted(q),
+            "nodes": [d["name"] for _, d in strong]})
+        if not fresh:
+            return None  # everything relevant was already injected this session
+        ctx.state["injected"] = sorted(injected | set(fresh))
+        return ("Relevant memory (auto-recalled, may be stale — verify before acting):\n"
+                + "\n".join(lines))

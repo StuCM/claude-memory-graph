@@ -1,19 +1,27 @@
-import io
 import json
 
 import pytest
 
-import claude_memory_graph.gate as gate
-from claude_memory_graph.gate import Context, nudge, recall, runtime
+from claude_hook_kit import HookContext, terms, terms_pos, state_home
+import claude_hook_kit.state as kit_state
+from claude_memory_graph.gate import runtime
+from claude_memory_graph.gate.recall import RecallExtension, _bigrams, _score
+from claude_memory_graph.gate.nudge import ContextCounterExtension
 from claude_memory_graph.store import MemoryStore
+
+
+@pytest.fixture(autouse=True)
+def kit_home(tmp_path, monkeypatch):
+    """Isolated hook-kit home (state, injections.jsonl, errors.log)."""
+    monkeypatch.setenv(kit_state.HOOK_KIT_HOME_ENV, str(tmp_path / "kit"))
+    return tmp_path / "kit"
 
 
 @pytest.fixture
 def graph(tmp_path, monkeypatch):
-    """Seeded store + isolated state dir; the gate reads via MEMORY_GRAPH_PATH."""
+    """Seeded store; the gate reads via MEMORY_GRAPH_PATH."""
     store_dir = tmp_path / "store"
     monkeypatch.setenv("MEMORY_GRAPH_PATH", str(store_dir))
-    monkeypatch.setattr(runtime, "_STATE_DIR", tmp_path / "state")
     store = MemoryStore.open_or_create(store_dir)
     store.create_resource("Decision", {
         "name": "Use pyoxigraph over rdflib",
@@ -24,53 +32,19 @@ def graph(tmp_path, monkeypatch):
     return store
 
 
-# ================= runtime =================
-
-def test_ack_words_yield_no_terms():
-    assert gate.terms("Thanks, yes please — OK!") == []
-
-def test_terms_keep_distinctive_words():
-    assert "pyoxigraph" in gate.terms("why did we pick pyoxigraph?")
-
-def test_main_swallows_garbage_stdin(monkeypatch, capsys, tmp_path):
-    monkeypatch.setattr(runtime, "_STATE_DIR", tmp_path)
-    monkeypatch.setattr("sys.stdin", io.StringIO("{not json"))
-    gate.main()  # must not raise
-    assert capsys.readouterr().out == ""
-
-def test_crashing_check_is_isolated(monkeypatch, capsys, tmp_path):
-    """One broken check -> errors.log entry; other checks still answer."""
-    monkeypatch.setattr(runtime, "_STATE_DIR", tmp_path)
-
-    def boom(ctx):
-        raise RuntimeError("kaput")
-
-    def fine(ctx):
-        return "still here"
-
-    monkeypatch.setattr(runtime, "CHECKS", [boom, fine])
-    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(
-        {"prompt": "anything meaningful here", "session_id": "iso"})))
-    gate.main()
-    assert "still here" in capsys.readouterr().out
-    assert "kaput" in (tmp_path / "errors.log").read_text()
-
-def test_runtime_persists_state_between_prompts(monkeypatch, tmp_path):
-    monkeypatch.setattr(runtime, "_STATE_DIR", tmp_path)
-
-    def remember(ctx):
-        ctx.state["seen"] = ctx.state.get("seen", 0) + 1
-        return None
-
-    monkeypatch.setattr(runtime, "CHECKS", [remember])
-    for _ in range(2):
-        monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(
-            {"prompt": "hello there world", "session_id": "persist"})))
-        gate.main()
-    assert json.loads((tmp_path / "persist.json").read_text())["seen"] == 2
+def prompt_ctx(prompt, state=None, project="", event="UserPromptSubmit", core=None):
+    """A HookContext the way the dispatcher would build it."""
+    core = core if core is not None else {}
+    core.setdefault("project", project)
+    return HookContext(
+        event=event,
+        payload={"prompt": prompt, "cwd": f"/home/user/{project}" if project else ""},
+        core=core,
+        state=state if state is not None else {},
+    )
 
 
-# ================= recall check =================
+# ================= recall scoring =================
 
 def _doc():
     return {"name": "charcoal", "desc": "dc03 harness",
@@ -78,19 +52,18 @@ def _doc():
 
 def test_generic_prompt_stays_silent():
     idf = {"dc03": 4.0, "harness": 3.0}
-    assert recall._score(set(gate.terms("thanks, run the tests")), _doc(), idf) == 0.0
+    assert _score(set(terms("thanks, run the tests")), _doc(), idf) == 0.0
 
 def test_specific_prompt_scores():
     idf = {"dc03": 4.0, "harness": 3.0}
-    score = recall._score(set(gate.terms("fix the dc03 harness")), _doc(), idf)
+    score = _score(set(terms("fix the dc03 harness")), _doc(), idf)
     assert score >= runtime.config()["ABS_MIN"]
 
 def test_phrase_needs_original_adjacency():
     """'memory graph' is a phrase; 'memory of the whole graph' is not —
     stopword-stripping must not manufacture adjacency."""
-    assert ("memory", "graph") in recall._bigrams(gate.terms_pos("the memory graph"))
-    assert ("memory", "graph") not in recall._bigrams(
-        gate.terms_pos("memory of the whole graph"))
+    assert ("memory", "graph") in _bigrams(terms_pos("the memory graph"))
+    assert ("memory", "graph") not in _bigrams(terms_pos("memory of the whole graph"))
 
 def test_config_file_overrides_defaults(monkeypatch, tmp_path):
     cfg_file = tmp_path / "gate.json"
@@ -101,23 +74,27 @@ def test_config_file_overrides_defaults(monkeypatch, tmp_path):
     assert runtime.config()["ABS_MIN"] == 99
     assert runtime.config()["MARGIN"] == 1.5  # untouched keys keep defaults
 
+
+# ================= recall extension =================
+
+def recall_on(prompt, state=None, project=""):
+    return RecallExtension().on_user_prompt_submit(prompt_ctx(prompt, state, project))
+
 def test_gate_fires_on_distinct_entity(graph):
-    out = recall.recall_memories(Context("remind me about pyoxigraph vs rdflib quad store", "s1"))
+    out = recall_on("remind me about pyoxigraph vs rdflib quad store")
     assert out is not None and "Use pyoxigraph over rdflib" in out
 
 def test_gate_silent_on_generic_prompt(graph):
-    assert recall.recall_memories(Context("run the linter again", "s1")) is None
+    assert recall_on("run the linter again") is None
 
 def test_gate_indexes_rationale_not_just_description(graph):
     # the Decision has no 'description' property — rationale must still match
-    out = recall.recall_memories(
-        Context("something about named graphs and the quad store rdflib pyoxigraph", "s1"))
-    assert out is not None
+    assert recall_on("something about named graphs and the quad store rdflib pyoxigraph") is not None
 
 def test_session_memo_prevents_reinjection(graph):
-    ctx = Context("pyoxigraph rdflib quad store", "s2")
-    assert recall.recall_memories(ctx) is not None
-    assert recall.recall_memories(ctx) is None  # same session state -> memo hit
+    state = {}  # same extension state across prompts, as the dispatcher persists it
+    assert recall_on("pyoxigraph rdflib quad store", state) is not None
+    assert recall_on("pyoxigraph rdflib quad store", state) is None  # memo hit
 
 def test_two_strong_memories_both_inject(graph):
     """Regression for the logged false negative: two near-tied STRONG matches
@@ -127,7 +104,7 @@ def test_two_strong_memories_both_inject(graph):
         "role": "rdflib alternative, quad store bindings",
     })
     graph.save()
-    out = recall.recall_memories(Context("pyoxigraph rdflib quad store", "s4"))
+    out = recall_on("pyoxigraph rdflib quad store")
     assert out is not None
     assert "Use pyoxigraph over rdflib" in out and "pyoxigraph:" in out
 
@@ -137,7 +114,7 @@ def test_injection_carries_neighbourhood_links(graph):
     _, project_iri = graph.find_resource("Project", "claude-memory-graph")
     graph.create_link(decision_iri, project_iri, "affects", {})
     graph.save()
-    out = recall.recall_memories(Context("pyoxigraph rdflib quad store", "s5"))
+    out = recall_on("pyoxigraph rdflib quad store")
     assert out is not None and "affects→ Project 'claude-memory-graph'" in out
 
 def test_two_concept_prompt_prefers_memory_covering_both_no_cwd(graph):
@@ -152,8 +129,7 @@ def test_two_concept_prompt_prefers_memory_covering_both_no_cwd(graph):
         "description": "arches graph restore recreates rows, arches signal quirk",
     })
     graph.save()
-    out = recall.recall_memories(
-        Context("what did we decide about arches and the memory graph?", "s8"))
+    out = recall_on("what did we decide about arches and the memory graph?")
     assert out is not None and "claude-memory-graph" in out
     assert "quartz" not in out
 
@@ -175,36 +151,99 @@ def test_project_proximity_outranks_other_projects_lexical_match(graph):
     _, design = graph.find_resource("Pattern", "arches inspired design")
     graph.create_link(design, project, "appliesTo", {})
     graph.save()
-    ctx = Context("tell me about the arches heritage platform design",
-                  "s6", cwd="claude-memory-graph")
-    out = recall.recall_memories(ctx)
+    out = recall_on("tell me about the arches heritage platform design",
+                    project="claude-memory-graph")
     assert out is not None and "arches inspired design" in out
     assert "arches quartz gotcha" not in out
 
 def test_no_project_node_means_no_boost(graph):
-    ctx = Context("pyoxigraph rdflib quad store", "s7", cwd="unknown-dir")
-    assert recall.recall_memories(ctx) is not None  # prior absent, gate unaffected
+    out = recall_on("pyoxigraph rdflib quad store", project="unknown-dir")
+    assert out is not None  # prior absent, gate unaffected
 
 def test_decisions_logged(graph):
-    recall.recall_memories(Context("pyoxigraph rdflib quad store", "s3"))
-    lines = (runtime._STATE_DIR / "injections.jsonl").read_text().strip().splitlines()
+    recall_on("pyoxigraph rdflib quad store")
+    lines = (state_home() / "injections.jsonl").read_text().strip().splitlines()
     assert any(json.loads(line)["fired"] for line in lines)
 
 
-# ================= nudge check =================
+# ================= recall auto-prime (SessionStart) =================
 
-def test_nudge_fires_on_third_significant_turn():
-    state = {}  # shared across prompts, like the runtime's state file
-    assert nudge.context_nudge(Context("design the dc03 harness merge", "sess-1", state=state)) is None
-    assert nudge.context_nudge(Context("fix the csv export path bug", "sess-1", state=state)) is None
-    assert nudge.context_nudge(Context("add the print view route", "sess-1", state=state)) is not None  # 3rd
-    assert nudge.context_nudge(Context("thanks", "sess-1", state=state)) is None  # trivial, no count
+def test_auto_prime_on_known_project(graph):
+    graph.create_resource("Project", {"name": "claude-memory-graph", "status": "active"})
+    graph.save()
+    ctx = prompt_ctx("", event="SessionStart", project="claude-memory-graph")
+    out = RecallExtension().on_session_start(ctx)
+    assert out is not None and "claude-memory-graph" in out
+    assert ctx.state["primed"] is True
+    assert RecallExtension().on_session_start(ctx) is None  # primes once
 
-def test_nudge_cadence_resets_after_firing():
-    state = {}
-    for p in ("alpha beta gamma", "delta epsilon", "zeta eta"):
-        nudge.context_nudge(Context(p, "sess-2", state=state))
-    assert nudge.context_nudge(Context("theta iota", "sess-2", state=state)) is None  # 4th: fresh cycle
+def test_auto_prime_silent_for_unknown_project(graph):
+    ctx = prompt_ctx("", event="SessionStart", project="never-heard-of-it")
+    assert RecallExtension().on_session_start(ctx) is None
 
-def test_nudge_needs_session_id():
-    assert nudge.context_nudge(Context("real words here", "")) is None
+
+# ================= nudge extension =================
+
+@pytest.fixture
+def context_dir(tmp_path, monkeypatch):
+    d = tmp_path / "context"
+    d.mkdir()
+    monkeypatch.setenv("CLAUDE_CONTEXT_DIR", str(d))
+    return d
+
+
+def nudge_seq(prompts, state, core, project="proj"):
+    """Feed prompts through the extension the way the dispatcher would:
+    core significant count advances only on significant prompts."""
+    ext = ContextCounterExtension()
+    results = []
+    for p in prompts:
+        if terms(p):
+            core["significant_prompt_count"] = core.get("significant_prompt_count", 0) + 1
+        results.append(ext.on_user_prompt_submit(prompt_ctx(p, state, project, core=core)))
+    return results
+
+def test_nudge_fires_on_third_significant_turn(context_dir):
+    state, core = {}, {}
+    results = nudge_seq([
+        "design the dc03 harness merge",
+        "fix the csv export path bug",
+        "add the print view route",   # 3rd significant -> nudge
+        "thanks",                      # trivial, no count, no nudge
+    ], state, core)
+    assert results[0] is None and results[1] is None
+    assert results[2] is not None
+    assert results[3] is None
+
+def test_nudge_cadence_resets_after_firing(context_dir):
+    state, core = {}, {}
+    results = nudge_seq([
+        "alpha beta gamma", "delta epsilon", "zeta eta",  # fires on 3rd
+        "theta iota",                                      # 4th: fresh cycle
+    ], state, core)
+    assert results[2] is not None and results[3] is None
+
+def test_context_write_resets_cadence(context_dir):
+    """A model that just updated the log isn't overdue — an observed mtime
+    change resets the counter baseline."""
+    state, core = {}, {}
+    nudge_seq(["alpha beta", "gamma delta"], state, core)          # 2 significant
+    (context_dir / "proj__2026-07-05_10-00.md").write_text("---\ndistilled: false\n---\n")
+    results = nudge_seq(["epsilon zeta"], state, core)             # write observed -> reset
+    assert results == [None]
+    results = nudge_seq(["eta theta", "iota kappa", "lambda mu"], state, core)
+    assert results[-1] is not None  # 3 significant past the write -> nudge again
+
+def test_precompact_always_flushes(context_dir):
+    out = ContextCounterExtension().on_pre_compact(prompt_ctx("", event="PreCompact"))
+    assert out is not None and "NOW" in out
+
+def test_session_end_suggests_distill(context_dir):
+    for i in range(3):
+        (context_dir / f"p__2026-07-0{i + 1}_10-00.md").write_text("---\ndistilled: false\n---\n")
+    out = ContextCounterExtension().on_session_end(prompt_ctx("", event="SessionEnd"))
+    assert out is not None and "distill" in out
+
+def test_session_end_quiet_when_distilled(context_dir):
+    (context_dir / "p__2026-07-01_10-00.md").write_text("---\ndistilled: true\n---\n")
+    assert ContextCounterExtension().on_session_end(prompt_ctx("", event="SessionEnd")) is None

@@ -1,9 +1,10 @@
+import io
 import json
 
 import pytest
 
-from claude_hook_kit import HookExtension, StateStore
-from claude_hook_kit.dispatch import run_dispatch
+from claude_hook_kit import HookExtension, StateStore, terms
+from claude_hook_kit.dispatch import run_dispatch, _read_payload
 from claude_hook_kit import registry, state
 
 
@@ -14,18 +15,36 @@ def kit_home(tmp_path, monkeypatch):
 
 
 # ----------------------------------------------------------------
+# Tokenization (shared by extensions via ctx.terms)
+# ----------------------------------------------------------------
+
+def test_ack_words_yield_no_terms():
+    assert terms("Thanks, yes please — OK!") == []
+
+
+def test_terms_keep_distinctive_words():
+    assert "pyoxigraph" in terms("why did we pick pyoxigraph?")
+
+
+def test_garbage_stdin_yields_empty_payload(monkeypatch):
+    monkeypatch.setattr("sys.stdin", io.StringIO("{not json"))
+    assert _read_payload() == {}
+
+
+# ----------------------------------------------------------------
 # State store
 # ----------------------------------------------------------------
 
 def test_core_state_maintained_across_dispatches(kit_home):
     payload = {"session_id": "s1", "cwd": "/home/user/quartz"}
     run_dispatch("SessionStart", payload)
-    run_dispatch("UserPromptSubmit", {**payload, "prompt": "hi"})
-    run_dispatch("UserPromptSubmit", {**payload, "prompt": "again"})
+    run_dispatch("UserPromptSubmit", {**payload, "prompt": "design the harness merge"})
+    run_dispatch("UserPromptSubmit", {**payload, "prompt": "thanks"})
 
     store = StateStore("s1")
     assert store.core["project"] == "quartz"
     assert store.core["prompt_count"] == 2
+    assert store.core["significant_prompt_count"] == 1  # "thanks" doesn't count
     assert store.core["events"]["UserPromptSubmit"] == 2
     assert store.core["events"]["SessionStart"] == 1
     assert "last_prompt_at" in store.core
@@ -118,6 +137,7 @@ def test_broken_extension_fails_open(kit_home, fake_extensions, capsys):
     out = run_dispatch("SessionStart", {"session_id": "s1", "cwd": "/p/quartz"})
     assert out == "hello from quartz"  # the healthy extension still ran
     assert "boom" in capsys.readouterr().err
+    assert "boom" in (kit_home / "errors.log").read_text()  # evidence persists
 
 
 def test_unknown_event_is_noop(kit_home, fake_extensions):
@@ -137,6 +157,27 @@ def test_enable_unknown_extension_reports(kit_home, fake_extensions):
 def test_enable_disable_roundtrip(kit_home, fake_extensions):
     assert "Enabled" in registry.enable("greeter")
     assert "already enabled" in registry.enable("greeter")
-    assert registry.enabled_names() == ["greeter"]
+    assert registry.enabled_names(fake_extensions) == ["greeter"]
     assert "Disabled" in registry.disable("greeter")
-    assert registry.enabled_names() == []
+    assert registry.enabled_names(fake_extensions) == []
+
+
+def test_default_enabled_runs_without_config(kit_home, monkeypatch):
+    """An extension marked enabled_by_default runs out of the box; an explicit
+    disable (writing config) then wins over the default."""
+
+    class DefaultOn(HookExtension):
+        name = "default-on"
+        enabled_by_default = True
+
+        def on_session_start(self, ctx):
+            return "default on duty"
+
+    exts = {"default-on": DefaultOn}
+    monkeypatch.setattr(registry, "discover", lambda: exts)
+    out = run_dispatch("SessionStart", {"session_id": "s1", "cwd": "/p/x"})
+    assert out == "default on duty"
+
+    registry.disable("default-on")
+    out = run_dispatch("SessionStart", {"session_id": "s1", "cwd": "/p/x"})
+    assert out == ""

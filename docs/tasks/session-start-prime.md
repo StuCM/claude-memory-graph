@@ -1,6 +1,6 @@
 # Task: session-start auto-prime
 
-Status: **planned** · Owner: Stuart · Created: 2026-07-04 · Size: S
+Status: **done — RecallExtension.on_session_start in gate/recall.py (hook-kit dispatch, SessionStart)** · Owner: Stuart · Created: 2026-07-04 · Size: S
 
 ## Goal
 

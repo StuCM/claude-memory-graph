@@ -35,8 +35,16 @@ def _config_path():
     return state_home() / "config.json"
 
 
-def enabled_names() -> list[str]:
-    return list(_read_json(_config_path()).get("enabled", []))
+def enabled_names(available: dict[str, type[HookExtension]] | None = None) -> list[str]:
+    """The extensions that should run. The user's explicit config wins; with
+    no config yet, extensions marked enabled_by_default run out of the box
+    (so installing memory-graph gives a working gate with zero setup)."""
+    config = _read_json(_config_path())
+    if "enabled" in config:
+        return list(config["enabled"])
+    if available is None:
+        available = discover()
+    return sorted(n for n, cls in available.items() if cls.enabled_by_default)
 
 
 def set_enabled(names: list[str]) -> None:
@@ -50,7 +58,7 @@ def enable(name: str) -> str:
     if name not in available:
         known = ", ".join(sorted(available)) or "none discovered"
         return f"Unknown extension '{name}'. Discovered: {known}"
-    names = enabled_names()
+    names = enabled_names(available)
     if name in names:
         return f"'{name}' already enabled"
     set_enabled([*names, name])
@@ -58,7 +66,8 @@ def enable(name: str) -> str:
 
 
 def disable(name: str) -> str:
-    names = enabled_names()
+    available = discover()
+    names = enabled_names(available)
     if name not in names:
         return f"'{name}' is not enabled"
     set_enabled([n for n in names if n != name])
@@ -67,7 +76,7 @@ def disable(name: str) -> str:
 
 def status() -> str:
     available = discover()
-    enabled = set(enabled_names())
+    enabled = set(enabled_names(available))
     if not available and not enabled:
         return "No extensions discovered."
     lines = []

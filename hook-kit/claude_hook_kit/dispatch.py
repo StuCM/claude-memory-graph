@@ -19,7 +19,7 @@ import sys
 import traceback
 
 from .extension import HookContext, EVENT_METHODS
-from .state import StateStore, state_home, _read_json
+from .state import StateStore, state_home, _read_json, log_error
 from . import registry
 
 
@@ -44,7 +44,7 @@ def run_dispatch(event: str, payload: dict) -> str:
 
     outputs: list[str] = []
     available = registry.discover()
-    for name in registry.enabled_names():
+    for name in registry.enabled_names(available):
         cls = available.get(name)
         if cls is None:
             continue
@@ -60,7 +60,9 @@ def run_dispatch(event: str, payload: dict) -> str:
             result = getattr(ext, method_name)(ctx)
             if result:
                 outputs.append(str(result).rstrip())
-        except Exception:
+        except Exception as exc:
+            # this extension failed; log it and let the others still answer
+            log_error(f"extension '{name}' on {event}", exc)
             print(f"[hook-kit] extension '{name}' failed on {event}:", file=sys.stderr)
             traceback.print_exc()
 
@@ -87,7 +89,8 @@ def main() -> None:
             out = run_dispatch(args.event, _read_payload())
             if out:
                 print(out)
-        except Exception:
+        except Exception as exc:
+            log_error("dispatch runtime", exc)
             traceback.print_exc()  # stderr; still exit 0 — fail open
         sys.exit(0)
     elif args.cmd == "list":

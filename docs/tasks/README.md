@@ -8,7 +8,7 @@ sharing/federation is explicitly **future** work.
 
 | Task | Size | Depends on | Status |
 |---|---|---|---|
-| [[session-start-prime]] — inject recall results at SessionStart | S | — | planned |
+| [[session-start-prime]] — inject recall results at SessionStart | S | — | **done** (RecallExtension.on_session_start) |
 | [[prompt-gated-recall]] — ambient analyzer (`gate.py`), deterministic injection | M | — | **done** |
 | [[memory-search-tool]] — fuzzy entry-point finder (tool + CLI) | S | — | planned |
 | [[grounding-coverage-experiment]] — measure grounder vs real transcripts | S | [[prompt-gated-recall]] | planned |
@@ -20,7 +20,7 @@ sharing/federation is explicitly **future** work.
 | Task | Size | Depends on | Status |
 |---|---|---|---|
 | [[prompt-count-context-trigger]] — deterministic context-write nudge | S | shares hook with [[prompt-gated-recall]] | **done** |
-| [[flush-hooks]] — PreCompact/SessionEnd flush + distill suggestion | S | [[prompt-count-context-trigger]] | planned |
+| [[flush-hooks]] — PreCompact/SessionEnd flush + distill suggestion | S | [[prompt-count-context-trigger]] | **done** (ContextCounterExtension) |
 
 ## Tool 3 — Distill creation
 

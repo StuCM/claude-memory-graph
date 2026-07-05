@@ -6,11 +6,16 @@ base class, the dispatcher CLI (`claude-hooks dispatch <Event>`, wired into hook
 framework-maintained **core session state** (session id, cwd/project, prompt count, event
 counts, timestamps) plus per-extension namespaced state (session and global scopes), and
 enable/disable via `claude-hooks enable <name>` (surfaced as the `/hook-kit:install` skill).
-Extensions are discovered from any installed package via `claude_hook_kit` entry points;
-memory-graph ships `memory-recall` (session-start auto-prime) and `context-counter`
-(staleness nudges, PreCompact/SessionEnd flush, distill suggestion). The design below remains
-the reference for behaviour and for what's still open (injection log tooling, threshold
-tuning). The third subsystem: retrieval decides *what*,
+Extensions are discovered from any installed package via `claude_hook_kit` entry points and
+run out of the box when marked `enabled_by_default`; explicit enable/disable always wins.
+Memory-graph's prompt gate (`claude_memory_graph/gate/`) now consists of two such extensions:
+`memory-recall` (scored per-prompt ambient injection — IDF, phrase and coverage evidence,
+project-proximity prior — plus session-start auto-prime) and `context-counter`
+(significant-prompt cadence nudges with write-detection reset, PreCompact/SessionEnd flush,
+distill suggestion). Gate tuning stays in `~/.claude/memory-graph/gate.json`; state, the
+injection log, and error logs live in the hook-kit home (`~/.claude/hook-kit`). The design
+below remains the reference for behaviour and for what's still open (threshold tuning from
+the injection log). The third subsystem: retrieval decides *what*,
 creation decides *what's worth keeping* — orchestration makes both happen **reliably**, by
 hooking into the client, counting prompts, and firing the right action at the right moment
 without depending on the model remembering to.

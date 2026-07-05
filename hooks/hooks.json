@@ -9,7 +9,7 @@
           },
           {
             "type": "command",
-            "command": "uvx --from \"${CLAUDE_PLUGIN_ROOT}\" claude-hooks dispatch SessionStart"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/dispatch.sh SessionStart"
           }
         ]
       }
@@ -19,7 +19,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uvx --from \"${CLAUDE_PLUGIN_ROOT}\" claude-hooks dispatch UserPromptSubmit"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/dispatch.sh UserPromptSubmit"
           }
         ]
       }
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uvx --from \"${CLAUDE_PLUGIN_ROOT}\" claude-hooks dispatch PreCompact"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/dispatch.sh PreCompact"
           }
         ]
       }
@@ -39,17 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uvx --from \"${CLAUDE_PLUGIN_ROOT}\" claude-hooks dispatch SessionEnd"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/user-prompt-submit.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/dispatch.sh SessionEnd"
           }
         ]
       }
