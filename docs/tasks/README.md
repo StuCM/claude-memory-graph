@@ -23,6 +23,8 @@ sharing/federation is explicitly **future** work.
 | [[prompt-count-context-trigger]] — deterministic context-write nudge | S | shares hook with [[prompt-gated-recall]] | **done** |
 | [[flush-hooks]] — PreCompact/SessionEnd flush + distill suggestion | S | [[prompt-count-context-trigger]] | **done** (ContextCounterExtension) |
 | [[transcript-telemetry]] — context size/token usage in core state; pressure-aware flush | S | [[flush-hooks]] | planned |
+| [[observation-capture]] — mechanical tool-observation lane via PostToolUse (claude-mem learning) | M | — | planned |
+| [[private-tags]] — <private> exclusion across capture, distill, and gate (claude-mem learning) | S | — | planned |
 
 ## Tool 3 — Distill creation
 
@@ -34,6 +36,7 @@ sharing/federation is explicitly **future** work.
 | [[distill-two-pass-dedup]] — distill searches before writing | S | [[memory-search-tool]] | planned |
 | [[bitemporal-links]] — two clocks + contradiction closure | M | — | planned |
 | [[code-anchors]] — anchor props + drift flag in recall | S | — | planned |
+| [[auto-distill]] — headless SessionEnd distillation, gated by hard rules (claude-mem bet, evaluate) | M | [[distill-two-pass-dedup]] | planned |
 
 ## Future (not now)
 
