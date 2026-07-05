@@ -25,6 +25,8 @@ INSTRUCTIONS = (
     "RECALL FIRST: before re-deriving knowledge about a project, person, or past "
     "problem via searches or re-investigation, call memory_recall (depth 2) — "
     "decisions, rationale, gotchas, and preferences may already be recorded. "
+    "When the exact name is unknown, memory_search finds ranked entry points "
+    "from free text (names, labels, aliases, property text) — then recall one. "
     "The graph answers why/what-do-we-know questions; code-structure questions "
     "still belong to code search. "
     "Use memory_store_resource to create entities, memory_link to connect them, "
@@ -78,6 +80,10 @@ def main() -> None:
     p.add_argument("model", nargs="?", default=None)
     p = sub.add_parser("query", help="run a SPARQL query")
     p.add_argument("sparql")
+    p = sub.add_parser("search", help="fuzzy entry-point search by free text")
+    p.add_argument("text")
+    p.add_argument("--model", default=None, help="filter: resource model or concept type")
+    p.add_argument("--limit", type=int, default=5)
     sub.add_parser("misses", help="gate miss report: silences followed by explicit recalls")
     args = parser.parse_args()
 
@@ -94,7 +100,7 @@ def main() -> None:
         print(misses.report())
         return
 
-    from .tools import recall, reflect, query
+    from .tools import recall, reflect, query, search
 
     store = MemoryStore.open_or_create(_store_path())
     if args.cmd == "recall":
@@ -103,6 +109,8 @@ def main() -> None:
         print(reflect.handle(store, args.model))
     elif args.cmd == "query":
         print(query.handle(store, args.sparql))
+    elif args.cmd == "search":
+        print(search.handle(store, args.text, args.model, args.limit))
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ from mcp.server import Server
 from mcp.types import Tool, TextContent
 
 from ..store import MemoryStore
-from . import store_resource, link, recall, forget, query, reflect
+from . import store_resource, link, recall, search, forget, query, reflect
 
 _TOOLS = [
     Tool(
@@ -127,6 +127,29 @@ _TOOLS = [
                 "relation": {"type": "string"},
             },
             "required": ["source_model", "source_name", "target_model", "target_name", "relation"],
+        },
+    ),
+    Tool(
+        name="memory_search",
+        description=(
+            "Fuzzy search for graph entry points when you do NOT know a node's exact "
+            "name: matches free text against names, concept labels, aliases, and "
+            "property text; returns ranked matches. Use before memory_recall whenever "
+            "the exact name is uncertain ('the db locking thing', 'that decision about "
+            "saving'), or to check whether the graph knows anything about a topic. "
+            "Search finds doors; memory_recall explores rooms."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "text": {"type": "string", "description": "Free-text query"},
+                "model": {
+                    "type": "string",
+                    "description": "Optional filter: a resource model or concept type",
+                },
+                "limit": {"type": "integer", "description": "Max matches (default 5)", "default": 5},
+            },
+            "required": ["text"],
         },
     ),
     Tool(
@@ -271,6 +294,11 @@ def _dispatch(store: MemoryStore, name: str, args: dict) -> str:
             args["target_model"],
             args["target_name"],
             args["relation"],
+        )
+
+    if name == "memory_search":
+        return search.handle(
+            store, args["text"], args.get("model"), args.get("limit") or 5
         )
 
     if name == "memory_recall":

@@ -45,37 +45,54 @@ def _bigrams(pos_terms: list[tuple[int, str]]) -> set[tuple[str, str]]:
     return bigrams(pos_terms, gap=config()["PHRASE_GAP"])
 
 
-def _corpus(store) -> list[dict]:
+def _corpus(store, include_concepts: bool = False) -> list[dict]:
     """(gid, name, text) per live resource — name + every mem: literal
     property, so Decisions (rationale) and aliases score, not just
-    description-bearing nodes."""
+    description-bearing nodes. With include_concepts, concept nodes join
+    the corpus too (label as name, gid=None) — memory_search wants them
+    as entry points; the gate's injection path does not use them."""
     import pyoxigraph as ox
-    from ..namespaces import GRAPH_RESOURCE_BASE, MEM
+    from ..namespaces import GRAPH_CONCEPTS, GRAPH_RESOURCE_BASE, MEM, RDF_TYPE
+
+    def _collect(rows, gid_of) -> dict[str, dict]:
+        by: dict[str, dict] = {}
+        for r in rows:
+            d = by.setdefault(gid_of(r), {"name": "", "parts": [], "dead": False,
+                                          "model": "", "iri": r["s"].value})
+            if r["p"] == RDF_TYPE:
+                if isinstance(r["o"], ox.NamedNode) and r["o"].value.startswith(MEM):
+                    d["model"] = r["o"].value[len(MEM):]
+                continue
+            pred = r["p"].value
+            if not pred.startswith(MEM):
+                continue
+            key = pred[len(MEM):]
+            if key == "invalidated":
+                d["dead"] = True
+            elif key in _SKIP_PROPS or not isinstance(r["o"], ox.Literal):
+                continue
+            elif key in ("name", "label"):
+                d["name"] = r["o"].value
+            else:
+                d["parts"].append(r["o"].value)
+        return by
 
     rows = store.query(
         f'SELECT ?g ?s ?p ?o WHERE {{ GRAPH ?g {{ ?s ?p ?o }} '
         f'FILTER(STRSTARTS(STR(?g), "{GRAPH_RESOURCE_BASE}")) }}'
     )
-    by: dict[str, dict] = {}
-    for r in rows:
-        pred = r["p"].value
-        if not pred.startswith(MEM):
-            continue
-        key = pred[len(MEM):]
-        d = by.setdefault(r["g"].value.removeprefix(GRAPH_RESOURCE_BASE),
-                          {"name": "", "parts": [], "dead": False,
-                           "iri": r["s"].value})
-        if key == "invalidated":
-            d["dead"] = True
-        elif key in _SKIP_PROPS or not isinstance(r["o"], ox.Literal):
-            continue
-        elif key == "name":
-            d["name"] = r["o"].value
-        else:
-            d["parts"].append(r["o"].value)
+    by = {gid: d for gid, d in _collect(
+        rows, lambda r: r["g"].value.removeprefix(GRAPH_RESOURCE_BASE)).items()}
+
+    concept_by: dict[str, dict] = {}
+    if include_concepts:
+        rows = store.query(
+            f'SELECT ?s ?p ?o WHERE {{ GRAPH <{GRAPH_CONCEPTS}> {{ ?s ?p ?o }} }}'
+        )
+        concept_by = _collect(rows, lambda r: r["s"].value)
 
     docs = []
-    for gid, d in by.items():
+    for gid, d in list(by.items()) + [(None, d) for d in concept_by.values()]:
         if d["dead"]:
             continue
         body = " ".join(d["parts"])
@@ -85,6 +102,7 @@ def _corpus(store) -> list[dict]:
             "gid": gid,
             "iri": d["iri"],
             "name": d["name"],
+            "model": d["model"],
             "desc": body[:300],
             "name_terms": {w for _, w in name_pos},
             "terms": {w for _, w in all_pos},

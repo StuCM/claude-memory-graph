@@ -1,6 +1,6 @@
 # Task: memory_search — fuzzy entry-point finder
 
-Status: **planned** · Owner: Stuart · Created: 2026-07-04 · Size: S
+Status: **done — memory_search MCP tool + `claude-memory-graph search` CLI; reuses the gate's corpus/IDF/phrase scoring (one matcher, two consumers); concepts included as entry points** · Owner: Stuart · Created: 2026-07-04 · Size: S
 
 ## Goal
 
