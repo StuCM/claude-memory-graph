@@ -1,6 +1,27 @@
 # Retrieval instigation — when and how recall happens
 
-Status: **exploration, not yet implemented.** Track B of [ROADMAP.md](ROADMAP.md).
+Status: **gate, search, and miss detector implemented; planner designed.** Track B of
+[ROADMAP.md](ROADMAP.md).
+
+## The retrieval stack in one table
+
+One matcher (corpus + IDF + phrase/coverage scoring), one graph, five escalating ways in —
+automation decreasing and judgement increasing as you go up, with the top layer's behaviour
+flowing back down as tuning data (the miss detector, [TUNING.md](TUNING.md)):
+
+| Layer | Trigger | Question it answers | Output |
+|---|---|---|---|
+| 0 · Session prime | session start, automatic | what do we know about *here*? | project + person neighbourhood |
+| 1 · Gate | every prompt, automatic, **threshold-gated** | does this work touch anything we know? | high-confidence memories *with links*, or silence |
+| 2 · `memory_search` | on demand, **ungated** | what might match this phrase? | ranked entry points (doors) |
+| 3 · `memory_recall` | on demand, exact | what surrounds this known node? | the neighbourhood (rooms) |
+| 4 · Query planner *(designed)* | question-shaped prompts | what is the answer, structurally? | answer rows from a composed query |
+
+Gate and search are the **same matcher with different invocation economics**: the gate speaks
+uninvited, so it must be precision-biased and silence-default; search was *asked*, so it always
+answers with ranked candidates. The gate's injections deliberately include the winner's links —
+threads left hanging so the model (the judgement layer above the stack) can pull them with
+recall/search; and every explicit pull it makes is telemetry that tunes the gate.
 
 ## The target design: ambient retrieval, no LLM in the loop
 
