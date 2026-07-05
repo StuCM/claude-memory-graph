@@ -1,6 +1,16 @@
 # Orchestration — the reliability layer
 
-Status: **exploration, not yet implemented.** The third subsystem: retrieval decides *what*,
+Status: **v0 implemented as [hook-kit](../hook-kit/)** — a standalone, zero-dependency package
+(`claude-hook-kit`, own plugin, memory-graph depends on it). It provides the `HookExtension`
+base class, the dispatcher CLI (`claude-hooks dispatch <Event>`, wired into hooks.json),
+framework-maintained **core session state** (session id, cwd/project, prompt count, event
+counts, timestamps) plus per-extension namespaced state (session and global scopes), and
+enable/disable via `claude-hooks enable <name>` (surfaced as the `/hook-kit:install` skill).
+Extensions are discovered from any installed package via `claude_hook_kit` entry points;
+memory-graph ships `memory-recall` (session-start auto-prime) and `context-counter`
+(staleness nudges, PreCompact/SessionEnd flush, distill suggestion). The design below remains
+the reference for behaviour and for what's still open (injection log tooling, threshold
+tuning). The third subsystem: retrieval decides *what*,
 creation decides *what's worth keeping* — orchestration makes both happen **reliably**, by
 hooking into the client, counting prompts, and firing the right action at the right moment
 without depending on the model remembering to.
