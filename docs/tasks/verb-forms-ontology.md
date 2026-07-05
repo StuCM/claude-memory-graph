@@ -1,6 +1,6 @@
 # Task: verb forms + domain/range in the ontology
 
-Status: **planned** · Owner: Stuart · Created: 2026-07-04 · Size: S
+Status: **done — base.ttl 0.4.0 annotates all 16 relations with verbForms + domainIncludes/rangeIncludes (schema.org-style union hints); store.relation_lexicon() exposes the planner lexicon; add_relation/memory_link require verb forms for new relations; _ensure_base_ontology keys on verbForms so pre-upgrade stores reload the base without losing LLM additions** · Owner: Stuart · Created: 2026-07-04 · Size: S
 
 ## Goal
 

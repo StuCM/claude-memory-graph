@@ -30,7 +30,7 @@ sharing/federation is explicitly **future** work.
 |---|---|---|---|
 | hard capture rules (name lint, required props, dup guard, provenance) | M | — | **done** (PR #1, `capture_rules.py`, 20 tests) |
 | enrichment rules in skills (aliases, concept hubs, anchors) | S | — | **done** (PR #1, docs+skills) |
-| [[verb-forms-ontology]] — verbForms + domain/range in base.ttl | S | — | planned |
+| [[verb-forms-ontology]] — verbForms + domain/range in base.ttl | S | — | **done** (base.ttl 0.4.0, relation_lexicon(), extension flow requires verb forms) |
 | [[distill-two-pass-dedup]] — distill searches before writing | S | [[memory-search-tool]] | planned |
 | [[bitemporal-links]] — two clocks + contradiction closure | M | — | planned |
 | [[code-anchors]] — anchor props + drift flag in recall | S | — | planned |

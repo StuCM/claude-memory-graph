@@ -110,6 +110,17 @@ _TOOLS = [
                         "(e.g. 'Person mentors another Person'). Adds it to the ontology permanently."
                     ),
                 },
+                "new_relation_verb_forms": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "Required alongside new_relation_description: the natural-language "
+                        "phrasings a question would use for the relation (e.g. ['mentors', "
+                        "'mentored by', 'mentoring']). These make the relation groundable "
+                        "by retrieval — a relation without them is linkable but never "
+                        "findable from language."
+                    ),
+                },
             },
             "required": ["source_model", "source_name", "target_model", "target_name", "relation"],
         },
@@ -284,6 +295,7 @@ def _dispatch(store: MemoryStore, name: str, args: dict) -> str:
             args["relation"],
             args.get("metadata") or {},
             args.get("new_relation_description"),
+            args.get("new_relation_verb_forms"),
         )
 
     if name == "memory_unlink":

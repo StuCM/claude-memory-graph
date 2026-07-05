@@ -26,11 +26,14 @@ def handle_link(
     relation: str,
     metadata: dict[str, str],
     new_relation_description: str | None = None,
+    new_relation_verb_forms: list[str] | None = None,
 ) -> str:
     defined = ""
     if relation not in store.valid_relations():
         if new_relation_description:
-            store.add_relation(relation, new_relation_description)
+            store.add_relation(
+                relation, new_relation_description, new_relation_verb_forms or []
+            )
             defined = f"Added new relation '{relation}' to the ontology.\n"
         else:
             existing = "\n".join(
@@ -42,7 +45,9 @@ def handle_link(
                 f"{existing}\n"
                 "Prefer an existing relation even if the fit is loose. Only if none "
                 "genuinely matches, call memory_link again with the same relation plus "
-                "new_relation_description to add it to the ontology."
+                "new_relation_description AND new_relation_verb_forms (the phrasings a "
+                "question would use, e.g. ['mentors', 'mentored by']) to add it to the "
+                "ontology."
             )
 
     source = _find_any(store, source_model, source_name)

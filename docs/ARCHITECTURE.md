@@ -81,7 +81,7 @@ The schema graph is the single source of truth for relations. Relations are mark
 The extension flow is deliberately high-friction so the LLM reuses before inventing:
 
 1. `memory_link` with an unknown relation **errors**, listing every current relation with its description and instructing the model to prefer an existing one.
-2. Only if nothing genuinely fits, the model retries with `new_relation_description`, and `add_relation()` writes the new relation into the schema graph — with an `rdfs:comment` and a `mem:definedAt` timestamp, so LLM additions are auditable (base relations have no `definedAt`).
+2. Only if nothing genuinely fits, the model retries with `new_relation_description` **and `new_relation_verb_forms`** (mandatory — the schema graph doubles as the retrieval/planner lexicon, so a relation without natural-language phrasings would be linkable but never groundable). `add_relation()` writes the relation into the schema graph with an `rdfs:comment`, its `mem:verbForms`, and a `mem:definedAt` timestamp, so LLM additions are auditable (base relations have no `definedAt`).
 
 Because LLM-added relations live in the schema graph, they persist like everything else and are immediately valid in future sessions. `_ensure_base_ontology()` keys on the `RelationType` marker rather than "schema graph non-empty", so stores created before an ontology change get the updated base.ttl re-loaded (RDF loading is set-semantics — re-loading is safe), without touching LLM additions.
 
