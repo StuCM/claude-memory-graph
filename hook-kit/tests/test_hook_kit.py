@@ -149,6 +149,36 @@ def test_unknown_event_is_noop(kit_home, fake_extensions):
 # Registry
 # ----------------------------------------------------------------
 
+# ----------------------------------------------------------------
+# Log pretty-printing
+# ----------------------------------------------------------------
+
+def test_log_formats_known_and_unknown_keys(kit_home, capsys):
+    from claude_hook_kit.dispatch import print_log
+    log = kit_home / "injections.jsonl"
+    log.write_text(
+        json.dumps({"ts": 1751700000, "fired": True, "top": 5.2, "rest": 1.1,
+                    "project": "quartz", "nodes": ["Use pyoxigraph over rdflib"],
+                    "terms": ["pyoxigraph", "rdflib"]}) + "\n"
+        + json.dumps({"ts": 1751700060, "fired": False, "top": 1.0, "rest": 0.9,
+                      "custom": "extra"}) + "\n"
+        + "{not json\n"
+    )
+    print_log("injections.jsonl", lines=20, follow=False)
+    out = capsys.readouterr().out
+    assert "INJECT" in out and "silent" in out
+    assert "nodes[Use pyoxigraph over rdflib]" in out
+    assert "terms(pyoxigraph rdflib)" in out
+    assert "custom=extra" in out
+    assert "{not json" in out  # garbage lines pass through, never crash
+
+
+def test_log_missing_file_reports_cleanly(kit_home, capsys):
+    from claude_hook_kit.dispatch import print_log
+    print_log("nope.jsonl", lines=5, follow=False)
+    assert "No log at" in capsys.readouterr().out
+
+
 def test_enable_unknown_extension_reports(kit_home, fake_extensions):
     msg = registry.enable("nope")
     assert "Unknown extension" in msg and "greeter" in msg
