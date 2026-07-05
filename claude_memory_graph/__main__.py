@@ -85,6 +85,12 @@ def main() -> None:
     p.add_argument("--model", default=None, help="filter: resource model or concept type")
     p.add_argument("--limit", type=int, default=5)
     sub.add_parser("misses", help="gate miss report: silences followed by explicit recalls")
+    p = sub.add_parser("coverage", help="grounding-coverage experiment over real prompts")
+    p.add_argument("--prompts", type=Path, default=None,
+                   help="text file, one prompt per line")
+    p.add_argument("--transcripts", type=Path, nargs="*", default=None,
+                   help="Claude Code transcript .jsonl files or directories "
+                        "(e.g. ~/.claude/projects)")
     args = parser.parse_args()
 
     if args.cmd is None:
@@ -98,6 +104,21 @@ def main() -> None:
     if args.cmd == "misses":
         from .gate import misses
         print(misses.report())
+        return
+
+    if args.cmd == "coverage":
+        from .gate import coverage
+        prompts: list[str] = []
+        if args.prompts:
+            prompts += coverage.prompts_from_file(args.prompts)
+        if args.transcripts:
+            prompts += coverage.prompts_from_transcripts(args.transcripts)
+        if not prompts:
+            print("No prompts. Pass --prompts FILE and/or --transcripts PATH "
+                  "(see docs/tasks/grounding-coverage-experiment.md).")
+            return
+        store = MemoryStore.open_or_create(_store_path())
+        print(coverage.report(store, prompts))
         return
 
     from .tools import recall, reflect, query, search

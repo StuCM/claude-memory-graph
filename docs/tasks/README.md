@@ -11,7 +11,7 @@ sharing/federation is explicitly **future** work.
 | [[session-start-prime]] — inject recall results at SessionStart | S | — | **done** (RecallExtension.on_session_start) |
 | [[prompt-gated-recall]] — ambient analyzer (`gate.py`), deterministic injection | M | — | **done** |
 | [[memory-search-tool]] — fuzzy entry-point finder (tool + CLI) | S | — | **done** (tools/search.py — shares the gate's corpus/scoring) |
-| [[grounding-coverage-experiment]] — measure grounder vs real transcripts | S | [[prompt-gated-recall]] | planned |
+| [[grounding-coverage-experiment]] — measure grounder vs real transcripts | S | [[prompt-gated-recall]] | **harness ready** (`claude-memory-graph coverage` — run after a few days of real sessions; decision table in the task file) |
 | [[recall-miss-detector]] — explicit recalls after silence = auto-labelled misses | S | [[prompt-gated-recall]] | **done** (gate/misses.py, `claude-memory-graph misses`, docs/TUNING.md) |
 | [[query-planner-v0]] — compose SPARQL from question shape (`ask` CLI) | L | [[memory-search-tool]] | planned |
 | [[temporal-query-modifiers]] — tense → valid-time filters | S | [[query-planner-v0]], [[bitemporal-links]] | planned |
