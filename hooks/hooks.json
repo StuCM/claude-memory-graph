@@ -24,6 +24,17 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "mcp__.*memory_.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/dispatch.sh PostToolUse"
+          }
+        ]
+      }
+    ],
     "PreCompact": [
       {
         "hooks": [

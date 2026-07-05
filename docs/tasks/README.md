@@ -12,7 +12,7 @@ sharing/federation is explicitly **future** work.
 | [[prompt-gated-recall]] — ambient analyzer (`gate.py`), deterministic injection | M | — | **done** |
 | [[memory-search-tool]] — fuzzy entry-point finder (tool + CLI) | S | — | planned |
 | [[grounding-coverage-experiment]] — measure grounder vs real transcripts | S | [[prompt-gated-recall]] | planned |
-| [[recall-miss-detector]] — explicit recalls after silence = auto-labelled misses | S | [[prompt-gated-recall]] | planned |
+| [[recall-miss-detector]] — explicit recalls after silence = auto-labelled misses | S | [[prompt-gated-recall]] | **done** (gate/misses.py, `claude-memory-graph misses`, docs/TUNING.md) |
 | [[query-planner-v0]] — compose SPARQL from question shape (`ask` CLI) | L | [[memory-search-tool]] | planned |
 | [[temporal-query-modifiers]] — tense → valid-time filters | S | [[query-planner-v0]], [[bitemporal-links]] | planned |
 

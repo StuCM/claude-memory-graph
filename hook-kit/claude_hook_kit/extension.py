@@ -7,6 +7,7 @@ from .text import terms_pos
 EVENT_METHODS = {
     "SessionStart": "on_session_start",
     "UserPromptSubmit": "on_user_prompt_submit",
+    "PostToolUse": "on_post_tool_use",
     "Stop": "on_stop",
     "PreCompact": "on_pre_compact",
     "SessionEnd": "on_session_end",
@@ -40,6 +41,11 @@ class HookContext:
     @property
     def cwd(self) -> str:
         return self.payload.get("cwd", "") or ""
+
+    @property
+    def tool_name(self) -> str:
+        """PostToolUse only: the tool that just ran (empty otherwise)."""
+        return self.payload.get("tool_name", "") or ""
 
     @property
     def project(self) -> str:
@@ -79,6 +85,9 @@ class HookExtension:
         return None
 
     def on_user_prompt_submit(self, ctx: HookContext) -> str | None:
+        return None
+
+    def on_post_tool_use(self, ctx: HookContext) -> str | None:
         return None
 
     def on_stop(self, ctx: HookContext) -> str | None:

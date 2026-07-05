@@ -198,6 +198,6 @@ rules catch its mistakes.
 [GLOSSARY.md](GLOSSARY.md) → this file → [ROADMAP.md](ROADMAP.md) (sequencing) → subsystem
 depth: [RETRIEVAL.md](RETRIEVAL.md) + [QUERY-PLANNING.md](QUERY-PLANNING.md) ·
 [CONTEXT-CREATION.md](CONTEXT-CREATION.md) · [DISTILL-CREATION.md](DISTILL-CREATION.md) ·
-[ORCHESTRATION.md](ORCHESTRATION.md) → horizons: [SHARING.md](SHARING.md) →
+[ORCHESTRATION.md](ORCHESTRATION.md) + [TUNING.md](TUNING.md) (observability) → horizons: [SHARING.md](SHARING.md) →
 [FEDERATION.md](FEDERATION.md) · [CODE-GRAPH.md](CODE-GRAPH.md) → implementation detail of
 what exists today: [ARCHITECTURE.md](ARCHITECTURE.md).

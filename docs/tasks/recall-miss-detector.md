@@ -1,6 +1,6 @@
 # Task: recall miss detector — self-tuning gate from explicit recalls
 
-Status: **planned** · Owner: Stuart · Created: 2026-07-05 · Size: S
+Status: **done — RecallExtension.on_post_tool_use + gate/misses.py join; report via `claude-memory-graph misses`; output documented in docs/TUNING.md** · Owner: Stuart · Created: 2026-07-05 · Size: S
 
 ## Goal
 

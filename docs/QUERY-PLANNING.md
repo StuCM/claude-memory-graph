@@ -124,6 +124,40 @@ prompt ─► shape check ─► ground words in vocabulary ─► compose BGPs 
    degrades to entity-anchored neighbourhood recall — the planner's floor is exactly today's
    behaviour, never worse.
 
+## Does the planner iterate — use one query's output to build the next?
+
+Mostly **no**, and the reason is the most SPARQL-ish idea in the whole design. What *looks* like
+it needs two searches — "first find the projects Stuart works on, then find decisions affecting
+those projects" — is **one query with a shared variable**:
+
+```sparql
+?l1: stuart —worksOn→ ?p        # "output" of step one...
+?l2: ?d —affects→ ?p            # ...is just ?p, joined declaratively
+```
+
+The chaining happens *inside* the database engine via the join on `?p` — the intermediate
+result never surfaces, no second search is composed, and the engine optimises the whole chain
+at once. Composing one structurally-rich query beats iterating shallow ones wherever the next
+step doesn't depend on *judgement* about the previous step's results.
+
+What the planner consumes to build a query is therefore not prior *results* but the prior
+*vocabulary*: the ontology, verb forms, entity names and aliases — all read from the graph.
+The graph shapes the query; the query then runs once.
+
+That said, three places where output genuinely does feed a next query:
+
+1. **The gate already does it** (implemented): scoring picks winners, then a *second, targeted*
+   query fetches each winner's links so the injection carries the neighbourhood. Cheap
+   two-step, no judgement in between — just "now zoom in on what won".
+2. **The planner's fallback** (designed): an empty or low-confidence result degrades to
+   entity-anchored neighbourhood recall — a different *strategy*, chosen by the first
+   attempt's outcome.
+3. **Conversational drill-down** (future, and it's the model's job, not the planner's): "what
+   decisions affect quartz?" → answer → user: "why the second one?" The follow-up needs
+   judgement about which result mattered — exactly where an LLM belongs, using `memory_recall`
+   /`memory_query` on the answer it can already see. The planner stays a one-shot translator;
+   iteration-with-judgement lives above it.
+
 ## Worked examples
 
 **"What decisions affect the projects Stuart works on?"**

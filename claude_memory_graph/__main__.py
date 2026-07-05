@@ -78,6 +78,7 @@ def main() -> None:
     p.add_argument("model", nargs="?", default=None)
     p = sub.add_parser("query", help="run a SPARQL query")
     p.add_argument("sparql")
+    sub.add_parser("misses", help="gate miss report: silences followed by explicit recalls")
     args = parser.parse_args()
 
     if args.cmd is None:
@@ -86,6 +87,11 @@ def main() -> None:
             format="%(asctime)s %(levelname)s %(name)s %(message)s",
         )
         asyncio.run(_run())
+        return
+
+    if args.cmd == "misses":
+        from .gate import misses
+        print(misses.report())
         return
 
     from .tools import recall, reflect, query

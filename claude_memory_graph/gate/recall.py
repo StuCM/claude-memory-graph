@@ -221,9 +221,13 @@ class RecallExtension(HookExtension):
         # not from each other. Two near-tied strong memories are both relevant;
         # the noise case is the group barely beating the rest of the graph.
         rest = ranked[len(strong)][0] if len(ranked) > len(strong) else 0.0
+        session = ctx.core.get("session_id", "")
         if not strong or top < cfg["MARGIN"] * (rest or 0.0001):
+            # top_node makes silent decisions joinable by the miss detector:
+            # "what WOULD the gate have injected, and what did it score?"
             append_jsonl("injections.jsonl", {
                 "fired": False, "top": round(top, 2), "rest": round(rest, 2),
+                "top_node": ranked[0][1]["name"], "session": session,
                 "project": ctx.project, "terms": sorted(q)})
             return None  # not confident -> silent, zero tokens added
 
@@ -235,10 +239,42 @@ class RecallExtension(HookExtension):
                 fresh.append(d["gid"])
         append_jsonl("injections.jsonl", {
             "fired": bool(fresh), "top": round(top, 2), "rest": round(rest, 2),
-            "project": ctx.project, "terms": sorted(q),
+            "session": session, "project": ctx.project, "terms": sorted(q),
             "nodes": [d["name"] for _, d in strong]})
         if not fresh:
             return None  # everything relevant was already injected this session
         ctx.state["injected"] = sorted(injected | set(fresh))
         return ("Relevant memory (auto-recalled, may be stale — verify before acting):\n"
                 + "\n".join(lines))
+
+    # The other half of the miss detector: whenever the model EXPLICITLY
+    # reaches for memory (PostToolUse on the memory-graph MCP tools), record
+    # it. An explicit recall shortly after gate silence is a revealed false
+    # negative — the model went to the shelf itself. The join lives in
+    # gate/misses.py (`claude-memory-graph misses`); this just writes the log.
+    def on_post_tool_use(self, ctx: HookContext) -> str | None:
+        tool = ctx.tool_name
+        short = tool.rsplit("__", 1)[-1]
+        if short not in ("memory_recall", "memory_query", "memory_search"):
+            return None
+        tool_input = ctx.payload.get("tool_input") or {}
+        response = str(ctx.payload.get("tool_response", ""))
+        entry = {
+            "session": ctx.core.get("session_id", ""),
+            "project": ctx.project,
+            "tool": short,
+            # "found": did memory actually hold something? Distinguishes a
+            # gate miss (it was there, gate stayed quiet) from a capture gap
+            # (the model went looking for knowledge nobody ever stored).
+            "found": bool(response.strip())
+            and "not found" not in response.lower()
+            and not response.startswith("Error"),
+        }
+        if "model" in tool_input and "name" in tool_input:
+            entry["target"] = f"{tool_input['model']}/{tool_input['name']}"
+        elif "sparql" in tool_input:
+            entry["sparql"] = str(tool_input["sparql"])[:150]
+        elif "text" in tool_input:
+            entry["target"] = str(tool_input["text"])
+        append_jsonl("explicit-recalls.jsonl", entry)
+        return None  # telemetry only — never injects

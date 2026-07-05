@@ -182,6 +182,144 @@ def test_auto_prime_silent_for_unknown_project(graph):
     assert RecallExtension().on_session_start(ctx) is None
 
 
+# ================= miss detector: explicit-recall log =================
+
+def tool_ctx(tool_name, tool_input, tool_response, session="s1"):
+    return HookContext(
+        event="PostToolUse",
+        payload={"tool_name": tool_name, "tool_input": tool_input,
+                 "tool_response": tool_response},
+        core={"session_id": session, "project": "quartz"},
+        state={},
+    )
+
+
+def _recall_log():
+    path = state_home() / "explicit-recalls.jsonl"
+    return [json.loads(line) for line in path.read_text().strip().splitlines()]
+
+
+def test_explicit_recall_logged_with_target():
+    out = RecallExtension().on_post_tool_use(tool_ctx(
+        "mcp__memory-graph__memory_recall",
+        {"model": "Decision", "name": "Use pyoxigraph over rdflib", "depth": 2},
+        "Decision 'Use pyoxigraph over rdflib' — rationale: ...",
+    ))
+    assert out is None  # telemetry only, never injects
+    entry = _recall_log()[-1]
+    assert entry["tool"] == "memory_recall"
+    assert entry["target"] == "Decision/Use pyoxigraph over rdflib"
+    assert entry["found"] is True
+    assert entry["session"] == "s1"
+
+
+def test_explicit_recall_not_found_flagged():
+    RecallExtension().on_post_tool_use(tool_ctx(
+        "mcp__memory-graph__memory_recall",
+        {"model": "Decision", "name": "nonexistent"},
+        "Error: Decision 'nonexistent' not found",
+    ))
+    assert _recall_log()[-1]["found"] is False
+
+
+def test_query_tool_logs_sparql():
+    RecallExtension().on_post_tool_use(tool_ctx(
+        "mcp__memory-graph__memory_query",
+        {"sparql": "SELECT ?n WHERE { GRAPH ?g { ?n rdf:type mem:Decision } }"},
+        '[{"n": "mem:resource/abc"}]',
+    ))
+    entry = _recall_log()[-1]
+    assert entry["tool"] == "memory_query" and entry["sparql"].startswith("SELECT")
+
+
+def test_non_memory_tools_ignored(kit_home):
+    RecallExtension().on_post_tool_use(tool_ctx("Edit", {"file_path": "x"}, "ok"))
+    assert not (state_home() / "explicit-recalls.jsonl").exists()
+
+
+# ================= miss detector: the join =================
+
+from claude_memory_graph.gate import misses as misses_mod
+from claude_hook_kit import append_jsonl
+
+
+def _seed_logs(entries_decisions, entries_recalls):
+    for e in entries_decisions:
+        append_jsonl("injections.jsonl", dict(e))
+    for e in entries_recalls:
+        append_jsonl("explicit-recalls.jsonl", dict(e))
+
+
+def _with_ts(entry, ts):
+    # append_jsonl stamps now(); rewrite files with controlled timestamps instead
+    return {**entry, "ts": ts}
+
+
+def _write_jsonl(name, entries):
+    path = state_home() / name
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(json.dumps(e) for e in entries) + "\n")
+
+
+def test_silence_then_found_recall_is_a_miss():
+    _write_jsonl("injections.jsonl", [_with_ts(
+        {"fired": False, "top": 2.7, "rest": 1.1, "top_node": "Save after every mutation",
+         "session": "s1", "terms": ["save", "mutation"]}, 1000)])
+    _write_jsonl("explicit-recalls.jsonl", [_with_ts(
+        {"session": "s1", "tool": "memory_recall",
+         "target": "Decision/Save after every mutation", "found": True}, 1060)])
+    result = misses_mod.analyse()
+    assert len(result["misses"]) == 1 and not result["gaps"]
+    out = misses_mod.report()
+    assert "MISS" in out and "2.7" in out and "Save after every mutation" in out
+    assert "threshold miss" in out  # 2.7 is within 70% of ABS_MIN 3.0
+
+
+def test_low_score_miss_classified_as_vocabulary():
+    _write_jsonl("injections.jsonl", [_with_ts(
+        {"fired": False, "top": 0.4, "top_node": "x", "session": "s1", "terms": ["db"]}, 1000)])
+    _write_jsonl("explicit-recalls.jsonl", [_with_ts(
+        {"session": "s1", "tool": "memory_recall",
+         "target": "Pattern/RocksDB exclusive lock", "found": True}, 1030)])
+    assert "vocabulary miss" in misses_mod.report()
+
+
+def test_recall_after_fired_injection_is_not_a_miss():
+    _write_jsonl("injections.jsonl", [_with_ts(
+        {"fired": True, "top": 6.0, "session": "s1",
+         "nodes": ["Use pyoxigraph over rdflib"], "terms": ["pyoxigraph"]}, 1000)])
+    _write_jsonl("explicit-recalls.jsonl", [_with_ts(
+        {"session": "s1", "tool": "memory_recall",
+         "target": "Decision/Use pyoxigraph over rdflib", "found": True}, 1030)])
+    result = misses_mod.analyse()
+    assert not result["misses"] and not result["gaps"]
+
+
+def test_not_found_recall_is_a_capture_gap_not_a_miss():
+    _write_jsonl("injections.jsonl", [_with_ts(
+        {"fired": False, "top": 0.0, "top_node": "", "session": "s1", "terms": ["deploy"]}, 1000)])
+    _write_jsonl("explicit-recalls.jsonl", [_with_ts(
+        {"session": "s1", "tool": "memory_recall",
+         "target": "Decision/deploy pipeline choice", "found": False}, 1030)])
+    result = misses_mod.analyse()
+    assert not result["misses"] and len(result["gaps"]) == 1
+    assert "CAPTURE GAP" in misses_mod.report()
+
+
+def test_recall_outside_window_or_session_not_joined():
+    _write_jsonl("injections.jsonl", [
+        _with_ts({"fired": False, "top": 2.7, "top_node": "n", "session": "s1",
+                  "terms": ["x"]}, 1000)])
+    _write_jsonl("explicit-recalls.jsonl", [
+        _with_ts({"session": "s1", "tool": "memory_recall", "target": "M/n",
+                  "found": True}, 1000 + misses_mod.WINDOW_SECONDS + 60),
+        _with_ts({"session": "OTHER", "tool": "memory_recall", "target": "M/n",
+                  "found": True}, 1030),
+    ])
+    result = misses_mod.analyse()
+    assert not result["misses"] and not result["gaps"]
+
+
 # ================= nudge extension =================
 
 @pytest.fixture

@@ -13,9 +13,8 @@ Memory-graph's prompt gate (`claude_memory_graph/gate/`) now consists of two suc
 project-proximity prior — plus session-start auto-prime) and `context-counter`
 (significant-prompt cadence nudges with write-detection reset, PreCompact/SessionEnd flush,
 distill suggestion). Gate tuning stays in `~/.claude/memory-graph/gate.json`; state, the
-injection log, and error logs live in the hook-kit home (`~/.claude/hook-kit`). The design
-below remains the reference for behaviour and for what's still open (threshold tuning from
-the injection log). The third subsystem: retrieval decides *what*,
+injection log, and error logs live in the hook-kit home (`~/.claude/hook-kit`). Observability — every log field, the miss report, and how to act on each verdict — is
+documented in [TUNING.md](TUNING.md). The design below remains the reference for behaviour. The third subsystem: retrieval decides *what*,
 creation decides *what's worth keeping* — orchestration makes both happen **reliably**, by
 hooking into the client, counting prompts, and firing the right action at the right moment
 without depending on the model remembering to.
