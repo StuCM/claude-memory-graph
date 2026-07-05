@@ -12,6 +12,7 @@ sharing/federation is explicitly **future** work.
 | [[prompt-gated-recall]] — ambient analyzer (`gate.py`), deterministic injection | M | — | **done** |
 | [[memory-search-tool]] — fuzzy entry-point finder (tool + CLI) | S | — | planned |
 | [[grounding-coverage-experiment]] — measure grounder vs real transcripts | S | [[prompt-gated-recall]] | planned |
+| [[recall-miss-detector]] — explicit recalls after silence = auto-labelled misses | S | [[prompt-gated-recall]] | planned |
 | [[query-planner-v0]] — compose SPARQL from question shape (`ask` CLI) | L | [[memory-search-tool]] | planned |
 | [[temporal-query-modifiers]] — tense → valid-time filters | S | [[query-planner-v0]], [[bitemporal-links]] | planned |
 
@@ -21,6 +22,7 @@ sharing/federation is explicitly **future** work.
 |---|---|---|---|
 | [[prompt-count-context-trigger]] — deterministic context-write nudge | S | shares hook with [[prompt-gated-recall]] | **done** |
 | [[flush-hooks]] — PreCompact/SessionEnd flush + distill suggestion | S | [[prompt-count-context-trigger]] | **done** (ContextCounterExtension) |
+| [[transcript-telemetry]] — context size/token usage in core state; pressure-aware flush | S | [[flush-hooks]] | planned |
 
 ## Tool 3 — Distill creation
 
