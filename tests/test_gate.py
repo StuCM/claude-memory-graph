@@ -330,23 +330,35 @@ def context_dir(tmp_path, monkeypatch):
     return d
 
 
+def stop_ctx(state, core, project="proj", active=False):
+    """The HookContext a Stop dispatch would build; active simulates
+    stop_hook_active (this stop already follows a block)."""
+    core.setdefault("project", project)
+    return HookContext(
+        event="Stop",
+        payload={"stop_hook_active": True} if active else {},
+        core=core,
+        state=state,
+    )
+
 def nudge_seq(prompts, state, core, project="proj"):
-    """Feed prompts through the extension the way the dispatcher would:
-    core significant count advances only on significant prompts."""
+    """Simulate the dispatcher's turn loop: each prompt advances the core
+    significant count (only significant prompts do), then the turn ends and
+    the Stop hook runs. Returns the on_stop result per turn."""
     ext = ContextCounterExtension()
     results = []
     for p in prompts:
         if terms(p):
             core["significant_prompt_count"] = core.get("significant_prompt_count", 0) + 1
-        results.append(ext.on_user_prompt_submit(prompt_ctx(p, state, project, core=core)))
+        results.append(ext.on_stop(stop_ctx(state, core, project)))
     return results
 
-def test_nudge_fires_on_third_significant_turn(context_dir):
+def test_nudge_blocks_stop_on_third_significant_turn(context_dir):
     state, core = {}, {}
     results = nudge_seq([
         "design the dc03 harness merge",
         "fix the csv export path bug",
-        "add the print view route",   # 3rd significant -> nudge
+        "add the print view route",   # 3rd significant -> block this stop
         "thanks",                      # trivial, no count, no nudge
     ], state, core)
     assert results[0] is None and results[1] is None
@@ -360,6 +372,14 @@ def test_nudge_cadence_resets_after_firing(context_dir):
         "theta iota",                                      # 4th: fresh cycle
     ], state, core)
     assert results[2] is not None and results[3] is None
+
+def test_nudge_never_chains_blocks(context_dir):
+    """A stop that already follows a block (stop_hook_active) passes through,
+    even in a state where the cadence check alone would fire."""
+    ext = ContextCounterExtension()
+    core = {"significant_prompt_count": 5}
+    assert ext.on_stop(stop_ctx({}, dict(core), active=False)) is not None  # would fire
+    assert ext.on_stop(stop_ctx({}, dict(core), active=True)) is None       # guard wins
 
 def test_context_write_resets_cadence(context_dir):
     """A model that just updated the log isn't overdue — an observed mtime

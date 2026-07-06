@@ -128,7 +128,10 @@ already have the `supersedes` chain.
 ## Two promotion paths, one ruleset
 
 - **[/memory-graph:distill](../skills/distill/SKILL.md)** — from session context files, with
-  hindsight; archives its sources.
+  hindsight; archives its sources. Structured context entries arrive pre-shaped (the
+  protocol now captures graph shape at write time), so distill *folds and stores* rather
+  than re-derives — and the fully mechanical, no-LLM lane is
+  [tasks/structured-context-entries](tasks/structured-context-entries.md) phase 2.
 - **[/memory-graph:ingest](../skills/ingest/SKILL.md)** — from documents we don't own (issue
   repos, ADRs, postmortems); never modifies its sources, tracks state via `sourceDocument`.
 

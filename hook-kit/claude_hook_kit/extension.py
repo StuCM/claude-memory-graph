@@ -52,6 +52,12 @@ class HookContext:
         """Basename of the working directory = current Project name."""
         return self.core.get("project", "") or ""
 
+    @property
+    def stop_hook_active(self) -> bool:
+        """Stop only: true when the model is already continuing because a
+        stop hook blocked this same stop — returning output again would loop."""
+        return bool(self.payload.get("stop_hook_active"))
+
     @cached_property
     def terms_pos(self) -> list[tuple[int, str]]:
         """[(position, word)] for the prompt — tokenized LAZILY on first
@@ -71,7 +77,9 @@ class HookExtension:
     state namespacing), and override the on_* methods you need. Return a
     string to inject it into the session context (SessionStart /
     UserPromptSubmit), or None to stay silent — silence is the default
-    and the norm.
+    and the norm. On Stop, a returned string BLOCKS the stop: the
+    dispatcher emits it as {"decision": "block", "reason": <string>}, so
+    the model must act on it before it can finish the turn.
 
     Set `enabled_by_default = True` for extensions that should run as soon
     as their package is installed; the user's explicit enable/disable

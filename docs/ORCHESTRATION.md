@@ -11,8 +11,8 @@ run out of the box when marked `enabled_by_default`; explicit enable/disable alw
 Memory-graph's prompt gate (`claude_memory_graph/gate/`) now consists of two such extensions:
 `memory-recall` (scored per-prompt ambient injection — IDF, phrase and coverage evidence,
 project-proximity prior — plus session-start auto-prime) and `context-counter`
-(significant-prompt cadence nudges with write-detection reset, PreCompact/SessionEnd flush,
-distill suggestion). Gate tuning stays in `~/.claude/memory-graph/gate.json`; state, the
+(significant-prompt cadence with write-detection reset, enforced by **blocking the Stop
+event** when the log is overdue; PreCompact/SessionEnd flush, distill suggestion). Gate tuning stays in `~/.claude/memory-graph/gate.json`; state, the
 injection log, and error logs live in the hook-kit home (`~/.claude/hook-kit`). Observability — every log field, the miss report, and how to act on each verdict — is
 documented in [TUNING.md](TUNING.md). The design below remains the reference for behaviour. The third subsystem: retrieval decides *what*,
 creation decides *what's worth keeping* — orchestration makes both happen **reliably**, by
@@ -31,8 +31,8 @@ file, prompt counting — so that machinery is one subsystem, not two implementa
 | Hook | Fires | Orchestration uses it for |
 |---|---|---|
 | `SessionStart` | session begins | prime: recall Project (cwd) + Person, inject results; init session state; inject the context-protocol (as today) |
-| `UserPromptSubmit` | every user prompt | increment prompt count; run the retrieval analyzer (inject memories); check context-log freshness (nudge if stale) |
-| `Stop` | model finishes a turn | cheap bookkeeping: note turn completed |
+| `UserPromptSubmit` | every user prompt | increment prompt count; run the retrieval analyzer (inject memories) |
+| `Stop` | model finishes a turn | check context-log freshness; when overdue, **block the stop** (`{"decision": "block"}`) with "write the context file now" — the model must act before it may finish. `stop_hook_active` guards the follow-up stop, so a block never chains |
 | `PreCompact` | context about to be summarised | **flush point**: inject "update the context file NOW" — last chance before the session's memory of itself degrades |
 | `SessionEnd` | session closes | if undistilled files ≥ threshold, surface "run /memory-graph:distill"; final state save |
 
@@ -59,12 +59,15 @@ threshold) → inject memories or stay silent → memo + log updated. Determinis
 analyzer runs on *every* prompt; whether it *speaks* is the scored decision. Counting prompts is
 what makes "silence" meaningful data rather than a gap.
 
-**Capture loop (context creation):** every prompt → `promptsSinceContextWrite` increments; when
-the context file's mtime shows no write for N prompts (start conservative, N≈5), inject a
-one-line mechanical nudge: *"context-log: N exchanges since last update — append key points
-now."* Present-tense, at the actionable moment — the same fix ambient retrieval applied to
-recall. `PreCompact` and `SessionEnd` are the backstops: flush before the in-context knowledge
-that would write the log is summarised away or lost.
+**Capture loop (context creation):** every prompt advances the significant count; at every
+`Stop`, when the context file's mtime shows no write for N significant prompts, the hook
+**blocks the stop** with a one-line mechanical reason: *"context-log: N exchanges since last
+update — append key points now."* The block lands at the one moment it can't be deprioritised:
+the turn's work is done, and the model must satisfy the reason before it may finish. (v0
+injected the nudge at `UserPromptSubmit`; live sessions showed the model treating it as lower
+priority than the user's actual ask and skipping it — the injection channel is advisory, the
+Stop channel is not.) `PreCompact` and `SessionEnd` are the backstops: flush before the
+in-context knowledge that would write the log is summarised away or lost.
 
 Distill triggering closes the loop: undistilled-file count ≥ 3 (checked at `SessionStart` and
 `SessionEnd`) → surface the suggestion. Distill itself stays a human-invoked skill — promotion

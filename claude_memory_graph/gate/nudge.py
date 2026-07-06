@@ -4,17 +4,22 @@ The context protocol asks the model to update the session context file
 "every 3+ meaningful exchanges" — and the model reliably forgets to
 count. This extension moves the COUNTING out of the model: the framework
 counts significant prompts (any prompt with real terms left after
-stopwords; bare "thanks"/"yes"/"ok" don't count) in core session state,
-and every N_TURNS this extension injects a reminder at exactly the moment
-it's actionable. The WRITING stays the model's job — only it has the
-conversation.
+stopwords; bare "thanks"/"yes"/"ok" don't count) in core session state.
+The WRITING stays the model's job — only it has the conversation.
 
-Two refinements over pure counting:
-- an observed context-file write (mtime change) resets the cadence — a
-  model that just updated the log isn't overdue;
-- PreCompact and SessionEnd are flush points: last chances to capture
-  before the in-context knowledge that would write the log is summarised
-  away or lost, plus the distill suggestion when undistilled files pile up.
+The reminder fires on Stop, not UserPromptSubmit. Injecting alongside the
+user's prompt proved unreliable: the nudge competes with the actual ask
+and the model deprioritises it. A Stop block can't be deprioritised — the
+turn's work is done, and the model must satisfy the reason before it may
+finish. So at each Stop we check the cadence; when the log is overdue we
+block once with "write the context file now". stop_hook_active guards the
+retry (never chain blocks), and an observed context-file write (mtime
+change) resets the cadence — a model that just updated the log isn't
+overdue.
+
+PreCompact and SessionEnd remain flush points: last chances to capture
+before the in-context knowledge that would write the log is summarised
+away or lost, plus the distill suggestion when undistilled files pile up.
 
 N_TURNS comes from runtime.config() (~/.claude/memory-graph/gate.json).
 """
@@ -46,9 +51,9 @@ class ContextCounterExtension(HookExtension):
             return None
         return max(f.stat().st_mtime for f in files)
 
-    def on_user_prompt_submit(self, ctx: HookContext) -> str | None:
-        if not ctx.terms_pos:
-            return None  # bare thanks/yes/ok -> don't nudge
+    def on_stop(self, ctx: HookContext) -> str | None:
+        if ctx.stop_hook_active:
+            return None  # this stop already follows our block — let it through
         state = ctx.state
         significant = ctx.core.get("significant_prompt_count", 0)
 
@@ -64,10 +69,10 @@ class ContextCounterExtension(HookExtension):
         if overdue < config()["N_TURNS"]:
             return None
         state["last_nudge_at"] = significant
-        return (f"[context] {overdue} significant exchanges since "
-                "last context update — you are overdue. Append the decisions/"
-                "problems/preferences since your last entry to the session context "
-                "file per the context protocol, then continue.")
+        return (f"[context] {overdue} significant exchanges since the context "
+                "file was last updated. Before finishing this turn, append the "
+                "decisions/problems/preferences from the conversation since your "
+                "last entry to the session context file per the context protocol.")
 
     def on_pre_compact(self, ctx: HookContext) -> str | None:
         return ("[context] compaction imminent — write ALL un-captured key points to the "

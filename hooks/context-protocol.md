@@ -30,10 +30,18 @@ summary: "<one-line summary, updated as the session evolves>"
 
 ## Key Points
 
-- [HH:MM] Decision: chose X over Y because Z
+- [HH:MM] Decision: Use pyoxigraph over rdflib
+  rationale: native quad store; rdflib named-graph handling too slow
+  affects: Project/claude-memory-graph
+  concepts: rdf, storage
+  aliases: rdf store choice, oxigraph
 - [HH:MM] Problem: encountered X, resolved by Y
 - [HH:MM] User preference: prefers X approach
 ```
+
+Entries come in two shapes:
+- **Narrative** — a single bullet line, as in the last two examples. Frictionless; mid-session wrongness and churn are fine.
+- **Structured** — the bullet plus indented `key: value` lines mirroring the graph shape: properties (`rationale`, `description`, `aliases`, …), links written as `relation: Model/name` (e.g. `affects: Project/claude-memory-graph`), and `concepts:` as a comma list. Use this shape whenever the point is graph-worthy — a Decision, Pattern, or preference likely to outlive the session. You know the shape *now*; writing it here lets distill promote it directly instead of re-deriving it from prose. If understanding evolves, restate the same `Type: name` bullet later with new values (the latest wins); a reversal adds `supersedes: Decision/<old name>`.
 
 ## What to capture
 Decisions and their rationale (the *why*), problems and their fixes, user preferences and corrections, non-obvious discoveries, scope changes. Do NOT capture routine actions, anything obvious from code/git history, or full code snippets (reference file paths instead).

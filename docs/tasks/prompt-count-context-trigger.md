@@ -1,7 +1,18 @@
 # Task: deterministic context-write trigger (prompt counter)
 
-Status: **done** · Owner: Stuart · Created: 2026-07-02
-Shares the `UserPromptSubmit` hook with [[prompt-gated-recall]].
+Status: **done — escalated to a Stop block (2026-07-06)** · Owner: Stuart · Created: 2026-07-02
+Counting still shares the `UserPromptSubmit` hook with [[prompt-gated-recall]];
+the trigger itself now fires on `Stop`.
+
+> **Escalation note (2026-07-06).** The open question below — "model may ignore the
+> nudge" — happened in live sessions: injected alongside the user's prompt, the nudge
+> lost the priority contest with the actual ask. The trigger moved from
+> `UserPromptSubmit` injection to the `Stop` hook: when the log is overdue, the
+> dispatcher emits `{"decision": "block", "reason": "write the context file now"}`,
+> which the model must satisfy before the turn may finish. `stop_hook_active` guards
+> against chained blocks; an observed mtime change still resets the cadence.
+> (`ContextCounterExtension.on_stop` in gate/nudge.py; `format_response` in
+> hook-kit's dispatcher.)
 
 ## Goal
 
