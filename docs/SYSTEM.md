@@ -40,7 +40,7 @@ flowchart TB
     AN -.question-shaped.-> QP
     QP --> GRAPH
     LLM -->|notes during session| CTX
-    HOOKS -->|staleness nudge / flush| CTX
+    HOOKS -->|stop-block when stale / dig / flush| CTX
     CTX --> DIST
     DIST --> HARD --> GRAPH
     GRAPH -->|rebuilt mechanically| IDX
@@ -77,7 +77,14 @@ sequenceDiagram
     else below threshold
         A->>A: silence + log decision
     end
-    M->>C: append notes (nudged by O when stale)
+    M->>C: append notes (structured entries where graph-worthy)
+
+    Note over U,C: Every turn end (Stop)
+    O->>O: log stale? dig turn (many greps/reads)?
+    alt overdue or dig detected
+        O->>M: block the stop: "write the context file now"
+        M->>C: append (then the stop passes)
+    end
 
     Note over C,G: Later — /distill (human-invoked)
     D->>C: read undistilled files with hindsight
@@ -158,8 +165,8 @@ flowchart TB
 - F4 All writes pass the hard capture rules; provenance is stamped server-side.
 - F5 Contradicted links are closed (two clocks), never silently replaced; retrieval defaults
   to currently-valid facts.
-- F6 Context logging and distill triggering fire mechanically (counted prompts, mtime, flush
-  hooks), not by model discipline.
+- F6 Context logging and distill triggering fire mechanically (counted prompts, mtime,
+  Stop blocks, dig detection, flush hooks), not by model discipline.
 - F7 Sharing is opt-in per node via manifest; imported knowledge is read-only and attributed.
 
 **Non-functional**
@@ -184,7 +191,7 @@ flowchart TB
 | Analyzer | **golden tests** (fixture graph + prompt table → expected inject/silence + nodes); **refusal suite** (prompts that must stay silent); determinism check (same input → same output) | design ready |
 | Query planner | golden **question → expected result rows** over a seeded graph (assert results, not SPARQL text); grounding unit tests; refusal tests for half-groundable questions | design ready |
 | Grounding coverage | run the grounder over real transcripts; % of question prompts fully grounded — the go/no-go metric for grammar size and the POS-tagger decision | first experiment |
-| Orchestration | hook integration tests: counted prompts, nudge firing on stale mtime, flush on PreCompact, fail-open on corrupt state | when implemented |
+| Orchestration | hook integration tests: counted prompts, Stop block on stale mtime (repeat-until-write, never-chain), dig counting per turn, flush on PreCompact, fail-open on corrupt state | **passing** (tests/test_gate.py, hook-kit/tests) |
 | Live tuning | injection log + miss detector (explicit recall after silence = logged false negative) reviewed against real sessions | continuous |
 | External benchmark | LongMemEval, once retrieval is implemented — the objective test of "ontology + discipline beats embeddings + judge" | later |
 
