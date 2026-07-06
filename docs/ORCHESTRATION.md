@@ -32,7 +32,7 @@ file, prompt counting — so that machinery is one subsystem, not two implementa
 |---|---|---|
 | `SessionStart` | session begins | prime: recall Project (cwd) + Person, inject results; init session state; inject the context-protocol (as today) |
 | `UserPromptSubmit` | every user prompt | increment prompt count; run the retrieval analyzer (inject memories) |
-| `Stop` | model finishes a turn | check context-log freshness; when overdue, **block the stop** (`{"decision": "block"}`) with "write the context file now" — the model must act before it may finish. `stop_hook_active` guards the follow-up stop, so a block never chains |
+| `Stop` | model finishes a turn | check context-log freshness; when overdue, **block the stop** (`{"decision": "block"}`) with "write the context file now" — the model must act before it may finish. Cadence is keyed to observed writes (mtime), so an ignored block fires again at every following stop until the log is written; `stop_hook_active` bounds it to one block per stop, so a block never chains within a turn |
 | `PreCompact` | context about to be summarised | **flush point**: inject "update the context file NOW" — last chance before the session's memory of itself degrades |
 | `SessionEnd` | session closes | if undistilled files ≥ threshold, surface "run /memory-graph:distill"; final state save |
 
@@ -63,10 +63,12 @@ what makes "silence" meaningful data rather than a gap.
 `Stop`, when the context file's mtime shows no write for N significant prompts, the hook
 **blocks the stop** with a one-line mechanical reason: *"context-log: N exchanges since last
 update — append key points now."* The block lands at the one moment it can't be deprioritised:
-the turn's work is done, and the model must satisfy the reason before it may finish. (v0
-injected the nudge at `UserPromptSubmit`; live sessions showed the model treating it as lower
-priority than the user's actual ask and skipping it — the injection channel is advisory, the
-Stop channel is not.) `PreCompact` and `SessionEnd` are the backstops: flush before the
+the turn's work is done, and the model must satisfy the reason before it may finish. The
+baseline is the significant count at the last *observed write* — never at the last block — so
+ignoring a block doesn't buy quiet turns: every subsequent stop blocks again until the file's
+mtime moves. (v0 injected the nudge at `UserPromptSubmit`; live sessions showed the model
+treating it as lower priority than the user's actual ask and skipping it — the injection
+channel is advisory, the Stop channel is not.) `PreCompact` and `SessionEnd` are the backstops: flush before the
 in-context knowledge that would write the log is summarised away or lost.
 
 Distill triggering closes the loop: undistilled-file count ≥ 3 (checked at `SessionStart` and

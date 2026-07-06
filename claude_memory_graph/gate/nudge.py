@@ -11,11 +11,14 @@ The reminder fires on Stop, not UserPromptSubmit. Injecting alongside the
 user's prompt proved unreliable: the nudge competes with the actual ask
 and the model deprioritises it. A Stop block can't be deprioritised — the
 turn's work is done, and the model must satisfy the reason before it may
-finish. So at each Stop we check the cadence; when the log is overdue we
-block once with "write the context file now". stop_hook_active guards the
-retry (never chain blocks), and an observed context-file write (mtime
-change) resets the cadence — a model that just updated the log isn't
-overdue.
+finish.
+
+The cadence is keyed to WRITES, not to our own nagging: the baseline is
+the significant count at the last observed context-file write (mtime
+change), and every Stop while the log is >= N_TURNS behind blocks again.
+A block that gets ignored doesn't buy the model N more quiet turns — the
+next turn's Stop blocks too, until a write is observed. stop_hook_active
+bounds it within a turn (one block per stop, never chained).
 
 PreCompact and SessionEnd remain flush points: last chances to capture
 before the in-context knowledge that would write the log is summarised
@@ -64,11 +67,9 @@ class ContextCounterExtension(HookExtension):
             state["written_at"] = significant
             return None
 
-        baseline = max(state.get("last_nudge_at", 0), state.get("written_at", 0))
-        overdue = significant - baseline
+        overdue = significant - state.get("written_at", 0)
         if overdue < config()["N_TURNS"]:
             return None
-        state["last_nudge_at"] = significant
         return (f"[context] {overdue} significant exchanges since the context "
                 "file was last updated. Before finishing this turn, append the "
                 "decisions/problems/preferences from the conversation since your "

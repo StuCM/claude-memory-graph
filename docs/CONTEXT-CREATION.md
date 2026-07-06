@@ -57,6 +57,8 @@ mtime; when activity has outrun the log, it **blocks the Stop event** with a mec
 "write the context file now" — the model must act on it before the turn may finish. (The first
 version injected the nudge alongside the user's prompt; live sessions showed it losing the
 priority contest with the actual ask. A Stop block arrives when there is nothing else to do
-and cannot be skipped; `stop_hook_active` ensures a block never chains into a loop.)
+and cannot be skipped; the cadence is keyed to observed writes, so an ignored block simply
+fires again at the next stop; `stop_hook_active` ensures a block never chains into a loop
+within a turn.)
 Session-end and pre-compaction hooks are the backstop: flush before the context that would
 have written the log disappears.

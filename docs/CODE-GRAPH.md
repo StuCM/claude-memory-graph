@@ -19,8 +19,14 @@ rebuildable structures outside it.
   top-level"), architectural constraints ("all mutations persist via the dispatcher's
   `_MUTATING` hook"). Small (dozens of nodes per project), durable across refactors, and the
   knowledge that leaves when a person does.
+- **Orientation** — the middle band live use surfaced: how and where things are stored,
+  located, and wired ("session state lives under `~/.claude/hook-kit/sessions/`, atomic
+  tmp+rename"). Convention-level, multi-file to re-derive, churns only on deliberate
+  restructuring — so it passes the rubric and belongs in the graph, under the keep test and
+  volume guard in [tasks/code-memory-rules](tasks/code-memory-rules.md).
 
-The scope discipline stays: **memory answers *why*; code tools answer *where*.**
+The scope discipline stays, refined: **memory answers *why* and holds the *map*; code tools
+answer symbol-level *where*.**
 
 ## The structural half, done right: a derived code graph
 

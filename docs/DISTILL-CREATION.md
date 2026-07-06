@@ -69,9 +69,11 @@ session-local shorthand (property text is a retrieval matching surface).
   planner ([QUERY-PLANNING.md](QUERY-PLANNING.md)) can ground them with zero code changes.
 - **Code anchors** — a memory *about code* carries `anchorPath` (repo-relative),
   `anchorSymbol`, and `anchorCommit`, enabling staleness flagging when the code drifts and,
-  later, joins to the derived code graph ([CODE-GRAPH.md](CODE-GRAPH.md)). Structural facts
-  themselves (where X is defined, who calls Y) stay out of the graph — derivable, so they fail
-  the rubric.
+  later, joins to the derived code graph ([CODE-GRAPH.md](CODE-GRAPH.md)). Symbol-level
+  structural facts (where X is defined, who calls Y) stay out of the graph — derivable by one
+  grep, so they fail the rubric. *Orientation* knowledge — how and where things are stored,
+  located, and wired, at convention level — passes it and is stored as Patterns under the
+  three-lane rules in [tasks/code-memory-rules](tasks/code-memory-rules.md).
 
 ## 5. Dedup (hard guard, soft preference)
 

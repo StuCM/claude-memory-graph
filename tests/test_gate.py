@@ -359,19 +359,26 @@ def test_nudge_blocks_stop_on_third_significant_turn(context_dir):
         "design the dc03 harness merge",
         "fix the csv export path bug",
         "add the print view route",   # 3rd significant -> block this stop
-        "thanks",                      # trivial, no count, no nudge
     ], state, core)
     assert results[0] is None and results[1] is None
     assert results[2] is not None
-    assert results[3] is None
 
-def test_nudge_cadence_resets_after_firing(context_dir):
+def test_nudge_repeats_until_write_observed(context_dir):
+    """The cadence is keyed to writes, not to our own nagging: an ignored
+    block doesn't buy N quiet turns — every following Stop blocks too,
+    until a context-file write resets the baseline."""
     state, core = {}, {}
     results = nudge_seq([
         "alpha beta gamma", "delta epsilon", "zeta eta",  # fires on 3rd
-        "theta iota",                                      # 4th: fresh cycle
+        "theta iota",                                      # still unwritten -> fires again
+        "thanks",                                          # trivial turn, still unwritten -> fires
     ], state, core)
-    assert results[2] is not None and results[3] is None
+    assert results[2] is not None and results[3] is not None and results[4] is not None
+    (context_dir / "proj__2026-07-05_10-00.md").write_text("---\ndistilled: false\n---\n")
+    results = nudge_seq(["kappa lambda"], state, core)     # write observed -> quiet
+    assert results == [None]
+    results = nudge_seq(["mu nu", "xi omicron"], state, core)
+    assert results == [None, None]                          # 2 past the write: not yet overdue
 
 def test_nudge_never_chains_blocks(context_dir):
     """A stop that already follows a block (stop_hook_active) passes through,

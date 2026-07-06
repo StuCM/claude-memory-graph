@@ -9,8 +9,10 @@ the trigger itself now fires on `Stop`.
 > lost the priority contest with the actual ask. The trigger moved from
 > `UserPromptSubmit` injection to the `Stop` hook: when the log is overdue, the
 > dispatcher emits `{"decision": "block", "reason": "write the context file now"}`,
-> which the model must satisfy before the turn may finish. `stop_hook_active` guards
-> against chained blocks; an observed mtime change still resets the cadence.
+> which the model must satisfy before the turn may finish. The cadence is keyed to
+> observed writes (mtime), not to the block itself — an ignored block fires again at
+> every following stop until the log is written. `stop_hook_active` guards against
+> chained blocks within a turn.
 > (`ContextCounterExtension.on_stop` in gate/nudge.py; `format_response` in
 > hook-kit's dispatcher.)
 
