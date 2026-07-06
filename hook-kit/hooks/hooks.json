@@ -1,0 +1,44 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uvx --from \"${CLAUDE_PLUGIN_ROOT}\" claude-hooks dispatch SessionStart"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uvx --from \"${CLAUDE_PLUGIN_ROOT}\" claude-hooks dispatch UserPromptSubmit"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uvx --from \"${CLAUDE_PLUGIN_ROOT}\" claude-hooks dispatch PreCompact"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uvx --from \"${CLAUDE_PLUGIN_ROOT}\" claude-hooks dispatch SessionEnd"
+          }
+        ]
+      }
+    ]
+  }
+}

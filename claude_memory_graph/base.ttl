@@ -9,7 +9,7 @@
 mem: a owl:Ontology ;
     rdfs:label "Claude Memory Graph Ontology" ;
     rdfs:comment "Arches-inspired hybrid knowledge graph for Claude Code long-term memory. Each resource instance gets its own named graph. Scalar attributes are flat properties; shared concepts are traversable nodes enabling multi-hop recall." ;
-    owl:versionInfo "0.3.0" .
+    owl:versionInfo "0.4.0" .
 
 # ============================================================
 # RESOURCE MODELS (graph types — each instance is a named graph)
@@ -163,66 +163,125 @@ mem:RelationType a rdfs:Class ;
     rdfs:label "Relation Type" ;
     rdfs:comment "A named relationship usable in cross-graph links." .
 
+# The schema graph doubles as the query planner's natural-language lexicon:
+# mem:verbForms holds the phrasings a prompt would use for a relation, and
+# domainIncludes/rangeIncludes (schema.org-style UNION semantics, hints not
+# constraints) tell the planner which way an edge points. LLM-added
+# relations must supply verb forms too — enforced in add_relation.
+mem:verbForms a rdf:Property ;
+    rdfs:label "verb forms" ;
+    rdfs:comment "Natural-language phrasings of a relation ('works on', 'working on') — the query planner's grounding lexicon. Repeat the property per phrasing." .
+
+mem:domainIncludes a rdf:Property ;
+    rdfs:label "domain includes" ;
+    rdfs:comment "A type this relation's SOURCE may have (union semantics, hint not constraint) — modelled on schema:domainIncludes." .
+
+mem:rangeIncludes a rdf:Property ;
+    rdfs:label "range includes" ;
+    rdfs:comment "A type this relation's TARGET may have (union semantics, hint not constraint) — modelled on schema:rangeIncludes." .
+
 mem:worksOn a rdf:Property, mem:RelationType ;
     rdfs:label "works on" ;
-    rdfs:comment "Person works on Project." .
+    rdfs:comment "Person works on Project." ;
+    mem:verbForms "works on", "work on", "working on", "worked on", "develops", "develop", "developing", "contributes to", "contribute to" ;
+    mem:domainIncludes mem:Person ;
+    mem:rangeIncludes mem:Project .
 
 mem:employedBy a rdf:Property, mem:RelationType ;
     rdfs:label "employed by" ;
-    rdfs:comment "Person employed by Company." .
+    rdfs:comment "Person employed by Company." ;
+    mem:verbForms "employed by", "works at", "work at", "works for", "work for", "working at", "hired by" ;
+    mem:domainIncludes mem:Person ;
+    mem:rangeIncludes mem:Company .
 
 mem:owns a rdf:Property, mem:RelationType ;
     rdfs:label "owns" ;
-    rdfs:comment "Company owns Project." .
+    rdfs:comment "Company owns Project." ;
+    mem:verbForms "owns", "own", "owning", "maintains", "maintain" ;
+    mem:domainIncludes mem:Company ;
+    mem:rangeIncludes mem:Project .
 
 mem:uses a rdf:Property, mem:RelationType ;
     rdfs:label "uses" ;
-    rdfs:comment "Project uses Technology." .
+    rdfs:comment "Project uses Technology." ;
+    mem:verbForms "uses", "use", "using", "used", "built with", "built on", "runs on", "run on", "depends on", "depend on" ;
+    mem:domainIncludes mem:Project ;
+    mem:rangeIncludes mem:Technology .
 
 mem:madeBy a rdf:Property, mem:RelationType ;
     rdfs:label "made by" ;
-    rdfs:comment "Decision made by Person." .
+    rdfs:comment "Decision made by Person." ;
+    mem:verbForms "made by", "decided by", "decided", "chosen by", "chose", "picked", "taken by" ;
+    mem:domainIncludes mem:Decision ;
+    mem:rangeIncludes mem:Person .
 
 mem:affects a rdf:Property, mem:RelationType ;
     rdfs:label "affects" ;
-    rdfs:comment "Decision affects Project/Task." .
+    rdfs:comment "Decision affects Project/Task." ;
+    mem:verbForms "affects", "affect", "affecting", "affected", "impacts", "impact", "impacting", "impacted" ;
+    mem:domainIncludes mem:Decision ;
+    mem:rangeIncludes mem:Project, mem:Task .
 
 mem:assignedTo a rdf:Property, mem:RelationType ;
     rdfs:label "assigned to" ;
-    rdfs:comment "Task assigned to Person." .
+    rdfs:comment "Task assigned to Person." ;
+    mem:verbForms "assigned to", "assigned", "given to" ;
+    mem:domainIncludes mem:Task ;
+    mem:rangeIncludes mem:Person .
 
 mem:partOf a rdf:Property, mem:RelationType ;
     rdfs:label "part of" ;
-    rdfs:comment "Task part of Project." .
+    rdfs:comment "Task part of Project." ;
+    mem:verbForms "part of", "belongs to", "within", "under" ;
+    mem:domainIncludes mem:Task ;
+    mem:rangeIncludes mem:Project .
 
 mem:relatesTo a rdf:Property, mem:RelationType ;
     rdfs:label "relates to" ;
-    rdfs:comment "General association between any two resources." .
+    rdfs:comment "General association between any two resources." ;
+    mem:verbForms "relates to", "relate to", "related to", "relating to", "connected to", "linked to", "associated with" .
 
 mem:supersedes a rdf:Property, mem:RelationType ;
     rdfs:label "supersedes" ;
-    rdfs:comment "This resource replaces an earlier one." .
+    rdfs:comment "This resource replaces an earlier one." ;
+    mem:verbForms "supersedes", "supersede", "replaces", "replace", "replaced", "overrides", "override", "succeeded", "succeeds" .
 
 mem:resolves a rdf:Property, mem:RelationType ;
     rdfs:label "resolves" ;
-    rdfs:comment "Decision resolves Task." .
+    rdfs:comment "Decision resolves Task." ;
+    mem:verbForms "resolves", "resolve", "resolved", "fixes", "fix", "fixed", "closes", "close", "solved", "solves", "solve" ;
+    mem:domainIncludes mem:Decision ;
+    mem:rangeIncludes mem:Task .
 
 mem:appliesTo a rdf:Property, mem:RelationType ;
     rdfs:label "applies to" ;
-    rdfs:comment "Pattern/Constraint applies to Project." .
+    rdfs:comment "Pattern/Constraint applies to Project." ;
+    mem:verbForms "applies to", "apply to", "applied to", "governs", "govern", "holds for" ;
+    mem:domainIncludes mem:Pattern, mem:Constraint ;
+    mem:rangeIncludes mem:Project .
 
 mem:hasSkill a rdf:Property, mem:RelationType ;
     rdfs:label "has skill" ;
-    rdfs:comment "Person has Skill concept." .
+    rdfs:comment "Person has Skill concept." ;
+    mem:verbForms "has skill", "knows", "know", "skilled in", "skilled with", "experienced with" ;
+    mem:domainIncludes mem:Person ;
+    mem:rangeIncludes mem:Skill .
 
 mem:hasConcept a rdf:Property, mem:RelationType ;
     rdfs:label "has concept" ;
-    rdfs:comment "Resource links to a Concept." .
+    rdfs:comment "Resource links to a Concept." ;
+    mem:verbForms "has concept", "concerns", "concern", "touches", "touch", "involves", "involve", "involving" ;
+    mem:rangeIncludes mem:Concept .
 
 mem:hasConstraint a rdf:Property, mem:RelationType ;
     rdfs:label "has constraint" ;
-    rdfs:comment "Resource has a Constraint." .
+    rdfs:comment "Resource has a Constraint." ;
+    mem:verbForms "has constraint", "constrained by", "constrain", "limited by", "limit", "must comply with", "comply with", "bound by" ;
+    mem:rangeIncludes mem:Constraint .
 
 mem:hasPreference a rdf:Property, mem:RelationType ;
     rdfs:label "has preference" ;
-    rdfs:comment "Person has a Preference." .
+    rdfs:comment "Person has a Preference." ;
+    mem:verbForms "has preference", "prefers", "prefer", "preferred", "likes", "like", "favours", "favour", "favors", "favor" ;
+    mem:domainIncludes mem:Person ;
+    mem:rangeIncludes mem:Preference .

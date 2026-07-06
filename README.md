@@ -8,7 +8,7 @@ An [Arches](https://www.archesproject.org/)-inspired RDF knowledge-graph MCP ser
 
 ## Install (Claude Code plugin — recommended)
 
-The repo is its own plugin marketplace. One plugin sets up everything: the MCP server (run via `uvx` from the bundled source — requires [uv](https://docs.astral.sh/uv/)), the conversation context-file protocol (injected each session, dirs auto-created), and the `/memory-graph:distill` skill.
+The repo is its own plugin marketplace. One plugin sets up everything: the MCP server (run via `uvx` from the bundled source — requires [uv](https://docs.astral.sh/uv/)), the conversation context-file protocol (injected each session, dirs auto-created), the `/memory-graph:distill` and `/memory-graph:ingest` skills, and [hook-kit](hook-kit/) — a standalone hook-extension framework (own plugin, also usable without memory-graph) whose installable extensions add session-start memory auto-priming (`memory-recall`) and mechanical context-log nudges (`context-counter`): enable them with `/hook-kit:install` or `claude-hooks enable <name>`.
 
 ```sh
 claude plugin marketplace add <git-url-or-local-path>

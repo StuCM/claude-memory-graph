@@ -6,10 +6,24 @@ requires-python = ">=3.11"
 dependencies = [
     "pyoxigraph>=0.4",
     "mcp>=1.0",
+    "claude-hook-kit",
 ]
 
 [project.scripts]
 claude-memory-graph = "claude_memory_graph.__main__:main"
+
+[project.entry-points."claude_hook_kit"]
+memory-recall = "claude_memory_graph.gate.recall:RecallExtension"
+context-counter = "claude_memory_graph.gate.nudge:ContextCounterExtension"
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.uv.workspace]
+members = ["hook-kit"]
+
+[tool.uv.sources]
+claude-hook-kit = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

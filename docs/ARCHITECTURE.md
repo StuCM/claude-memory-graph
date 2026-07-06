@@ -81,7 +81,7 @@ The schema graph is the single source of truth for relations. Relations are mark
 The extension flow is deliberately high-friction so the LLM reuses before inventing:
 
 1. `memory_link` with an unknown relation **errors**, listing every current relation with its description and instructing the model to prefer an existing one.
-2. Only if nothing genuinely fits, the model retries with `new_relation_description`, and `add_relation()` writes the new relation into the schema graph — with an `rdfs:comment` and a `mem:definedAt` timestamp, so LLM additions are auditable (base relations have no `definedAt`).
+2. Only if nothing genuinely fits, the model retries with `new_relation_description` **and `new_relation_verb_forms`** (mandatory — the schema graph doubles as the retrieval/planner lexicon, so a relation without natural-language phrasings would be linkable but never groundable). `add_relation()` writes the relation into the schema graph with an `rdfs:comment`, its `mem:verbForms`, and a `mem:definedAt` timestamp, so LLM additions are auditable (base relations have no `definedAt`).
 
 Because LLM-added relations live in the schema graph, they persist like everything else and are immediately valid in future sessions. `_ensure_base_ontology()` keys on the `RelationType` marker rather than "schema graph non-empty", so stores created before an ontology change get the updated base.ttl re-loaded (RDF loading is set-semantics — re-loading is safe), without touching LLM additions.
 
@@ -106,7 +106,7 @@ Every tool output is consumed by an LLM, so tokens are the real cost. The rules:
 **Claude Code plugin**: the repo is its own marketplace ([.claude-plugin/](../.claude-plugin/)). The plugin bundles:
 - the MCP server, launched as `uvx --from ${CLAUDE_PLUGIN_ROOT} claude-memory-graph` — the plugin's bundled source is the package, so users need only `uv`;
 - a SessionStart hook ([hooks/](../hooks/)) that creates `~/.claude/context/` dirs and injects the recall-first + context-writing protocol into every session;
-- skills [`/memory-graph:distill`](../skills/distill/SKILL.md) (context files → graph nodes) and [`/memory-graph:reflect`](../skills/reflect/SKILL.md) (find missing links, orphans, stale nodes).
+- skills [`/memory-graph:distill`](../skills/distill/SKILL.md) (context files → graph nodes), [`/memory-graph:ingest`](../skills/ingest/SKILL.md) (arbitrary markdown documents — issue reports, ADRs, notes — → graph nodes, source files never modified), and [`/memory-graph:reflect`](../skills/reflect/SKILL.md) (find missing links, orphans, stale nodes).
 
 Note the plugin's MCP config is `mcp-servers.json`, *not* `.mcp.json` — the latter at a repo root is also read as project-scope MCP config, which would double-register the server for anyone working in this repo.
 

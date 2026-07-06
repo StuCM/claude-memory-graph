@@ -1,8 +1,10 @@
+import os
+
 from mcp.server import Server
 from mcp.types import Tool, TextContent
 
 from ..store import MemoryStore
-from . import store_resource, link, recall, forget, query, reflect
+from . import store_resource, link, recall, search, forget, query, reflect
 
 _TOOLS = [
     Tool(
@@ -10,7 +12,13 @@ _TOOLS = [
         description=(
             "Create or update a resource instance (Person, Project, Company, Task, Technology, "
             "Decision, Pattern). Each resource gets its own named graph. If a resource with "
-            "matching model+name exists, its properties are updated."
+            "matching model+name exists, its properties are updated. The name IS the node's "
+            "identity: use a short, specific, stable title (Decision: imperative phrase stating "
+            "the choice, e.g. 'Use pyoxigraph over rdflib'; Pattern: the phenomenon itself). "
+            "A Decision requires a 'rationale' property and a Pattern a 'description' — "
+            "creation is rejected without them. Creating a node whose name is similar to an "
+            "existing one errors with the candidates: reuse the exact existing name to update "
+            "it, or pass force=true only if it is genuinely a distinct thing."
         ),
         inputSchema={
             "type": "object",
@@ -24,8 +32,19 @@ _TOOLS = [
                     "additionalProperties": {"type": "string"},
                     "description": (
                         "Scalar properties as key-value pairs. 'name' is required; any other "
-                        "camelCase keys are accepted (e.g. email, role, status, description)."
+                        "camelCase keys are accepted (e.g. email, role, status, description). "
+                        "Recommended shapes — Decision: rationale (required), outcome, date, "
+                        "status; Pattern: description (required), example, appliesWhen. When "
+                        "distilling from a file, add sourceContext/sourceDocument with its path."
                     ),
+                },
+                "force": {
+                    "type": "boolean",
+                    "description": (
+                        "Create even though a similar-named node of this model exists. Only "
+                        "after the duplicate guard listed candidates and none is the same thing."
+                    ),
+                    "default": False,
                 },
             },
             "required": ["model", "properties"],
@@ -35,7 +54,9 @@ _TOOLS = [
         name="memory_store_concept",
         description=(
             "Create a shared concept node (Skill, Concept, Constraint, Preference). "
-            "Concepts are lightweight shared nodes that enable traversal between resource graphs."
+            "Concepts are lightweight shared nodes that enable traversal between resource "
+            "graphs. Labels are lowercase singular by convention and matched case- and "
+            "whitespace-insensitively: storing 'Rust' reuses an existing 'rust'."
         ),
         inputSchema={
             "type": "object",
@@ -89,6 +110,17 @@ _TOOLS = [
                         "(e.g. 'Person mentors another Person'). Adds it to the ontology permanently."
                     ),
                 },
+                "new_relation_verb_forms": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "Required alongside new_relation_description: the natural-language "
+                        "phrasings a question would use for the relation (e.g. ['mentors', "
+                        "'mentored by', 'mentoring']). These make the relation groundable "
+                        "by retrieval — a relation without them is linkable but never "
+                        "findable from language."
+                    ),
+                },
             },
             "required": ["source_model", "source_name", "target_model", "target_name", "relation"],
         },
@@ -106,6 +138,29 @@ _TOOLS = [
                 "relation": {"type": "string"},
             },
             "required": ["source_model", "source_name", "target_model", "target_name", "relation"],
+        },
+    ),
+    Tool(
+        name="memory_search",
+        description=(
+            "Fuzzy search for graph entry points when you do NOT know a node's exact "
+            "name: matches free text against names, concept labels, aliases, and "
+            "property text; returns ranked matches. Use before memory_recall whenever "
+            "the exact name is uncertain ('the db locking thing', 'that decision about "
+            "saving'), or to check whether the graph knows anything about a topic. "
+            "Search finds doors; memory_recall explores rooms."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "text": {"type": "string", "description": "Free-text query"},
+                "model": {
+                    "type": "string",
+                    "description": "Optional filter: a resource model or concept type",
+                },
+                "limit": {"type": "integer", "description": "Max matches (default 5)", "default": 5},
+            },
+            "required": ["text"],
         },
     ),
     Tool(
@@ -189,6 +244,16 @@ _MUTATING = {
 }
 
 
+def _client_id(server: Server) -> str | None:
+    """Identify the writing client for mem:capturedBy provenance —
+    the MCP client's declared name/version, or MEMORY_GRAPH_CLIENT."""
+    try:
+        info = server.request_context.session.client_params.clientInfo
+        return f"{info.name}/{info.version}" if info.version else info.name
+    except Exception:
+        return os.environ.get("MEMORY_GRAPH_CLIENT")
+
+
 def register(server: Server, mem_store: MemoryStore) -> None:
     @server.list_tools()
     async def list_tools() -> list[Tool]:
@@ -197,6 +262,7 @@ def register(server: Server, mem_store: MemoryStore) -> None:
     @server.call_tool()
     async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         try:
+            mem_store.capture_client = _client_id(server)
             text = _dispatch(mem_store, name, arguments)
             if name in _MUTATING:
                 mem_store.save()
@@ -207,7 +273,9 @@ def register(server: Server, mem_store: MemoryStore) -> None:
 
 def _dispatch(store: MemoryStore, name: str, args: dict) -> str:
     if name == "memory_store_resource":
-        return store_resource.handle_resource(store, args["model"], args["properties"])
+        return store_resource.handle_resource(
+            store, args["model"], args["properties"], bool(args.get("force"))
+        )
 
     if name == "memory_store_concept":
         return store_resource.handle_concept(
@@ -227,6 +295,7 @@ def _dispatch(store: MemoryStore, name: str, args: dict) -> str:
             args["relation"],
             args.get("metadata") or {},
             args.get("new_relation_description"),
+            args.get("new_relation_verb_forms"),
         )
 
     if name == "memory_unlink":
@@ -237,6 +306,11 @@ def _dispatch(store: MemoryStore, name: str, args: dict) -> str:
             args["target_model"],
             args["target_name"],
             args["relation"],
+        )
+
+    if name == "memory_search":
+        return search.handle(
+            store, args["text"], args.get("model"), args.get("limit") or 5
         )
 
     if name == "memory_recall":

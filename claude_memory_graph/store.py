@@ -14,6 +14,7 @@ from .namespaces import (
     mem_node, resource_graph_node,
 )
 from . import ontology
+from .capture_rules import names_similar, normalize_name
 
 log = logging.getLogger(__name__)
 
@@ -45,6 +46,9 @@ class MemoryStore:
     def __init__(self, store: ox.Store, data_path: Optional[Path] = None):
         self._store = store
         self._data_path = data_path
+        # Set per-request by the MCP layer (client name/version); stamped as
+        # mem:capturedBy provenance on every node created while set.
+        self.capture_client: Optional[str] = None
 
     @classmethod
     def open_or_create(cls, data_dir: Path) -> "MemoryStore":
@@ -74,14 +78,16 @@ class MemoryStore:
         tmp.replace(self._data_path)
 
     def _ensure_base_ontology(self) -> None:
-        # Keyed on the RelationType marker so stores persisted before it
-        # existed get the updated ontology; loading is set-semantics, so
-        # re-loading over an existing schema graph is safe.
+        # Keyed on the NEWEST base-ontology feature (currently the verbForms
+        # definition), not merely "schema graph non-empty": stores persisted
+        # before an ontology upgrade must get the updated base.ttl re-loaded.
+        # Loading is set-semantics, so re-loading over an existing schema
+        # graph is safe and never touches LLM-added relations.
         schema_node = ox.NamedNode(GRAPH_SCHEMA)
-        has_marker = any(True for _ in self._store.quads_for_pattern(
-            mem_node("RelationType"), RDF_TYPE, None, schema_node
+        has_current = any(True for _ in self._store.quads_for_pattern(
+            mem_node("verbForms"), RDF_TYPE, None, schema_node
         ))
-        if not has_marker:
+        if not has_current:
             log.info("Loading base ontology into schema graph")
             ttl = _BASE_TTL_PATH.read_bytes()
             self._store.load(ttl, ox.RdfFormat.TURTLE, to_graph=schema_node)
@@ -135,6 +141,8 @@ class MemoryStore:
         self._add(iri, RDF_TYPE, mem_node(model), graph)
         self._add(iri, mem_node("createdAt"), now, graph)
         self._add(iri, mem_node("updatedAt"), now, graph)
+        if self.capture_client:
+            self._add(iri, mem_node("capturedBy"), ox.Literal(self.capture_client), graph)
 
         for key, value in properties.items():
             self._check_key(key)
@@ -182,6 +190,31 @@ class MemoryStore:
                     graph_id = g.value.removeprefix(GRAPH_RESOURCE_BASE)
                     return graph_id, node
         return None
+
+    def resource_names(self, model: str) -> list[str]:
+        """Names of all live (non-invalidated) resources of a model."""
+        name_prop = ontology.name_property(model)
+        sparql = (
+            f'SELECT ?name WHERE {{\n'
+            f'    GRAPH ?g {{\n'
+            f'        ?node rdf:type mem:{model} .\n'
+            f'        ?node mem:{name_prop} ?name .\n'
+            f'        FILTER NOT EXISTS {{ ?node mem:invalidated ?inv }}\n'
+            f'    }}\n'
+            f'    FILTER(STRSTARTS(STR(?g), "{GRAPH_RESOURCE_BASE}"))\n'
+            f'}}'
+        )
+        names = []
+        for solution in self._query(sparql):
+            name = solution["name"]
+            if isinstance(name, ox.Literal):
+                names.append(name.value)
+        return names
+
+    def find_similar_resources(self, model: str, name: str) -> list[str]:
+        """Names of live resources of `model` whose names are near-duplicates
+        of `name` (used by the write-time duplicate guard)."""
+        return [n for n in self.resource_names(model) if names_similar(n, name)]
 
     def get_resource_properties(
         self, resource_iri: ox.NamedNode, graph_id: str
@@ -240,6 +273,10 @@ class MemoryStore:
     def find_concept(
         self, concept_type: str, label: str
     ) -> Optional[ox.NamedNode]:
+        """Find a concept by label. Concept identity is case- and
+        whitespace-insensitive: an exact match wins, otherwise a normalized
+        match ('Rust' finds 'rust') — so store and link resolve consistently
+        and near-duplicate concept nodes don't accumulate."""
         sparql = (
             f'SELECT ?node WHERE {{\n'
             f'    GRAPH <{GRAPH_CONCEPTS}> {{\n'
@@ -254,6 +291,24 @@ class MemoryStore:
                 node = solution["node"]
                 if isinstance(node, ox.NamedNode):
                     return node
+
+        wanted = normalize_name(label).casefold()
+        sparql = (
+            f'SELECT ?node ?label WHERE {{\n'
+            f'    GRAPH <{GRAPH_CONCEPTS}> {{\n'
+            f'        ?node rdf:type mem:{concept_type} .\n'
+            f'        ?node mem:label ?label .\n'
+            f'    }}\n'
+            f'}}'
+        )
+        for solution in self._query(sparql):
+            node, existing = solution["node"], solution["label"]
+            if (
+                isinstance(node, ox.NamedNode)
+                and isinstance(existing, ox.Literal)
+                and normalize_name(existing.value).casefold() == wanted
+            ):
+                return node
         return None
 
     # ================================================================
@@ -279,15 +334,67 @@ class MemoryStore:
                 relations[r.value[len(MEM):]] = desc
         return relations
 
-    def add_relation(self, relation: str, description: str) -> None:
-        """Extend the ontology with a new relation type (persisted in the schema graph)."""
+    def relation_lexicon(self) -> dict[str, dict]:
+        """The schema graph as the query planner's lexicon: every relation
+        with its description, natural-language verb forms, and (union-
+        semantics, hint-only) domain/range types."""
+        sparql = (
+            f'SELECT ?r ?comment ?vf ?dom ?rng WHERE {{\n'
+            f'    GRAPH <{GRAPH_SCHEMA}> {{\n'
+            f'        ?r rdf:type mem:RelationType .\n'
+            f'        OPTIONAL {{ ?r rdfs:comment ?comment }}\n'
+            f'        OPTIONAL {{ ?r mem:verbForms ?vf }}\n'
+            f'        OPTIONAL {{ ?r mem:domainIncludes ?dom }}\n'
+            f'        OPTIONAL {{ ?r mem:rangeIncludes ?rng }}\n'
+            f'    }}\n'
+            f'}}'
+        )
+        lexicon: dict[str, dict] = {}
+        for solution in self._query(sparql):
+            r = solution["r"]
+            if not (isinstance(r, ox.NamedNode) and r.value.startswith(MEM)):
+                continue
+            entry = lexicon.setdefault(r.value[len(MEM):], {
+                "description": "", "verbForms": set(), "domain": set(), "range": set(),
+            })
+            comment = solution["comment"]
+            if isinstance(comment, ox.Literal):
+                entry["description"] = comment.value
+            vf = solution["vf"]
+            if isinstance(vf, ox.Literal):
+                entry["verbForms"].add(vf.value)
+            for key, var in (("domain", "dom"), ("range", "rng")):
+                node = solution[var]
+                if isinstance(node, ox.NamedNode) and node.value.startswith(MEM):
+                    entry[key].add(node.value[len(MEM):])
+        return {name: {"description": e["description"],
+                       "verbForms": sorted(e["verbForms"]),
+                       "domain": sorted(e["domain"]),
+                       "range": sorted(e["range"])}
+                for name, e in lexicon.items()}
+
+    def add_relation(self, relation: str, description: str,
+                     verb_forms: list[str]) -> None:
+        """Extend the ontology with a new relation type (persisted in the
+        schema graph). Verb forms are mandatory: the schema graph is the
+        query planner's lexicon, so a relation without phrasings would be
+        linkable but never groundable from language."""
         self._check_key(relation)
+        forms = [f.strip() for f in verb_forms if f and f.strip()]
+        if not forms:
+            raise ValueError(
+                f"New relation '{relation}' needs verb forms: the natural-language "
+                "phrasings a question would use for it (e.g. 'mentors', 'mentored by'). "
+                "Pass new_relation_verb_forms alongside the description."
+            )
         graph = ox.NamedNode(GRAPH_SCHEMA)
         node = mem_node(relation)
         self._add(node, RDF_TYPE, ox.NamedNode(f"{RDF}Property"), graph)
         self._add(node, RDF_TYPE, mem_node("RelationType"), graph)
         self._add(node, ox.NamedNode(f"{RDFS}comment"), ox.Literal(description), graph)
         self._add(node, mem_node("definedAt"), self._now(), graph)
+        for form in forms:
+            self._add(node, mem_node("verbForms"), ox.Literal(form), graph)
 
     # ================================================================
     # Cross-link operations
