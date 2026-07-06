@@ -78,14 +78,14 @@ class MemoryStore:
         tmp.replace(self._data_path)
 
     def _ensure_base_ontology(self) -> None:
-        # Keyed on the NEWEST base-ontology feature (currently the verbForms
-        # definition), not merely "schema graph non-empty": stores persisted
-        # before an ontology upgrade must get the updated base.ttl re-loaded.
-        # Loading is set-semantics, so re-loading over an existing schema
-        # graph is safe and never touches LLM-added relations.
+        # Keyed on the NEWEST base-ontology feature (currently the manifestsIn
+        # relation's verb forms), not merely "schema graph non-empty": stores
+        # persisted before an ontology upgrade must get the updated base.ttl
+        # re-loaded. Loading is set-semantics, so re-loading over an existing
+        # schema graph is safe and never touches LLM-added relations.
         schema_node = ox.NamedNode(GRAPH_SCHEMA)
         has_current = any(True for _ in self._store.quads_for_pattern(
-            mem_node("verbForms"), RDF_TYPE, None, schema_node
+            mem_node("manifestsIn"), mem_node("verbForms"), None, schema_node
         ))
         if not has_current:
             log.info("Loading base ontology into schema graph")

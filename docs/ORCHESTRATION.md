@@ -32,6 +32,7 @@ file, prompt counting — so that machinery is one subsystem, not two implementa
 |---|---|---|
 | `SessionStart` | session begins | prime: recall Project (cwd) + Person, inject results; init session state; inject the context-protocol (as today) |
 | `UserPromptSubmit` | every user prompt | increment prompt count; run the retrieval analyzer (inject memories) |
+| `PostToolUse` | after a tool call | silent bookkeeping: log explicit memory recalls (miss detector); count file-inspection calls per turn (dig detector — a turn past `DIG_THRESHOLD` was an investigation, and its Stop block asks for a trace entry) |
 | `Stop` | model finishes a turn | check context-log freshness; when overdue, **block the stop** (`{"decision": "block"}`) with "write the context file now" — the model must act before it may finish. Cadence is keyed to observed writes (mtime), so an ignored block fires again at every following stop until the log is written; `stop_hook_active` bounds it to one block per stop, so a block never chains within a turn |
 | `PreCompact` | context about to be summarised | **flush point**: inject "update the context file NOW" — last chance before the session's memory of itself degrades |
 | `SessionEnd` | session closes | if undistilled files ≥ threshold, surface "run /memory-graph:distill"; final state save |

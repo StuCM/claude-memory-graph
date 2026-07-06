@@ -20,14 +20,25 @@ A block that gets ignored doesn't buy the model N more quiet turns — the
 next turn's Stop blocks too, until a write is observed. stop_hook_active
 bounds it within a turn (one block per stop, never chained).
 
+The dig detector rides the same Stop block: PostToolUse counts
+file-inspection calls (Grep/Glob/Read, plus search-shaped Bash) per turn,
+and a turn that crossed DIG_THRESHOLD was an investigation — knowledge a
+future session would have to re-pay for. The Stop reason then asks for a
+trace entry (docs/tasks/code-memory-rules.md) naming the finding, the
+question phrasings as aliases, and an anchorPath. One ask per dig turn:
+whether the model recorded it isn't observable the way the log's mtime
+is, so the dig nag never repeats — the cadence block is the backstop.
+
 PreCompact and SessionEnd remain flush points: last chances to capture
 before the in-context knowledge that would write the log is summarised
 away or lost, plus the distill suggestion when undistilled files pile up.
 
-N_TURNS comes from runtime.config() (~/.claude/memory-graph/gate.json).
+N_TURNS and DIG_THRESHOLD come from runtime.config()
+(~/.claude/memory-graph/gate.json).
 """
 
 import os
+import re
 from pathlib import Path
 
 from claude_hook_kit import HookContext, HookExtension
@@ -42,6 +53,21 @@ def _context_dir() -> Path:
     return Path.home() / ".claude" / "context"
 
 
+# File-inspection tools that make up a dig. Bash counts only when the
+# command itself is search/read-shaped — builds and test runs are not digs.
+_DIG_TOOLS = {"Grep", "Glob", "Read"}
+_DIG_BASH = re.compile(r"\b(rg|grep|find|fd|ag|cat|head|tail|tree|ls)\b")
+
+
+def _is_dig_call(tool_name: str, payload: dict) -> bool:
+    if tool_name in _DIG_TOOLS:
+        return True
+    if tool_name == "Bash":
+        command = (payload.get("tool_input") or {}).get("command", "") or ""
+        return bool(_DIG_BASH.search(command))
+    return False
+
+
 class ContextCounterExtension(HookExtension):
     """Context-log cadence: significant-prompt counting, write detection, flush points."""
 
@@ -54,6 +80,21 @@ class ContextCounterExtension(HookExtension):
             return None
         return max(f.stat().st_mtime for f in files)
 
+    def on_post_tool_use(self, ctx: HookContext) -> str | None:
+        if not _is_dig_call(ctx.tool_name, ctx.payload):
+            return None
+        turn = ctx.core.get("prompt_count", 0)
+        if ctx.state.get("dig_turn") != turn:
+            ctx.state["dig_turn"] = turn
+            ctx.state["dig_count"] = 0
+        ctx.state["dig_count"] = ctx.state.get("dig_count", 0) + 1
+        return None  # counting only; the Stop hook decides whether to speak
+
+    def _dig_count(self, ctx: HookContext) -> int:
+        if ctx.state.get("dig_turn") != ctx.core.get("prompt_count", 0):
+            return 0  # counter belongs to an earlier turn
+        return ctx.state.get("dig_count", 0)
+
     def on_stop(self, ctx: HookContext) -> str | None:
         if ctx.stop_hook_active:
             return None  # this stop already follows our block — let it through
@@ -62,18 +103,30 @@ class ContextCounterExtension(HookExtension):
 
         mtime = self._latest_mtime(ctx.project)
         if mtime is not None and mtime != state.get("last_mtime"):
-            # The log was written since we last looked — reset the cadence.
+            # The log was written since we last looked — reset the cadence
+            # (and trust the dig turn's write to have carried its finding).
             state["last_mtime"] = mtime
             state["written_at"] = significant
             return None
 
+        reasons = []
         overdue = significant - state.get("written_at", 0)
-        if overdue < config()["N_TURNS"]:
-            return None
-        return (f"[context] {overdue} significant exchanges since the context "
+        if overdue >= config()["N_TURNS"]:
+            reasons.append(
+                f"[context] {overdue} significant exchanges since the context "
                 "file was last updated. Before finishing this turn, append the "
                 "decisions/problems/preferences from the conversation since your "
                 "last entry to the session context file per the context protocol.")
+        dig = self._dig_count(ctx)
+        if dig >= config()["DIG_THRESHOLD"]:
+            reasons.append(
+                f"[context] this turn took {dig} file-inspection calls to answer "
+                "— an investigation worth keeping. Before finishing, record the "
+                "finding as a structured trace entry in the session context file: "
+                "a Pattern with kind: trace, the path/flow (file paths and symbols) "
+                "in the description, the question phrasings as aliases, and an "
+                "anchorPath — so memory can short-circuit the next dig.")
+        return "\n\n".join(reasons) if reasons else None
 
     def on_pre_compact(self, ctx: HookContext) -> str | None:
         return ("[context] compaction imminent — write ALL un-captured key points to the "

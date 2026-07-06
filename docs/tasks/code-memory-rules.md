@@ -67,6 +67,33 @@ makes it expensive every time; that cost is exactly what memory exists to amorti
   Until it lands, recall of a trace should be read as "true as of `anchorCommit`".
 - One grep answers it → still out. The lane is cost-gated, not topic-gated.
 
+## Linking learnings to the layout — `manifestsIn`
+
+Intent and structure are separate lanes, but the edge between them is where the graph
+beats prose: a Decision links to the layout/trace Patterns where the choice lives in code,
+via **`Decision manifestsIn Pattern`** (ontology 0.5.0; verb forms "implemented in",
+"lives in", "located at" …). The Pattern's `anchorPath` carries the exact files, so recall
+traverses from a *why* to its *where* — per project:
+
+```
+Decision "Use Pinia stores"
+  ├─ manifestsIn → Pattern "charcoal store layout"   (anchorPath: src/stores/project.ts, appliesTo → Project charcoal)
+  ├─ manifestsIn → Pattern "raspberry store layout"  (anchorPath: src/store/,             appliesTo → Project raspberry)
+  └─ affects → Project charcoal, Project raspberry
+```
+
+"Why Pinia?" grounds the Decision and walks depth 2 to both layouts and their files;
+"where do stores live in raspberry?" grounds the layout Pattern directly and walks *back*
+to the rationale. One decision, N projects, each with its own anchored layout node — and
+when one project restructures, only that Pattern updates (or is superseded); the Decision
+and the other project's layout are untouched. The drift flag ([[code-anchors]]) marks each
+edge-of-truth independently.
+
+Rule for distill: when a decision's implementation has a known location, put the paths in
+an anchored layout/trace Pattern and link `manifestsIn` — do **not** stuff file paths into
+the Decision's properties, where they can't be shared across decisions, anchored, or
+drift-flagged.
+
 ## The structure thread off the Project
 
 Both authored code lanes hang off the Project node (`appliesTo Project`,
@@ -116,6 +143,9 @@ layout itself stays worth knowing.
 
 ## Remaining work
 
+- ~~Dig counter~~ — **done** ([[dig-counter]]): the trace lane no longer depends on the
+  model noticing "that was an expensive dig" — PostToolUse counts file-inspection calls
+  per turn, and a turn past `DIG_THRESHOLD` gets a Stop block asking for the trace entry.
 - [[code-anchors]] — the drift flag that keeps this lane honest (`(code changed since)`
   on recall when the anchored path has commits past `anchorCommit`).
 - After a few sessions, check volume: if orientation Patterns exceed ~a dozen per project,

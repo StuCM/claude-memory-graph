@@ -22,6 +22,7 @@ sharing/federation is explicitly **future** work.
 |---|---|---|---|
 | [[prompt-count-context-trigger]] — deterministic context-write trigger | S | shares hook with [[prompt-gated-recall]] | **done** (escalated: overdue log now blocks `Stop` instead of injecting a nudge) |
 | [[flush-hooks]] — PreCompact/SessionEnd flush + distill suggestion | S | [[prompt-count-context-trigger]] | **done** (ContextCounterExtension) |
+| [[dig-counter]] — PostToolUse counts file-inspection calls; dig turns get a Stop block asking for the trace entry | S | [[code-memory-rules]] | **done** (ContextCounterExtension) |
 | [[transcript-telemetry]] — context size/token usage in core state; pressure-aware flush | S | [[flush-hooks]] | planned |
 | [[observation-capture]] — mechanical tool-observation lane via PostToolUse (claude-mem learning) | M | — | planned |
 | [[private-tags]] — <private> exclusion across capture, distill, and gate (claude-mem learning) | S | — | planned |

@@ -42,6 +42,7 @@ _DEFAULTS = {
     "PROX_BOOST": 1.5,  # recall: multiplier for current project's node + 1-hop neighbours
     "PHRASE_GAP": 2,    # recall: max original-token distance for a bigram (2 = one word between)
     "N_TURNS": 3,       # nudge: remind every N significant prompts
+    "DIG_THRESHOLD": 8, # nudge: file-inspection calls in one turn that make it a dig
 }
 _CONFIG_PATH = Path.home() / ".claude" / "memory-graph" / "gate.json"
 _config: dict | None = None

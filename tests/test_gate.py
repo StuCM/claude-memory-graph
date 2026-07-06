@@ -399,6 +399,75 @@ def test_context_write_resets_cadence(context_dir):
     results = nudge_seq(["eta theta", "iota kappa", "lambda mu"], state, core)
     assert results[-1] is not None  # 3 significant past the write -> nudge again
 
+def dig_call(ext, state, core, tool="Grep", command=""):
+    payload = {"tool_name": tool}
+    if command:
+        payload["tool_input"] = {"command": command}
+    return ext.on_post_tool_use(HookContext(
+        event="PostToolUse", payload=payload, core=core, state=state))
+
+def test_dig_turn_blocks_stop_with_trace_ask(context_dir):
+    """A turn that crossed DIG_THRESHOLD file-inspection calls gets a Stop
+    block asking for a trace entry — even when the cadence isn't overdue."""
+    ext = ContextCounterExtension()
+    state = {}
+    core = {"prompt_count": 1, "significant_prompt_count": 1, "project": "proj"}
+    for _ in range(8):
+        assert dig_call(ext, state, core) is None  # counting is silent
+    out = ext.on_stop(stop_ctx(state, core))
+    assert out is not None and "trace" in out
+    assert "significant exchanges" not in out  # cadence quiet at 1 prompt
+
+def test_light_inspection_stays_silent(context_dir):
+    ext = ContextCounterExtension()
+    state = {}
+    core = {"prompt_count": 1, "significant_prompt_count": 1, "project": "proj"}
+    for _ in range(3):
+        dig_call(ext, state, core)
+    assert ext.on_stop(stop_ctx(state, core)) is None
+
+def test_dig_counter_resets_each_turn(context_dir):
+    ext = ContextCounterExtension()
+    state = {}
+    core = {"prompt_count": 1, "significant_prompt_count": 1, "project": "proj"}
+    for _ in range(5):
+        dig_call(ext, state, core)
+    core["prompt_count"] = 2  # new turn: earlier calls don't accumulate
+    for _ in range(5):
+        dig_call(ext, state, core)
+    assert ext.on_stop(stop_ctx(state, core)) is None
+
+def test_bash_counts_only_search_shaped_commands(context_dir):
+    ext = ContextCounterExtension()
+    state = {}
+    core = {"prompt_count": 1, "significant_prompt_count": 1, "project": "proj"}
+    for _ in range(8):
+        dig_call(ext, state, core, tool="Bash", command="uv run pytest -q")
+    assert ext.on_stop(stop_ctx(state, core)) is None  # builds aren't digs
+    for _ in range(8):
+        dig_call(ext, state, core, tool="Bash", command="rg -n 'written_at' src/")
+    assert ext.on_stop(stop_ctx(state, core)) is not None
+
+def test_dig_and_cadence_reasons_combine(context_dir):
+    ext = ContextCounterExtension()
+    state = {}
+    core = {"prompt_count": 5, "significant_prompt_count": 5, "project": "proj"}
+    for _ in range(9):
+        dig_call(ext, state, core)
+    out = ext.on_stop(stop_ctx(state, core))
+    assert out is not None
+    assert "significant exchanges" in out and "trace" in out
+
+def test_context_write_clears_dig_ask_too(context_dir):
+    """An observed write during the dig turn is trusted to carry the finding."""
+    ext = ContextCounterExtension()
+    state = {}
+    core = {"prompt_count": 1, "significant_prompt_count": 1, "project": "proj"}
+    for _ in range(9):
+        dig_call(ext, state, core)
+    (context_dir / "proj__2026-07-06_15-00.md").write_text("---\ndistilled: false\n---\n")
+    assert ext.on_stop(stop_ctx(state, core)) is None
+
 def test_precompact_always_flushes(context_dir):
     out = ContextCounterExtension().on_pre_compact(prompt_ctx("", event="PreCompact"))
     assert out is not None and "NOW" in out

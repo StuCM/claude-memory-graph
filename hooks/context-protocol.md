@@ -46,7 +46,7 @@ Entries come in two shapes:
 ## What to capture
 Decisions and their rationale (the *why*), problems and their fixes, user preferences and corrections, non-obvious discoveries, scope changes — plus two kinds of code knowledge:
 - **Codebase orientation**: how and where things are stored, located, and wired at convention level (state layout, persistence formats, how subsystems connect) — the map a cold session would otherwise re-derive.
-- **Investigation findings**: when answering a where/how question took a real dig (many greps and file reads, not a lookup), record the *answer* as a structured entry — the path/flow with its file paths and symbols in the description, the question phrasings as `aliases`, and an `anchorPath`. What was expensive once will be expensive again; the entry is what lets memory short-circuit the next dig.
+- **Investigation findings**: when answering a where/how question took a real dig (many greps and file reads, not a lookup), record the *answer* as a structured entry — the path/flow with its file paths and symbols in the description, the question phrasings as `aliases`, and an `anchorPath`. What was expensive once will be expensive again; the entry is what lets memory short-circuit the next dig. When the location embodies a decision, link them: `manifestsIn: Pattern/<layout name>` under the Decision's entry, so recall traverses from the why to the exact files.
 
 Do NOT capture routine actions, symbol-level facts a single grep answers (where a function is defined, who calls it), anything obvious from code/git history, or full code snippets (reference file paths instead).
 

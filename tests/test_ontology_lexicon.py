@@ -38,6 +38,15 @@ def test_valid_relations_unchanged(store):
     assert isinstance(relations["worksOn"], str)
 
 
+def test_manifests_in_grounds_decision_to_layout(store):
+    """Decision manifestsIn Pattern: the edge that lets recall traverse from a
+    choice to the anchored layout/trace nodes carrying its exact files."""
+    lex = store.relation_lexicon()
+    assert "implemented in" in lex["manifestsIn"]["verbForms"]
+    assert lex["manifestsIn"]["domain"] == ["Decision"]
+    assert lex["manifestsIn"]["range"] == ["Pattern"]
+
+
 # ----------------------------------------------------------------
 # The extension flow requires verb forms
 # ----------------------------------------------------------------
@@ -100,3 +109,18 @@ def test_pre_upgrade_store_gets_new_ontology_without_losing_llm_relations(tmp_pa
     lex = reopened.relation_lexicon()
     assert "works on" in lex["worksOn"]["verbForms"]  # base upgraded
     assert "mentors" in reopened.valid_relations()    # LLM addition survived
+
+
+def test_pre_manifestsin_store_upgraded_on_open(tmp_path):
+    """A store persisted on ontology 0.4 (no manifestsIn) must receive it on
+    next open — the loader keys on the newest base feature."""
+    store = MemoryStore.open_or_create(tmp_path)
+    schema = ox.NamedNode(GRAPH_SCHEMA)
+    mi = mem_node("manifestsIn")
+    for quad in list(store._store.quads_for_pattern(mi, None, None, schema)):
+        store._store.remove(quad)
+    assert "manifestsIn" not in store.valid_relations()
+    store.save()
+
+    reopened = MemoryStore.open_or_create(tmp_path)
+    assert "manifestsIn" in reopened.valid_relations()
