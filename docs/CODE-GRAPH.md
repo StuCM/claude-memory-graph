@@ -9,10 +9,14 @@ rebuildable structures outside it.
 "Can memory map and understand a codebase?" splits on the rubric's *not derivable* test:
 
 - **Structure** (where is `save()` defined, who calls it, imports) is derivable — the code is
-  the authoritative store and grep/LSP answer from it, always fresh. Structure must **never**
-  be written into the memory graph: it goes stale every commit, its volume (thousands of
-  symbols) would destroy the analyzer's term-distinctiveness, and an LLM is the wrong author
-  for it.
+  the authoritative store and grep/LSP answer from it, always fresh. Bulk structure must
+  **never** be authored into the memory graph: it goes stale every commit, its volume
+  (thousands of symbols) would destroy the analyzer's term-distinctiveness, and an LLM is the
+  wrong author for it. Note the objection is to *mechanical enumeration*, not to structural
+  content: the one authored exception is cost-gated — the **finding** of a genuine
+  investigation (a path trace that took many greps to establish) earns a Pattern
+  (`kind: trace`, anchors mandatory, the question as aliases) under
+  [tasks/code-memory-rules](tasks/code-memory-rules.md).
 - **The semantic overlay** — *why* the code is the way it is — is not derivable and is exactly
   what the graph already holds: Decisions with rationale ("full dump + atomic rename because
   MCP stdio servers die ungracefully"), Patterns/gotchas ("FILTER on a VALUES var must be
