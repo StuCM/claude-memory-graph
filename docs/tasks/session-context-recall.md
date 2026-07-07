@@ -13,6 +13,15 @@ context entries themselves: index the session log in state, score entries agains
 prompt, and inject only the relevant ones. Context stays small; recovery of a relevant
 earlier point costs a few lines, not a re-read or a re-derivation.
 
+**Priority order within retrieval (decision 2026-07-07): the log is the PRIMARY
+per-prompt source; the graph is the second layer.** The log holds the current working
+context (this session and its recent siblings); the graph holds the durable, vetted
+knowledge behind it. Per prompt, the target shape is *rebuilt context*: relevant log
+entries first, graph neighbourhood second, nothing else — never fill the window, just
+the relevant slice. This task is also the **gate for context removal**
+([CONTEXT-WINDOW.md](../CONTEXT-WINDOW.md)): clearing raw context is deferred until this
+retrieval path has proven itself on live sessions (coverage numbers + miss rate).
+
 ## What this actually buys (and what it can't)
 
 **Deliberate limit first: hooks add context; they cannot remove it.** The harness owns

@@ -1,9 +1,30 @@
 # Context-window management — removing, not just adding
 
-Status: **exploration, researched against platform docs 2026-07** (sources at the end).
-Companion to [tasks/session-context-recall](tasks/session-context-recall.md): that task pages
-relevant context *in*; this explores taking stale context *out*. Together they are a managed
-window: small live context, everything else recallable.
+Status: **exploration, researched against platform docs 2026-07 — deliberately deferred
+(decision 2026-07-07)** (sources at the end). Companion to
+[tasks/session-context-recall](tasks/session-context-recall.md): that task pages relevant
+context *in*; this explores taking stale context *out*. Together they are a managed window:
+small live context, everything else recallable.
+
+## Sequencing decision (2026-07-07): retrieval first, removal later
+
+Removal's success rests entirely on the retrieval stack — clear a tool result and the only
+thing standing between the session and a re-derivation dig is whether recall brings the
+distilled form back at the right prompt. So nothing here gets built until retrieval has
+earned trust on live sessions:
+
+1. **[tasks/session-context-recall](tasks/session-context-recall.md)** running live —
+   context files as the **primary** per-prompt source, the graph as the second layer.
+2. **[tasks/grounding-coverage-experiment](tasks/grounding-coverage-experiment.md)** numbers
+   over real transcripts, and a **miss rate** (from `claude-memory-graph misses`) low enough
+   that silence usually means "genuinely nothing relevant", not "scorer missed it".
+
+The end state this is aiming at: context is **rebuilt per prompt** — log entries first,
+graph neighbourhood second, only what the prompt grounds to. The window is never *filled*;
+it carries the relevant slice and pointers to the rest. Token usage stays low because
+injection is scored and budgeted, and removal (this doc) merely stops the raw bulk from
+accumulating behind that slice. Until the retrieval half demonstrably works, removal would
+be deleting the safety net's contents before the net is proven to catch.
 
 ## The constraint that shapes everything
 
