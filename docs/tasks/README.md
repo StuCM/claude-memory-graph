@@ -47,6 +47,7 @@ sharing/federation is explicitly **future** work.
 
 | Task | Doc |
 |---|---|
+| Context-window manager — steer compaction, then a proxy shim enabling API context editing (clear raw tool results; memory keeps the distilled) | [CONTEXT-WINDOW.md](../CONTEXT-WINDOW.md) |
 | Share bundles → hosted store → federation gatekeeper | [SHARING.md](../SHARING.md), [FEDERATION.md](../FEDERATION.md) |
 | Derived code graph + planner joins | [CODE-GRAPH.md](../CODE-GRAPH.md) |
 | Local embeddings behind the matcher | RETRIEVAL.md phase 3 — only if [[grounding-coverage-experiment]] shows misses |

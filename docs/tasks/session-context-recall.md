@@ -97,4 +97,5 @@ a distilled/archived file simply leaves the corpus.
 - **Small-window mode?** True managed-context operation (model runs lean, harness pages
   context in) is an Agent SDK build, not a hook: the harness would own compaction and
   this index would be its paging table. This task keeps that door open — same index,
-  different consumer.
+  different consumer. The removal side is now explored in
+  [CONTEXT-WINDOW.md](../CONTEXT-WINDOW.md).
