@@ -88,20 +88,33 @@ def test_unknown_relation_error_mentions_verb_forms(store):
 # Ontology upgrade path for existing stores
 # ----------------------------------------------------------------
 
+def _downgrade_schema_version(store, version):
+    """Simulate a store persisted under an older base.ttl: replace the
+    owl:versionInfo marker the loader keys on."""
+    from claude_memory_graph.store import _ONTOLOGY_IRI, _OWL_VERSION_INFO
+    schema = ox.NamedNode(GRAPH_SCHEMA)
+    for quad in list(store._store.quads_for_pattern(
+            _ONTOLOGY_IRI, _OWL_VERSION_INFO, None, schema)):
+        store._store.remove(quad)
+    store._store.add(ox.Quad(_ONTOLOGY_IRI, _OWL_VERSION_INFO,
+                             ox.Literal(version), schema))
+
+
 def test_pre_upgrade_store_gets_new_ontology_without_losing_llm_relations(tmp_path):
     """A store persisted before verbForms existed must receive the updated
     base.ttl on next open — and keep its LLM-added relations."""
     store = MemoryStore.open_or_create(tmp_path)
     store.add_relation("mentors", "Person mentors another Person", ["mentors"])
 
-    # simulate a pre-upgrade store: strip every verbForms triple, including
-    # the marker definition the loader keys on
+    # simulate a pre-verbForms store: strip every verbForms triple and
+    # downgrade the version marker
     schema = ox.NamedNode(GRAPH_SCHEMA)
     vf = mem_node("verbForms")
     for quad in list(store._store.quads_for_pattern(None, vf, None, schema)):
         store._store.remove(quad)
     for quad in list(store._store.quads_for_pattern(vf, None, None, schema)):
         store._store.remove(quad)
+    _downgrade_schema_version(store, "0.3.0")
     assert store.relation_lexicon()["worksOn"]["verbForms"] == []
     store.save()
 
@@ -113,14 +126,27 @@ def test_pre_upgrade_store_gets_new_ontology_without_losing_llm_relations(tmp_pa
 
 def test_pre_manifestsin_store_upgraded_on_open(tmp_path):
     """A store persisted on ontology 0.4 (no manifestsIn) must receive it on
-    next open — the loader keys on the newest base feature."""
+    next open — the loader keys on the base.ttl version."""
     store = MemoryStore.open_or_create(tmp_path)
     schema = ox.NamedNode(GRAPH_SCHEMA)
     mi = mem_node("manifestsIn")
     for quad in list(store._store.quads_for_pattern(mi, None, None, schema)):
         store._store.remove(quad)
+    _downgrade_schema_version(store, "0.4.0")
     assert "manifestsIn" not in store.valid_relations()
     store.save()
 
     reopened = MemoryStore.open_or_create(tmp_path)
     assert "manifestsIn" in reopened.valid_relations()
+
+
+def test_same_version_store_not_reloaded(tmp_path):
+    """A store already on the current version keeps its schema untouched —
+    including deliberate local edits (the loader must not thrash)."""
+    store = MemoryStore.open_or_create(tmp_path)
+    schema = ox.NamedNode(GRAPH_SCHEMA)
+    marker = mem_node("localTestMarker")
+    store._store.add(ox.Quad(marker, RDF_TYPE, mem_node("RelationType"), schema))
+    store.save()
+    reopened = MemoryStore.open_or_create(tmp_path)
+    assert "localTestMarker" in reopened.valid_relations()

@@ -98,6 +98,10 @@ records a reversal) and at reflect time (contradictory decisions found).
 
 ## 8. Temporal validity — facts carry two clocks (adopted from Zep/Graphiti)
 
+*Status: implemented (ontology 0.6.0) — closure in `create_link` for `mem:singleValued`
+relations, `worldChange`/`correction`/`remove` modes on `memory_unlink`, open-edge default in
+recall and the gate; [tasks/bitemporal-links](tasks/bitemporal-links.md).*
+
 Bi-temporal modelling (temporal databases, SQL:2011) separates **valid time** (when a fact was
 true in the world) from **transaction time** (when we believed it). Our reified CrossLinks are
 already the structure this needs — an edge is a node that can carry properties — so adoption is

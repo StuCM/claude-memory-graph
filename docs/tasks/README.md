@@ -36,7 +36,7 @@ sharing/federation is explicitly **future** work.
 | [[verb-forms-ontology]] — verbForms + domain/range in base.ttl | S | — | **done** (base.ttl 0.4.0, relation_lexicon(), extension flow requires verb forms) |
 | [[structured-context-entries]] — RDF-ready context entries; distill folds instead of re-deriving; phase-2 mechanical (no-LLM) distiller | M | — | **phase 1 done** (protocol + distill skill); parser planned |
 | [[distill-two-pass-dedup]] — distill searches before writing | S | [[memory-search-tool]] | planned (absorbed into [[structured-context-entries]] phase 2 for the structured lane) |
-| [[bitemporal-links]] — two clocks + contradiction closure | M | — | planned |
+| [[bitemporal-links]] — two clocks + contradiction closure | M | — | **done** (ontology 0.6.0; closure on singleValued relations; unlink closes by default; reads filter to open edges) |
 | [[code-memory-rules]] — lanes of code knowledge; orientation (storage/layout/wiring) + cost-gated investigation findings (traces) earn Patterns | S | drift flag: [[code-anchors]] | **rules drafted** (protocol + docs wired) |
 | [[code-anchors]] — anchor props + drift flag in recall | S | — | planned |
 | [[auto-distill]] — headless SessionEnd distillation, gated by hard rules (claude-mem bet, evaluate) | M | [[distill-two-pass-dedup]] | planned |
