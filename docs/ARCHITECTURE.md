@@ -42,6 +42,8 @@ Lightweight shared nodes (Skill, Concept, Constraint, Preference) identified by 
 
 Relationships are *reified*: each link is a `mem:CrossLink` node in the links graph carrying `linkSource`, `linkTarget`, `linkRelation`, `linkCreatedAt`, plus any free-form metadata. Reification costs a node per edge but lets links carry provenance and metadata, and keeps resource graphs self-contained.
 
+Links are **bi-temporal** (design: [DISTILL-CREATION.md §8](DISTILL-CREATION.md)): `linkValidFrom`/`linkValidUntil` carry the world clock (backdatable via metadata), `linkInvalidatedAt` + `invalidationKind` the belief clock. Relations marked `mem:singleValued` in the schema (employedBy, assignedTo) get **contradiction closure** on write: a new link with a different target bounds the open old edge (`worldChange`) instead of leaving two current facts. `memory_unlink` closes rather than deletes by default (`worldChange` | `correction` | `remove`). Recall and the gate's traversals filter to open edges — "true now" is the read default; history stays queryable via SPARQL.
+
 ### Soft delete
 
 `memory_forget` marks a resource `mem:invalidated true` with a timestamp and reason. Nothing is removed — but `find_resource`, `recall`, and `reflect` all filter invalidated resources out, so forgotten knowledge is invisible while remaining auditable.

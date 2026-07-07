@@ -20,6 +20,16 @@
         ]
       }
     ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uvx --from \"${CLAUDE_PLUGIN_ROOT}\" claude-hooks dispatch Stop"
+          }
+        ]
+      }
+    ],
     "PreCompact": [
       {
         "hooks": [

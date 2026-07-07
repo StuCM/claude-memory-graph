@@ -330,36 +330,101 @@ def context_dir(tmp_path, monkeypatch):
     return d
 
 
+def stop_ctx(state, core, project="proj", active=False):
+    """The HookContext a Stop dispatch would build; active simulates
+    stop_hook_active (this stop already follows a block)."""
+    core.setdefault("project", project)
+    return HookContext(
+        event="Stop",
+        payload={"stop_hook_active": True} if active else {},
+        core=core,
+        state=state,
+    )
+
 def nudge_seq(prompts, state, core, project="proj"):
-    """Feed prompts through the extension the way the dispatcher would:
-    core significant count advances only on significant prompts."""
+    """Simulate the dispatcher's turn loop: each prompt advances the core
+    significant count (only significant prompts do), then the turn ends and
+    the Stop hook runs. Returns the on_stop result per turn."""
     ext = ContextCounterExtension()
     results = []
     for p in prompts:
         if terms(p):
             core["significant_prompt_count"] = core.get("significant_prompt_count", 0) + 1
-        results.append(ext.on_user_prompt_submit(prompt_ctx(p, state, project, core=core)))
+        results.append(ext.on_stop(stop_ctx(state, core, project)))
     return results
 
-def test_nudge_fires_on_third_significant_turn(context_dir):
+def test_nudge_blocks_stop_on_third_significant_turn(context_dir):
     state, core = {}, {}
     results = nudge_seq([
         "design the dc03 harness merge",
         "fix the csv export path bug",
-        "add the print view route",   # 3rd significant -> nudge
-        "thanks",                      # trivial, no count, no nudge
+        "add the print view route",   # 3rd significant -> block this stop
     ], state, core)
     assert results[0] is None and results[1] is None
     assert results[2] is not None
-    assert results[3] is None
 
-def test_nudge_cadence_resets_after_firing(context_dir):
+def test_nudge_repeats_until_write_observed(context_dir):
+    """The cadence is keyed to writes, not to our own nagging: an ignored
+    block doesn't buy N quiet turns — every following Stop blocks too,
+    until a context-file write resets the baseline."""
     state, core = {}, {}
     results = nudge_seq([
         "alpha beta gamma", "delta epsilon", "zeta eta",  # fires on 3rd
-        "theta iota",                                      # 4th: fresh cycle
+        "theta iota",                                      # still unwritten -> fires again
+        "thanks",                                          # trivial turn, still unwritten -> fires
     ], state, core)
-    assert results[2] is not None and results[3] is None
+    assert results[2] is not None and results[3] is not None and results[4] is not None
+    (context_dir / "proj__2026-07-05_10-00.md").write_text("---\ndistilled: false\n---\n")
+    results = nudge_seq(["kappa lambda"], state, core)     # write observed -> quiet
+    assert results == [None]
+    results = nudge_seq(["mu nu", "xi omicron"], state, core)
+    assert results == [None, None]                          # 2 past the write: not yet overdue
+
+def test_nudge_never_chains_blocks(context_dir):
+    """A stop that already follows a block (stop_hook_active) passes through,
+    even in a state where the cadence check alone would fire."""
+    ext = ContextCounterExtension()
+    core = {"significant_prompt_count": 5}
+    assert ext.on_stop(stop_ctx({}, dict(core), active=False)) is not None  # would fire
+    assert ext.on_stop(stop_ctx({}, dict(core), active=True)) is None       # guard wins
+
+def test_block_names_exact_path_and_carries_format(context_dir):
+    """The reason must be self-contained: it fires when the session-start
+    protocol has decayed, so it names the file and the entry format inline."""
+    state, core = {}, {}
+    results = nudge_seq(["alpha beta", "gamma delta", "epsilon zeta"], state, core)
+    out = results[2]
+    assert str(context_dir) in out and "proj__" in out  # exact path
+    assert "[HH:MM]" in out                              # format inline
+    assert "context protocol" not in out                 # no dangling reference
+
+def test_hook_stamps_missing_file_without_crediting_a_write(context_dir):
+    """No context file -> the hook creates it (frontmatter + header) so the
+    artifact exists and the block points somewhere concrete — but the stamp
+    must not count as a model write: the next stop still blocks."""
+    state, core = {}, {}
+    results = nudge_seq(["alpha beta", "gamma delta", "epsilon zeta"], state, core)
+    assert results[2] is not None
+    files = list(context_dir.glob("proj__*.md"))
+    assert len(files) == 1
+    head = files[0].read_text()
+    assert "distilled: false" in head and "## Key Points" in head
+    # stamp isn't a write: the very next stop still blocks
+    assert nudge_seq(["eta theta"], state, core)[0] is not None
+    assert len(list(context_dir.glob("proj__*.md"))) == 1  # and no re-stamp
+    # a real append (mtime moves) is what resets
+    files[0].write_text(head + "- [10:00] Decision: alpha over beta\n")
+    assert nudge_seq(["iota kappa"], state, core)[0] is None
+
+def test_existing_file_is_pointed_at_not_duplicated(context_dir):
+    existing = context_dir / "proj__2026-07-01_09-00.md"
+    existing.write_text("---\ndistilled: false\n---\n")
+    state, core = {}, {}
+    nudge_seq(["alpha beta"], state, core)  # first stop observes the file
+    results = nudge_seq(["gamma delta", "epsilon zeta", "eta theta"], state, core)
+    out = results[-1]
+    assert out is not None and str(existing) in out
+    assert len(list(context_dir.glob("proj__*.md"))) == 1  # no second file
 
 def test_context_write_resets_cadence(context_dir):
     """A model that just updated the log isn't overdue — an observed mtime
@@ -372,9 +437,81 @@ def test_context_write_resets_cadence(context_dir):
     results = nudge_seq(["eta theta", "iota kappa", "lambda mu"], state, core)
     assert results[-1] is not None  # 3 significant past the write -> nudge again
 
-def test_precompact_always_flushes(context_dir):
-    out = ContextCounterExtension().on_pre_compact(prompt_ctx("", event="PreCompact"))
+def dig_call(ext, state, core, tool="Grep", command=""):
+    payload = {"tool_name": tool}
+    if command:
+        payload["tool_input"] = {"command": command}
+    return ext.on_post_tool_use(HookContext(
+        event="PostToolUse", payload=payload, core=core, state=state))
+
+def test_dig_turn_blocks_stop_with_trace_ask(context_dir):
+    """A turn that crossed DIG_THRESHOLD file-inspection calls gets a Stop
+    block asking for a trace entry — even when the cadence isn't overdue."""
+    ext = ContextCounterExtension()
+    state = {}
+    core = {"prompt_count": 1, "significant_prompt_count": 1, "project": "proj"}
+    for _ in range(8):
+        assert dig_call(ext, state, core) is None  # counting is silent
+    out = ext.on_stop(stop_ctx(state, core))
+    assert out is not None and "trace" in out
+    assert "significant exchanges" not in out  # cadence quiet at 1 prompt
+
+def test_light_inspection_stays_silent(context_dir):
+    ext = ContextCounterExtension()
+    state = {}
+    core = {"prompt_count": 1, "significant_prompt_count": 1, "project": "proj"}
+    for _ in range(3):
+        dig_call(ext, state, core)
+    assert ext.on_stop(stop_ctx(state, core)) is None
+
+def test_dig_counter_resets_each_turn(context_dir):
+    ext = ContextCounterExtension()
+    state = {}
+    core = {"prompt_count": 1, "significant_prompt_count": 1, "project": "proj"}
+    for _ in range(5):
+        dig_call(ext, state, core)
+    core["prompt_count"] = 2  # new turn: earlier calls don't accumulate
+    for _ in range(5):
+        dig_call(ext, state, core)
+    assert ext.on_stop(stop_ctx(state, core)) is None
+
+def test_bash_counts_only_search_shaped_commands(context_dir):
+    ext = ContextCounterExtension()
+    state = {}
+    core = {"prompt_count": 1, "significant_prompt_count": 1, "project": "proj"}
+    for _ in range(8):
+        dig_call(ext, state, core, tool="Bash", command="uv run pytest -q")
+    assert ext.on_stop(stop_ctx(state, core)) is None  # builds aren't digs
+    for _ in range(8):
+        dig_call(ext, state, core, tool="Bash", command="rg -n 'written_at' src/")
+    assert ext.on_stop(stop_ctx(state, core)) is not None
+
+def test_dig_and_cadence_reasons_combine(context_dir):
+    ext = ContextCounterExtension()
+    state = {}
+    core = {"prompt_count": 5, "significant_prompt_count": 5, "project": "proj"}
+    for _ in range(9):
+        dig_call(ext, state, core)
+    out = ext.on_stop(stop_ctx(state, core))
+    assert out is not None
+    assert "significant exchanges" in out and "trace" in out
+
+def test_context_write_clears_dig_ask_too(context_dir):
+    """An observed write during the dig turn is trusted to carry the finding."""
+    ext = ContextCounterExtension()
+    state = {}
+    core = {"prompt_count": 1, "significant_prompt_count": 1, "project": "proj"}
+    for _ in range(9):
+        dig_call(ext, state, core)
+    (context_dir / "proj__2026-07-06_15-00.md").write_text("---\ndistilled: false\n---\n")
+    assert ext.on_stop(stop_ctx(state, core)) is None
+
+def test_precompact_always_flushes_and_names_the_file(context_dir):
+    out = ContextCounterExtension().on_pre_compact(
+        prompt_ctx("", event="PreCompact", project="proj"))
     assert out is not None and "NOW" in out
+    assert str(context_dir) in out                       # self-contained path
+    assert list(context_dir.glob("proj__*.md"))          # stamped if missing
 
 def test_session_end_suggests_distill(context_dir):
     for i in range(3):

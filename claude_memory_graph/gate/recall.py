@@ -127,6 +127,8 @@ def _project_neighbourhood(store, project: str) -> set[str]:
         f'SELECT ?other WHERE {{\n'
         f'    GRAPH <{GRAPH_LINKS}> {{\n'
         f'        ?l mem:linkSource ?s ; mem:linkTarget ?t .\n'
+        f'        FILTER NOT EXISTS {{ ?l mem:linkValidUntil ?end }}\n'
+        f'        FILTER NOT EXISTS {{ ?l mem:linkInvalidatedAt ?inv }}\n'
         f'    }}\n'
         f'    FILTER(?s = <{iri.value}> || ?t = <{iri.value}>)\n'
         f'    BIND(IF(?s = <{iri.value}>, ?t, ?s) AS ?other)\n'

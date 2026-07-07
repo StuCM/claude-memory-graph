@@ -24,6 +24,11 @@ _BASE_TTL_PATH = Path(__file__).parent / "base.ttl"
 # Property keys and relation names become IRI local names — keep them sane.
 _LOCAL_NAME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
 
+# The ontology's version marker: subject is the mem: namespace itself.
+_ONTOLOGY_IRI = ox.NamedNode(MEM)
+_OWL_VERSION_INFO = ox.NamedNode("http://www.w3.org/2002/07/owl#versionInfo")
+_TTL_VERSION_RE = re.compile(r'owl:versionInfo\s+"([^"]+)"')
+
 
 @dataclass
 class LinkedResource:
@@ -78,19 +83,29 @@ class MemoryStore:
         tmp.replace(self._data_path)
 
     def _ensure_base_ontology(self) -> None:
-        # Keyed on the NEWEST base-ontology feature (currently the verbForms
-        # definition), not merely "schema graph non-empty": stores persisted
-        # before an ontology upgrade must get the updated base.ttl re-loaded.
-        # Loading is set-semantics, so re-loading over an existing schema
-        # graph is safe and never touches LLM-added relations.
+        # Keyed on owl:versionInfo: a store persisted under an older base.ttl
+        # gets the current one re-loaded on open (bump the version in base.ttl
+        # and every store upgrades — no loader edits per feature). Loading is
+        # set-semantics, so re-loading over an existing schema graph is safe
+        # and never touches LLM-added relations; only the stale version
+        # marker is removed first so the check stays single-valued.
         schema_node = ox.NamedNode(GRAPH_SCHEMA)
-        has_current = any(True for _ in self._store.quads_for_pattern(
-            mem_node("verbForms"), RDF_TYPE, None, schema_node
-        ))
-        if not has_current:
-            log.info("Loading base ontology into schema graph")
-            ttl = _BASE_TTL_PATH.read_bytes()
-            self._store.load(ttl, ox.RdfFormat.TURTLE, to_graph=schema_node)
+        ttl = _BASE_TTL_PATH.read_text(encoding="utf-8")
+        match = _TTL_VERSION_RE.search(ttl)
+        current = match.group(1) if match else ""
+        stored = None
+        for quad in self._store.quads_for_pattern(
+            _ONTOLOGY_IRI, _OWL_VERSION_INFO, None, schema_node
+        ):
+            if isinstance(quad.object, ox.Literal):
+                stored = quad.object.value
+        if stored != current:
+            log.info("Loading base ontology %s into schema graph", current)
+            for quad in list(self._store.quads_for_pattern(
+                _ONTOLOGY_IRI, _OWL_VERSION_INFO, None, schema_node
+            )):
+                self._store.remove(quad)
+            self._store.load(ttl.encode(), ox.RdfFormat.TURTLE, to_graph=schema_node)
             log.info("Base ontology loaded")
 
     # ================================================================
@@ -397,8 +412,55 @@ class MemoryStore:
             self._add(node, mem_node("verbForms"), ox.Literal(form), graph)
 
     # ================================================================
-    # Cross-link operations
+    # Cross-link operations (bi-temporal: two clocks per edge)
     # ================================================================
+
+    def single_valued_relations(self) -> set[str]:
+        """Relations marked mem:singleValued in the schema: one current
+        target per source — the contradiction-closure rule applies."""
+        sparql = (
+            f'SELECT ?r WHERE {{\n'
+            f'    GRAPH <{GRAPH_SCHEMA}> {{ ?r mem:singleValued true }}\n'
+            f'}}'
+        )
+        found = set()
+        for solution in self._query(sparql):
+            r = solution["r"]
+            if isinstance(r, ox.NamedNode) and r.value.startswith(MEM):
+                found.add(r.value[len(MEM):])
+        return found
+
+    def _close_conflicting_links(
+        self, source_iri: ox.NamedNode, target_iri: ox.NamedNode, relation: str
+    ) -> int:
+        """Contradiction closure: bound the valid time of open edges with the
+        same source and single-valued relation but a DIFFERENT target. The old
+        fact was true and stopped being (worldChange) — never deleted."""
+        sparql = (
+            f'SELECT ?link WHERE {{\n'
+            f'    GRAPH <{GRAPH_LINKS}> {{\n'
+            f'        ?link rdf:type mem:CrossLink ;\n'
+            f'              mem:linkSource <{source_iri.value}> ;\n'
+            f'              mem:linkRelation "{relation}" ;\n'
+            f'              mem:linkTarget ?t .\n'
+            f'        FILTER(?t != <{target_iri.value}>)\n'
+            f'        FILTER NOT EXISTS {{ ?link mem:linkValidUntil ?end }}\n'
+            f'        FILTER NOT EXISTS {{ ?link mem:linkInvalidatedAt ?inv }}\n'
+            f'    }}\n'
+            f'}}'
+        )
+        graph = ox.NamedNode(GRAPH_LINKS)
+        now = self._now()
+        closed = 0
+        for solution in self._query(sparql):
+            link = solution["link"]
+            if not isinstance(link, ox.NamedNode):
+                continue
+            self._add(link, mem_node("linkValidUntil"), now, graph)
+            self._add(link, mem_node("linkInvalidatedAt"), now, graph)
+            self._add(link, mem_node("invalidationKind"), ox.Literal("worldChange"), graph)
+            closed += 1
+        return closed
 
     def create_link(
         self,
@@ -406,7 +468,13 @@ class MemoryStore:
         target_iri: ox.NamedNode,
         relation: str,
         metadata: dict[str, str],
-    ) -> ox.NamedNode:
+    ) -> tuple[ox.NamedNode, int]:
+        """Create an edge; returns (link_iri, closed) where closed is how many
+        conflicting open edges the contradiction-closure rule bounded."""
+        closed = 0
+        if relation in self.single_valued_relations():
+            closed = self._close_conflicting_links(source_iri, target_iri, relation)
+
         link_iri = self._new_link_iri()
         graph = ox.NamedNode(GRAPH_LINKS)
 
@@ -415,12 +483,59 @@ class MemoryStore:
         self._add(link_iri, mem_node("linkTarget"), target_iri, graph)
         self._add(link_iri, mem_node("linkRelation"), ox.Literal(relation), graph)
         self._add(link_iri, mem_node("linkCreatedAt"), self._now(), graph)
+        # World clock: defaults to recording time; a caller-supplied
+        # linkValidFrom in metadata backdates it ("since 2019") instead.
+        if "linkValidFrom" not in metadata:
+            self._add(link_iri, mem_node("linkValidFrom"), self._now(), graph)
 
         for key, value in metadata.items():
             self._check_key(key)
             self._add(link_iri, mem_node(key), ox.Literal(value), graph)
 
-        return link_iri
+        return link_iri, closed
+
+    def close_link(
+        self,
+        source_iri: ox.NamedNode,
+        target_iri: ox.NamedNode,
+        relation: str,
+        kind: str = "worldChange",
+    ) -> bool:
+        """Bound an open edge instead of deleting it. worldChange also closes
+        the world clock (was true, stopped being); a correction only revises
+        belief (never was true) so point-in-time queries can exclude it."""
+        if kind not in ("worldChange", "correction"):
+            raise ValueError(
+                f"Unknown invalidation kind '{kind}': use 'worldChange' "
+                "(was true, no longer) or 'correction' (never was true)."
+            )
+        sparql = (
+            f'SELECT ?link WHERE {{\n'
+            f'    GRAPH <{GRAPH_LINKS}> {{\n'
+            f'        ?link rdf:type mem:CrossLink ;\n'
+            f'              mem:linkSource <{source_iri.value}> ;\n'
+            f'              mem:linkTarget <{target_iri.value}> ;\n'
+            f'              mem:linkRelation "{relation}" .\n'
+            f'        FILTER NOT EXISTS {{ ?link mem:linkValidUntil ?end }}\n'
+            f'        FILTER NOT EXISTS {{ ?link mem:linkInvalidatedAt ?inv }}\n'
+            f'    }}\n'
+            f'}} LIMIT 1'
+        )
+        link_iri = None
+        for solution in self._query(sparql):
+            node = solution["link"]
+            if isinstance(node, ox.NamedNode):
+                link_iri = node
+        if link_iri is None:
+            return False
+
+        graph = ox.NamedNode(GRAPH_LINKS)
+        now = self._now()
+        if kind == "worldChange":
+            self._add(link_iri, mem_node("linkValidUntil"), now, graph)
+        self._add(link_iri, mem_node("linkInvalidatedAt"), now, graph)
+        self._add(link_iri, mem_node("invalidationKind"), ox.Literal(kind), graph)
+        return True
 
     def remove_link(
         self,
@@ -461,8 +576,10 @@ class MemoryStore:
     def _neighbours(
         self, iris: list[ox.NamedNode]
     ) -> list[tuple[str, LinkedResource]]:
-        """One query: every link touching `iris`, with the other node's full
-        properties — covers both resource graphs and the concepts graph.
+        """One query: every OPEN link touching `iris`, with the other node's
+        full properties — covers both resource graphs and the concepts graph.
+        Closed/invalidated edges (bi-temporal bounds) are excluded: retrieval
+        defaults to "true now"; point-in-time questions go through SPARQL.
         Returns (touched_iri_value, linked_resource) pairs."""
         values = " ".join(f"<{i.value}>" for i in iris)
         # FILTER/BIND referencing ?me must sit at the top level: inside the
@@ -475,6 +592,8 @@ class MemoryStore:
             f'              mem:linkSource ?s ;\n'
             f'              mem:linkTarget ?t ;\n'
             f'              mem:linkRelation ?rel .\n'
+            f'        FILTER NOT EXISTS {{ ?link mem:linkValidUntil ?closedAt }}\n'
+            f'        FILTER NOT EXISTS {{ ?link mem:linkInvalidatedAt ?invAt }}\n'
             f'    }}\n'
             f'    FILTER(?s = ?me || ?t = ?me)\n'
             f'    BIND(IF(?s = ?me, ?t, ?s) AS ?other)\n'

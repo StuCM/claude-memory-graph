@@ -127,6 +127,28 @@ Today: logs accumulate automatically, `misses` turns them into verdicts, a human
 three at an estimated +2 injections/week") — proposals first, auto-apply within bounds only
 after they've earned trust. That's the `gate-tuner` task when we want it.
 
+## The capture-side knobs (context-counter)
+
+The same `~/.claude/memory-graph/gate.json` file tunes the capture loop's two triggers —
+both enforced via **Stop blocks** ([ORCHESTRATION.md](ORCHESTRATION.md)), both observable in
+session state (`claude-hooks state <session_id>`, extension `context-counter`):
+
+- **`N_TURNS`** (default 3) — significant prompts the context log may fall behind before the
+  Stop hook blocks with "write the context file now". The baseline is the count at the last
+  *observed write* (`written_at` in state), so an ignored block re-fires every stop until the
+  file's mtime moves. Raise it if the block fires during legitimately note-free stretches;
+  remember trivial prompts ("thanks", "ok") never advance the counter.
+- **`DIG_THRESHOLD`** (default 8) — file-inspection calls (Grep/Glob/Read + search-shaped
+  Bash) in one turn that make it a *dig*, triggering the trace-entry ask
+  ([tasks/dig-counter](tasks/dig-counter.md)). State fields `dig_turn`/`dig_count` show the
+  live counter. If it catches routine multi-file edits (false digs), raise it; genuine
+  investigations that stay under it argue for lowering — carefully, since Read-heavy work
+  counts too.
+
+Whether the model *complied* with a block is only observable for the write cadence (mtime);
+trace compliance is not, which is why the dig ask fires once per dig turn and the write
+cadence is the backstop.
+
 ## Commands, in one place
 
 ```sh

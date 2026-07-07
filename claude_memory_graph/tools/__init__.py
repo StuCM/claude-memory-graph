@@ -84,7 +84,9 @@ _TOOLS = [
             "appliesTo, hasSkill, hasConcept, hasConstraint, hasPreference — an unknown "
             "relation errors with the full current list). ALWAYS prefer an existing "
             "relation, even if the fit is loose. Only when none genuinely matches, pass "
-            "new_relation_description to extend the ontology with the new relation."
+            "new_relation_description to extend the ontology with the new relation. "
+            "Single-valued relations (e.g. employedBy, assignedTo) auto-close a conflicting "
+            "earlier link (worldChange) instead of leaving two current facts."
         ),
         inputSchema={
             "type": "object",
@@ -100,7 +102,11 @@ _TOOLS = [
                 "metadata": {
                     "type": "object",
                     "additionalProperties": {"type": "string"},
-                    "description": "Optional metadata on the link (e.g. since, role)",
+                    "description": (
+                        "Optional metadata on the link (e.g. role). Links carry valid time: "
+                        "linkValidFrom defaults to now — pass it here (ISO date) to backdate "
+                        "when the source says 'since 2019'."
+                    ),
                 },
                 "new_relation_description": {
                     "type": "string",
@@ -127,7 +133,14 @@ _TOOLS = [
     ),
     Tool(
         name="memory_unlink",
-        description="Remove a cross-graph relationship between two resources.",
+        description=(
+            "End a cross-graph relationship. Default is CLOSE, not delete: the edge's "
+            "valid time is bounded and it disappears from current recall while staying "
+            "queryable history. Pick the mode by why the link is ending: worldChange "
+            "(was true, stopped being — a job change), correction (never was true — "
+            "mis-captured; excluded from point-in-time queries too), remove (hard "
+            "delete, only for noise/mistaken spam links)."
+        ),
         inputSchema={
             "type": "object",
             "properties": {
@@ -136,6 +149,12 @@ _TOOLS = [
                 "target_model": {"type": "string"},
                 "target_name": {"type": "string"},
                 "relation": {"type": "string"},
+                "mode": {
+                    "type": "string",
+                    "enum": ["worldChange", "correction", "remove"],
+                    "default": "worldChange",
+                    "description": "worldChange: fact ended. correction: fact never held. remove: hard delete.",
+                },
             },
             "required": ["source_model", "source_name", "target_model", "target_name", "relation"],
         },
@@ -306,6 +325,7 @@ def _dispatch(store: MemoryStore, name: str, args: dict) -> str:
             args["target_model"],
             args["target_name"],
             args["relation"],
+            args.get("mode") or "worldChange",
         )
 
     if name == "memory_search":

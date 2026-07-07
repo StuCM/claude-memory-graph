@@ -8,7 +8,7 @@ An [Arches](https://www.archesproject.org/)-inspired RDF knowledge-graph MCP ser
 
 ## Install (Claude Code plugin — recommended)
 
-The repo is its own plugin marketplace. One plugin sets up everything: the MCP server (run via `uvx` from the bundled source — requires [uv](https://docs.astral.sh/uv/)), the conversation context-file protocol (injected each session, dirs auto-created), the `/memory-graph:distill` and `/memory-graph:ingest` skills, and [hook-kit](hook-kit/) — a standalone hook-extension framework (own plugin, also usable without memory-graph) whose installable extensions add session-start memory auto-priming (`memory-recall`) and mechanical context-log nudges (`context-counter`): enable them with `/hook-kit:install` or `claude-hooks enable <name>`.
+The repo is its own plugin marketplace. One plugin sets up everything: the MCP server (run via `uvx` from the bundled source — requires [uv](https://docs.astral.sh/uv/)), the conversation context-file protocol (injected each session, dirs auto-created), the `/memory-graph:distill` and `/memory-graph:ingest` skills, and [hook-kit](hook-kit/) — a standalone hook-extension framework (own plugin, also usable without memory-graph) whose installable extensions add session-start memory auto-priming (`memory-recall`) and mechanical context-log enforcement (`context-counter`: an overdue log **blocks the Stop event** until written; a heavy grep/read turn gets asked for a trace entry — see [docs/ORCHESTRATION.md](docs/ORCHESTRATION.md)): enable them with `/hook-kit:install` or `claude-hooks enable <name>`.
 
 ```sh
 claude plugin marketplace add <git-url-or-local-path>
@@ -28,7 +28,7 @@ This registers just the MCP server — no context protocol or distill skill.
 
 ## The workflow
 
-1. **During every session**, Claude keeps a running context file in `~/.claude/context/` (decisions, problems solved, preferences — a handoff log any LLM can pick up).
+1. **During every session**, Claude keeps a running context file in `~/.claude/context/` (decisions, problems solved, preferences, codebase orientation and dig findings — a handoff log any LLM can pick up; graph-worthy points are written as *structured entries* that distill promotes directly instead of re-deriving).
 2. **`/memory-graph:distill`** batch-extracts the durable knowledge from those files into the graph — with hindsight, deduped, favouring the final understanding over mid-session churn — then archives them to `~/.claude/context/archive/` (never deleted).
 3. **Recall** happens naturally: Claude calls `memory_recall`/`memory_query` when past context is relevant, traversing links between projects, decisions, gotchas, and people.
 
@@ -38,7 +38,7 @@ This registers just the MCP server — no context protocol or distill skill.
 |------|---------|
 | `memory_store_resource` | Create/update a typed resource (Person, Project, Company, Task, Technology, Decision, Pattern). Upserts by model+name; any camelCase properties accepted. |
 | `memory_store_concept` | Create a shared concept node (Skill, Concept, Constraint, Preference). |
-| `memory_link` / `memory_unlink` | Cross-graph relationships. Unknown relations error with the valid list; pass `new_relation_description` to extend the ontology when nothing fits. |
+| `memory_link` / `memory_unlink` | Cross-graph relationships. Unknown relations error with the valid list; pass `new_relation_description` to extend the ontology when nothing fits. Links are bi-temporal: single-valued relations (employedBy, assignedTo) auto-close a conflicting earlier edge (`worldChange`) instead of keeping two current facts, and unlink *closes* by default (`worldChange`/`correction`) — `mode: remove` for hard delete. Recall shows only currently-valid edges; history stays queryable. |
 | `memory_recall` | A resource, its properties, and linked resources — depth 1 or 2 (multi-hop via shared nodes). |
 | `memory_forget` | Soft-delete (invalidated, kept for provenance, hidden from retrieval). |
 | `memory_query` | Raw SPARQL (prefixes `rdf`, `rdfs`, `xsd`, `mem` pre-loaded). |

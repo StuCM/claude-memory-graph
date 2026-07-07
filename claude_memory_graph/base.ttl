@@ -9,7 +9,7 @@
 mem: a owl:Ontology ;
     rdfs:label "Claude Memory Graph Ontology" ;
     rdfs:comment "Arches-inspired hybrid knowledge graph for Claude Code long-term memory. Each resource instance gets its own named graph. Scalar attributes are flat properties; shared concepts are traversable nodes enabling multi-hop recall." ;
-    owl:versionInfo "0.4.0" .
+    owl:versionInfo "0.6.0" .
 
 # ============================================================
 # RESOURCE MODELS (graph types — each instance is a named graph)
@@ -156,6 +156,26 @@ mem:linkRelation a rdf:Property ; rdfs:domain mem:CrossLink ;
     rdfs:comment "Relationship type name." .
 mem:linkCreatedAt a rdf:Property ; rdfs:domain mem:CrossLink ; rdfs:range xsd:dateTime .
 
+# Bi-temporal validity (adopted from Zep/Graphiti — DISTILL-CREATION.md §8).
+# World clock: when the fact was true out there. Belief clock: when we
+# recorded/revised it (linkCreatedAt / linkInvalidatedAt). An edge with no
+# linkValidUntil and no linkInvalidatedAt is OPEN — currently believed true —
+# and retrieval defaults to open edges only.
+mem:linkValidFrom a rdf:Property ; rdfs:domain mem:CrossLink ; rdfs:range xsd:dateTime ;
+    rdfs:comment "World clock: when the fact started being true. Defaults to recording time; backdate when the source says so." .
+mem:linkValidUntil a rdf:Property ; rdfs:domain mem:CrossLink ; rdfs:range xsd:dateTime ;
+    rdfs:comment "World clock: when the fact stopped being true. Set by contradiction closure and worldChange unlinks; never set for corrections (the fact never was true)." .
+mem:linkInvalidatedAt a rdf:Property ; rdfs:domain mem:CrossLink ; rdfs:range xsd:dateTime ;
+    rdfs:comment "Belief clock: when this edge was revised out of current truth." .
+mem:invalidationKind a rdf:Property ; rdfs:domain mem:CrossLink ;
+    rdfs:comment "worldChange (was true, stopped being true) vs correction (never was true — excluded from point-in-time queries)." .
+
+# Marks a relation as effectively single-valued per source: a new link with a
+# different target CLOSES the open old edge (worldChange) instead of leaving
+# both equally current — the contradiction-closure write rule.
+mem:singleValued a rdf:Property ; rdfs:range xsd:boolean ;
+    rdfs:comment "On a RelationType: one current target per source; conflicting links are closed, not duplicated." .
+
 # Relationship types (used as values of mem:linkRelation).
 # mem:RelationType is the marker the store queries for valid relations;
 # LLM-defined relations are added to the schema graph with the same shape.
@@ -192,7 +212,8 @@ mem:employedBy a rdf:Property, mem:RelationType ;
     rdfs:comment "Person employed by Company." ;
     mem:verbForms "employed by", "works at", "work at", "works for", "work for", "working at", "hired by" ;
     mem:domainIncludes mem:Person ;
-    mem:rangeIncludes mem:Company .
+    mem:rangeIncludes mem:Company ;
+    mem:singleValued true .
 
 mem:owns a rdf:Property, mem:RelationType ;
     rdfs:label "owns" ;
@@ -227,7 +248,8 @@ mem:assignedTo a rdf:Property, mem:RelationType ;
     rdfs:comment "Task assigned to Person." ;
     mem:verbForms "assigned to", "assigned", "given to" ;
     mem:domainIncludes mem:Task ;
-    mem:rangeIncludes mem:Person .
+    mem:rangeIncludes mem:Person ;
+    mem:singleValued true .
 
 mem:partOf a rdf:Property, mem:RelationType ;
     rdfs:label "part of" ;
@@ -259,6 +281,13 @@ mem:appliesTo a rdf:Property, mem:RelationType ;
     mem:verbForms "applies to", "apply to", "applied to", "governs", "govern", "holds for" ;
     mem:domainIncludes mem:Pattern, mem:Constraint ;
     mem:rangeIncludes mem:Project .
+
+mem:manifestsIn a rdf:Property, mem:RelationType ;
+    rdfs:label "manifests in" ;
+    rdfs:comment "Decision manifests in a layout/trace Pattern — where the choice lives in code. The Pattern's anchorPath carries the exact files, so recall traverses from a decision to its implementation sites." ;
+    mem:verbForms "manifests in", "manifest in", "implemented in", "implemented by", "lives in", "lives at", "realised in", "realized in", "located in", "located at" ;
+    mem:domainIncludes mem:Decision ;
+    mem:rangeIncludes mem:Pattern .
 
 mem:hasSkill a rdf:Property, mem:RelationType ;
     rdfs:label "has skill" ;

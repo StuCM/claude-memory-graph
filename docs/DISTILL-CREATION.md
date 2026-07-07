@@ -69,9 +69,11 @@ session-local shorthand (property text is a retrieval matching surface).
   planner ([QUERY-PLANNING.md](QUERY-PLANNING.md)) can ground them with zero code changes.
 - **Code anchors** — a memory *about code* carries `anchorPath` (repo-relative),
   `anchorSymbol`, and `anchorCommit`, enabling staleness flagging when the code drifts and,
-  later, joins to the derived code graph ([CODE-GRAPH.md](CODE-GRAPH.md)). Structural facts
-  themselves (where X is defined, who calls Y) stay out of the graph — derivable, so they fail
-  the rubric.
+  later, joins to the derived code graph ([CODE-GRAPH.md](CODE-GRAPH.md)). Symbol-level
+  structural facts (where X is defined, who calls Y) stay out of the graph — derivable by one
+  grep, so they fail the rubric. *Orientation* knowledge — how and where things are stored,
+  located, and wired, at convention level — passes it and is stored as Patterns under the
+  three-lane rules in [tasks/code-memory-rules](tasks/code-memory-rules.md).
 
 ## 5. Dedup (hard guard, soft preference)
 
@@ -95,6 +97,10 @@ the chain — what we decided *and what we used to think*. Applies at distill ti
 records a reversal) and at reflect time (contradictory decisions found).
 
 ## 8. Temporal validity — facts carry two clocks (adopted from Zep/Graphiti)
+
+*Status: implemented (ontology 0.6.0) — closure in `create_link` for `mem:singleValued`
+relations, `worldChange`/`correction`/`remove` modes on `memory_unlink`, open-edge default in
+recall and the gate; [tasks/bitemporal-links](tasks/bitemporal-links.md).*
 
 Bi-temporal modelling (temporal databases, SQL:2011) separates **valid time** (when a fact was
 true in the world) from **transaction time** (when we believed it). Our reified CrossLinks are
@@ -128,7 +134,10 @@ already have the `supersedes` chain.
 ## Two promotion paths, one ruleset
 
 - **[/memory-graph:distill](../skills/distill/SKILL.md)** — from session context files, with
-  hindsight; archives its sources.
+  hindsight; archives its sources. Structured context entries arrive pre-shaped (the
+  protocol now captures graph shape at write time), so distill *folds and stores* rather
+  than re-derives — and the fully mechanical, no-LLM lane is
+  [tasks/structured-context-entries](tasks/structured-context-entries.md) phase 2.
 - **[/memory-graph:ingest](../skills/ingest/SKILL.md)** — from documents we don't own (issue
   repos, ADRs, postmortems); never modifies its sources, tracks state via `sourceDocument`.
 

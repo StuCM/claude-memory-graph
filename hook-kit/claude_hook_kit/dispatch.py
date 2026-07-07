@@ -12,7 +12,10 @@
 Contracts (docs/ORCHESTRATION.md):
 - fail open: extension errors go to stderr; exit code is always 0
 - core state is advanced on every dispatch, whether or not extensions run
-- extension output strings are concatenated to stdout (context injection)
+- extension output strings are concatenated to stdout (context injection);
+  on Stop they become {"decision": "block", "reason": ...} — plain stdout
+  never reaches the model there — and are suppressed when stop_hook_active
+  (a stop hook may block a stop once, never chain blocks)
 """
 
 import argparse
@@ -71,6 +74,22 @@ def run_dispatch(event: str, payload: dict) -> str:
 
     store.save()
     return "\n\n".join(outputs)
+
+
+def format_response(event: str, payload: dict, out: str) -> str:
+    """Adapt concatenated extension output to the event's response channel.
+    SessionStart/UserPromptSubmit inject plain stdout into context; a Stop
+    hook only reaches the model as {"decision": "block", "reason": ...}
+    JSON. When stop_hook_active is set this stop is already the result of a
+    block — emit nothing rather than trap the session in a loop, no matter
+    what the extensions returned."""
+    if not out:
+        return ""
+    if event == "Stop":
+        if payload.get("stop_hook_active"):
+            return ""
+        return json.dumps({"decision": "block", "reason": out})
+    return out
 
 
 def format_log_entry(line: str) -> str:
@@ -138,7 +157,8 @@ def main() -> None:
 
     if args.cmd == "dispatch":
         try:
-            out = run_dispatch(args.event, _read_payload())
+            payload = _read_payload()
+            out = format_response(args.event, payload, run_dispatch(args.event, payload))
             if out:
                 print(out)
         except Exception as exc:

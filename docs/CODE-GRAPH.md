@@ -9,18 +9,28 @@ rebuildable structures outside it.
 "Can memory map and understand a codebase?" splits on the rubric's *not derivable* test:
 
 - **Structure** (where is `save()` defined, who calls it, imports) is derivable — the code is
-  the authoritative store and grep/LSP answer from it, always fresh. Structure must **never**
-  be written into the memory graph: it goes stale every commit, its volume (thousands of
-  symbols) would destroy the analyzer's term-distinctiveness, and an LLM is the wrong author
-  for it.
+  the authoritative store and grep/LSP answer from it, always fresh. Bulk structure must
+  **never** be authored into the memory graph: it goes stale every commit, its volume
+  (thousands of symbols) would destroy the analyzer's term-distinctiveness, and an LLM is the
+  wrong author for it. Note the objection is to *mechanical enumeration*, not to structural
+  content: the one authored exception is cost-gated — the **finding** of a genuine
+  investigation (a path trace that took many greps to establish) earns a Pattern
+  (`kind: trace`, anchors mandatory, the question as aliases) under
+  [tasks/code-memory-rules](tasks/code-memory-rules.md).
 - **The semantic overlay** — *why* the code is the way it is — is not derivable and is exactly
   what the graph already holds: Decisions with rationale ("full dump + atomic rename because
   MCP stdio servers die ungracefully"), Patterns/gotchas ("FILTER on a VALUES var must be
   top-level"), architectural constraints ("all mutations persist via the dispatcher's
   `_MUTATING` hook"). Small (dozens of nodes per project), durable across refactors, and the
   knowledge that leaves when a person does.
+- **Orientation** — the middle band live use surfaced: how and where things are stored,
+  located, and wired ("session state lives under `~/.claude/hook-kit/sessions/`, atomic
+  tmp+rename"). Convention-level, multi-file to re-derive, churns only on deliberate
+  restructuring — so it passes the rubric and belongs in the graph, under the keep test and
+  volume guard in [tasks/code-memory-rules](tasks/code-memory-rules.md).
 
-The scope discipline stays: **memory answers *why*; code tools answer *where*.**
+The scope discipline stays, refined: **memory answers *why* and holds the *map*; code tools
+answer symbol-level *where*.**
 
 ## The structural half, done right: a derived code graph
 

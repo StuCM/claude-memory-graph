@@ -52,10 +52,17 @@ def handle_link(
 
     source = _find_any(store, source_model, source_name)
     target = _find_any(store, target_model, target_name)
-    store.create_link(source, target, relation, metadata)
+    _, closed = store.create_link(source, target, relation, metadata)
+    closure = ""
+    if closed:
+        closure = (
+            f"\n{relation} is single-valued: closed {closed} earlier conflicting "
+            "link(s) (worldChange — bounded, kept for history)."
+        )
     return (
         f"{defined}"
         f"Linked {source_model}:'{source_name}' --{relation}--> {target_model}:'{target_name}'"
+        f"{closure}"
     )
 
 
@@ -66,10 +73,17 @@ def handle_unlink(
     target_model: str,
     target_name: str,
     relation: str,
+    mode: str = "worldChange",
 ) -> str:
     source = _find_any(store, source_model, source_name)
     target = _find_any(store, target_model, target_name)
-    removed = store.remove_link(source, target, relation)
-    if removed:
-        return f"Removed link: {source_model}:'{source_name}' --{relation}--> {target_model}:'{target_name}'"
-    return "No matching link found to remove."
+    edge = f"{source_model}:'{source_name}' --{relation}--> {target_model}:'{target_name}'"
+    if mode == "remove":
+        if store.remove_link(source, target, relation):
+            return f"Removed link (hard delete): {edge}"
+        return "No matching link found to remove."
+    if store.close_link(source, target, relation, kind=mode):
+        meaning = ("no longer true" if mode == "worldChange"
+                   else "never was true — excluded from history queries")
+        return f"Closed link ({mode}: {meaning}; edge kept, bounded): {edge}"
+    return "No open link found to close (already closed, or never existed)."

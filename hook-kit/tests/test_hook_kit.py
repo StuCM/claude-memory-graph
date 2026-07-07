@@ -4,7 +4,7 @@ import json
 import pytest
 
 from claude_hook_kit import HookExtension, StateStore, terms
-from claude_hook_kit.dispatch import run_dispatch, _read_payload
+from claude_hook_kit.dispatch import run_dispatch, format_response, _read_payload
 from claude_hook_kit import registry, state
 
 
@@ -143,6 +143,36 @@ def test_broken_extension_fails_open(kit_home, fake_extensions, capsys):
 def test_unknown_event_is_noop(kit_home, fake_extensions):
     registry.set_enabled(["greeter"])
     assert run_dispatch("NotAnEvent", {"session_id": "s1"}) == ""
+
+
+# ----------------------------------------------------------------
+# Response formatting per event
+# ----------------------------------------------------------------
+
+def test_injection_events_pass_output_through():
+    assert format_response("UserPromptSubmit", {}, "remember X") == "remember X"
+    assert format_response("SessionStart", {}, "protocol") == "protocol"
+
+
+def test_stop_output_becomes_block_json():
+    out = format_response("Stop", {"session_id": "s1"}, "write the log")
+    assert json.loads(out) == {"decision": "block", "reason": "write the log"}
+
+
+def test_stop_never_chains_blocks():
+    """stop_hook_active means this stop already follows a block — whatever
+    extensions returned, the dispatcher must not trap the session in a loop."""
+    assert format_response("Stop", {"stop_hook_active": True}, "write the log") == ""
+
+
+def test_silent_stop_emits_nothing():
+    assert format_response("Stop", {}, "") == ""
+
+
+def test_stop_hook_active_exposed_on_context():
+    from claude_hook_kit import HookContext
+    assert HookContext("Stop", {"stop_hook_active": True}, {}, {}).stop_hook_active
+    assert not HookContext("Stop", {}, {}, {}).stop_hook_active
 
 
 # ----------------------------------------------------------------

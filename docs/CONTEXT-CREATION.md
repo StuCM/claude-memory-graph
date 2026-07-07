@@ -19,8 +19,11 @@ because they optimise for opposite things:
 
 The context file is a **write-ahead log**: cheap, narrative, tolerant of mid-session wrongness —
 because distillation reads it *with hindsight* and promotes only what survived. Rules that
-belong to graph quality (naming, aliases, dedup, required properties) do **not** apply here;
-applying them mid-session is friction exactly when capture should be frictionless.
+belong to graph *judgment* (dedup checks, promotion decisions, naming deliberation) do **not**
+apply here; applying them mid-session is friction exactly when capture should be frictionless.
+Graph *structure* is different: writing a graph-worthy point in graph shape is transcription
+the in-session model does nearly for free — see the structured-entry format below and
+[tasks/structured-context-entries](tasks/structured-context-entries.md).
 
 ## The rules for context notes
 
@@ -30,7 +33,11 @@ applying them mid-session is friction exactly when capture should be frictionles
   scope changed.
 - **What a note looks like:** one timestamped bullet, categorised
   (`Decision:` / `Problem:` / `User preference:` / `Discovery:` / `Scope:`), with the *why*
-  attached. Reference file paths instead of pasting code.
+  attached. Reference file paths instead of pasting code. Graph-worthy points additionally
+  carry indented `key: value` lines mirroring the graph shape (properties, `relation:
+  Model/name` links, `concepts:`) — structure is transcription, not judgment, and it is
+  nearly free at write time while re-deriving it at distill time costs a whole LLM pass
+  (see [tasks/structured-context-entries](tasks/structured-context-entries.md)).
 - **What not to write:** routine actions, anything reconstructible from code/git, full snippets.
 - **Wrongness is allowed:** record the current belief; if it reverses later, record the
   reversal too. Distill keeps the final understanding; the churn is the log doing its job.
@@ -46,7 +53,12 @@ that dies uncaptured loses exactly the knowledge the whole system exists for.
 
 The fix is the same one retrieval got: move the trigger out of the model. The orchestration
 layer ([ORCHESTRATION.md](ORCHESTRATION.md)) counts prompts and checks the context file's
-mtime; when activity has outrun the log, it injects a *mechanical* nudge — present-tense, at the
-actionable moment — rather than hoping session-start prose is still salient. Session-end and
-pre-compaction hooks are the backstop: flush before the context that would have written the log
-disappears.
+mtime; when activity has outrun the log, it **blocks the Stop event** with a mechanical
+"write the context file now" — the model must act on it before the turn may finish. (The first
+version injected the nudge alongside the user's prompt; live sessions showed it losing the
+priority contest with the actual ask. A Stop block arrives when there is nothing else to do
+and cannot be skipped; the cadence is keyed to observed writes, so an ignored block simply
+fires again at the next stop; `stop_hook_active` ensures a block never chains into a loop
+within a turn.)
+Session-end and pre-compaction hooks are the backstop: flush before the context that would
+have written the log disappears.

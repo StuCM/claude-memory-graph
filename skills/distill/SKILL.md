@@ -13,14 +13,19 @@ Review context files in `~/.claude/context/` and extract what matters into the m
 Read all `.md` files in `~/.claude/context/` with `distilled: false` in frontmatter. If none, tell the user there's nothing to distill and stop.
 
 ### 2. Analyse
-Across the undistilled files, extract: decisions WITH rationale, hard-won gotchas, user preferences and corrections, constraints, and the people/projects/technologies involved. Favour the most recent understanding when a topic evolved during a session. Do NOT save routine task details, one-off trivia, or anything derivable from code/git history. Quality over quantity.
+Context entries come in two shapes, and they cost you very differently — do not re-derive what is already structured:
+
+- **Structured entries** (a bullet with indented `key: value` lines) are pre-shaped graph nodes: the head line is `Type: name`, property lines map straight to `memory_store_resource` properties, `relation: Model/name` lines to `memory_link` calls, `concepts:` to concept links. Your job here is *folding and hindsight only*: merge repeated `Type: name` bullets (latest values win), honour `supersedes:` lines, and drop entries the session itself later invalidated. Do NOT re-summarise or rename them.
+- **Narrative entries** (single bullet lines) need the full extraction: decisions WITH rationale, hard-won gotchas, user preferences and corrections, constraints, and the people/projects/technologies involved. Favour the most recent understanding when a topic evolved during a session.
+
+Either way: do NOT save routine task details, one-off trivia, or anything derivable from code/git history. Quality over quantity.
 
 ### 3. Store
-Use the memory-graph MCP tools:
+Work **per entry**: store the node, then immediately its concepts and links, before moving to the next entry — not resources, concepts, and links as three separate graph-wide phases. Use the memory-graph MCP tools:
 
 - `memory_store_resource` — models: Person, Project, Company, Task, Technology, Decision, Pattern. Every resource needs `name` — a short, specific, stable title (Decision: imperative phrase stating the choice, e.g. "Use pyoxigraph over rdflib"); other camelCase properties are free-form. Decisions require `rationale` (plus `outcome`, `date`); Patterns require `description` (plus `example`) — the server rejects creation without them. Add `sourceContext: <context filename>` so nodes are traceable to their session. Upserts by model+name — no need to check existence first, but only set properties you have real content for. If the server reports a similar existing node, prefer updating that node by its exact name; pass `force: true` only when it is genuinely a distinct thing.
 - `memory_store_concept` — shared nodes: Skill, Concept, Constraint, Preference (needs `label`, lowercase singular).
-- `memory_link` — connect everything. Prefer the existing relations (an unknown relation errors with the full current list); only when nothing genuinely fits, pass `new_relation_description` plus `new_relation_verb_forms` (the phrasings a future question would use — required; they make the relation groundable by retrieval). Typical shape: Person worksOn Project; Project uses Technology; Decision affects Project; Pattern appliesTo Project; Project hasConstraint Constraint; Person hasPreference Preference.
+- `memory_link` — connect everything. Prefer the existing relations (an unknown relation errors with the full current list); only when nothing genuinely fits, pass `new_relation_description` plus `new_relation_verb_forms` (the phrasings a future question would use — required; they make the relation groundable by retrieval). Typical shape: Person worksOn Project; Project uses Technology; Decision affects Project; Pattern appliesTo Project; Decision manifestsIn Pattern (the anchored layout/trace where the choice lives in code — put file paths in that Pattern's `anchorPath`, not in the Decision's properties); Project hasConstraint Constraint; Person hasPreference Preference.
 
 Write for retrieval — future recall is lexical and link-walking, so the associations must be in the data:
 - **`aliases` property on every substantial node**: the 2–3 phrasings a future prompt would plausibly use (Pattern "RocksDB exclusive lock" → `aliases: "db locking, database lock"`). This is what lets a dumb matcher bridge paraphrase.
