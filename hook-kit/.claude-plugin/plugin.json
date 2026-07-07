@@ -1,7 +1,7 @@
 {
   "name": "hook-kit",
   "description": "Extension framework for Claude Code hooks: session state, prompt counting, and installable hook extensions",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "Stuart Marshall"
   },
