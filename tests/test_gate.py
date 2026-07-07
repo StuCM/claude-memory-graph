@@ -388,6 +388,44 @@ def test_nudge_never_chains_blocks(context_dir):
     assert ext.on_stop(stop_ctx({}, dict(core), active=False)) is not None  # would fire
     assert ext.on_stop(stop_ctx({}, dict(core), active=True)) is None       # guard wins
 
+def test_block_names_exact_path_and_carries_format(context_dir):
+    """The reason must be self-contained: it fires when the session-start
+    protocol has decayed, so it names the file and the entry format inline."""
+    state, core = {}, {}
+    results = nudge_seq(["alpha beta", "gamma delta", "epsilon zeta"], state, core)
+    out = results[2]
+    assert str(context_dir) in out and "proj__" in out  # exact path
+    assert "[HH:MM]" in out                              # format inline
+    assert "context protocol" not in out                 # no dangling reference
+
+def test_hook_stamps_missing_file_without_crediting_a_write(context_dir):
+    """No context file -> the hook creates it (frontmatter + header) so the
+    artifact exists and the block points somewhere concrete — but the stamp
+    must not count as a model write: the next stop still blocks."""
+    state, core = {}, {}
+    results = nudge_seq(["alpha beta", "gamma delta", "epsilon zeta"], state, core)
+    assert results[2] is not None
+    files = list(context_dir.glob("proj__*.md"))
+    assert len(files) == 1
+    head = files[0].read_text()
+    assert "distilled: false" in head and "## Key Points" in head
+    # stamp isn't a write: the very next stop still blocks
+    assert nudge_seq(["eta theta"], state, core)[0] is not None
+    assert len(list(context_dir.glob("proj__*.md"))) == 1  # and no re-stamp
+    # a real append (mtime moves) is what resets
+    files[0].write_text(head + "- [10:00] Decision: alpha over beta\n")
+    assert nudge_seq(["iota kappa"], state, core)[0] is None
+
+def test_existing_file_is_pointed_at_not_duplicated(context_dir):
+    existing = context_dir / "proj__2026-07-01_09-00.md"
+    existing.write_text("---\ndistilled: false\n---\n")
+    state, core = {}, {}
+    nudge_seq(["alpha beta"], state, core)  # first stop observes the file
+    results = nudge_seq(["gamma delta", "epsilon zeta", "eta theta"], state, core)
+    out = results[-1]
+    assert out is not None and str(existing) in out
+    assert len(list(context_dir.glob("proj__*.md"))) == 1  # no second file
+
 def test_context_write_resets_cadence(context_dir):
     """A model that just updated the log isn't overdue — an observed mtime
     change resets the counter baseline."""
@@ -468,9 +506,12 @@ def test_context_write_clears_dig_ask_too(context_dir):
     (context_dir / "proj__2026-07-06_15-00.md").write_text("---\ndistilled: false\n---\n")
     assert ext.on_stop(stop_ctx(state, core)) is None
 
-def test_precompact_always_flushes(context_dir):
-    out = ContextCounterExtension().on_pre_compact(prompt_ctx("", event="PreCompact"))
+def test_precompact_always_flushes_and_names_the_file(context_dir):
+    out = ContextCounterExtension().on_pre_compact(
+        prompt_ctx("", event="PreCompact", project="proj"))
     assert out is not None and "NOW" in out
+    assert str(context_dir) in out                       # self-contained path
+    assert list(context_dir.glob("proj__*.md"))          # stamped if missing
 
 def test_session_end_suggests_distill(context_dir):
     for i in range(3):

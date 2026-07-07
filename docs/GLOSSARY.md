@@ -113,7 +113,9 @@ Start here; [SYSTEM.md](SYSTEM.md) shows how the pieces connect.
   write the log before the turn may finish. Replaced prompt-time nudge injection, which the
   model deprioritised against the user's actual ask. Cadence keys to observed writes (mtime):
   an ignored block fires again every stop until the log moves; `stop_hook_active` bounds it to
-  one block per stop.
+  one block per stop. The reason is **self-contained** (exact path + entry format inline — the
+  session-start protocol has usually decayed by Stop time), and when no context file exists the
+  hook **stamps** one first, so the artifact exists whether or not the model complies.
 - **Dig counter** — PostToolUse counting of file-inspection calls (Grep/Glob/Read +
   search-shaped Bash) per turn. A turn past `DIG_THRESHOLD` was an investigation; its Stop
   block asks for a **trace** entry. One ask per dig turn — trace compliance isn't observable

@@ -13,6 +13,15 @@ the trigger itself now fires on `Stop`.
 > observed writes (mtime), not to the block itself — an ignored block fires again at
 > every following stop until the log is written. `stop_hook_active` guards against
 > chained blocks within a turn.
+>
+> **Second escalation (2026-07-07).** Live sessions showed blocks the model couldn't
+> act on: the reason said "per the context protocol", but by the time Stop fires the
+> session-start protocol has decayed or been compacted away — the block had no
+> context. The reason is now self-contained (exact file path + entry format inline),
+> and the fallback below is implemented: when no context file exists, the hook stamps
+> it (frontmatter + Key Points header) before blocking, recording the stamp's mtime so
+> it never counts as a model write. The artifact exists for handoff even on a
+> non-compliant session.
 > (`ContextCounterExtension.on_stop` in gate/nudge.py; `format_response` in
 > hook-kit's dispatcher.)
 

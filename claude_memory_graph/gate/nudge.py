@@ -20,6 +20,18 @@ A block that gets ignored doesn't buy the model N more quiet turns — the
 next turn's Stop blocks too, until a write is observed. stop_hook_active
 bounds it within a turn (one block per stop, never chained).
 
+Two lessons from live sessions are baked into the block itself:
+- **Self-contained reasons.** The block fires deep into sessions where
+  the session-start protocol has decayed or been compacted away — so the
+  reason names the exact file path and carries the entry format inline,
+  never "per the context protocol".
+- **The hook stamps the file.** When no context file exists for the
+  project, the hook creates it (frontmatter + Key Points header) before
+  blocking: the artifact exists for other sessions to see even if the
+  model never complies, and the block points at a concrete path. The
+  stamp's own mtime is recorded so it is not mistaken for a model write —
+  the cadence stays overdue until the model actually appends.
+
 The dig detector rides the same Stop block: PostToolUse counts
 file-inspection calls (Grep/Glob/Read, plus search-shaped Bash) per turn,
 and a turn that crossed DIG_THRESHOLD was an investigation — knowledge a
@@ -39,6 +51,7 @@ N_TURNS and DIG_THRESHOLD come from runtime.config()
 
 import os
 import re
+from datetime import datetime
 from pathlib import Path
 
 from claude_hook_kit import HookContext, HookExtension
@@ -74,11 +87,42 @@ class ContextCounterExtension(HookExtension):
     name = "context-counter"
     enabled_by_default = True
 
-    def _latest_mtime(self, project: str) -> float | None:
+    def _latest_file(self, project: str) -> Path | None:
         files = list(_context_dir().glob(f"{project}__*.md"))
         if not files:
             return None
-        return max(f.stat().st_mtime for f in files)
+        return max(files, key=lambda f: f.stat().st_mtime)
+
+    def _stamp_file(self, ctx: HookContext) -> Path:
+        """Create the session's context file mechanically — the escalation the
+        original task predicted: if the model isn't writing the log, at least
+        the artifact exists, sessions can see it, and the block can point at a
+        concrete path. Records the stamped mtime so our own write is not read
+        as a model write (written_at stays put; the cadence stays overdue)."""
+        directory = _context_dir()
+        directory.mkdir(parents=True, exist_ok=True)
+        now = datetime.now()
+        path = directory / f"{ctx.project}__{now.strftime('%Y-%m-%d_%H-%M')}.md"
+        if not path.exists():
+            path.write_text(
+                f"---\ncreated: {now.strftime('%Y-%m-%dT%H:%M')}\n"
+                f"distilled: false\nsummary: \"\"\n---\n\n## Key Points\n\n",
+                encoding="utf-8",
+            )
+        ctx.state["last_mtime"] = path.stat().st_mtime
+        return path
+
+    # The block must be SELF-CONTAINED: it fires deep into sessions where the
+    # session-start protocol has decayed or been compacted away, so it names
+    # the exact file and carries the entry format inline — never "per the
+    # context protocol".
+    _FORMAT_HINT = (
+        "One '- [HH:MM] Type: point' bullet per key point (Decision / Problem / "
+        "User preference / Discovery / Scope); attach the why. Graph-worthy points "
+        "add indented 'key: value' lines (rationale/description, links as "
+        "'relation: Model/name', concepts:, aliases:). Skip routine actions and "
+        "anything derivable from code or git."
+    )
 
     def on_post_tool_use(self, ctx: HookContext) -> str | None:
         if not _is_dig_call(ctx.tool_name, ctx.payload):
@@ -101,36 +145,45 @@ class ContextCounterExtension(HookExtension):
         state = ctx.state
         significant = ctx.core.get("significant_prompt_count", 0)
 
-        mtime = self._latest_mtime(ctx.project)
-        if mtime is not None and mtime != state.get("last_mtime"):
-            # The log was written since we last looked — reset the cadence
-            # (and trust the dig turn's write to have carried its finding).
-            state["last_mtime"] = mtime
-            state["written_at"] = significant
+        latest = self._latest_file(ctx.project)
+        if latest is not None:
+            mtime = latest.stat().st_mtime
+            if mtime != state.get("last_mtime"):
+                # The log was written since we last looked — reset the cadence
+                # (and trust the dig turn's write to have carried its finding).
+                state["last_mtime"] = mtime
+                state["written_at"] = significant
+                return None
+
+        overdue = significant - state.get("written_at", 0)
+        dig = self._dig_count(ctx)
+        cadence_due = overdue >= config()["N_TURNS"]
+        dig_due = dig >= config()["DIG_THRESHOLD"]
+        if not (cadence_due or dig_due):
             return None
 
+        path = latest if latest is not None else self._stamp_file(ctx)
         reasons = []
-        overdue = significant - state.get("written_at", 0)
-        if overdue >= config()["N_TURNS"]:
+        if cadence_due:
             reasons.append(
-                f"[context] {overdue} significant exchanges since the context "
-                "file was last updated. Before finishing this turn, append the "
-                "decisions/problems/preferences from the conversation since your "
-                "last entry to the session context file per the context protocol.")
-        dig = self._dig_count(ctx)
-        if dig >= config()["DIG_THRESHOLD"]:
+                f"[context] {overdue} significant exchanges are uncaptured. Before "
+                f"finishing this turn, append the key points from the conversation "
+                f"since your last entry to {path}. {self._FORMAT_HINT}")
+        if dig_due:
             reasons.append(
                 f"[context] this turn took {dig} file-inspection calls to answer "
-                "— an investigation worth keeping. Before finishing, record the "
-                "finding as a structured trace entry in the session context file: "
-                "a Pattern with kind: trace, the path/flow (file paths and symbols) "
-                "in the description, the question phrasings as aliases, and an "
-                "anchorPath — so memory can short-circuit the next dig.")
-        return "\n\n".join(reasons) if reasons else None
+                f"— an investigation worth keeping. Before finishing, record the "
+                f"finding in {path} as a structured trace entry: a Pattern bullet "
+                "with kind: trace, the path/flow (file paths and symbols) in the "
+                "description, the question phrasings as aliases, and an anchorPath "
+                "— so memory can short-circuit the next dig.")
+        return "\n\n".join(reasons)
 
     def on_pre_compact(self, ctx: HookContext) -> str | None:
-        return ("[context] compaction imminent — write ALL un-captured key points to the "
-                "context file NOW, before this conversation's detail is summarised away.")
+        path = self._latest_file(ctx.project) or self._stamp_file(ctx)
+        return (f"[context] compaction imminent — write ALL un-captured key points to "
+                f"{path} NOW, before this conversation's detail is summarised away. "
+                f"{self._FORMAT_HINT}")
 
     def on_session_end(self, ctx: HookContext) -> str | None:
         undistilled = 0
