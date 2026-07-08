@@ -1,6 +1,6 @@
 # Task: transcript telemetry — context size & token usage in core state
 
-Status: **planned** · Owner: Stuart · Created: 2026-07-05 · Size: S
+Status: **done — `_transcript_usage` in hook-kit touch_core (context_tokens, last_output_tokens); PRESSURE_TOKENS escalation in the Stop block** · Owner: Stuart · Created: 2026-07-05 · Size: S
 
 ## Goal
 

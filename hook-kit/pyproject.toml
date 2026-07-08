@@ -1,6 +1,6 @@
 [project]
 name = "claude-hook-kit"
-version = "0.2.0"
+version = "0.3.0"
 description = "Extension framework for Claude Code hooks: base class, session state, dispatcher"
 requires-python = ">=3.11"
 dependencies = []
