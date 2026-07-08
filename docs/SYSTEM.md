@@ -208,3 +208,6 @@ depth: [RETRIEVAL.md](RETRIEVAL.md) + [QUERY-PLANNING.md](QUERY-PLANNING.md) ·
 [ORCHESTRATION.md](ORCHESTRATION.md) + [TUNING.md](TUNING.md) (observability) → horizons: [SHARING.md](SHARING.md) →
 [FEDERATION.md](FEDERATION.md) · [CODE-GRAPH.md](CODE-GRAPH.md) → implementation detail of
 what exists today: [ARCHITECTURE.md](ARCHITECTURE.md).
+
+**Operating it** (running, watching, debugging, tuning, day-to-day prompting):
+[HANDBOOK.md](HANDBOOK.md).

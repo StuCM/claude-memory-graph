@@ -54,6 +54,13 @@ claude-memory-graph query 'SELECT ?name WHERE { GRAPH ?g { ?n rdf:type mem:Proje
 
 Writes are deliberately MCP-only: a running server holds the graph in memory and saves after each mutation, so terminal writes would be overwritten by the next in-session save.
 
+## Running, debugging, tuning
+
+**[docs/HANDBOOK.md](docs/HANDBOOK.md)** is the operator's guide: what each subsystem is
+doing at runtime (with the code and log locations to dig into), the terminology with
+examples, setup verification steps, the symptom→knob tuning table, how to prompt so
+retrieval works with you, and the command cadence.
+
 ## Design notes
 
 Each resource instance lives in its own named graph (`…/graph/resource/<uuid>`); cross-links live in a dedicated links graph; shared concepts in a concepts graph; the ontology (including LLM-added relations) in a schema graph. See `claude_memory_graph/base.ttl` for the base ontology.
