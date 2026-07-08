@@ -126,7 +126,7 @@ wheels = [
 
 [[package]]
 name = "claude-hook-kit"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "hook-kit" }
 
 [package.dev-dependencies]
@@ -141,7 +141,7 @@ dev = [{ name = "pytest", specifier = ">=8" }]
 
 [[package]]
 name = "claude-memory-graph"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "claude-hook-kit" },

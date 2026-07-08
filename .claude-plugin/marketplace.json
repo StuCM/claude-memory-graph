@@ -8,13 +8,13 @@
       "name": "memory-graph",
       "source": "./",
       "description": "RDF knowledge-graph long-term memory for Claude Code: MCP server, session context-file protocol, and /distill skill",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "name": "hook-kit",
       "source": "./hook-kit",
       "description": "Standalone hook extension framework: session state, prompt counting, installable hook extensions (used by memory-graph; useful on its own)",
-      "version": "0.2.0"
+      "version": "0.3.0"
     }
   ]
 }
