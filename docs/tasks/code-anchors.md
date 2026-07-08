@@ -1,6 +1,6 @@
 # Task: code anchors + drift flag
 
-Status: **planned** · Owner: Stuart · Created: 2026-07-04 · Size: S
+Status: **done — `_drift` in tools/recall.py: `(code changed since <commit>)` on anchored memories, git-only, fail open** · Owner: Stuart · Created: 2026-07-04 · Size: S
 
 ## Goal
 

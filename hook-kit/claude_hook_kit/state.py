@@ -37,6 +37,36 @@ def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _transcript_usage(path_str: str) -> dict | None:
+    """Token usage from the transcript's most recent assistant message —
+    the tail only (last 64KB), so per-dispatch cost stays in milliseconds.
+    context_tokens = the model's current context size (input + cache reads
+    + cache writes of the last turn). Fail open: absent/garbled -> None."""
+    if not path_str:
+        return None
+    try:
+        with open(path_str, "rb") as f:
+            f.seek(0, os.SEEK_END)
+            size = f.tell()
+            f.seek(max(0, size - 65536))
+            tail = f.read().decode("utf-8", errors="ignore")
+    except OSError:
+        return None
+    for line in reversed(tail.splitlines()):
+        try:
+            entry = json.loads(line)
+        except ValueError:
+            continue
+        usage = (entry.get("message") or {}).get("usage") if isinstance(entry, dict) else None
+        if entry.get("type") == "assistant" and isinstance(usage, dict):
+            context = (usage.get("input_tokens", 0)
+                       + usage.get("cache_read_input_tokens", 0)
+                       + usage.get("cache_creation_input_tokens", 0))
+            return {"context_tokens": context,
+                    "last_output_tokens": usage.get("output_tokens", 0)}
+    return None
+
+
 def _read_json(path: Path) -> dict:
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -94,6 +124,12 @@ class StateStore:
             if terms(payload.get("prompt", "") or ""):
                 core["significant_prompt_count"] += 1
             core["last_prompt_at"] = _now()
+        # transcript telemetry: derive, don't duplicate — the transcript is
+        # authoritative; we read only its tail, and absent/garbled means the
+        # fields simply stay at their last value.
+        usage = _transcript_usage(payload.get("transcript_path", "") or "")
+        if usage:
+            core.update(usage)
         core["updated_at"] = _now()
 
     # -- extension state ------------------------------------------------------

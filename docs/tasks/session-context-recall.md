@@ -1,6 +1,6 @@
 # Task: session-context recall — index the log, inject only what the prompt needs
 
-Status: **planned (design)** · Owner: Stuart · Created: 2026-07-07 · Size: M
+Status: **done — gate/session_corpus.py + RecallExtension._log_recall (shared TOP_N budget, LOG_ABS_MIN, own-session-post-compaction eligibility, per-entry memo)** · Owner: Stuart · Created: 2026-07-07 · Size: M
 Depends: [[structured-context-entries]] (the entry parser is the indexer).
 
 ## The idea (2026-07-07)

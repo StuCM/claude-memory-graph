@@ -169,6 +169,37 @@ def test_silent_stop_emits_nothing():
     assert format_response("Stop", {}, "") == ""
 
 
+def test_precompact_output_becomes_additional_context():
+    """Plain stdout is a no-op for PreCompact — output must travel as
+    hookSpecificOutput.additionalContext to reach the compactor."""
+    out = format_response("PreCompact", {}, "preserve the uncaptured points")
+    assert json.loads(out) == {"hookSpecificOutput": {
+        "hookEventName": "PreCompact",
+        "additionalContext": "preserve the uncaptured points"}}
+    assert format_response("PreCompact", {}, "") == ""
+
+
+def test_transcript_usage_lands_in_core(kit_home, tmp_path):
+    transcript = tmp_path / "t.jsonl"
+    transcript.write_text(
+        json.dumps({"type": "user", "message": {"content": "hi"}}) + "\n"
+        + json.dumps({"type": "assistant", "message": {"usage": {
+            "input_tokens": 1200, "cache_read_input_tokens": 90000,
+            "cache_creation_input_tokens": 800, "output_tokens": 350}}}) + "\n"
+        + "{not json\n")
+    run_dispatch("UserPromptSubmit", {
+        "session_id": "s9", "prompt": "x", "transcript_path": str(transcript)})
+    core = StateStore("s9").core
+    assert core["context_tokens"] == 92000
+    assert core["last_output_tokens"] == 350
+
+
+def test_missing_transcript_fails_open(kit_home):
+    run_dispatch("UserPromptSubmit", {
+        "session_id": "s10", "prompt": "x", "transcript_path": "/nope/t.jsonl"})
+    assert "context_tokens" not in StateStore("s10").core
+
+
 def test_stop_hook_active_exposed_on_context():
     from claude_hook_kit import HookContext
     assert HookContext("Stop", {"stop_hook_active": True}, {}, {}).stop_hook_active

@@ -13,7 +13,7 @@ sharing/federation is explicitly **future** work.
 | [[memory-search-tool]] — fuzzy entry-point finder (tool + CLI) | S | — | **done** (tools/search.py — shares the gate's corpus/scoring) |
 | [[grounding-coverage-experiment]] — measure grounder vs real transcripts | S | [[prompt-gated-recall]] | **harness ready** (`claude-memory-graph coverage` — run after a few days of real sessions; decision table in the task file) |
 | [[recall-miss-detector]] — explicit recalls after silence = auto-labelled misses | S | [[prompt-gated-recall]] | **done** (gate/misses.py, `claude-memory-graph misses`, docs/TUNING.md) |
-| [[session-context-recall]] — index undistilled context entries; per-prompt scored injection (post-compaction recovery, cheap handoffs) | M | [[structured-context-entries]] | planned (design) |
+| [[session-context-recall]] — index undistilled context entries; per-prompt scored injection (post-compaction recovery, cheap handoffs) | M | [[structured-context-entries]] | **done** (session_corpus.py + `_log_recall`; log = primary layer, shared TOP_N budget) |
 | [[query-planner-v0]] — compose SPARQL from question shape (`ask` CLI) | L | [[memory-search-tool]] | **done** (planner.py, `ask --explain`; golden + refusal tests) |
 | [[planner-telemetry]] — ask-decisions log, `asks` report, `memory_amend_relation` | S | [[query-planner-v0]] | **done** (lexicon self-correction loop; reflect skill step 6) |
 | [[temporal-query-modifiers]] — tense → valid-time filters | S | [[query-planner-v0]], [[bitemporal-links]] | planned |
@@ -25,7 +25,7 @@ sharing/federation is explicitly **future** work.
 | [[prompt-count-context-trigger]] — deterministic context-write trigger | S | shares hook with [[prompt-gated-recall]] | **done** (escalated: overdue log now blocks `Stop` instead of injecting a nudge) |
 | [[flush-hooks]] — PreCompact/SessionEnd flush + distill suggestion | S | [[prompt-count-context-trigger]] | **done** (ContextCounterExtension) |
 | [[dig-counter]] — PostToolUse counts file-inspection calls; dig turns get a Stop block asking for the trace entry | S | [[code-memory-rules]] | **done** (ContextCounterExtension) |
-| [[transcript-telemetry]] — context size/token usage in core state; pressure-aware flush | S | [[flush-hooks]] | planned |
+| [[transcript-telemetry]] — context size/token usage in core state; pressure-aware flush | S | [[flush-hooks]] | **done** (touch_core reads the transcript tail; PRESSURE_TOKENS escalates the Stop block) |
 | [[observation-capture]] — mechanical tool-observation lane via PostToolUse (claude-mem learning) | M | — | planned |
 | [[private-tags]] — <private> exclusion across capture, distill, and gate (claude-mem learning) | S | — | planned |
 
@@ -36,11 +36,11 @@ sharing/federation is explicitly **future** work.
 | hard capture rules (name lint, required props, dup guard, provenance) | M | — | **done** (PR #1, `capture_rules.py`, 20 tests) |
 | enrichment rules in skills (aliases, concept hubs, anchors) | S | — | **done** (PR #1, docs+skills) |
 | [[verb-forms-ontology]] — verbForms + domain/range in base.ttl | S | — | **done** (base.ttl 0.4.0, relation_lexicon(), extension flow requires verb forms) |
-| [[structured-context-entries]] — RDF-ready context entries; distill folds instead of re-deriving; phase-2 mechanical (no-LLM) distiller | M | — | **phase 1 done** (protocol + distill skill); parser planned |
-| [[distill-two-pass-dedup]] — distill searches before writing | S | [[memory-search-tool]] | planned (absorbed into [[structured-context-entries]] phase 2 for the structured lane) |
+| [[structured-context-entries]] — RDF-ready context entries; distill folds instead of re-deriving; phase-2 mechanical (no-LLM) distiller | M | — | **done** (context_entries.py + distill.py + `claude-memory-graph distill`; residue reported for the skill lane) |
+| [[distill-two-pass-dedup]] — distill searches before writing | S | [[memory-search-tool]] | **structured lane done** (mechanical distill refuses near-dups to residue); skill-side search-first for narrative still planned |
 | [[bitemporal-links]] — two clocks + contradiction closure | M | — | **done** (ontology 0.6.0; closure on singleValued relations; unlink closes by default; reads filter to open edges) |
 | [[code-memory-rules]] — lanes of code knowledge; orientation (storage/layout/wiring) + cost-gated investigation findings (traces) earn Patterns | S | drift flag: [[code-anchors]] | **rules drafted** (protocol + docs wired) |
-| [[code-anchors]] — anchor props + drift flag in recall | S | — | planned |
+| [[code-anchors]] — anchor props + drift flag in recall | S | — | **done** (tools/recall.py `_drift`: git-only staleness flag, fail open) |
 | [[auto-distill]] — headless SessionEnd distillation, gated by hard rules (claude-mem bet, evaluate) | M | [[distill-two-pass-dedup]] | planned |
 
 ## Future (not now)

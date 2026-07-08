@@ -80,7 +80,9 @@ def format_response(event: str, payload: dict, out: str) -> str:
     """Adapt concatenated extension output to the event's response channel.
     SessionStart/UserPromptSubmit inject plain stdout into context; a Stop
     hook only reaches the model as {"decision": "block", "reason": ...}
-    JSON. When stop_hook_active is set this stop is already the result of a
+    JSON; PreCompact output only reaches the compactor as
+    hookSpecificOutput.additionalContext (plain stdout is a no-op there).
+    When stop_hook_active is set this stop is already the result of a
     block — emit nothing rather than trap the session in a loop, no matter
     what the extensions returned."""
     if not out:
@@ -89,6 +91,9 @@ def format_response(event: str, payload: dict, out: str) -> str:
         if payload.get("stop_hook_active"):
             return ""
         return json.dumps({"decision": "block", "reason": out})
+    if event == "PreCompact":
+        return json.dumps({"hookSpecificOutput": {
+            "hookEventName": "PreCompact", "additionalContext": out}})
     return out
 
 

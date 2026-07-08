@@ -144,6 +144,15 @@ session state (`claude-hooks state <session_id>`, extension `context-counter`):
   live counter. If it catches routine multi-file edits (false digs), raise it; genuine
   investigations that stay under it argue for lowering — carefully, since Read-heavy work
   counts too.
+- **`PRESSURE_TOKENS`** (default 140000) — context size (from transcript telemetry:
+  `context_tokens` in core state) past which the Stop block escalates: ANY uncaptured
+  exchange blocks, because compaction is close and PreCompact can only steer the summary,
+  not trigger writes.
+- **`LOG_ABS_MIN`** (default 3.0) — score floor for **session-log recall**
+  ([tasks/session-context-recall](tasks/session-context-recall.md)): undistilled context
+  entries injected per prompt. `kind: "log"` lines in `injections.jsonl` record its
+  decisions; raise it if unvetted entries produce false positives that the graph's
+  `ABS_MIN` wouldn't.
 
 Whether the model *complied* with a block is only observable for the write cadence (mtime);
 trace compliance is not, which is why the dig ask fires once per dig turn and the write

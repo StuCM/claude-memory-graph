@@ -89,6 +89,15 @@ def main() -> None:
     p.add_argument("text")
     p.add_argument("--model", default=None, help="filter: resource model or concept type")
     p.add_argument("--limit", type=int, default=5)
+    p = sub.add_parser(
+        "distill",
+        help="mechanical distill: promote structured context entries to the graph "
+             "(no LLM). The one WRITING subcommand — run it between sessions: a "
+             "live MCP server's next save would overwrite CLI writes.")
+    p.add_argument("--dry-run", action="store_true", help="report without writing")
+    p.add_argument("--keep", action="store_true", help="don't archive clean files")
+    p.add_argument("--project", default=None, help="only this project's context files")
+    p.add_argument("--context-dir", type=Path, default=None)
     sub.add_parser("misses", help="gate miss report: silences followed by explicit recalls")
     sub.add_parser("asks", help="planner telemetry: outcomes, misgrounding suspects, "
                                 "vocabulary gaps (from ask-decisions.jsonl)")
@@ -116,6 +125,15 @@ def main() -> None:
     if args.cmd == "asks":
         from . import planner
         print(planner.asks_report())
+        return
+
+    if args.cmd == "distill":
+        from . import distill as distill_mod
+        store = MemoryStore.open_or_create(_store_path())
+        report = distill_mod.distill(
+            store, directory=args.context_dir, project=args.project,
+            dry_run=args.dry_run, keep=args.keep)
+        print(report.render())
         return
 
     if args.cmd == "coverage":
