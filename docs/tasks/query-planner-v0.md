@@ -1,6 +1,6 @@
 # Task: query planner v0 (`ask` CLI)
 
-Status: **planned** · Owner: Stuart · Created: 2026-07-04 · Size: L
+Status: **done** (2026-07-08 — `planner.py`, CLI `ask` + `--explain`) · Owner: Stuart · Created: 2026-07-04 · Size: L
 
 ## Goal
 

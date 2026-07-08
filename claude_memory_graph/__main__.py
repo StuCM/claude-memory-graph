@@ -80,6 +80,11 @@ def main() -> None:
     p.add_argument("model", nargs="?", default=None)
     p = sub.add_parser("query", help="run a SPARQL query")
     p.add_argument("sparql")
+    p = sub.add_parser("ask", help="natural-language question → composed SPARQL "
+                                   "(query planner v0)")
+    p.add_argument("text")
+    p.add_argument("--explain", action="store_true",
+                   help="show the grounding table and composed SPARQL")
     p = sub.add_parser("search", help="fuzzy entry-point search by free text")
     p.add_argument("text")
     p.add_argument("--model", default=None, help="filter: resource model or concept type")
@@ -132,6 +137,9 @@ def main() -> None:
         print(query.handle(store, args.sparql))
     elif args.cmd == "search":
         print(search.handle(store, args.text, args.model, args.limit))
+    elif args.cmd == "ask":
+        from . import planner
+        print(planner.handle(store, args.text, explain=args.explain))
 
 
 if __name__ == "__main__":
