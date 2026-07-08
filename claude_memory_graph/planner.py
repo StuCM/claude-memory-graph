@@ -84,6 +84,7 @@ class Node:
 class Edge:
     relation: str
     pos: float
+    form: str = ""            # the verb form that grounded it (telemetry)
     source: Node | None = None
     target: Node | None = None
 
@@ -99,6 +100,7 @@ class Grounding:
     subject: Node | None = None
     anchor: Node | None = None
     coverage: float = 0.0
+    uncovered: list[str] = field(default_factory=list)
     refuse: str = ""                              # out-of-grammar reason
     notes: list[str] = field(default_factory=list)  # --explain lines
 
@@ -150,7 +152,8 @@ def ground(store: MemoryStore, text: str) -> Grounding:
             if s >= m.start() and e <= m.end():
                 consumed.add(i)
                 first_word = i if first_word is None else first_word
-        g.edges.append(Edge(rel, float(first_word if first_word is not None else 0)))
+        g.edges.append(Edge(rel, float(first_word if first_word is not None else 0),
+                            form=form))
         g.notes.append(f"'{form}' → relation {rel}")
     g.edges.sort(key=lambda e: e.pos)
 
@@ -206,6 +209,23 @@ def ground(store: MemoryStore, text: str) -> Grounding:
             ranked = sorted(((_score(left_terms, d, idf), d) for d in docs),
                             key=lambda x: x[0], reverse=True)
             score, top = ranked[0]
+            # role fit: grounded relations say what TYPE the anchor should be
+            # (worksOn wants Person/Project) — a near-tied candidate of the
+            # expected type beats a lexically-equal one of the wrong type,
+            # e.g. the Project 'memory graph' over a Decision that merely
+            # mentions memory-graph in its name
+            expected = {t for e in g.edges if e.relation in lexicon
+                        for t in (lexicon[e.relation]["domain"]
+                                  + lexicon[e.relation]["range"])}
+            if expected and top["model"] not in expected:
+                for s, d in ranked[1:]:
+                    if (s >= 0.75 * score and d["model"] in expected
+                            and left_terms & d["name_terms"]):
+                        g.notes.append(
+                            f"anchor role fit: {d['model']} '{d['name']}' "
+                            f"preferred over {top['model']} '{top['name']}'")
+                        score, top = s, d
+                        break
             if score > 0 and left_terms & top["name_terms"]:
                 hit = left_terms & top["terms"]
                 pos = min(i for i, w in leftovers if parts_of(w) & hit)
@@ -229,6 +249,7 @@ def ground(store: MemoryStore, text: str) -> Grounding:
 
     covered = set().union(set(), *(parts_of(w) for i, _s, _e, w in words if i in consumed))
     g.coverage = len(covered & terms) / len(terms) if terms else 0.0
+    g.uncovered = sorted(terms - covered)
 
     # ── grammar caps + edge endpoint assignment
     if len(g.edges) > 2:
@@ -384,8 +405,28 @@ def _fallback(store: MemoryStore, text: str, g: Grounding, why: str) -> str:
     return f"(fallback: {why} — entry-point search)\n" + search.handle(store, text)
 
 
+def _log(text: str, g: Grounding | None, outcome: str, rows: int = 0) -> None:
+    """One line per ask into <hook-kit home>/ask-decisions.jsonl — the
+    planner's tuning dataset, mirroring the gate's injections.jsonl. The
+    `asks` CLI report joins it into misgrounding suspects (verb forms that
+    fire but never produce rows) and vocabulary gaps (uncovered terms)."""
+    from claude_hook_kit import append_jsonl
+    entry: dict = {"q": text[:200], "outcome": outcome, "rows": rows}
+    if g is not None:
+        entry.update({
+            "wh": g.wh,
+            "relations": [{"rel": e.relation, "form": e.form} for e in g.edges],
+            "types": sorted({n.type for n in g.vars()}),
+            "anchor": g.anchor.name if g.anchor else None,
+            "coverage": round(g.coverage, 2),
+            "uncovered": g.uncovered,
+        })
+    append_jsonl("ask-decisions.jsonl", entry)
+
+
 def handle(store: MemoryStore, text: str, explain: bool = False) -> str:
     if not is_question(text):
+        _log(text, None, "statement")
         return ("Statement-shaped — the ambient gate handles working prose. "
                 "Ask a question, or use `search` for entry points.")
     g = ground(store, text)
@@ -398,8 +439,10 @@ def handle(store: MemoryStore, text: str, explain: bool = False) -> str:
                   + (f"\n  refused: {g.refuse}" if g.refuse else "") + "\n")
 
     if g.refuse:
+        _log(text, g, "refused")
         return prefix + _fallback(store, text, g, f"out of grammar ({g.refuse})")
     if g.coverage < COVERAGE_MIN:
+        _log(text, g, "low-coverage")
         return prefix + _fallback(
             store, text, g, f"grounding coverage {g.coverage:.0%} below "
             f"{COVERAGE_MIN:.0%}")
@@ -410,9 +453,11 @@ def handle(store: MemoryStore, text: str, explain: bool = False) -> str:
     if g.anchor is not None and g.anchor.gid is not None and (
             g.subject is None
             or (not g.edges and g.subject.type == g.anchor.type)):
+        _log(text, g, "direct", 1)
         return (prefix + "(direct match)\n"
                 + recall_tool.handle(store, g.anchor.type, g.anchor.name, 1))
     if g.subject is None:
+        _log(text, g, "no-subject")
         return prefix + _fallback(store, text, g, "no queryable subject")
 
     sparql = compose(g)
@@ -426,7 +471,64 @@ def handle(store: MemoryStore, text: str, explain: bool = False) -> str:
             prefix += "(no rows via links — retrying as text mention)\n"
         lines = _run_rows(store, sparql2, g)
     if not lines:
+        _log(text, g, "no-rows")
         return prefix + _fallback(store, text, g, "composed query returned no rows")
+    _log(text, g, "answered", len(lines))
     if len(lines) > 10:
         lines = lines[:10] + [f"(+{len(lines) - 10} more)"]
     return prefix + "\n".join(lines)
+
+
+def asks_report() -> str:
+    """Join ask-decisions.jsonl into the two curation signals: misgrounding
+    suspects (verb forms that fire in asks that end with no rows) and
+    vocabulary gaps (terms nothing grounded). Read-only; run any time."""
+    import json
+    from collections import Counter
+
+    from claude_hook_kit import state_home
+
+    path = state_home() / "ask-decisions.jsonl"
+    entries = []
+    try:
+        for line in path.read_text(encoding="utf-8").splitlines():
+            try:
+                entries.append(json.loads(line))
+            except ValueError:
+                continue
+    except OSError:
+        pass
+    if not entries:
+        return ("No ask decisions logged yet — use `claude-memory-graph ask` "
+                "for a while, then rerun.")
+
+    outcomes = Counter(e.get("outcome", "?") for e in entries)
+    report = [f"{len(entries)} asks: "
+              + ", ".join(f"{k} {v}" for k, v in outcomes.most_common())]
+
+    fired = Counter()
+    dry = Counter()
+    for e in entries:
+        for r in e.get("relations", []):
+            key = (r.get("rel", "?"), r.get("form", "?"))
+            fired[key] += 1
+            if e.get("outcome") in ("no-rows", "refused"):
+                dry[key] += 1
+    suspects = [(k, n, fired[k]) for k, n in dry.most_common() if n == fired[k]]
+    if suspects:
+        report.append("\nMisgrounding suspects (verb form fired, NEVER produced rows):")
+        for (rel, form), n, total in suspects[:10]:
+            report.append(f"- '{form}' → {rel}: {n}/{total} asks ended dry "
+                          f"→ memory_amend_relation (LLM-added) or edit base.ttl")
+
+    gaps = Counter(t for e in entries
+                   if e.get("outcome") in ("low-coverage", "no-subject")
+                   for t in e.get("uncovered", []))
+    if gaps:
+        report.append("\nVocabulary gaps (ungrounded terms in failed asks):")
+        for term, n in gaps.most_common(10):
+            report.append(f"- '{term}' ×{n} → a verb form, node alias, or new "
+                          f"node if it names something real")
+    if len(report) == 1:
+        report.append("No misgrounding suspects or vocabulary gaps — lexicon looks healthy.")
+    return "\n".join(report)

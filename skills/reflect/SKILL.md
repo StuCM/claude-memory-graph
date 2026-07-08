@@ -63,5 +63,10 @@ Use `memory_recall` (depth 2) on hub nodes (the user, active projects) to see ac
 - Nodes with old `createdAt` and superseding activity → confirm with the user, then `memory_forget` (soft delete, kept for provenance)
 - Overlapping LLM-added relations (e.g. a new relation duplicating `relatesTo`) → suggest consolidation
 
-### 6. Report
+### 6. Verb-form lexicon health (query planner)
+Run `claude-memory-graph asks` (read-only CLI). It joins the planner's telemetry log into two curation signals:
+- **Misgrounding suspects** — a verb form that fires but its asks always end with no rows (e.g. a prose word like "under" colliding with a relation). Remove it with `memory_amend_relation` if the relation is LLM-added; for base-ontology relations suggest the base.ttl edit (+ version bump) to the user.
+- **Vocabulary gaps** — terms that repeatedly ground to nothing in failed asks. If a gap term is a phrasing of an existing relation, `memory_amend_relation` with `add_verb_forms`; if it's an alternate name of an existing node, add it to that node's `aliases`; if it names something real and absent, capture the node.
+
+### 7. Report
 Terse: graph state, links created and why, orphans/stale nodes found, suggested missing knowledge.

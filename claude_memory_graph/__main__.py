@@ -90,6 +90,8 @@ def main() -> None:
     p.add_argument("--model", default=None, help="filter: resource model or concept type")
     p.add_argument("--limit", type=int, default=5)
     sub.add_parser("misses", help="gate miss report: silences followed by explicit recalls")
+    sub.add_parser("asks", help="planner telemetry: outcomes, misgrounding suspects, "
+                                "vocabulary gaps (from ask-decisions.jsonl)")
     p = sub.add_parser("coverage", help="grounding-coverage experiment over real prompts")
     p.add_argument("--prompts", type=Path, default=None,
                    help="text file, one prompt per line")
@@ -109,6 +111,11 @@ def main() -> None:
     if args.cmd == "misses":
         from .gate import misses
         print(misses.report())
+        return
+
+    if args.cmd == "asks":
+        from . import planner
+        print(planner.asks_report())
         return
 
     if args.cmd == "coverage":

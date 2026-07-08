@@ -66,6 +66,28 @@ def handle_link(
     )
 
 
+def handle_amend_relation(
+    store: MemoryStore,
+    relation: str,
+    add_verb_forms: list[str] | None = None,
+    remove_verb_forms: list[str] | None = None,
+) -> str:
+    added, removed = store.amend_relation(
+        relation, add_verb_forms or [], remove_verb_forms or []
+    )
+    parts = []
+    if added:
+        parts.append(f"added verb form(s): {', '.join(repr(f) for f in added)}")
+    if removed:
+        parts.append(f"removed: {', '.join(repr(f) for f in removed)}")
+    missed = [f for f in (remove_verb_forms or [])
+              if f.strip() and f.strip() not in removed]
+    if missed:
+        parts.append(f"not present (nothing removed): "
+                     f"{', '.join(repr(f) for f in missed)}")
+    return f"Amended relation '{relation}': " + "; ".join(parts)
+
+
 def handle_unlink(
     store: MemoryStore,
     source_model: str,

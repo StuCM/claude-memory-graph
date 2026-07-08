@@ -411,6 +411,46 @@ class MemoryStore:
         for form in forms:
             self._add(node, mem_node("verbForms"), ox.Literal(form), graph)
 
+    def amend_relation(
+        self, relation: str, add_forms: list[str], remove_forms: list[str]
+    ) -> tuple[list[str], list[str]]:
+        """Curate a relation's verb-form lexicon in place. Adding works on any
+        relation (base.ttl reloads are set-semantics, so added forms survive
+        ontology upgrades). Removing only works on LLM-added relations: a
+        base-ontology form removed from the store would silently resurrect on
+        the next base.ttl version bump — edit base.ttl instead.
+        Returns (added, removed)."""
+        if relation not in self.valid_relations():
+            raise ValueError(
+                f"Unknown relation '{relation}'. Existing: "
+                f"{', '.join(sorted(self.valid_relations()))}"
+            )
+        adds = [f.strip() for f in add_forms if f and f.strip()]
+        removes = [f.strip() for f in remove_forms if f and f.strip()]
+        if not adds and not removes:
+            raise ValueError("Nothing to amend: pass verb forms to add and/or remove.")
+        graph = ox.NamedNode(GRAPH_SCHEMA)
+        node = mem_node(relation)
+        if removes:
+            llm_added = any(self._store.quads_for_pattern(
+                node, mem_node("definedAt"), None, graph))
+            if not llm_added:
+                raise ValueError(
+                    f"'{relation}' is a base-ontology relation: a form removed from "
+                    "the store would silently resurrect on the next base.ttl "
+                    "upgrade. Edit base.ttl (and bump owl:versionInfo) instead. "
+                    "Adding forms to it is fine."
+                )
+        removed = []
+        for form in removes:
+            for quad in list(self._store.quads_for_pattern(
+                    node, mem_node("verbForms"), ox.Literal(form), graph)):
+                self._store.remove(quad)
+                removed.append(form)
+        for form in adds:
+            self._add(node, mem_node("verbForms"), ox.Literal(form), graph)
+        return adds, removed
+
     # ================================================================
     # Cross-link operations (bi-temporal: two clocks per edge)
     # ================================================================

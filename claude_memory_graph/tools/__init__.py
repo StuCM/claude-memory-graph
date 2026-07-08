@@ -132,6 +132,37 @@ _TOOLS = [
         },
     ),
     Tool(
+        name="memory_amend_relation",
+        description=(
+            "Curate a relation's natural-language verb forms — the query planner's "
+            "grounding lexicon. Add phrasings when a real question used wording no "
+            "relation covers; remove a phrasing when telemetry "
+            "(`claude-memory-graph asks`) shows it misgrounding questions. Adding "
+            "works on any relation; removing only on LLM-added relations "
+            "(base-ontology forms live in base.ttl and must be edited there)."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "relation": {
+                    "type": "string",
+                    "description": "Existing relation name (e.g. worksOn, mentors)",
+                },
+                "add_verb_forms": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Phrasings to add (e.g. 'collaborates on')",
+                },
+                "remove_verb_forms": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Phrasings to remove (LLM-added relations only)",
+                },
+            },
+            "required": ["relation"],
+        },
+    ),
+    Tool(
         name="memory_unlink",
         description=(
             "End a cross-graph relationship. Default is CLOSE, not delete: the edge's "
@@ -260,6 +291,7 @@ _MUTATING = {
     "memory_link",
     "memory_unlink",
     "memory_forget",
+    "memory_amend_relation",
 }
 
 
@@ -315,6 +347,14 @@ def _dispatch(store: MemoryStore, name: str, args: dict) -> str:
             args.get("metadata") or {},
             args.get("new_relation_description"),
             args.get("new_relation_verb_forms"),
+        )
+
+    if name == "memory_amend_relation":
+        return link.handle_amend_relation(
+            store,
+            args["relation"],
+            args.get("add_verb_forms"),
+            args.get("remove_verb_forms"),
         )
 
     if name == "memory_unlink":

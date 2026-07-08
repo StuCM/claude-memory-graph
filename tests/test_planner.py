@@ -26,6 +26,11 @@ def store(tmp_path):
     store_resource.handle_resource(s, "Decision", {
         "name": "Serve static via nginx image",
         "rationale": "prod-mode static files need nginx, not runserver"})
+    # deliberately shares name words with Project 'memory graph' — the
+    # anchor role-fit regression's decoy
+    store_resource.handle_resource(s, "Decision", {
+        "name": "Rebuild memory graph recall gate",
+        "rationale": "gate scoring needed a coordination bonus"})
 
     def L(sm, sn, tm, tn, rel):
         link.handle_link(s, sm, sn, tm, tn, rel, {})
@@ -55,6 +60,13 @@ def test_flagship_two_edge_chain(store):
 
 def test_who_projection(store):
     out = planner.handle(store, "Who works on quartz?")
+    assert "Stuart Marshall" in out
+
+
+def test_anchor_role_fit_beats_lexical_tie(store):
+    # "memory graph" name-matches both the Project and the decoy Decision;
+    # worksOn's domain/range hints must pick the Project
+    out = planner.handle(store, "Who works on memory graph?")
     assert "Stuart Marshall" in out
 
 
