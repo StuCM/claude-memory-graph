@@ -94,3 +94,16 @@ def test_asks_report_flags_vocabulary_gap(store):
     planner.handle(store, "What colour is the bikeshed?")
     report = planner.asks_report()
     assert "bikeshed" in report or "colour" in report
+
+
+def test_dropped_contains_word_counts_as_gap(store):
+    planner.handle(store, "What projects is Stuart embedded in?")
+    assert "embedded" in planner.asks_report()
+
+
+def test_contains_word_in_dry_ask_counts_as_gap(store):
+    # grounded shape, but the CONTAINS word matches nothing → no-rows;
+    # the word was "covered" so it never reaches uncovered — the report
+    # must still surface it as the likeliest cause of the dry ask
+    planner.handle(store, "Any recent decisions about kubernetes?")
+    assert "kubernetes" in planner.asks_report()

@@ -75,6 +75,21 @@ def test_implicit_variable_from_relation_range(store):
     assert "pyoxigraph" in out
 
 
+def test_new_worksOn_phrasings_ground(store):
+    # base.ttl 0.6.1: "involved in" / "committed to" are worksOn verb forms
+    out = planner.handle(store, "What projects is Stuart involved in?")
+    assert "quartz" in out and "memory graph" in out
+    assert "ignored ungrounded" not in out  # grounded properly, no retry rung
+
+
+def test_dropped_contains_rung_rescues_link_query(store):
+    # "embedded" fails to ground and would poison the loose link query as a
+    # CONTAINS filter — the last rung drops it and answers from links alone
+    out = planner.handle(store, "What projects is Stuart embedded in?")
+    assert "quartz" in out and "memory graph" in out
+    assert "ignored ungrounded 'embedded'" in out
+
+
 def test_why_finds_rationale(store):
     out = planner.handle(store, "Why did we choose pyoxigraph?")
     assert "native quad store" in out

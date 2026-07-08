@@ -1,7 +1,10 @@
 # Query planning — composing SPARQL from language, without an LLM
 
-Status: **exploration, not yet implemented.** Part of track B ([RETRIEVAL.md](RETRIEVAL.md));
-this is the component that makes retrieval more than RAG.
+Status: **v0 implemented** (`planner.py`, `claude-memory-graph ask "…" [--explain]`;
+tasks [query-planner-v0](tasks/query-planner-v0.md) and
+[planner-telemetry](tasks/planner-telemetry.md)). Part of track B
+([RETRIEVAL.md](RETRIEVAL.md)); this is the component that makes retrieval more than RAG.
+§"v0 field notes" below records what real usage taught us.
 
 ## The problem with what we have
 
@@ -239,6 +242,33 @@ Federation note: composed queries run against the local store plus imported shar
 do **not** cross the network — remote stores still expose only the per-hop `expand` gatekeeper
 (FEDERATION.md); the planner treats remote knowledge as reachable through cached/shared graphs,
 not as a federated SPARQL target. Arbitrary remote queries remain deliberately impossible.
+
+## v0 field notes — failure modes real questions exposed
+
+Three lessons from the first day of live asks, each now encoded in the planner:
+
+- **Anchor shadowing.** Two nodes sharing name words tie lexically: "memory graph"
+  matched both the Project and a Decision *about* memory-graph, sending `worksOn` at a
+  Decision (zero rows). Fix: **anchor role fit** — the grounded relations'
+  domain/range hints prefer a near-tied (≥0.75×top) name-hit candidate of the type the
+  relation expects.
+- **CONTAINS poisoning.** The one-leftover-noun CONTAINS escape hatch assumes the
+  leftover is a content noun ("auth"). When it's a relation verb that failed to ground
+  ("involved", or the typo "commited"), the text filter kills an otherwise-correct
+  loose-link query. Fix: a final **retry rung** — in the anchor + typed-variable +
+  no-grounded-relation shape, drop the CONTAINS and answer from links alone, labelled
+  `(ignored ungrounded '<word>' — the link structure answered without it)` so the
+  guess is visible. The retry ladder for that shape is now: link-attach with CONTAINS →
+  text-mention attach → link-attach without CONTAINS → fallback.
+- **Vocabulary gaps converge; don't enumerate up front.** Every ask logs to
+  `ask-decisions.jsonl`; `claude-memory-graph asks` joins the log into *misgrounding
+  suspects* (a verb form that fires but never produces rows) and *vocabulary gaps*
+  (ungrounded terms in failed asks, including dropped-CONTAINS words). Each gap is
+  fixed once, permanently — `memory_amend_relation` for LLM-added relations, base.ttl
+  (+ version bump) for built-ins; the reflect skill's step 6 runs this loop. Phrasings
+  are Zipf-distributed: curate the head from evidence rather than guessing the tail.
+  Only if gaps prove synonym-shaped does the embeddings tier (RETRIEVAL.md phase 3)
+  earn its dependency.
 
 ## Phasing (extends RETRIEVAL.md's)
 
