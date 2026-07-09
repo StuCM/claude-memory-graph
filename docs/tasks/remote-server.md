@@ -34,8 +34,28 @@ Same-machine multi-client (Claude Code + Claude Desktop + an IDE) needs no serve
 all — point them at the same `MEMORY_GRAPH_PATH`; hooks work wherever the plugin is
 installed.
 
+## What each client gets today
+
+To be precise about "tools travel": the FULL tool surface travels — reads AND writes
+(store/link/distill/forget as much as recall/search/query). "Hooks don't" means only
+the automatic behaviours (ambient injection, Stop-block capture), which are Claude Code
+hook features and never existed on other surfaces anyway.
+
+| Client | Shared memory today? | Notes |
+|---|---|---|
+| Claude Code, any machine | **yes** — `claude mcp add --transport http … --header "Authorization: Bearer …"` | tools remote; hooks still run locally against the local store unless v2 |
+| Claude Desktop app, same machine | **yes, no server needed** — stdio server in its MCP config against the same `MEMORY_GRAPH_PATH` | full tools; no hooks (the app has none) |
+| claude.ai / phone (custom connector) | **needs v1.5** | connectors dial from Anthropic's side: public HTTPS required (no LAN/VPN), and the connector UI supports OAuth or no-auth — **no static-header option**, so the bearer token doesn't fit |
+
 ## Phasing
 
+- **v1.5 — hosted for claude.ai (the phone case):** public HTTPS + OAuth 2.1 with
+  dynamic client registration. Two routes: (a) an OAuth-terminating proxy in front
+  (Cloudflare Access, an MCP OAuth gateway) — zero code change here, the sane first
+  move; (b) native OAuth via the MCP SDK's auth scaffolding — a substantial,
+  security-sensitive build (client registry, token issuance, persistence). Do (a)
+  first; promote to (b) only if the proxy chafes. Never run the no-auth option in
+  public: this is your memory.
 - **v2 — remote gate:** teach the gate extensions to fetch their corpus from the
   server (a `/corpus` endpoint or an MCP resource) with a short-TTL local cache, so
   ambient injection works on machines that only have the plugin + a server URL.
