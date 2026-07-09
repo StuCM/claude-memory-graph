@@ -9,7 +9,7 @@
 mem: a owl:Ontology ;
     rdfs:label "Claude Memory Graph Ontology" ;
     rdfs:comment "Arches-inspired hybrid knowledge graph for Claude Code long-term memory. Each resource instance gets its own named graph. Scalar attributes are flat properties; shared concepts are traversable nodes enabling multi-hop recall." ;
-    owl:versionInfo "0.6.0" .
+    owl:versionInfo "0.6.1" .
 
 # ============================================================
 # RESOURCE MODELS (graph types — each instance is a named graph)
@@ -203,7 +203,7 @@ mem:rangeIncludes a rdf:Property ;
 mem:worksOn a rdf:Property, mem:RelationType ;
     rdfs:label "works on" ;
     rdfs:comment "Person works on Project." ;
-    mem:verbForms "works on", "work on", "working on", "worked on", "develops", "develop", "developing", "contributes to", "contribute to" ;
+    mem:verbForms "works on", "work on", "working on", "worked on", "develops", "develop", "developing", "contributes to", "contribute to", "committed to", "commits to", "involved in", "involved with" ;
     mem:domainIncludes mem:Person ;
     mem:rangeIncludes mem:Project .
 

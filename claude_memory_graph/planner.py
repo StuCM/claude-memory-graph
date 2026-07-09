@@ -314,10 +314,15 @@ def _lit(s: str) -> str:
     return s.replace("\\", "\\\\").replace('"', '\\"')
 
 
-def compose(g: Grounding, anchor_attach: str = "link") -> str:
+def compose(g: Grounding, anchor_attach: str = "link",
+            drop_contains: bool = False) -> str:
     """One SPARQL query from the grounding. anchor_attach applies only when
     an anchor grounded but no relation did: 'link' joins subject↔anchor
-    through any open CrossLink; 'contains' falls back to text mention."""
+    through any open CrossLink; 'contains' falls back to text mention.
+    drop_contains omits the leftover-word CONTAINS filter — the last retry
+    rung when that word was probably a relation verb that failed to ground
+    ("involved in") rather than a content noun, and is poisoning an
+    otherwise-correct link query."""
     subject = g.subject
     salient = _salient(subject.type, g.wh)
     select = ["?name"] + [f"?p_{p}" for p in salient]
@@ -370,7 +375,7 @@ def compose(g: Grounding, anchor_attach: str = "link") -> str:
         where.append(f"GRAPH <{GRAPH_LINKS}> {{\n    "
                      + "\n    ".join(link_inner) + "\n  }")
 
-    if g.contains:
+    if g.contains and not drop_contains:
         blob = "LCASE(CONCAT(?name" + "".join(
             f', " ", COALESCE(?p_{p}, "")' for p in salient) + "))"
         top_filters.append(f'FILTER(CONTAINS({blob}, "{_lit(g.contains)}"))')
@@ -420,6 +425,7 @@ def _log(text: str, g: Grounding | None, outcome: str, rows: int = 0) -> None:
             "anchor": g.anchor.name if g.anchor else None,
             "coverage": round(g.coverage, 2),
             "uncovered": g.uncovered,
+            "contains": g.contains,
         })
     append_jsonl("ask-decisions.jsonl", entry)
 
@@ -470,6 +476,19 @@ def handle(store: MemoryStore, text: str, explain: bool = False) -> str:
         if explain:
             prefix += "(no rows via links — retrying as text mention)\n"
         lines = _run_rows(store, sparql2, g)
+        if not lines and g.contains:
+            # last rung: the leftover was probably a relation verb that
+            # failed to ground, not a content noun — its CONTAINS filter is
+            # poisoning a link query that answers the question on its own
+            lines = _run_rows(store, compose(g, drop_contains=True), g)
+            if lines:
+                prefix += (f"(ignored ungrounded '{g.contains}' — the link "
+                           f"structure answered without it)\n")
+                g.uncovered.append(g.contains)  # count it as a vocabulary gap
+                _log(text, g, "dropped-contains", len(lines))
+                if len(lines) > 10:
+                    lines = lines[:10] + [f"(+{len(lines) - 10} more)"]
+                return prefix + "\n".join(lines)
     if not lines:
         _log(text, g, "no-rows")
         return prefix + _fallback(store, text, g, "composed query returned no rows")
@@ -522,8 +541,13 @@ def asks_report() -> str:
                           f"→ memory_amend_relation (LLM-added) or edit base.ttl")
 
     gaps = Counter(t for e in entries
-                   if e.get("outcome") in ("low-coverage", "no-subject")
+                   if e.get("outcome") in ("low-coverage", "no-subject",
+                                           "dropped-contains")
                    for t in e.get("uncovered", []))
+    # a CONTAINS word in a dry ask is the failure's likeliest cause — it was
+    # "covered", so it never reaches `uncovered`, but it belongs in this list
+    gaps.update(e["contains"] for e in entries
+                if e.get("outcome") == "no-rows" and e.get("contains"))
     if gaps:
         report.append("\nVocabulary gaps (ungrounded terms in failed asks):")
         for term, n in gaps.most_common(10):
