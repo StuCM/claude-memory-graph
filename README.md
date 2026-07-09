@@ -29,7 +29,7 @@ This registers just the MCP server — no context protocol or distill skill.
 ## The workflow
 
 1. **During every session**, Claude keeps a running context file in `~/.claude/context/` (decisions, problems solved, preferences, codebase orientation and dig findings — a handoff log any LLM can pick up; graph-worthy points are written as *structured entries* that distill promotes directly instead of re-deriving).
-2. **Distill** promotes the durable knowledge into the graph in two lanes: the `memory_distill` MCP tool (no LLM — also available as the `claude-memory-graph distill` CLI for terminal use) mechanically parses, folds, and applies structured entries — refusing anything questionable to a residue report — and **`/memory-graph:distill`** handles that residue with hindsight (narrative bullets, near-duplicates, ontology extensions). Processed files are archived to `~/.claude/context/archive/` (never deleted).
+2. **Distill happens by itself**: every new session's server starts by mechanically promoting structured entries into the graph (no LLM, idempotent, refuses anything questionable to a residue report; `MEMORY_GRAPH_AUTO_DISTILL=0` to disable). **`/memory-graph:distill`** is for the residue — narrative bullets, near-duplicates, ontology extensions — and archives clean files to `~/.claude/context/archive/` (never deleted). Also available on demand as the `memory_distill` MCP tool and the `claude-memory-graph distill` CLI.
 3. **Recall** happens naturally: Claude calls `memory_recall`/`memory_query` when past context is relevant, traversing links between projects, decisions, gotchas, and people.
 
 ## MCP tools

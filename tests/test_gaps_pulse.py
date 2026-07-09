@@ -149,6 +149,32 @@ def test_pulse_diagnoses_dead_hooks(kit_home):
     assert "NO ACTIVITY LOGGED" in out and "hooks are not firing" in out
 
 
+def test_pulse_reports_auto_distill(kit_home):
+    _seed("injections.jsonl", [{"fired": False, "session": "s1"}])
+    _seed("capture.jsonl", [
+        {"kind": "distill", "auto": True, "stored": 3, "linked": 4, "residue": 1,
+         "session": ""}])
+    out = pulse_report(days=1)
+    assert "auto-distill: 1 run(s)" in out
+    assert "3 node(s), 4 link(s), 1 residue" in out
+
+
+def test_dashboard_generates_from_logs(kit_home, tmp_path):
+    from claude_memory_graph.gate import dashboard
+    _seed("injections.jsonl", [
+        {"fired": True, "session": "s1", "nodes": ["Use pinia stores"]},
+        {"kind": "prime", "fired": True, "session": "s1"},
+    ])
+    _seed("capture.jsonl", [{"kind": "block", "cadence": True, "dig": 0, "session": "s1"},
+                            {"kind": "write", "session": "s1"}])
+    path = dashboard.write(out=tmp_path / "dash.html", days=7)
+    html_text = path.read_text()
+    assert "memory pulse" in html_text
+    assert "Use pinia stores" in html_text
+    assert "memory payouts" in html_text
+    assert "capture loop healthy" in html_text
+
+
 def test_pulse_flags_ignored_blocks(kit_home):
     _seed("capture.jsonl", [{"kind": "block", "cadence": True, "dig": 0, "session": "s1"}])
     _seed("injections.jsonl", [{"fired": False, "session": "s1"}])

@@ -91,6 +91,17 @@ def test_same_target_relink_does_not_close(store):
     assert closed == 0
 
 
+def test_create_link_is_idempotent(store):
+    """Re-creating an identical open edge returns it, never duplicates —
+    what makes auto-distill safe to re-run every server start."""
+    stuart = _iri(store, "Person", "Stuart Marshall")
+    charcoal = _iri(store, "Project", "charcoal")
+    first, _ = store.create_link(stuart, charcoal, "worksOn", {})
+    second, _ = store.create_link(stuart, charcoal, "worksOn", {})
+    assert first == second
+    assert len(_link_props(store, stuart, charcoal, "worksOn")) == 1
+
+
 def test_multi_valued_relation_never_closes(store):
     stuart = _iri(store, "Person", "Stuart Marshall")
     charcoal = _iri(store, "Project", "charcoal")

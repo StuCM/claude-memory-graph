@@ -93,19 +93,20 @@ Four behaviours in one extension (`gate/nudge.py`):
 - Format spec: `hooks/context-protocol.md` (injected each SessionStart)
 - Parser: `claude_memory_graph/context_entries.py`
 
-### Mechanical distill — promotion without an LLM
+### Mechanical distill — promotion without an LLM, now automatic
 Distill parses structured entries, **folds** repeats (latest values win — mid-session
 churn resolves itself), and applies them through the same handlers the MCP tools use,
 hard capture rules unchanged. Anything questionable is **refused to the residue** (never
 forced): narrative bullets, duplicate-guard hits, unknown relations, missing required
-properties — each reported with `file:line`. A file archives only when nothing was left
-behind; otherwise it stays active for the skill.
-- **In a session: the `memory_distill` MCP tool** (what the /distill skill calls first).
-  Runs inside the live server, so there is no clobber risk — the preferred form.
+properties — each reported with `file:line`.
+- **Automatic (the default path):** every MCP server start (= every new session) runs a
+  promote-only pass — no marking, no archiving, idempotent (upserts + idempotent links),
+  self-healing, fail-open, logged to `capture.jsonl`. You do nothing.
+  Disable: `MEMORY_GRAPH_AUTO_DISTILL=0`.
+- **In a session: the `memory_distill` MCP tool** (what the /distill skill calls first) —
+  same code, and the form that also marks + archives clean files.
 - **From a terminal: `claude-memory-graph distill`** — only on PATH from a repo checkout
-  (`uv run …`) or after `uv tool install`; **plugin installs don't put the CLI on PATH**
-  (the server runs via `uvx --from` the plugin dir). Run it between sessions — a live
-  server's next save would overwrite terminal writes.
+  (`uv run …`) or after `uv tool install`; **plugin installs don't put the CLI on PATH**.
 - Code: `claude_memory_graph/distill.py` · Skill for the residue: `skills/distill/SKILL.md`
 
 ### The graph + MCP server
@@ -224,6 +225,7 @@ fields, no error.
 
 ```sh
 claude-memory-graph pulse                # ONE SCREEN: is memory reaching sessions?
+claude-memory-graph dashboard            # same + trends, as HTML (open the printed path)
 claude-hooks log                         # last 20 gate decisions, pretty-printed
 claude-hooks log -f                      # follow live while you work in another pane
 claude-hooks log explicit-recalls.jsonl  # every explicit memory tool call
@@ -282,8 +284,9 @@ so most tuning pressure should come from the miss report, not from gut feel.
 | Start of a work block | *(nothing)* | prime + recall are automatic |
 | Whenever you wonder "is this on?" | `claude-memory-graph pulse` | injections, enforcement, backlog — zeros come with diagnoses |
 | Weekly, or when a visualisation shows loose nodes | `claude-memory-graph gaps` → `/memory-graph:reflect` | mechanical candidates → LLM judges and links |
-| End of a session / few sessions | `memory_distill` tool in-session, or `claude-memory-graph distill` from a terminal | promote structured entries, zero LLM work |
-| When distill reports residue | `/memory-graph:distill` in a session | LLM pass over the leftovers only |
+| End of a session | *(nothing)* | structured entries auto-promote at the next session's start |
+| Occasionally (weekly-ish) | `claude-memory-graph dashboard` → open the printed HTML | the whole picture: payouts, enforcement, gaps, backlog |
+| When pulse/dashboard shows residue piling up | `/memory-graph:distill` in a session | LLM pass over narrative leftovers + archive clean files |
 | Weekly, or after a "why didn't it remember?" moment | `claude-memory-graph misses` | evidence-based threshold/alias fixes |
 | Weekly | `claude-hooks log -n 50` | eyeball false positives |
 | After ~a week of sessions | `claude-memory-graph coverage --transcripts ~/.claude/projects` | is the lexical grounder enough? (the embeddings go/no-go metric) |

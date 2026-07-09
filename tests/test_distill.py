@@ -101,6 +101,45 @@ def test_dry_run_writes_nothing(store, tmp_path):
     assert path.exists() and "distilled: false" in path.read_text()
 
 
+def test_auto_distill_promotes_without_archiving(store, tmp_path, monkeypatch):
+    """The startup lane: promote-only, idempotent, self-healing. Files stay
+    active (never marked/archived headlessly); a second run duplicates
+    nothing; the run is logged for pulse/dashboard."""
+    import claude_hook_kit.state as kit_state
+    from claude_hook_kit import state_home
+    from claude_memory_graph.distill import auto_distill
+    monkeypatch.setenv(kit_state.HOOK_KIT_HOME_ENV, str(tmp_path / "kit"))
+    ctx = tmp_path / "ctx"
+    ctx.mkdir()
+    path = ctx / "claude-memory-graph__2026-07-09_09-00.md"
+    path.write_text(GOOD)
+    monkeypatch.setenv("CLAUDE_CONTEXT_DIR", str(ctx))
+
+    report = auto_distill(store)
+    assert report is not None and report.stored
+    assert store.find_resource("Decision", "Use pyoxigraph over rdflib") is not None
+    assert path.exists() and "distilled: false" in path.read_text()  # never archived
+
+    auto_distill(store)  # second startup: upserts, no twins
+    gid, iri = store.find_resource("Decision", "Use pyoxigraph over rdflib")
+    assert len(store.recall(iri, gid, 1).linked) == 2  # affects + concept, once
+
+    import json
+    lines = (state_home() / "capture.jsonl").read_text().strip().splitlines()
+    assert all(json.loads(l)["kind"] == "distill" for l in lines) and len(lines) == 2
+
+
+def test_auto_distill_disabled_by_env(store, tmp_path, monkeypatch):
+    from claude_memory_graph.distill import auto_distill
+    ctx = tmp_path / "ctx"
+    ctx.mkdir()
+    (ctx / "p__1.md").write_text(GOOD)
+    monkeypatch.setenv("CLAUDE_CONTEXT_DIR", str(ctx))
+    monkeypatch.setenv("MEMORY_GRAPH_AUTO_DISTILL", "0")
+    assert auto_distill(store) is None
+    assert store.find_resource("Decision", "Use pyoxigraph over rdflib") is None
+
+
 def test_memory_distill_mcp_tool(store, tmp_path, monkeypatch):
     """The in-session lane: memory_distill dispatches to the same code —
     sessions must never need the CLI (it isn't on PATH in plugin installs)."""

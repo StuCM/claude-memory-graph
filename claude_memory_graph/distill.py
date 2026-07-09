@@ -106,6 +106,31 @@ def _archive(path: Path) -> Path:
     return target
 
 
+def auto_distill(store: MemoryStore) -> Report | None:
+    """The automated lane: runs at MCP server startup, so every new session
+    begins with the log's structured entries already in the graph — no human
+    remembering required. PROMOTE-ONLY (keep=True): files are never marked or
+    archived here, which makes the run idempotent (upserts + idempotent links)
+    and self-healing — if a concurrent session's save ever clobbers the
+    promoted nodes, the still-active files re-promote them next startup.
+    Archiving stays with memory_distill / the skill, where a human is present.
+    Fail open: a broken log file must never block a session from starting.
+    Disable with MEMORY_GRAPH_AUTO_DISTILL=0."""
+    if os.environ.get("MEMORY_GRAPH_AUTO_DISTILL", "1").lower() in ("0", "false", "off"):
+        return None
+    try:
+        report = distill(store, keep=True)
+        if report.files:
+            from claude_hook_kit import append_jsonl
+            append_jsonl("capture.jsonl", {
+                "kind": "distill", "auto": True, "files": len(report.files),
+                "stored": len(report.stored), "linked": report.linked,
+                "residue": len(report.residue)})
+        return report
+    except Exception:
+        return None
+
+
 def distill(store: MemoryStore, directory: Path | None = None,
             project: str | None = None, dry_run: bool = False,
             keep: bool = False) -> Report:

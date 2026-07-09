@@ -215,6 +215,7 @@ class ContextCounterExtension(HookExtension):
             if "distilled: false" in head:
                 undistilled += 1
         if undistilled >= 3:
-            return (f"[context] {undistilled} undistilled context files — "
-                    "suggest running /memory-graph:distill.")
+            return (f"[context] {undistilled} undistilled context files. Structured "
+                    "entries auto-promote at every session start — suggest running "
+                    "/memory-graph:distill to handle the narrative residue and archive.")
         return None
