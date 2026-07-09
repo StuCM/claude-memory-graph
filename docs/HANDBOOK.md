@@ -94,14 +94,19 @@ Four behaviours in one extension (`gate/nudge.py`):
 - Parser: `claude_memory_graph/context_entries.py`
 
 ### Mechanical distill — promotion without an LLM
-`claude-memory-graph distill` parses structured entries, **folds** repeats (latest values
-win — mid-session churn resolves itself), and applies them through the same handlers the
-MCP tools use, hard capture rules unchanged. Anything questionable is **refused to the
-residue** (never forced): narrative bullets, duplicate-guard hits, unknown relations,
-missing required properties — each reported with `file:line`. A file archives only when
-nothing was left behind; otherwise it stays active for the skill.
+Distill parses structured entries, **folds** repeats (latest values win — mid-session
+churn resolves itself), and applies them through the same handlers the MCP tools use,
+hard capture rules unchanged. Anything questionable is **refused to the residue** (never
+forced): narrative bullets, duplicate-guard hits, unknown relations, missing required
+properties — each reported with `file:line`. A file archives only when nothing was left
+behind; otherwise it stays active for the skill.
+- **In a session: the `memory_distill` MCP tool** (what the /distill skill calls first).
+  Runs inside the live server, so there is no clobber risk — the preferred form.
+- **From a terminal: `claude-memory-graph distill`** — only on PATH from a repo checkout
+  (`uv run …`) or after `uv tool install`; **plugin installs don't put the CLI on PATH**
+  (the server runs via `uvx --from` the plugin dir). Run it between sessions — a live
+  server's next save would overwrite terminal writes.
 - Code: `claude_memory_graph/distill.py` · Skill for the residue: `skills/distill/SKILL.md`
-- **Run it between sessions** — a live MCP server's next save would overwrite CLI writes.
 
 ### The graph + MCP server
 pyoxigraph store at `~/.claude/memory-graph/store/graph.nq` (human-readable NQuads — you
@@ -277,7 +282,7 @@ so most tuning pressure should come from the miss report, not from gut feel.
 | Start of a work block | *(nothing)* | prime + recall are automatic |
 | Whenever you wonder "is this on?" | `claude-memory-graph pulse` | injections, enforcement, backlog — zeros come with diagnoses |
 | Weekly, or when a visualisation shows loose nodes | `claude-memory-graph gaps` → `/memory-graph:reflect` | mechanical candidates → LLM judges and links |
-| End of a session / few sessions | `claude-memory-graph distill` | promote structured entries, zero tokens |
+| End of a session / few sessions | `memory_distill` tool in-session, or `claude-memory-graph distill` from a terminal | promote structured entries, zero LLM work |
 | When distill reports residue | `/memory-graph:distill` in a session | LLM pass over the leftovers only |
 | Weekly, or after a "why didn't it remember?" moment | `claude-memory-graph misses` | evidence-based threshold/alias fixes |
 | Weekly | `claude-hooks log -n 50` | eyeball false positives |
@@ -297,6 +302,10 @@ so most tuning pressure should come from the miss report, not from gut feel.
   is fresh (is something else touching the context dir?).
 - **Stop block fires but no file appears** → it stamps on *overdue*, so check the block's
   reason names a path, then check permissions on `CLAUDE_CONTEXT_DIR`.
+- **A session says "claude-memory-graph: command not found" / "tools not installed"** →
+  expected: plugin installs run the server via `uvx --from` and put NO CLI on PATH. In a
+  session the model should call the `memory_distill` tool (same code, safer); the CLI is
+  for terminals, via a repo checkout (`uv run …`) or `uv tool install`.
 - **`distill` reports 0 files** → files must match `<project>__*.md` and contain
   `distilled: false` in the first 300 bytes; `--project` filters by cwd basename.
 - **`distill` refused something you want stored** → the residue line says exactly why

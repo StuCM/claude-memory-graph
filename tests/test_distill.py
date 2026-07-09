@@ -101,6 +101,21 @@ def test_dry_run_writes_nothing(store, tmp_path):
     assert path.exists() and "distilled: false" in path.read_text()
 
 
+def test_memory_distill_mcp_tool(store, tmp_path, monkeypatch):
+    """The in-session lane: memory_distill dispatches to the same code —
+    sessions must never need the CLI (it isn't on PATH in plugin installs)."""
+    from claude_memory_graph.tools import _dispatch
+    ctx = tmp_path / "ctx"
+    ctx.mkdir()
+    (ctx / "claude-memory-graph__2026-07-08_09-00.md").write_text(GOOD)
+    monkeypatch.setenv("CLAUDE_CONTEXT_DIR", str(ctx))
+    out = _dispatch(store, "memory_distill", {})
+    assert "Created Decision 'Use pyoxigraph over rdflib'" in out
+    assert store.find_resource("Decision", "Use pyoxigraph over rdflib") is not None
+    out = _dispatch(store, "memory_distill", {"dry_run": True})
+    assert "files: 0" in out  # first run archived the clean file
+
+
 def test_upsert_not_duplicate_on_rerun(store, tmp_path):
     ctx = tmp_path / "ctx"
     ctx.mkdir()

@@ -282,10 +282,40 @@ _TOOLS = [
             },
         },
     ),
+    Tool(
+        name="memory_distill",
+        description=(
+            "Mechanically promote structured context entries into the graph — no LLM "
+            "work: parse undistilled context files, fold repeated statements (latest "
+            "values win), and apply nodes/concepts/links through the standard write "
+            "path with the hard capture rules enforced. Anything questionable is "
+            "REFUSED to a residue report (narrative bullets, near-duplicates, unknown "
+            "relations, missing required properties) — handle the residue yourself "
+            "afterwards. Clean files are marked distilled and archived. This is the "
+            "in-session equivalent of the `claude-memory-graph distill` CLI and the "
+            "preferred form: it runs inside the live server, so there is no risk of "
+            "the session's next save overwriting it."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "project": {
+                    "type": "string",
+                    "description": "Only this project's context files (default: all projects)",
+                },
+                "dry_run": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "Report what would be promoted without writing",
+                },
+            },
+        },
+    ),
 ]
 
 
 _MUTATING = {
+    "memory_distill",
     "memory_store_resource",
     "memory_store_concept",
     "memory_link",
@@ -384,5 +414,12 @@ def _dispatch(store: MemoryStore, name: str, args: dict) -> str:
 
     if name == "memory_reflect":
         return reflect.handle(store, args.get("model"))
+
+    if name == "memory_distill":
+        from .. import distill as distill_mod
+        report = distill_mod.distill(
+            store, project=args.get("project"),
+            dry_run=bool(args.get("dry_run")))
+        return report.render()
 
     raise ValueError(f"Unknown tool: {name}")
