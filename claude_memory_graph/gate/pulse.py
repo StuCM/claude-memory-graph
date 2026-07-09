@@ -107,6 +107,12 @@ def report(days: int = 7) -> str:
     if blocks and not writes:
         lines.append("  → blocks fire but no writes are ever observed — the model may "
                      "be ignoring them or the context dir is wrong (HANDBOOK §8).")
+    distills = [e for e in capture if e.get("kind") == "distill"]
+    if distills:
+        last = distills[-1]
+        lines.append(f"auto-distill: {len(distills)} run(s) · last promoted "
+                     f"{last.get('stored', 0)} node(s), {last.get('linked', 0)} link(s), "
+                     f"{last.get('residue', 0)} residue")
     found = sum(1 for e in recalls if e.get("found"))
     lines.append(f"explicit:    {len(recalls)} memory tool call(s), {found} found")
     lines.append(f"miss report: {n_miss} miss(es), {n_gap} capture gap(s) (all time)"

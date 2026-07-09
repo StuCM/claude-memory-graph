@@ -43,7 +43,8 @@ sharing/federation is explicitly **future** work.
 | [[bitemporal-links]] — two clocks + contradiction closure | M | — | **done** (ontology 0.6.0; closure on singleValued relations; unlink closes by default; reads filter to open edges) |
 | [[code-memory-rules]] — lanes of code knowledge; orientation (storage/layout/wiring) + cost-gated investigation findings (traces) earn Patterns | S | drift flag: [[code-anchors]] | **rules drafted** (protocol + docs wired) |
 | [[code-anchors]] — anchor props + drift flag in recall | S | — | **done** (tools/recall.py `_drift`: git-only staleness flag, fail open) |
-| [[auto-distill]] — headless SessionEnd distillation, gated by hard rules (claude-mem bet, evaluate) | M | [[distill-two-pass-dedup]] | planned |
+| [[auto-distill]] — automatic promotion of structured entries | M | — | **done** (mechanical, at server start, no LLM; promote-only + idempotent links = self-healing; MEMORY_GRAPH_AUTO_DISTILL=0 to disable) |
+| dashboard — self-contained HTML report over the logs (tiles, per-day activity, top memories, gaps, health notes) | S | pulse | **done** (gate/dashboard.py, `dashboard` CLI) |
 
 ## Future (not now)
 

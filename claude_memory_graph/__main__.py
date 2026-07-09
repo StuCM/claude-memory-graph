@@ -47,6 +47,14 @@ async def _run() -> None:
     log.info("Opening memory store at: %s", store_path)
     store = MemoryStore.open_or_create(store_path)
 
+    # Auto-distill: every new session's server starts by promoting the log's
+    # structured entries (promote-only, idempotent, fail-open) — see distill.py.
+    from . import distill as distill_mod
+    report = distill_mod.auto_distill(store)
+    if report and report.stored:
+        log.info("auto-distill: %d node(s), %d link(s), %d residue",
+                 len(report.stored), report.linked, len(report.residue))
+
     server = Server(SERVER_INFO["name"])
     server.instructions = INSTRUCTIONS
     tools.register(server, store)
@@ -107,6 +115,10 @@ def main() -> None:
     p = sub.add_parser("pulse", help="one screen: is memory reaching sessions? "
                                      "(injections, capture enforcement, misses, backlog)")
     p.add_argument("--days", type=int, default=7)
+    p = sub.add_parser("dashboard", help="generate a self-contained HTML dashboard "
+                                         "from the logs (open the printed path)")
+    p.add_argument("--days", type=int, default=14)
+    p.add_argument("--out", type=Path, default=None)
     p = sub.add_parser("coverage", help="grounding-coverage experiment over real prompts")
     p.add_argument("--prompts", type=Path, default=None,
                    help="text file, one prompt per line")
@@ -142,6 +154,11 @@ def main() -> None:
     if args.cmd == "pulse":
         from .gate import pulse
         print(pulse.report(days=args.days))
+        return
+
+    if args.cmd == "dashboard":
+        from .gate import dashboard
+        print(dashboard.write(out=args.out, days=args.days))
         return
 
     if args.cmd == "distill":

@@ -502,6 +502,27 @@ class MemoryStore:
             closed += 1
         return closed
 
+    def find_open_link(
+        self, source_iri: ox.NamedNode, target_iri: ox.NamedNode, relation: str
+    ) -> Optional[ox.NamedNode]:
+        sparql = (
+            f'SELECT ?link WHERE {{\n'
+            f'    GRAPH <{GRAPH_LINKS}> {{\n'
+            f'        ?link rdf:type mem:CrossLink ;\n'
+            f'              mem:linkSource <{source_iri.value}> ;\n'
+            f'              mem:linkTarget <{target_iri.value}> ;\n'
+            f'              mem:linkRelation "{relation}" .\n'
+            f'        FILTER NOT EXISTS {{ ?link mem:linkValidUntil ?end }}\n'
+            f'        FILTER NOT EXISTS {{ ?link mem:linkInvalidatedAt ?inv }}\n'
+            f'    }}\n'
+            f'}} LIMIT 1'
+        )
+        for solution in self._query(sparql):
+            node = solution["link"]
+            if isinstance(node, ox.NamedNode):
+                return node
+        return None
+
     def create_link(
         self,
         source_iri: ox.NamedNode,
@@ -510,7 +531,12 @@ class MemoryStore:
         metadata: dict[str, str],
     ) -> tuple[ox.NamedNode, int]:
         """Create an edge; returns (link_iri, closed) where closed is how many
-        conflicting open edges the contradiction-closure rule bounded."""
+        conflicting open edges the contradiction-closure rule bounded.
+        IDEMPOTENT: an identical open edge is returned, not duplicated — what
+        lets auto-distill re-run every server start without twinning links."""
+        existing = self.find_open_link(source_iri, target_iri, relation)
+        if existing is not None:
+            return existing, 0
         closed = 0
         if relation in self.single_valued_relations():
             closed = self._close_conflicting_links(source_iri, target_iri, relation)
