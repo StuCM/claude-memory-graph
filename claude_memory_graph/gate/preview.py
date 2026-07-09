@@ -16,30 +16,30 @@ Differences from a live session, stated in the output:
 `claude-memory-graph gate "why did we pick pyoxigraph?" [--project P]`
 """
 
-from .recall import _bigrams, _corpus, _idf, _project_neighbourhood, _score
+from .recall import _bigrams, _corpus, _idf, _project_neighbourhood, query_views, score_views
 from .runtime import config, store_dir
 
 
-def _rank(docs, q, q_bi, idf, near, boost):
+def _rank(docs, views, idf, near, boost):
     return sorted(
-        ((_score(q, d, idf, q_bi) * (boost if d.get("iri") in near else 1.0), d)
+        ((score_views(views, d, idf) * (boost if d.get("iri") in near else 1.0), d)
          for d in docs),
         key=lambda x: x[0], reverse=True)
 
 
 def preview(prompt: str, project: str = "", show: int = 6) -> str:
-    from claude_hook_kit import terms_pos
     from ..store import MemoryStore
     from . import session_corpus
 
     cfg = config()
-    pos = terms_pos(prompt)
-    q = {w for _, w in pos}
-    lines = [f"prompt terms: {' '.join(sorted(q)) or '(none — trivial prompt, gate never runs)'}"]
+    views = query_views(prompt)
+    q = views[0][0]
+    lines = [f"prompt terms: {' '.join(sorted(q)) or '(none — trivial prompt, gate never runs)'}"
+             + (f"  ·  scored as {len(views)} views (whole prompt + sentences; best wins)"
+                if len(views) > 1 else "")]
     if not q:
         return "\n".join(lines)
 
-    q_bi = _bigrams(pos)
     store = MemoryStore.open_or_create(store_dir())
     docs = _corpus(store)
     idf = _idf(docs) if docs else {}
@@ -54,7 +54,7 @@ def preview(prompt: str, project: str = "", show: int = 6) -> str:
         strong = []
     else:
         near = _project_neighbourhood(store, project)
-        ranked = _rank(docs, q, q_bi, idf, near, cfg["PROX_BOOST"])
+        ranked = _rank(docs, views, idf, near, cfg["PROX_BOOST"])
         top = ranked[0][0]
         strong = [(s, d) for s, d in ranked[:cfg["TOP_N"]]
                   if s >= cfg["ABS_MIN"] and s > top / cfg["MARGIN"]]
@@ -90,7 +90,7 @@ def preview(prompt: str, project: str = "", show: int = 6) -> str:
         lines.append("  no eligible entries")
     else:
         log_idf = {**_idf(log_docs), **idf}  # same merge as the live layer
-        log_ranked = _rank(log_docs, q, q_bi, log_idf, set(), 1.0)
+        log_ranked = _rank(log_docs, views, log_idf, set(), 1.0)
         log_strong = [(s, d) for s, d in log_ranked[:max(budget, 0)]
                       if s >= cfg["LOG_ABS_MIN"]]
         for s, d in log_ranked[:show]:

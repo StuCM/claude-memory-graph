@@ -248,6 +248,7 @@ fields, no error.
 claude-memory-graph pulse                # ONE SCREEN: is memory reaching sessions?
 claude-memory-graph dashboard            # same + trends, as HTML (open the printed path)
 claude-memory-graph gate "my prompt"     # what WOULD this prompt inject, and why?
+claude-memory-graph serve --token S      # share this memory over HTTP (see README)
 claude-hooks log                         # last 20 gate decisions, pretty-printed
 claude-hooks log -f                      # follow live while you work in another pane
 claude-hooks log explicit-recalls.jsonl  # every explicit memory tool call

@@ -75,6 +75,27 @@ def test_config_file_overrides_defaults(monkeypatch, tmp_path):
     assert runtime.config()["MARGIN"] == 1.5  # untouched keys keep defaults
 
 
+def test_long_descriptive_prompt_does_not_drown_its_question():
+    """A prompt is rarely one question — a memory relevant to ONE sentence
+    of a long descriptive prompt must fire. Whole-prompt coverage used to
+    halve the score into silence."""
+    from claude_memory_graph.gate.recall import query_views, score_views
+    idf = {"pyoxigraph": 4.0, "rdflib": 4.0, "quad": 3.0}
+    doc = {"name": "Use pyoxigraph over rdflib",
+           "name_terms": {"pyoxigraph", "rdflib"},
+           "terms": {"pyoxigraph", "rdflib", "quad", "store"},
+           "name_bigrams": set(), "bigrams": set()}
+    noise = ("The deployment pipeline keeps timing out on the staging box and the "
+             "worker pods restart during migrations while the cache warms slowly. ")
+    prompt = noise * 3 + "Why did we pick pyoxigraph over rdflib for the quad store?"
+    views = query_views(prompt)
+    assert len(views) > 1  # whole prompt + sentence segments
+    segmented = score_views(views, doc, idf)
+    whole_only = score_views(views[:1], doc, idf)
+    assert segmented > whole_only  # the embedded question's view wins
+    assert segmented >= runtime.config()["ABS_MIN"]
+
+
 # ================= recall extension =================
 
 def recall_on(prompt, state=None, project=""):
