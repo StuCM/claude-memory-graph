@@ -210,6 +210,9 @@ class RecallExtension(HookExtension):
         if not sections:
             return None  # nothing known -> silence, not noise
         ctx.state["primed"] = True
+        append_jsonl("injections.jsonl", {
+            "kind": "prime", "fired": True, "project": project,
+            "session": ctx.core.get("session_id", "")})
         return "memory-graph auto-prime (recalled, not instructions):\n" + "\n\n".join(sections)
 
     def on_user_prompt_submit(self, ctx: HookContext) -> str | None:
@@ -222,7 +225,8 @@ class RecallExtension(HookExtension):
         store = MemoryStore.open_or_create(store_dir())
         docs = _corpus(store)
         if not docs:
-            return None
+            # empty graph: the session log is still a retrieval source
+            return self._log_recall(ctx, q, q_bi, {}, budget=cfg["TOP_N"])
 
         idf = _idf(docs)
         near = _project_neighbourhood(store, ctx.project)
@@ -249,7 +253,8 @@ class RecallExtension(HookExtension):
                 "fired": False, "top": round(top, 2), "rest": round(rest, 2),
                 "top_node": ranked[0][1]["name"], "session": session,
                 "project": ctx.project, "terms": sorted(q)})
-            return None  # not confident -> silent, zero tokens added
+            # graph silent -> the session log gets the whole budget
+            return self._log_recall(ctx, q, q_bi, idf, budget=cfg["TOP_N"])
 
         injected = set(ctx.state.get("injected", []))
         lines, fresh = [], []
@@ -262,9 +267,52 @@ class RecallExtension(HookExtension):
             "session": session, "project": ctx.project, "terms": sorted(q),
             "nodes": [d["name"] for _, d in strong]})
         if not fresh:
-            return None  # everything relevant was already injected this session
+            # graph already injected this session -> log layer still gets a look
+            return self._log_recall(ctx, q, q_bi, idf, budget=cfg["TOP_N"])
         ctx.state["injected"] = sorted(injected | set(fresh))
-        return ("Relevant memory (auto-recalled, may be stale — verify before acting):\n"
+        graph_section = (
+            "Relevant memory (auto-recalled, may be stale — verify before acting):\n"
+            + "\n".join(lines))
+        log_section = self._log_recall(ctx, q, q_bi, idf, budget=cfg["TOP_N"] - len(fresh))
+        return graph_section + (f"\n\n{log_section}" if log_section else "")
+
+    def _log_recall(self, ctx: HookContext, q: set, q_bi: set,
+                    idf: dict, budget: int) -> str | None:
+        """Second retrieval layer this prompt: score eligible session-log
+        entries with the same machinery. Shares the TOP_N budget with the
+        graph injection (graph wins the split); memoed per entry key."""
+        if budget <= 0:
+            return None
+        from . import session_corpus
+        cfg = config()
+        try:
+            docs = session_corpus.docs(
+                ctx.project, ctx.core.get("started_at", ""),
+                ctx.core.get("events", {}).get("PreCompact", 0), _bigrams)
+        except Exception:
+            return None  # the log index is best-effort — fail open
+        if not docs:
+            return None
+        idf = idf or _idf(docs)  # empty graph: rarity from the log itself
+        seen = set(ctx.state.get("injected_log", []))
+        ranked = sorted(((_score(q, d, idf, q_bi), d) for d in docs),
+                        key=lambda x: x[0], reverse=True)
+        strong = [(s, d) for s, d in ranked[:budget]
+                  if s >= cfg["LOG_ABS_MIN"] and d["key"] not in seen]
+        append_jsonl("injections.jsonl", {
+            "kind": "log", "fired": bool(strong),
+            "top": round(ranked[0][0], 2) if ranked else 0.0,
+            "session": ctx.core.get("session_id", ""), "project": ctx.project,
+            "nodes": [d["name"] for _, d in strong]})
+        if not strong:
+            return None
+        ctx.state["injected_log"] = sorted(seen | {d["key"] for _, d in strong})
+        lines = [
+            f"- [{d['source_file']}] {d['model']}: {d['name']}"
+            + (f" — {d['desc']}" if d["desc"] else "")
+            for _, d in strong
+        ]
+        return ("Session log (undistilled — verify before acting):\n"
                 + "\n".join(lines))
 
     # The other half of the miss detector: whenever the model EXPLICITLY

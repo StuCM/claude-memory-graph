@@ -506,12 +506,23 @@ def test_context_write_clears_dig_ask_too(context_dir):
     (context_dir / "proj__2026-07-06_15-00.md").write_text("---\ndistilled: false\n---\n")
     assert ext.on_stop(stop_ctx(state, core)) is None
 
-def test_precompact_always_flushes_and_names_the_file(context_dir):
+def test_precompact_steers_the_summary_and_names_the_file(context_dir):
+    """No model turn exists before compaction — PreCompact steers the
+    SUMMARY (what must be carried forward) rather than asking for writes."""
     out = ContextCounterExtension().on_pre_compact(
         prompt_ctx("", event="PreCompact", project="proj"))
-    assert out is not None and "NOW" in out
+    assert out is not None and "summary MUST carry forward" in out
     assert str(context_dir) in out                       # self-contained path
     assert list(context_dir.glob("proj__*.md"))          # stamped if missing
+
+def test_pressure_escalates_cadence(context_dir):
+    """Near the window limit, one uncaptured exchange is enough to block —
+    compaction is close and PreCompact can only steer, not trigger writes."""
+    ext = ContextCounterExtension()
+    core = {"significant_prompt_count": 1, "context_tokens": 150_000}
+    assert ext.on_stop(stop_ctx({}, dict(core))) is not None
+    calm = {"significant_prompt_count": 1, "context_tokens": 50_000}
+    assert ext.on_stop(stop_ctx({}, calm)) is None
 
 def test_session_end_suggests_distill(context_dir):
     for i in range(3):

@@ -34,9 +34,17 @@ Start here; [SYSTEM.md](SYSTEM.md) shows how the pieces connect.
   when the point is graph-worthy; lets distill *fold and store* instead of re-deriving from
   prose — structure is transcription, nearly free at write time. Plain narrative bullets
   remain legal for everything else.
-- **Distill** — the promotion step (`/memory-graph:distill`): reads context files *with
-  hindsight*, extracts what survived, writes graph nodes, archives the files. Optimises for
-  *quality* (a junk node is the failure).
+- **Distill** — the promotion step, two lanes: **mechanical** (`claude-memory-graph
+  distill`, no LLM — parses structured entries, folds latest-wins, applies via the same
+  handlers as the MCP tools, refuses anything questionable) and the **skill lane**
+  (`/memory-graph:distill`) for the residue, with hindsight. Optimises for *quality*
+  (a junk node is the failure).
+- **Residue** — what the mechanical lane refuses rather than forces: narrative bullets,
+  duplicate-guard hits, unknown relations, missing required properties. Reported with
+  file:line; the skill lane's whole job.
+- **Session-log recall** — the log as the PRIMARY per-prompt retrieval layer (graph
+  second): undistilled entries scored by the gate and injected when relevant. Own-session
+  entries are eligible only after a compaction; other sessions' always (the handoff case).
 - **Ingest** — distillation for documents we don't own (issue repos, ADRs): same rules, but
   sources are never modified; ingestion state lives in the graph via `sourceDocument`.
 - **The rubric** — the three-part test a fact must pass to earn a node: **durable** (useful

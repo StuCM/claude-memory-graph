@@ -43,6 +43,9 @@ _DEFAULTS = {
     "PHRASE_GAP": 2,    # recall: max original-token distance for a bigram (2 = one word between)
     "N_TURNS": 3,       # nudge: remind every N significant prompts
     "DIG_THRESHOLD": 8, # nudge: file-inspection calls in one turn that make it a dig
+    "LOG_ABS_MIN": 3.0, # session-log recall: score floor for undistilled entries
+    "PRESSURE_TOKENS": 140000,  # nudge: context size that escalates the flush
+    "GAP_MIN": 6.0,     # gaps: IDF mass two unlinked nodes must share to suggest a link
 }
 _CONFIG_PATH = Path.home() / ".claude" / "memory-graph" / "gate.json"
 _config: dict | None = None

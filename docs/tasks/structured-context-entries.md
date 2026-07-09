@@ -1,6 +1,6 @@
 # Task: structured context entries → mechanical distill
 
-Status: **phase 1 done (protocol + skill); phase 2 planned (parser)** · Owner: Stuart ·
+Status: **done — phase 1 (protocol + skill) and phase 2 (context_entries.py parser, distill.py, `claude-memory-graph distill` CLI; refuses to residue, never forces)** · Owner: Stuart ·
 Created: 2026-07-06 · Size: M
 
 ## The observed problem (2026-07-06 session)

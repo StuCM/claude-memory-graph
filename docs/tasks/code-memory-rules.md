@@ -146,8 +146,8 @@ layout itself stays worth knowing.
 - ~~Dig counter~~ — **done** ([[dig-counter]]): the trace lane no longer depends on the
   model noticing "that was an expensive dig" — PostToolUse counts file-inspection calls
   per turn, and a turn past `DIG_THRESHOLD` gets a Stop block asking for the trace entry.
-- [[code-anchors]] — the drift flag that keeps this lane honest (`(code changed since)`
-  on recall when the anchored path has commits past `anchorCommit`).
+- ~~[[code-anchors]]~~ — **done**: recall now appends `(code changed since <commit>)`
+  when the anchored path has commits past `anchorCommit` (git-only, fail open).
 - After a few sessions, check volume: if orientation Patterns exceed ~a dozen per project,
   tighten test 1 (subsystem granularity); if traces accumulate faster than they get
   recalled, raise the cost gate before anything else. The lane earns its keep when the

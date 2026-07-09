@@ -54,7 +54,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-from claude_hook_kit import HookContext, HookExtension
+from claude_hook_kit import HookContext, HookExtension, append_jsonl
 
 from .runtime import config
 
@@ -153,16 +153,30 @@ class ContextCounterExtension(HookExtension):
                 # (and trust the dig turn's write to have carried its finding).
                 state["last_mtime"] = mtime
                 state["written_at"] = significant
+                append_jsonl("capture.jsonl", {
+                    "kind": "write", "session": ctx.core.get("session_id", ""),
+                    "project": ctx.project})
                 return None
 
         overdue = significant - state.get("written_at", 0)
         dig = self._dig_count(ctx)
         cadence_due = overdue >= config()["N_TURNS"]
+        # Pressure escalation (transcript telemetry): near the window limit,
+        # ANY uncaptured exchange is worth flushing — compaction is close and
+        # PreCompact can only steer the summary, not trigger writes.
+        if ctx.core.get("context_tokens", 0) >= config()["PRESSURE_TOKENS"]:
+            cadence_due = cadence_due or overdue >= 1
         dig_due = dig >= config()["DIG_THRESHOLD"]
         if not (cadence_due or dig_due):
             return None
 
         path = latest if latest is not None else self._stamp_file(ctx)
+        # The capture loop's decision log — the pulse report's evidence that
+        # enforcement is (or isn't) happening.
+        append_jsonl("capture.jsonl", {
+            "kind": "block", "cadence": cadence_due, "dig": dig if dig_due else 0,
+            "overdue": overdue, "stamped": latest is None,
+            "session": ctx.core.get("session_id", ""), "project": ctx.project})
         reasons = []
         if cadence_due:
             reasons.append(
@@ -180,10 +194,16 @@ class ContextCounterExtension(HookExtension):
         return "\n\n".join(reasons)
 
     def on_pre_compact(self, ctx: HookContext) -> str | None:
+        # There is NO model turn before compaction — asking for writes here
+        # arrives too late by construction (the Stop block is the flush
+        # point). What PreCompact CAN do is steer the summary: this output
+        # goes to the compactor as additionalContext (dispatcher wraps it).
         path = self._latest_file(ctx.project) or self._stamp_file(ctx)
-        return (f"[context] compaction imminent — write ALL un-captured key points to "
-                f"{path} NOW, before this conversation's detail is summarised away. "
-                f"{self._FORMAT_HINT}")
+        return (f"The compaction summary MUST carry forward every decision, problem/fix, "
+                f"user preference, and finding not yet recorded in the session context "
+                f"file. The durable record is {path} — prefer pointing at it over "
+                f"re-summarising what it already holds, and preserve anything it does "
+                f"NOT yet contain verbatim enough to be written there afterwards.")
 
     def on_session_end(self, ctx: HookContext) -> str | None:
         undistilled = 0
