@@ -10,7 +10,7 @@ Review context files in `~/.claude/context/` and extract what matters into the m
 ## Steps
 
 ### 1. Gather
-First run `claude-memory-graph distill` (Bash) — the mechanical lane promotes all structured entries with zero LLM work and prints a RESIDUE list (narrative bullets, refused promotions, unknown relations). Your job is only what it left behind. Then read the remaining `.md` files in `~/.claude/context/` with `distilled: false` in frontmatter. If the mechanical lane archived everything and there is no residue, report its summary and stop.
+First call the **`memory_distill` tool** — the mechanical lane promotes all structured entries with zero LLM work and returns a RESIDUE list (narrative bullets, refused promotions, unknown relations). Your job is only what it left behind. (Do NOT try `claude-memory-graph distill` in Bash — the CLI is not on PATH in plugin installs; the tool is the same code running inside the live server, which is also safer.) Then read the remaining `.md` files in `~/.claude/context/` with `distilled: false` in frontmatter. If the mechanical lane archived everything and there is no residue, report its summary and stop.
 
 ### 2. Analyse
 Context entries come in two shapes, and they cost you very differently — do not re-derive what is already structured:
