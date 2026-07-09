@@ -18,6 +18,7 @@ sharing/federation is explicitly **future** work.
 | [[session-context-recall]] — index undistilled context entries; per-prompt scored injection (post-compaction recovery, cheap handoffs) | M | [[structured-context-entries]] | **done** (session_corpus.py + `_log_recall`; log = primary layer, shared TOP_N budget) |
 | [[query-planner-v0]] — compose SPARQL from question shape (`ask` CLI) | L | [[memory-search-tool]] | **done** (planner.py, `ask --explain`; golden + refusal tests) |
 | [[planner-telemetry]] — ask-decisions log, `asks` report, `memory_amend_relation` | S | [[query-planner-v0]] | **done** (lexicon self-correction loop; reflect skill step 6) |
+| segment scoring — long descriptive prompts scored per-sentence, best view wins (whole-prompt coverage drowned embedded questions) | S | — | **done** (query_views/score_views in gate + preview) |
 | [[temporal-query-modifiers]] — tense → valid-time filters | S | [[query-planner-v0]], [[bitemporal-links]] | planned |
 
 ## Tool 2 — Context creation
@@ -45,6 +46,7 @@ sharing/federation is explicitly **future** work.
 | [[code-anchors]] — anchor props + drift flag in recall | S | — | **done** (tools/recall.py `_drift`: git-only staleness flag, fail open) |
 | [[auto-distill]] — automatic promotion of structured entries | M | — | **done** (mechanical, at server start, no LLM; promote-only + idempotent links = self-healing; MEMORY_GRAPH_AUTO_DISTILL=0 to disable) |
 | dashboard — self-contained HTML report over the logs (tiles, per-day activity, top memories, gaps, health notes) | S | pulse | **done** (gate/dashboard.py, `dashboard` CLI) |
+| [[remote-server]] — shared memory over streamable HTTP (`serve`, bearer auth); tools travel, hooks stay per-machine (v2: remote gate corpus) | M | — | **v1 done** |
 
 ## Future (not now)
 

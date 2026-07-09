@@ -28,6 +28,7 @@ MEMORY_GRAPH_USER's) recall, so sessions begin already primed.
 
 import math
 import os
+import re
 from pathlib import Path
 
 from claude_hook_kit import HookContext, HookExtension, append_jsonl, bigrams, terms_pos
@@ -43,6 +44,35 @@ _SKIP_PROPS = {
 
 def _bigrams(pos_terms: list[tuple[int, str]]) -> set[tuple[str, str]]:
     return bigrams(pos_terms, gap=config()["PHRASE_GAP"])
+
+
+_SEGMENT_RE = re.compile(r"[.!?;\n]+")
+_SEGMENT_MIN_TERMS = 12  # prompts shorter than this score fine as one view
+
+
+def query_views(prompt: str) -> list[tuple[set, set]]:
+    """(terms, bigrams) views of the prompt: the whole thing, plus each
+    sentence-ish segment when the prompt is a real chunk of text.
+
+    A prompt is rarely a single question — it's usually descriptive prose
+    with the actual asks embedded in it. Scored as one bag of words, a
+    long prompt DROWNS its own signals: the coverage factor divides by
+    every word in the prompt, so three strong rare-word matches inside
+    sixty words of description get halved into silence. Scoring each
+    segment separately and taking a document's BEST view means a memory
+    relevant to one sentence fires regardless of how much surrounds it."""
+    pos = terms_pos(prompt)
+    views = [({w for _, w in pos}, _bigrams(pos))]
+    if len(pos) >= _SEGMENT_MIN_TERMS:
+        for segment in _SEGMENT_RE.split(prompt):
+            seg_pos = terms_pos(segment)
+            if len(seg_pos) >= 2:
+                views.append(({w for _, w in seg_pos}, _bigrams(seg_pos)))
+    return views
+
+
+def score_views(views: list[tuple[set, set]], d: dict, idf: dict) -> float:
+    return max(_score(q, d, idf, q_bi) for q, q_bi in views)
 
 
 def _corpus(store, include_concepts: bool = False) -> list[dict]:
@@ -220,19 +250,19 @@ class RecallExtension(HookExtension):
         if not q:
             return None
         cfg = config()
-        q_bi = _bigrams(ctx.terms_pos)
+        views = query_views(ctx.prompt)  # whole prompt + its sentences
         from ..store import MemoryStore
         store = MemoryStore.open_or_create(store_dir())
         docs = _corpus(store)
         if not docs:
             # empty graph: the session log is still a retrieval source
-            return self._log_recall(ctx, q, q_bi, {}, budget=cfg["TOP_N"])
+            return self._log_recall(ctx, q, views, {}, budget=cfg["TOP_N"])
 
         idf = _idf(docs)
         near = _project_neighbourhood(store, ctx.project)
         boost = cfg["PROX_BOOST"]
         ranked = sorted(
-            ((_score(q, d, idf, q_bi) * (boost if d["iri"] in near else 1.0), d)
+            ((score_views(views, d, idf) * (boost if d["iri"] in near else 1.0), d)
              for d in docs),
             key=lambda x: x[0], reverse=True)
         top = ranked[0][0]
@@ -254,7 +284,7 @@ class RecallExtension(HookExtension):
                 "top_node": ranked[0][1]["name"], "session": session,
                 "project": ctx.project, "terms": sorted(q)})
             # graph silent -> the session log gets the whole budget
-            return self._log_recall(ctx, q, q_bi, idf, budget=cfg["TOP_N"])
+            return self._log_recall(ctx, q, views, idf, budget=cfg["TOP_N"])
 
         injected = set(ctx.state.get("injected", []))
         lines, fresh = [], []
@@ -268,15 +298,15 @@ class RecallExtension(HookExtension):
             "nodes": [d["name"] for _, d in strong]})
         if not fresh:
             # graph already injected this session -> log layer still gets a look
-            return self._log_recall(ctx, q, q_bi, idf, budget=cfg["TOP_N"])
+            return self._log_recall(ctx, q, views, idf, budget=cfg["TOP_N"])
         ctx.state["injected"] = sorted(injected | set(fresh))
         graph_section = (
             "Relevant memory (auto-recalled, may be stale — verify before acting):\n"
             + "\n".join(lines))
-        log_section = self._log_recall(ctx, q, q_bi, idf, budget=cfg["TOP_N"] - len(fresh))
+        log_section = self._log_recall(ctx, q, views, idf, budget=cfg["TOP_N"] - len(fresh))
         return graph_section + (f"\n\n{log_section}" if log_section else "")
 
-    def _log_recall(self, ctx: HookContext, q: set, q_bi: set,
+    def _log_recall(self, ctx: HookContext, q: set, views: list,
                     idf: dict, budget: int) -> str | None:
         """Second retrieval layer this prompt: score eligible session-log
         entries with the same machinery. Shares the TOP_N budget with the
@@ -299,7 +329,7 @@ class RecallExtension(HookExtension):
         # Graph values win on overlap (bigger corpus, better estimates).
         idf = {**_idf(docs), **(idf or {})}
         seen = set(ctx.state.get("injected_log", []))
-        ranked = sorted(((_score(q, d, idf, q_bi), d) for d in docs),
+        ranked = sorted(((score_views(views, d, idf), d) for d in docs),
                         key=lambda x: x[0], reverse=True)
         strong = [(s, d) for s, d in ranked[:budget]
                   if s >= cfg["LOG_ABS_MIN"] and d["key"] not in seen]

@@ -17,6 +17,18 @@ claude plugin install memory-graph@claude-memory-graph --scope user
 
 Optional: set `MEMORY_GRAPH_PATH` to change the data directory (defaults to `~/.claude/memory-graph/store`).
 
+### Shared server (across clients and machines)
+
+```sh
+claude-memory-graph serve --host 0.0.0.0 --port 8848 --token <secret>   # on the host
+claude mcp add --transport http memory-graph http://host:8848/mcp \
+    --header "Authorization: Bearer <secret>"                            # on each client
+```
+
+One process owns the store (no last-writer-wins between sessions). Non-localhost binds
+require the token. v1 scope: the MCP tools travel; ambient injection/capture hooks stay
+per-machine — see [docs/tasks/remote-server.md](docs/tasks/remote-server.md).
+
 ### Manual install (server only)
 
 ```sh

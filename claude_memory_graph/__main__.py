@@ -119,6 +119,15 @@ def main() -> None:
                                          "from the logs (open the printed path)")
     p.add_argument("--days", type=int, default=14)
     p.add_argument("--out", type=Path, default=None)
+    p = sub.add_parser("serve", help="run the MCP server over streamable HTTP so "
+                                     "other machines/clients share this memory. "
+                                     "One process owns the store (safer than "
+                                     "per-session stdio servers). Non-localhost "
+                                     "binds require --token.")
+    p.add_argument("--host", default="127.0.0.1")
+    p.add_argument("--port", type=int, default=8848)
+    p.add_argument("--token", default=os.environ.get("MEMORY_GRAPH_TOKEN", ""),
+                   help="bearer token clients must send (env: MEMORY_GRAPH_TOKEN)")
     p = sub.add_parser("gate", help="preview the injection decision for a prompt — "
                                     "the REAL gate math (both layers, thresholds, "
                                     "scores), zero side effects. memory_search is "
@@ -168,6 +177,14 @@ def main() -> None:
     if args.cmd == "dashboard":
         from .gate import dashboard
         print(dashboard.write(out=args.out, days=args.days))
+        return
+
+    if args.cmd == "serve":
+        logging.basicConfig(level=logging.INFO,
+                            format="%(asctime)s %(levelname)s %(message)s")
+        from .http_server import serve
+        serve(_store_path(), INSTRUCTIONS, host=args.host, port=args.port,
+              token=args.token)
         return
 
     if args.cmd == "gate":
