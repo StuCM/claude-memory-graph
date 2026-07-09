@@ -293,7 +293,11 @@ class RecallExtension(HookExtension):
             return None  # the log index is best-effort — fail open
         if not docs:
             return None
-        idf = idf or _idf(docs)  # empty graph: rarity from the log itself
+        # Rarity for log terms the graph has never seen must come from the
+        # log corpus itself — graph IDF alone would score fresh vocabulary 0
+        # and the newest knowledge (the layer's whole point) could never fire.
+        # Graph values win on overlap (bigger corpus, better estimates).
+        idf = {**_idf(docs), **(idf or {})}
         seen = set(ctx.state.get("injected_log", []))
         ranked = sorted(((_score(q, d, idf, q_bi), d) for d in docs),
                         key=lambda x: x[0], reverse=True)

@@ -69,7 +69,7 @@ Then look for what mechanics can't see:
 - Overlapping LLM-added relations (e.g. a new relation duplicating `relatesTo`) → suggest consolidation
 
 ### 6. Verb-form lexicon health (query planner)
-Run `claude-memory-graph asks` (read-only CLI). It joins the planner's telemetry log into two curation signals:
+Run `claude-memory-graph asks` (read-only CLI — note it is only on PATH from a repo checkout or after `uv tool install`; in a plugin-install session, ask the user to run it and paste the output). It joins the planner's telemetry log into two curation signals:
 - **Misgrounding suspects** — a verb form that fires but its asks always end with no rows (e.g. a prose word like "under" colliding with a relation). Remove it with `memory_amend_relation` if the relation is LLM-added; for base-ontology relations suggest the base.ttl edit (+ version bump) to the user.
 - **Vocabulary gaps** — terms that repeatedly ground to nothing in failed asks. If a gap term is a phrasing of an existing relation, `memory_amend_relation` with `add_verb_forms`; if it's an alternate name of an existing node, add it to that node's `aliases`; if it names something real and absent, capture the node.
 
