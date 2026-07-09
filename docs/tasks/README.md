@@ -19,6 +19,7 @@ sharing/federation is explicitly **future** work.
 | [[query-planner-v0]] — compose SPARQL from question shape (`ask` CLI) | L | [[memory-search-tool]] | **done** (planner.py, `ask --explain`; golden + refusal tests) |
 | [[planner-telemetry]] — ask-decisions log, `asks` report, `memory_amend_relation` | S | [[query-planner-v0]] | **done** (lexicon self-correction loop; reflect skill step 6) |
 | segment scoring — long descriptive prompts scored per-sentence, best view wins (whole-prompt coverage drowned embedded questions) | S | — | **done** (query_views/score_views in gate + preview) |
+| project identity — git-root resolution + CLAUDE_HOOK_KIT_PROJECT override (subdir sessions fragmented the project; drift check now runs from repo root) | S | — | **done** (hook-kit project_of; HANDBOOK §1) |
 | [[temporal-query-modifiers]] — tense → valid-time filters | S | [[query-planner-v0]], [[bitemporal-links]] | planned |
 
 ## Tool 2 — Context creation

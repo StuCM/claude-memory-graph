@@ -37,6 +37,26 @@ def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def project_of(cwd: str) -> str:
+    """The session's project name — the identity everything keys on
+    (priming, proximity, context-file grouping). Resolution order:
+
+    1. CLAUDE_HOOK_KIT_PROJECT — explicit override (monorepos, or a repo
+       cloned under a different directory name than its Project node);
+    2. the git repo ROOT's basename — a session started in a subdirectory
+       (~/dev/charcoal/frontend) still belongs to 'charcoal';
+    3. the cwd basename — non-repo directories keep today's behaviour.
+    """
+    override = os.environ.get("CLAUDE_HOOK_KIT_PROJECT")
+    if override:
+        return override
+    path = Path(cwd)
+    for candidate in (path, *path.parents):
+        if (candidate / ".git").exists():  # dir in a checkout, file in a worktree
+            return candidate.name
+    return path.name
+
+
 def _transcript_usage(path_str: str) -> dict | None:
     """Token usage from the transcript's most recent assistant message —
     the tail only (last 64KB), so per-dispatch cost stays in milliseconds.
@@ -112,7 +132,7 @@ class StateStore:
         core.setdefault("started_at", _now())
         cwd = payload.get("cwd") or os.getcwd()
         core["cwd"] = cwd
-        core["project"] = Path(cwd).name
+        core["project"] = project_of(cwd)
         core.setdefault("prompt_count", 0)
         core.setdefault("significant_prompt_count", 0)
         core.setdefault("events", {})
