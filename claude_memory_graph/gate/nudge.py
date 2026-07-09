@@ -54,7 +54,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-from claude_hook_kit import HookContext, HookExtension
+from claude_hook_kit import HookContext, HookExtension, append_jsonl
 
 from .runtime import config
 
@@ -153,6 +153,9 @@ class ContextCounterExtension(HookExtension):
                 # (and trust the dig turn's write to have carried its finding).
                 state["last_mtime"] = mtime
                 state["written_at"] = significant
+                append_jsonl("capture.jsonl", {
+                    "kind": "write", "session": ctx.core.get("session_id", ""),
+                    "project": ctx.project})
                 return None
 
         overdue = significant - state.get("written_at", 0)
@@ -168,6 +171,12 @@ class ContextCounterExtension(HookExtension):
             return None
 
         path = latest if latest is not None else self._stamp_file(ctx)
+        # The capture loop's decision log — the pulse report's evidence that
+        # enforcement is (or isn't) happening.
+        append_jsonl("capture.jsonl", {
+            "kind": "block", "cadence": cadence_due, "dig": dig if dig_due else 0,
+            "overdue": overdue, "stamped": latest is None,
+            "session": ctx.core.get("session_id", ""), "project": ctx.project})
         reasons = []
         if cadence_due:
             reasons.append(

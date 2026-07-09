@@ -101,6 +101,12 @@ def main() -> None:
     sub.add_parser("misses", help="gate miss report: silences followed by explicit recalls")
     sub.add_parser("asks", help="planner telemetry: outcomes, misgrounding suspects, "
                                 "vocabulary gaps (from ask-decisions.jsonl)")
+    p = sub.add_parser("gaps", help="mechanical link-gap report: orphans, conceptless "
+                                    "nodes, unlinked pairs sharing rare vocabulary")
+    p.add_argument("--limit", type=int, default=10, help="max pair suggestions")
+    p = sub.add_parser("pulse", help="one screen: is memory reaching sessions? "
+                                     "(injections, capture enforcement, misses, backlog)")
+    p.add_argument("--days", type=int, default=7)
     p = sub.add_parser("coverage", help="grounding-coverage experiment over real prompts")
     p.add_argument("--prompts", type=Path, default=None,
                    help="text file, one prompt per line")
@@ -125,6 +131,17 @@ def main() -> None:
     if args.cmd == "asks":
         from . import planner
         print(planner.asks_report())
+        return
+
+    if args.cmd == "gaps":
+        from . import gaps as gaps_mod
+        store = MemoryStore.open_or_create(_store_path())
+        print(gaps_mod.handle(store, limit=args.limit))
+        return
+
+    if args.cmd == "pulse":
+        from .gate import pulse
+        print(pulse.report(days=args.days))
         return
 
     if args.cmd == "distill":

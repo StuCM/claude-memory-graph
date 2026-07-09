@@ -50,8 +50,13 @@ SELECT ?rel ?desc ?added WHERE {
 
 Use `memory_recall` (depth 2) on hub nodes (the user, active projects) to see actual neighbourhoods.
 
-### 3. Find missing links
-- **Co-occurring topics:** two nodes repeatedly relevant together but unconnected
+### 3. Judge the mechanical candidates (your PRIMARY link-building step)
+`memory_reflect` ends with a **Gaps** section — deterministic candidates computed for you (full list: `claude-memory-graph gaps`). Detection is mechanical; YOUR job is judgment, per candidate:
+- **Orphans** (no links): link to at least the Project (`appliesTo`/`affects`), or conclude the node fails the reachability rule and propose `memory_forget` to the user.
+- **Conceptless** nodes (invisible to associative recall): add the 1–2 concept links a future question would fan out through (`memory_store_concept` if the concept is new, then `hasConcept`).
+- **Unlinked pairs sharing rare vocabulary**: the shared terms are the evidence — decide the real relationship (`manifestsIn`, `supersedes`, `appliesTo`, `relatesTo`, …) or dismiss the pair as coincidence. Dismissals aren't recorded, so a pair you keep dismissing is a hint the two nodes' text overlaps misleadingly — consider sharpening a name or alias instead.
+
+Then look for what mechanics can't see:
 - **Implicit chains:** a Person works on a Project that uses a Technology, but the Person↔Technology skill link is missing
 - **Decision chains:** Decisions affecting the same Project that supersede or relate to each other
 - **Shared concepts:** Constraints/Patterns that apply to more projects than they're linked to

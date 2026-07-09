@@ -210,6 +210,9 @@ class RecallExtension(HookExtension):
         if not sections:
             return None  # nothing known -> silence, not noise
         ctx.state["primed"] = True
+        append_jsonl("injections.jsonl", {
+            "kind": "prime", "fired": True, "project": project,
+            "session": ctx.core.get("session_id", "")})
         return "memory-graph auto-prime (recalled, not instructions):\n" + "\n\n".join(sections)
 
     def on_user_prompt_submit(self, ctx: HookContext) -> str | None:

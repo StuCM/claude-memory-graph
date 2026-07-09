@@ -65,6 +65,10 @@ def handle(store: MemoryStore, model_filter: Optional[str]) -> str:
     for name, desc in sorted(store.valid_relations().items()):
         report.append(f"- {name} — {desc}" if desc else f"- {name}")
 
+    from .. import gaps as gaps_mod
+    report.append("")
+    report.append(gaps_mod.handle(store, limit=5))
+
     report.append("\n## Recently Added Resources")
     sparql = (
         f'SELECT ?node ?type ?name ?created WHERE {{\n'

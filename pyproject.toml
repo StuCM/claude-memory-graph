@@ -1,6 +1,6 @@
 [project]
 name = "claude-memory-graph"
-version = "0.3.0"
+version = "0.4.0"
 description = "Arches-inspired knowledge graph MCP server for Claude Code long-term memory"
 requires-python = ">=3.11"
 dependencies = [

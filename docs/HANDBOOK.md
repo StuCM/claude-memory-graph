@@ -118,6 +118,14 @@ shows the grounding table and the query. Its decisions log to `ask-decisions.jso
 - Code: `claude_memory_graph/planner.py`
 
 ### The instruments
+- **Pulse** (`claude-memory-graph pulse [--days N]`) — **start here**: one screen answering
+  "is memory reaching my sessions?" — primes, graph/log injections with top nodes, capture
+  enforcement (blocks/digs/observed writes), explicit recalls, the miss headline, and the
+  distill backlog. Every zero comes with a diagnosis line.
+- **Gap finder** (`claude-memory-graph gaps`; top candidates also appended to
+  `memory_reflect`): mechanical link candidates — orphans, concept-less nodes, and
+  unlinked pairs sharing rare vocabulary, with the shared words as evidence. The reflect
+  skill judges this list; detection is never the LLM's job.
 - **Miss detector** (`claude-memory-graph misses`): joins gate silences with the model's
   explicit recalls — every "gate said nothing, model went to the shelf and found it" is a
   labelled false negative, with a suggested fix (threshold vs vocabulary).
@@ -210,6 +218,7 @@ fields, no error.
 ## 4. Watching it (the logs)
 
 ```sh
+claude-memory-graph pulse                # ONE SCREEN: is memory reaching sessions?
 claude-hooks log                         # last 20 gate decisions, pretty-printed
 claude-hooks log -f                      # follow live while you work in another pane
 claude-hooks log explicit-recalls.jsonl  # every explicit memory tool call
@@ -266,6 +275,8 @@ so most tuning pressure should come from the miss report, not from gut feel.
 | When | Command | Why |
 |---|---|---|
 | Start of a work block | *(nothing)* | prime + recall are automatic |
+| Whenever you wonder "is this on?" | `claude-memory-graph pulse` | injections, enforcement, backlog — zeros come with diagnoses |
+| Weekly, or when a visualisation shows loose nodes | `claude-memory-graph gaps` → `/memory-graph:reflect` | mechanical candidates → LLM judges and links |
 | End of a session / few sessions | `claude-memory-graph distill` | promote structured entries, zero tokens |
 | When distill reports residue | `/memory-graph:distill` in a session | LLM pass over the leftovers only |
 | Weekly, or after a "why didn't it remember?" moment | `claude-memory-graph misses` | evidence-based threshold/alias fixes |
