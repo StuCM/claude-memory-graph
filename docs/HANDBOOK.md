@@ -124,6 +124,27 @@ shows the grounding table and the query. Its decisions log to `ask-decisions.jso
 - Code: `claude_memory_graph/planner.py`
 
 ### The instruments
+
+**Which instrument answers which question** (they don't feed each other):
+
+| You did | It logged to | Read it with |
+|---|---|---|
+| worked in a session (prompts) | `injections.jsonl` (fired AND silent) | `pulse`, `misses`, `claude-hooks log` |
+| the model called a memory tool in-session | `explicit-recalls.jsonl` | `misses` (the join) |
+| ran `ask` (planner) anywhere | `ask-decisions.jsonl` | `asks` — **never** `misses` |
+| wondered "what would this prompt inject?" | nothing — side-effect-free | `gate "<prompt>"` |
+
+A miss requires two in-session events: the gate stayed silent on a prompt AND the model
+then explicitly recalled the thing. Terminal `ask` runs touch neither — few misses after
+running `ask` is expected, not a wiring gap.
+
+- **Gate preview** (`claude-memory-graph gate "<prompt>" [--project P]`) — the REAL
+  injection decision for a prompt, shown with its work: terms, per-candidate scores,
+  thresholds, both layers, and the inject/silent verdict with the reason. Writes no
+  logs, no memo — experiment freely. **`memory_search` is not this**: search is the
+  fuzzy entry-point finder (no thresholds, no proximity, no session-log layer, concepts
+  included) — good for "does the graph know anything about X?", wrong for predicting
+  injections.
 - **Pulse** (`claude-memory-graph pulse [--days N]`) — **start here**: one screen answering
   "is memory reaching my sessions?" — primes, graph/log injections with top nodes, capture
   enforcement (blocks/digs/observed writes), explicit recalls, the miss headline, and the
@@ -226,6 +247,7 @@ fields, no error.
 ```sh
 claude-memory-graph pulse                # ONE SCREEN: is memory reaching sessions?
 claude-memory-graph dashboard            # same + trends, as HTML (open the printed path)
+claude-memory-graph gate "my prompt"     # what WOULD this prompt inject, and why?
 claude-hooks log                         # last 20 gate decisions, pretty-printed
 claude-hooks log -f                      # follow live while you work in another pane
 claude-hooks log explicit-recalls.jsonl  # every explicit memory tool call

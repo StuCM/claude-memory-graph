@@ -116,6 +116,22 @@ def test_graph_and_log_sections_combine(context_dir, tmp_path, monkeypatch):
     assert "Session log (undistilled" in out  # log section, shared budget
 
 
+def test_fresh_vocabulary_scores_despite_unrelated_graph(context_dir, tmp_path, monkeypatch):
+    """Regression: log entries whose words the graph has never seen must
+    still inject — graph-only IDF scored them 0 (found via gate preview)."""
+    monkeypatch.setenv("MEMORY_GRAPH_PATH", str(tmp_path / "store2"))
+    store = MemoryStore.open_or_create(tmp_path / "store2")
+    store.create_resource("Decision", {
+        "name": "Ship the charting harness",
+        "rationale": "d3 sparkline dashboards for telemetry",
+    })
+    store.save()
+    _old_file(context_dir)  # pyoxigraph/rocksdb vocab — none of it in the graph
+    out = RecallExtension().on_user_prompt_submit(
+        ctx("the rocksdb exclusive lock gotcha again?"))
+    assert out is not None and "rocksdb exclusive lock gotcha" in out
+
+
 def test_distilled_files_leave_the_corpus(context_dir, empty_store):
     _old_file(context_dir, text=ENTRY.replace("distilled: false", "distilled: true"))
     assert RecallExtension().on_user_prompt_submit(

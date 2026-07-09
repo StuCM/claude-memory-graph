@@ -119,6 +119,15 @@ def main() -> None:
                                          "from the logs (open the printed path)")
     p.add_argument("--days", type=int, default=14)
     p.add_argument("--out", type=Path, default=None)
+    p = sub.add_parser("gate", help="preview the injection decision for a prompt — "
+                                    "the REAL gate math (both layers, thresholds, "
+                                    "scores), zero side effects. memory_search is "
+                                    "NOT this; use gate to answer 'what would my "
+                                    "prompt inject?'")
+    p.add_argument("prompt")
+    p.add_argument("--project", default="",
+                   help="apply the proximity prior + session-log layer for this project")
+    p.add_argument("--show", type=int, default=6, help="candidates to display per layer")
     p = sub.add_parser("coverage", help="grounding-coverage experiment over real prompts")
     p.add_argument("--prompts", type=Path, default=None,
                    help="text file, one prompt per line")
@@ -159,6 +168,11 @@ def main() -> None:
     if args.cmd == "dashboard":
         from .gate import dashboard
         print(dashboard.write(out=args.out, days=args.days))
+        return
+
+    if args.cmd == "gate":
+        from .gate import preview
+        print(preview.preview(args.prompt, project=args.project, show=args.show))
         return
 
     if args.cmd == "distill":
