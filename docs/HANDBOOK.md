@@ -33,10 +33,24 @@ stdout for injection events, block-JSON for Stop, additionalContext-JSON for Pre
   echo '{"session_id":"debug","cwd":"'$PWD'"}' | claude-hooks dispatch Stop
   ```
 
+### Project identity — how a session knows where it is
+Everything project-scoped (priming, the proximity boost, context-file grouping,
+session-log recall, distill's `--project`) keys on ONE name, resolved per session:
+1. `CLAUDE_HOOK_KIT_PROJECT` env — explicit override (monorepos; a repo cloned under a
+   different directory name);
+2. the **git repo root's** basename — a session started in `~/dev/charcoal/frontend`
+   still belongs to `charcoal`;
+3. the cwd basename (non-repo directories).
+The convention that makes recall line up: **a Project node's `name` is the repo
+directory's basename.** If they diverge (renamed checkout), set the override — a
+mismatch is silent: no prime, no proximity, a phantom context-file group. Check what a
+session resolved with `claude-hooks state <id>` → `project`.
+
 ### Session-start prime — memory arrives before you ask
-On SessionStart, recalls the current Project (cwd basename) and, if `MEMORY_GRAPH_USER`
-is set, your Person node — depth 2, so orientation Patterns, Decisions, and their links
-arrive as the session's opening context. Silent when the graph doesn't know the project.
+On SessionStart, recalls the current Project (see project identity above) and, if
+`MEMORY_GRAPH_USER` is set, your Person node — depth 2, so orientation Patterns,
+Decisions, and their links arrive as the session's opening context. Silent when the
+graph doesn't know the project.
 - Code: `claude_memory_graph/gate/recall.py` → `on_session_start`
 
 ### The ambient recall gate — graph layer

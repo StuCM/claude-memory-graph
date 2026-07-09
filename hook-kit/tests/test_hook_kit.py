@@ -50,6 +50,28 @@ def test_core_state_maintained_across_dispatches(kit_home):
     assert "last_prompt_at" in store.core
 
 
+def test_project_is_git_root_not_subdirectory(kit_home, tmp_path, monkeypatch):
+    """A session started in a subdirectory belongs to the REPO's project —
+    'frontend' fragmenting 'charcoal' broke priming, proximity, and
+    context-file grouping."""
+    repo = tmp_path / "charcoal"
+    (repo / "frontend").mkdir(parents=True)
+    (repo / ".git").mkdir()
+    run_dispatch("SessionStart", {"session_id": "sub", "cwd": str(repo / "frontend")})
+    assert StateStore("sub").core["project"] == "charcoal"
+
+    monkeypatch.setenv("CLAUDE_HOOK_KIT_PROJECT", "renamed-checkout")
+    run_dispatch("SessionStart", {"session_id": "ovr", "cwd": str(repo / "frontend")})
+    assert StateStore("ovr").core["project"] == "renamed-checkout"
+
+
+def test_non_repo_directory_keeps_basename(kit_home, tmp_path):
+    plain = tmp_path / "scratch" / "notes"
+    plain.mkdir(parents=True)
+    run_dispatch("SessionStart", {"session_id": "pl", "cwd": str(plain)})
+    assert StateStore("pl").core["project"] == "notes"
+
+
 def test_sessions_are_isolated(kit_home):
     run_dispatch("UserPromptSubmit", {"session_id": "a", "cwd": "/p/one"})
     run_dispatch("UserPromptSubmit", {"session_id": "b", "cwd": "/p/two"})

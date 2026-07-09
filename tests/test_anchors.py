@@ -70,6 +70,20 @@ def test_other_file_change_not_flagged(repo, store):
     assert "code changed since" not in out
 
 
+def test_drift_detected_from_subdirectory(repo, store, monkeypatch):
+    """anchorPath is repo-relative; a session cwd'd into a subdirectory must
+    still resolve the pathspec from the repo root."""
+    commit = _anchor_commit(repo)
+    _pattern(store, commit)
+    (repo / "sub").mkdir()
+    (repo / "store.py").write_text("v2\n")
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-qm", "v2")
+    monkeypatch.chdir(repo / "sub")
+    out = recall_tool.handle(store, "Pattern", "state layout", 1)
+    assert f"(code changed since {commit[:7]})" in out
+
+
 def test_no_repo_fails_open(tmp_path, monkeypatch, store):
     monkeypatch.chdir(tmp_path)  # not a git repo
     _pattern(store, "deadbeef")
