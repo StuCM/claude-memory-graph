@@ -172,6 +172,10 @@ running `ask` is expected, not a wiring gap.
   labelled false negative, with a suggested fix (threshold vs vocabulary).
 - **Coverage harness** (`claude-memory-graph coverage --transcripts ~/.claude/projects`):
   what fraction of your real question-prompts the grounder can ground.
+- **Graph viewer** (`claude-memory-graph viz`): renders the whole graph as a
+  self-contained interactive HTML page (force layout, type filters, search,
+  per-node detail) and opens it in the browser. Read-only snapshot — rerun to
+  refresh. `--out PATH` / `--no-open` for scripting.
 - Field-by-field log reference: [TUNING.md](TUNING.md).
 
 ---

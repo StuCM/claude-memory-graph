@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Memory Graph Explorer</title>
+<style>
+:root {
+  --surface: #f9f9f7;
+  --panel: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --hairline: #e1e0d9;
+  --ring: rgba(11,11,11,0.10);
+  --edge: rgba(11,11,11,0.13);
+  --edge-hi: rgba(11,11,11,0.55);
+  --c-Project: #2a78d6;
+  --c-Pattern: #1baf7a;
+  --c-Decision: #4a3aa7;
+  --c-Technology: #008300;
+  --c-Concept: #eda100;
+  --c-Constraint: #e34948;
+  --c-Person: #e87ba4;
+  --c-Company: #eb6834;
+  --c-Preference: #2a78d6;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #0d0d0d;
+    --panel: #1a1a19;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --hairline: #2c2c2a;
+    --ring: rgba(255,255,255,0.10);
+    --edge: rgba(255,255,255,0.15);
+    --edge-hi: rgba(255,255,255,0.65);
+    --c-Project: #3987e5;
+    --c-Pattern: #199e70;
+    --c-Decision: #9085e9;
+    --c-Constraint: #e66767;
+    --c-Person: #d55181;
+    --c-Company: #d95926;
+    --c-Concept: #c98500;
+    --c-Preference: #3987e5;
+  }
+}
+:root[data-theme="light"] {
+  --surface: #f9f9f7; --panel: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e;
+  --muted: #898781; --hairline: #e1e0d9; --ring: rgba(11,11,11,0.10);
+  --edge: rgba(11,11,11,0.13); --edge-hi: rgba(11,11,11,0.55);
+  --c-Project: #2a78d6; --c-Pattern: #1baf7a; --c-Decision: #4a3aa7;
+  --c-Constraint: #e34948; --c-Person: #e87ba4; --c-Company: #eb6834;
+  --c-Concept: #eda100; --c-Preference: #2a78d6;
+}
+:root[data-theme="dark"] {
+  --surface: #0d0d0d; --panel: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
+  --muted: #898781; --hairline: #2c2c2a; --ring: rgba(255,255,255,0.10);
+  --edge: rgba(255,255,255,0.15); --edge-hi: rgba(255,255,255,0.65);
+  --c-Project: #3987e5; --c-Pattern: #199e70; --c-Decision: #9085e9;
+  --c-Constraint: #e66767; --c-Person: #d55181; --c-Company: #d95926;
+  --c-Concept: #c98500; --c-Preference: #3987e5;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; overflow: hidden;
+  background: var(--surface); color: var(--ink);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+#app { display: flex; flex-direction: column; height: 100vh; }
+
+header {
+  display: flex; align-items: center; gap: 16px;
+  padding: 10px 16px; border-bottom: 1px solid var(--hairline);
+  background: var(--panel); flex-wrap: wrap;
+}
+header h1 { font-size: 15px; font-weight: 650; margin: 0; letter-spacing: -0.01em; }
+header .stats {
+  font: 12px ui-monospace, "Cascadia Mono", monospace;
+  color: var(--muted);
+}
+#search {
+  margin-left: auto; width: min(260px, 40vw);
+  padding: 6px 10px; border: 1px solid var(--hairline); border-radius: 6px;
+  background: var(--surface); color: var(--ink); font: inherit; font-size: 13px;
+}
+#search:focus { outline: 2px solid var(--c-Project); outline-offset: -1px; }
+
+#stage { position: relative; flex: 1; min-height: 0; }
+canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; display: block; }
+canvas.dragging { cursor: grabbing; }
+
+#legend {
+  position: absolute; top: 12px; left: 12px;
+  display: flex; flex-direction: column; gap: 2px;
+  background: var(--panel); border: 1px solid var(--hairline); border-radius: 8px;
+  padding: 8px; max-width: 190px;
+}
+#legend .lg-title {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--muted); padding: 2px 6px 6px;
+}
+.lg-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 3px 6px; border-radius: 5px; border: none; background: none;
+  color: var(--ink-2); font: 13px system-ui, sans-serif; cursor: pointer;
+  text-align: left; width: 100%;
+}
+.lg-row:hover { background: var(--ring); }
+.lg-row:focus-visible { outline: 2px solid var(--c-Project); }
+.lg-row.off { opacity: 0.35; }
+.lg-row .swatch { flex: 0 0 12px; height: 12px; }
+.lg-row .swatch.circle { border-radius: 50%; }
+.lg-row .swatch.diamond { transform: rotate(45deg) scale(0.85); border-radius: 2px; }
+.lg-row .count { margin-left: auto; font: 11px ui-monospace, monospace; color: var(--muted); }
+
+#tooltip {
+  position: absolute; pointer-events: none; display: none; z-index: 5;
+  max-width: 300px; padding: 8px 10px;
+  background: var(--panel); border: 1px solid var(--hairline); border-radius: 7px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18); font-size: 12.5px;
+}
+#tooltip .tt-type {
+  font: 10px ui-monospace, monospace; text-transform: uppercase;
+  letter-spacing: 0.07em; margin-bottom: 2px;
+}
+#tooltip .tt-label { font-weight: 600; }
+#tooltip .tt-desc { color: var(--ink-2); margin-top: 4px; font-size: 12px;
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+
+#detail {
+  position: absolute; top: 12px; right: 12px; bottom: 12px; width: min(330px, 85vw);
+  background: var(--panel); border: 1px solid var(--hairline); border-radius: 10px;
+  padding: 16px; overflow-y: auto; display: none;
+}
+#detail.open { display: block; }
+#detail .d-type {
+  font: 11px ui-monospace, monospace; text-transform: uppercase; letter-spacing: 0.07em;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+#detail .d-type .swatch { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+#detail h2 { font-size: 16px; margin: 6px 0 10px; line-height: 1.3; text-wrap: balance; }
+#detail .d-desc { color: var(--ink-2); font-size: 13px; white-space: pre-wrap; }
+#detail .d-links-title {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--muted); margin: 16px 0 6px;
+}
+.d-link {
+  display: block; width: 100%; text-align: left; border: none; background: none;
+  padding: 5px 6px; margin: 0 -6px; border-radius: 5px; cursor: pointer;
+  color: var(--ink); font: 13px system-ui, sans-serif;
+}
+.d-link:hover { background: var(--ring); }
+.d-link .rel { font: 11px ui-monospace, monospace; color: var(--muted); }
+#detail .close {
+  position: absolute; top: 10px; right: 10px; border: none; background: none;
+  color: var(--muted); font-size: 16px; cursor: pointer; padding: 4px 8px; border-radius: 5px;
+}
+#detail .close:hover { background: var(--ring); color: var(--ink); }
+
+#hint {
+  position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+  font-size: 11.5px; color: var(--muted); pointer-events: none; white-space: nowrap;
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <h1>Memory Graph Explorer</h1>
+    <span class="stats" id="stats"></span>
+    <input id="search" type="search" placeholder="Search nodes…" aria-label="Search nodes">
+  </header>
+  <div id="stage">
+    <canvas id="cv"></canvas>
+    <div id="legend"></div>
+    <div id="tooltip"></div>
+    <aside id="detail" aria-live="polite"></aside>
+    <div id="hint">drag to pan · scroll to zoom · click a node for details</div>
+  </div>
+</div>
+
+<script>
+const DATA = __GRAPH_DATA__;
+
+const TYPE_COLOR = t => getComputedStyle(document.documentElement)
+  .getPropertyValue('--c-' + t).trim() || '#898781';
+
+const nodes = DATA.nodes, edges = DATA.edges;
+const byId = new Map(nodes.map(n => [n.id, n]));
+const neighbors = new Map(nodes.map(n => [n.id, []]));
+edges.forEach(e => {
+  neighbors.get(e.s).push({ id: e.t, rel: e.rel, dir: 'out' });
+  neighbors.get(e.t).push({ id: e.s, rel: e.rel, dir: 'in' });
+});
+
+// ---- layout state ----
+nodes.forEach((n, i) => {
+  const a = i * 2.399963; // golden angle spiral for stable initial spread
+  const r = 60 + 14 * Math.sqrt(i);
+  n.x = Math.cos(a) * r; n.y = Math.sin(a) * r;
+  n.vx = 0; n.vy = 0;
+  n.r = 5 + Math.min(9, Math.sqrt(n.deg) * 2.2);
+});
+
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+let W = 0, H = 0, dpr = 1;
+let view = { x: 0, y: 0, k: 1 };
+let hovered = null, selected = null, dragNode = null, panning = false;
+let searchTerm = '';
+const hiddenTypes = new Set();
+
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  const rect = cv.parentElement.getBoundingClientRect();
+  W = rect.width; H = rect.height;
+  cv.width = W * dpr; cv.height = H * dpr;
+  draw();
+}
+window.addEventListener('resize', resize);
+
+// ---- force simulation ----
+let alpha = 1;
+function tick() {
+  const visible = nodes.filter(n => !hiddenTypes.has(n.type));
+  // repulsion (n^2 is fine at this size)
+  for (let i = 0; i < visible.length; i++) {
+    const a = visible[i];
+    for (let j = i + 1; j < visible.length; j++) {
+      const b = visible[j];
+      let dx = b.x - a.x, dy = b.y - a.y;
+      let d2 = dx * dx + dy * dy || 1;
+      if (d2 > 90000) continue;
+      const f = 900 / d2;
+      const d = Math.sqrt(d2);
+      dx /= d; dy /= d;
+      a.vx -= dx * f; a.vy -= dy * f;
+      b.vx += dx * f; b.vy += dy * f;
+    }
+  }
+  // springs — keep the force linear in displacement and capped;
+  // anything superlinear feeds overshoot back into itself and diverges
+  for (const e of edges) {
+    const a = byId.get(e.s), b = byId.get(e.t);
+    if (hiddenTypes.has(a.type) || hiddenTypes.has(b.type)) continue;
+    let dx = b.x - a.x, dy = b.y - a.y;
+    const d = Math.sqrt(dx * dx + dy * dy) || 1;
+    const f = Math.min((d - 70) * 0.04, 20);
+    dx /= d; dy /= d;
+    a.vx += dx * f; a.vy += dy * f;
+    b.vx -= dx * f; b.vy -= dy * f;
+  }
+  // centering, velocity cap, integrate
+  for (const n of visible) {
+    n.vx -= n.x * 0.003; n.vy -= n.y * 0.003;
+    const sp = Math.hypot(n.vx, n.vy);
+    if (sp > 30) { n.vx *= 30 / sp; n.vy *= 30 / sp; }
+    if (n !== dragNode) { n.x += n.vx * alpha; n.y += n.vy * alpha; }
+    n.vx *= 0.6; n.vy *= 0.6;
+  }
+  alpha = Math.max(alpha * 0.998, 0.02);
+}
+
+// ---- rendering ----
+function nodeVisible(n) { return !hiddenTypes.has(n.type); }
+function nodeMatches(n) { return searchTerm && n.label.toLowerCase().includes(searchTerm); }
+
+function drawShape(n, x, y, r) {
+  ctx.beginPath();
+  if (n.kind === 'concept') {
+    ctx.moveTo(x, y - r * 1.25); ctx.lineTo(x + r * 1.25, y);
+    ctx.lineTo(x, y + r * 1.25); ctx.lineTo(x - r * 1.25, y);
+    ctx.closePath();
+  } else {
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+  }
+}
+
+function draw() {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  ctx.translate(W / 2 + view.x, H / 2 + view.y);
+  ctx.scale(view.k, view.k);
+
+  const css = getComputedStyle(document.documentElement);
+  const edgeCol = css.getPropertyValue('--edge').trim();
+  const edgeHi = css.getPropertyValue('--edge-hi').trim();
+  const inkCol = css.getPropertyValue('--ink').trim();
+  const panelCol = css.getPropertyValue('--panel').trim();
+  const focus = hovered || selected;
+  const focusSet = focus ? new Set([focus.id, ...neighbors.get(focus.id).map(l => l.id)]) : null;
+
+  // edges
+  ctx.lineWidth = 1 / view.k;
+  for (const e of edges) {
+    const a = byId.get(e.s), b = byId.get(e.t);
+    if (!nodeVisible(a) || !nodeVisible(b)) continue;
+    const hi = focus && (e.s === focus.id || e.t === focus.id);
+    ctx.strokeStyle = hi ? edgeHi : edgeCol;
+    ctx.lineWidth = (hi ? 1.6 : 1) / view.k;
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    if (hi && view.k > 0.5) { // relation label on highlighted edges
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      ctx.font = `${10 / view.k}px ui-monospace, monospace`;
+      ctx.fillStyle = inkCol; ctx.globalAlpha = 0.75;
+      ctx.textAlign = 'center';
+      ctx.fillText(e.rel, mx, my - 3 / view.k);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // nodes
+  for (const n of nodes) {
+    if (!nodeVisible(n)) continue;
+    const dim = (focusSet && !focusSet.has(n.id)) || (searchTerm && !nodeMatches(n));
+    ctx.globalAlpha = dim ? 0.18 : 1;
+    drawShape(n, n.x, n.y, n.r);
+    ctx.fillStyle = TYPE_COLOR(n.type);
+    ctx.fill();
+    ctx.lineWidth = 1.5 / view.k;
+    ctx.strokeStyle = panelCol;
+    ctx.stroke();
+    if (n === selected) {
+      ctx.lineWidth = 2 / view.k;
+      ctx.strokeStyle = inkCol;
+      drawShape(n, n.x, n.y, n.r + 3 / view.k);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // labels: hubs always, everything when zoomed, focus + matches always
+  ctx.textAlign = 'center';
+  ctx.fillStyle = inkCol;
+  for (const n of nodes) {
+    if (!nodeVisible(n)) continue;
+    const show = view.k > 1.1 || n.deg >= 4 || (focusSet && focusSet.has(n.id)) || nodeMatches(n);
+    if (!show) continue;
+    if (focusSet && !focusSet.has(n.id) && !nodeMatches(n)) continue;
+    const size = Math.max(10.5 / view.k, 4);
+    ctx.font = `${n.deg >= 6 ? 600 : 400} ${size}px system-ui, sans-serif`;
+    const label = n.label.length > 34 ? n.label.slice(0, 32) + '…' : n.label;
+    ctx.globalAlpha = 0.9;
+    ctx.fillText(label, n.x, n.y + n.r + 12 / view.k);
+    ctx.globalAlpha = 1;
+  }
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+// ---- interaction ----
+function toWorld(px, py) {
+  return { x: (px - W / 2 - view.x) / view.k, y: (py - H / 2 - view.y) / view.k };
+}
+function pick(px, py) {
+  const p = toWorld(px, py);
+  let best = null, bestD = Infinity;
+  for (const n of nodes) {
+    if (!nodeVisible(n)) continue;
+    const dx = n.x - p.x, dy = n.y - p.y, d = Math.sqrt(dx * dx + dy * dy);
+    if (d < Math.max(n.r + 4, 10 / view.k) && d < bestD) { best = n; bestD = d; }
+  }
+  return best;
+}
+
+let downPos = null, moved = false;
+cv.addEventListener('pointerdown', e => {
+  cv.setPointerCapture(e.pointerId);
+  downPos = { x: e.offsetX, y: e.offsetY };
+  moved = false;
+  const n = pick(e.offsetX, e.offsetY);
+  if (n) { dragNode = n; } else { panning = true; cv.classList.add('dragging'); }
+});
+cv.addEventListener('pointermove', e => {
+  if (downPos && (Math.abs(e.offsetX - downPos.x) > 3 || Math.abs(e.offsetY - downPos.y) > 3)) moved = true;
+  if (dragNode) {
+    const p = toWorld(e.offsetX, e.offsetY);
+    dragNode.x = p.x; dragNode.y = p.y;
+    dragNode.vx = 0; dragNode.vy = 0;
+    alpha = Math.max(alpha, 0.3);
+  } else if (panning) {
+    view.x += e.movementX; view.y += e.movementY;
+  } else {
+    const n = pick(e.offsetX, e.offsetY);
+    if (n !== hovered) { hovered = n; updateTooltip(e); }
+    else if (n) updateTooltip(e);
+    cv.style.cursor = n ? 'pointer' : 'grab';
+  }
+  draw();
+});
+cv.addEventListener('pointerup', e => {
+  if (!moved) {
+    const n = pick(e.offsetX, e.offsetY);
+    select(n);
+  }
+  dragNode = null; panning = false; downPos = null;
+  cv.classList.remove('dragging');
+});
+cv.addEventListener('pointerleave', () => { hovered = null; hideTooltip(); draw(); });
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  const f = Math.exp(-e.deltaY * 0.0015);
+  const k2 = Math.min(6, Math.max(0.15, view.k * f));
+  const px = e.offsetX - W / 2, py = e.offsetY - H / 2;
+  view.x = px - (px - view.x) * (k2 / view.k);
+  view.y = py - (py - view.y) * (k2 / view.k);
+  view.k = k2;
+  draw();
+}, { passive: false });
+
+// ---- tooltip ----
+const tt = document.getElementById('tooltip');
+function updateTooltip(e) {
+  if (!hovered) { hideTooltip(); return; }
+  tt.style.display = 'block';
+  tt.innerHTML = `
+    <div class="tt-type" style="color:${TYPE_COLOR(hovered.type)}">${hovered.type}</div>
+    <div class="tt-label"></div>
+    ${hovered.desc ? '<div class="tt-desc"></div>' : ''}`;
+  tt.querySelector('.tt-label').textContent = hovered.label;
+  if (hovered.desc) tt.querySelector('.tt-desc').textContent = hovered.desc;
+  const x = Math.min(e.offsetX + 14, W - tt.offsetWidth - 8);
+  const y = Math.min(e.offsetY + 14, H - tt.offsetHeight - 8);
+  tt.style.left = x + 'px'; tt.style.top = y + 'px';
+}
+function hideTooltip() { tt.style.display = 'none'; }
+
+// ---- detail panel ----
+const detail = document.getElementById('detail');
+function select(n) {
+  selected = n;
+  if (!n) { detail.classList.remove('open'); draw(); return; }
+  const links = neighbors.get(n.id).map(l => {
+    const other = byId.get(l.id);
+    const arrow = l.dir === 'out' ? '→' : '←';
+    return `<button class="d-link" data-id="${other.id}">
+      <span class="rel">${arrow} ${l.rel}</span><br>${escapeHtml(other.label)}
+    </button>`;
+  }).join('');
+  detail.innerHTML = `
+    <button class="close" aria-label="Close">✕</button>
+    <span class="d-type" style="color:${TYPE_COLOR(n.type)}">
+      <span class="swatch" style="background:${TYPE_COLOR(n.type)}"></span>${n.type}
+    </span>
+    <h2>${escapeHtml(n.label)}</h2>
+    ${n.desc ? `<div class="d-desc">${escapeHtml(n.desc)}</div>` : ''}
+    <div class="d-links-title">Connections (${neighbors.get(n.id).length})</div>
+    ${links || '<span style="color:var(--muted);font-size:12px">None</span>'}`;
+  detail.classList.add('open');
+  detail.querySelector('.close').onclick = () => select(null);
+  detail.querySelectorAll('.d-link').forEach(b => {
+    b.onclick = () => {
+      const target = byId.get(b.dataset.id);
+      select(target);
+      // pan target into view
+      view.x = -target.x * view.k; view.y = -target.y * view.k;
+      draw();
+    };
+  });
+  draw();
+}
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ---- legend ----
+const KIND = {};
+nodes.forEach(n => KIND[n.type] = n.kind);
+const counts = {};
+nodes.forEach(n => counts[n.type] = (counts[n.type] || 0) + 1);
+const legend = document.getElementById('legend');
+legend.innerHTML = '<div class="lg-title">Node types — click to filter</div>' +
+  Object.keys(counts).sort((a, b) => counts[b] - counts[a]).map(t => `
+    <button class="lg-row" data-type="${t}">
+      <span class="swatch ${KIND[t] === 'concept' ? 'diamond' : 'circle'}" style="background:var(--c-${t})"></span>
+      ${t}<span class="count">${counts[t]}</span>
+    </button>`).join('');
+legend.querySelectorAll('.lg-row').forEach(b => {
+  b.onclick = () => {
+    const t = b.dataset.type;
+    if (hiddenTypes.has(t)) hiddenTypes.delete(t); else hiddenTypes.add(t);
+    b.classList.toggle('off', hiddenTypes.has(t));
+    alpha = Math.max(alpha, 0.3);
+    draw();
+  };
+});
+
+// ---- search ----
+document.getElementById('search').addEventListener('input', e => {
+  searchTerm = e.target.value.trim().toLowerCase();
+  draw();
+});
+
+document.getElementById('stats').textContent = `${nodes.length} nodes · ${edges.length} links`;
+
+// theme changes re-read CSS vars on next draw
+new MutationObserver(() => draw()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => draw());
+
+// ---- run ----
+resize();
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (reduced) {
+  for (let i = 0; i < 400; i++) tick();
+  alpha = 0; draw();
+} else {
+  (function loop() {
+    tick(); draw();
+    requestAnimationFrame(loop);
+  })();
+}
+</script>
+
+</body>
+</html>

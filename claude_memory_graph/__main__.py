@@ -106,6 +106,11 @@ def main() -> None:
     p.add_argument("--keep", action="store_true", help="don't archive clean files")
     p.add_argument("--project", default=None, help="only this project's context files")
     p.add_argument("--context-dir", type=Path, default=None)
+    p = sub.add_parser("viz", help="render the graph as an interactive HTML page "
+                                   "and open it in the browser")
+    p.add_argument("--out", type=Path, default=None,
+                   help="output path (default ~/.claude/memory-graph/viz.html)")
+    p.add_argument("--no-open", action="store_true", help="write the file only")
     sub.add_parser("misses", help="gate miss report: silences followed by explicit recalls")
     sub.add_parser("asks", help="planner telemetry: outcomes, misgrounding suspects, "
                                 "vocabulary gaps (from ask-decisions.jsonl)")
@@ -199,6 +204,14 @@ def main() -> None:
             store, directory=args.context_dir, project=args.project,
             dry_run=args.dry_run, keep=args.keep)
         print(report.render())
+        return
+
+    if args.cmd == "viz":
+        from . import viz
+        store = MemoryStore.open_or_create(_store_path())
+        msg = viz.handle(store, args.out, open_browser=not args.no_open)
+        if msg:
+            print(msg)
         return
 
     if args.cmd == "coverage":
