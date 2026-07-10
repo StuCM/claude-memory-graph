@@ -12,8 +12,11 @@ from claude_memory_graph.store import MemoryStore
 
 @pytest.fixture(autouse=True)
 def kit_home(tmp_path, monkeypatch):
-    """Isolated hook-kit home (state, injections.jsonl, errors.log)."""
+    """Isolated hook-kit home (state, injections.jsonl, errors.log) and an
+    empty session-log dir — otherwise the log-recall layer reads the real
+    ~/.claude/context/ files and leaks them into every gate test."""
     monkeypatch.setenv(kit_state.HOOK_KIT_HOME_ENV, str(tmp_path / "kit"))
+    monkeypatch.setenv("CLAUDE_CONTEXT_DIR", str(tmp_path / "empty-context"))
     return tmp_path / "kit"
 
 
@@ -137,6 +140,19 @@ def test_injection_carries_neighbourhood_links(graph):
     graph.save()
     out = recall_on("pyoxigraph rdflib quad store")
     assert out is not None and "affects→ Project 'claude-memory-graph'" in out
+
+
+def test_link_peek_hints_at_untraversed_links(graph):
+    """The peek shows 3 links; when the winner has more, the injection must
+    say '+N more, recall to traverse' — the nudge that turns a signpost into
+    an invitation to walk the graph."""
+    _, decision = graph.find_resource("Decision", "Use pyoxigraph over rdflib")
+    for i in range(5):
+        _, other = graph.create_resource("Pattern", {"name": f"pattern-{i}"})
+        graph.create_link(decision, other, "relatesTo", {})
+    graph.save()
+    out = recall_on("pyoxigraph rdflib quad store")
+    assert out is not None and "+2 more, recall to traverse" in out  # 5 links, 3 shown
 
 def test_two_concept_prompt_prefers_memory_covering_both_no_cwd(graph):
     """'arches and the memory graph' must pick the memory that knows BOTH

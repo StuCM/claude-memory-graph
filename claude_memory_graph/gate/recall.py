@@ -209,7 +209,15 @@ def _links(store, d: dict) -> str:
             f"{lr.relation}→ {lr.model} '{lr.properties.get('name') or lr.properties.get('label', '')}'"
             for lr in result.linked[:3]
         ]
-        return f" ({' · '.join(parts)})" if parts else ""
+        if not parts:
+            return ""
+        # Signpost, not conclusion: telemetry shows the model treats an injected
+        # entry point as the whole answer and almost never traverses. When the
+        # node has more links than this peek shows, say so — an explicit
+        # invitation to recall and walk the graph for the rest.
+        extra = len(result.linked) - len(parts)
+        tail = f" · +{extra} more, recall to traverse" if extra > 0 else ""
+        return f" ({' · '.join(parts)}{tail})"
     except Exception:
         return ""
 
