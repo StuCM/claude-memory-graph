@@ -15,6 +15,7 @@ sharing/federation is explicitly **future** work.
 | [[recall-miss-detector]] — explicit recalls after silence = auto-labelled misses | S | [[prompt-gated-recall]] | **done** (gate/misses.py, `claude-memory-graph misses`, docs/TUNING.md) |
 | gap finder — mechanical link candidates (orphans, conceptless, unlinked pairs by shared rare vocabulary) feeding the reflect skill's judgment | S | — | **done** (gaps.py, `gaps` CLI, appended to memory_reflect; GAP_MIN knob) |
 | pulse — one-screen "is memory reaching sessions?" (injections, capture enforcement via capture.jsonl, misses, backlog, diagnoses) | S | — | **done** (gate/pulse.py, `pulse` CLI) |
+| doctor — one-shot wiring diagnosis (dead hooks · path mismatch · empty/orphan graph) with prioritised verdict + fix | S | — | **done** (gate/doctor.py, `doctor` CLI) |
 | [[session-context-recall]] — index undistilled context entries; per-prompt scored injection (post-compaction recovery, cheap handoffs) | M | [[structured-context-entries]] | **done** (session_corpus.py + `_log_recall`; log = primary layer, shared TOP_N budget) |
 | [[query-planner-v0]] — compose SPARQL from question shape (`ask` CLI) | L | [[memory-search-tool]] | **done** (planner.py, `ask --explain`; golden + refusal tests) |
 | [[planner-telemetry]] — ask-decisions log, `asks` report, `memory_amend_relation` | S | [[query-planner-v0]] | **done** (lexicon self-correction loop; reflect skill step 6) |
