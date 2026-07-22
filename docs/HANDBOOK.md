@@ -139,6 +139,16 @@ shows the grounding table and the query. Its decisions log to `ask-decisions.jso
 
 ### The instruments
 
+**Start every "why isn't it doing anything?" with one command:**
+```sh
+claude-memory-graph doctor
+```
+It checks the three things that break silently and look identical — hooks not firing
+(stale plugin), the CLI and plugin reading different paths (a set env var), and an empty
+or link-less graph — prints the exact paths it inspected, and ends with a prioritised
+diagnosis and the specific fix. If it says everything's wired, *then* reach for the
+per-question instruments below.
+
 **Which instrument answers which question** (they don't feed each other):
 
 | You did | It logged to | Read it with |
@@ -342,6 +352,11 @@ so most tuning pressure should come from the miss report, not from gut feel.
   is fresh (is something else touching the context dir?).
 - **Stop block fires but no file appears** → it stamps on *overdue*, so check the block's
   reason names a path, then check permissions on `CLAUDE_CONTEXT_DIR`.
+- **"Nothing traverses / nothing records / no memory at all"** → `claude-memory-graph
+  doctor` first — it diagnoses the whole class (dead hooks, path mismatch, empty/orphan
+  graph) in one shot with the fix. Note: there is **no derived code graph** (horizon
+  feature) — a grep-heavy turn writes a *trace* entry that distills to a `Pattern
+  (kind: trace)`; look for those in `reflect`, not for a code graph.
 - **A session says "claude-memory-graph: command not found" / "tools not installed"** →
   expected: plugin installs run the server via `uvx --from` and put NO CLI on PATH. In a
   session the model should call the `memory_distill` tool (same code, safer); the CLI is

@@ -112,6 +112,9 @@ def main() -> None:
     p = sub.add_parser("gaps", help="mechanical link-gap report: orphans, conceptless "
                                     "nodes, unlinked pairs sharing rare vocabulary")
     p.add_argument("--limit", type=int, default=10, help="max pair suggestions")
+    sub.add_parser("doctor", help="one-shot diagnosis: are hooks firing? do the CLI "
+                                  "and plugin agree on paths? is the graph populated "
+                                  "and linked? prints a prioritised verdict.")
     p = sub.add_parser("pulse", help="one screen: is memory reaching sessions? "
                                      "(injections, capture enforcement, misses, backlog)")
     p.add_argument("--days", type=int, default=7)
@@ -167,6 +170,11 @@ def main() -> None:
         from . import gaps as gaps_mod
         store = MemoryStore.open_or_create(_store_path())
         print(gaps_mod.handle(store, limit=args.limit))
+        return
+
+    if args.cmd == "doctor":
+        from .gate import doctor
+        print(doctor.report())
         return
 
     if args.cmd == "pulse":
