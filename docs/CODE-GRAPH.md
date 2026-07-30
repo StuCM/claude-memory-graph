@@ -51,12 +51,31 @@ Anchors buy two things, in order of arrival:
    questions no similarity-based system can represent; the CIDOC/Arches shape again — a large
    mechanically-derived substrate under a small curated semantic layer.
 
-## Phasing
+## Buy, don't build: codebase-memory-mcp
 
-1. **Anchors + drift flag** — anchor properties written by distill when a memory is about code
-   (protocol already says "reference file paths"; this makes it structured); recall appends
-   `(code changed since)` when the anchor is stale. Cheap, immediately useful.
-2. **Derived code graph v0** — extractor (tree-sitter or SCIP import) → NQuads for one repo;
-   rebuilt by a git hook; queryable via `memory_query`.
-3. **Planner integration** — code-graph vocabulary (symbol names) joins the grounding lexicon;
-   cross-graph path templates.
+[codebase-memory-mcp](https://github.com/DeusData/codebase-memory-mcp) (36k+ stars, mature) is
+this document's "derived code graph" built to a standard we would never reach ourselves:
+tree-sitter across 158 languages plus an embedded LSP-lite type-resolution layer, a
+SQLite-backed structural graph (File/Function/Class nodes; CALLS/IMPORTS/DATA_FLOWS edges),
+incremental git-watch re-indexing, Cypher-like queries, embedded local embeddings, and a
+committable team snapshot — all as an MCP server any client can use.
+
+By its own positioning it stores **"only code structure, not design rationale"** — it is the
+substrate half of this document with none of the semantic overlay. Which is exactly the
+division we designed: structure derived mechanically, the *why* in memory. So the extractor we
+planned to write (old phase 2) is cancelled in favour of adoption. Its team-snapshot feature is
+also a neat confirmation of our authored-vs-derived split: derived data is trivially shareable
+precisely because it contains no personal knowledge; authored memory is why the manifest/policy
+machinery exists.
+
+## Phasing (revised)
+
+1. **Anchors + drift flag** (unchanged) — anchor properties written by distill when a memory is
+   about code; recall appends `(code changed since)` when the anchor is stale. Git-only, cheap.
+2. **Coexistence join (zero code)** — run codebase-memory-mcp alongside memory-graph as sibling
+   MCP servers. The model bridges in-context: their tools answer *who calls `save()`*, ours
+   answer *what gotchas apply to it* — the join happens in the model's head, guided by matching
+   anchor paths/symbols. Evaluate in real use before building anything.
+3. **Mechanical join (only if 2 proves insufficient)** — resolve our anchors against their
+   graph (symbol existence/validation), or mirror relevant slices into an RDF named graph so
+   the query planner can compose cross-graph queries natively.

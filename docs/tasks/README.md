@@ -43,7 +43,7 @@ sharing/federation is explicitly **future** work.
 | Task | Doc |
 |---|---|
 | Share bundles → hosted store → federation gatekeeper | [SHARING.md](../SHARING.md), [FEDERATION.md](../FEDERATION.md) |
-| Derived code graph + planner joins | [CODE-GRAPH.md](../CODE-GRAPH.md) |
+| Code graph: adopt codebase-memory-mcp as substrate, coexistence join first | [CODE-GRAPH.md](../CODE-GRAPH.md) (extractor build cancelled — buy, not build) |
 | Local embeddings behind the matcher | RETRIEVAL.md phase 3 — only if [[grounding-coverage-experiment]] shows misses |
 
 **Suggested order:** session-start-prime → prompt-gated-recall + prompt-count-context-trigger
