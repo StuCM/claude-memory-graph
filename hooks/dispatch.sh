@@ -2,6 +2,15 @@
 # Route a Claude Code hook event through hook-kit's dispatcher. Fast and
 # fail-open — if python/uv is unavailable, inject nothing and exit 0.
 EVENT="${1:?hook event name required}"
+# Plugin-scope hooks never fire in bridge (Claude Desktop) sessions, so these
+# are ALSO registered in ~/.claude/settings.json, which fires on both surfaces.
+# In a terminal session both registrations fire; let the settings-scope one win
+# rather than double-counting prompts and emitting the nudge twice. The plugin
+# invocation is the one Claude Code hands CLAUDE_PLUGIN_ROOT.
+if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] &&
+   grep -q "hooks/dispatch\.sh" "$HOME/.claude/settings.json" 2>/dev/null; then
+  exit 0
+fi
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)}"
 PY="$PLUGIN_ROOT/.venv/bin/python"
 # A venv can exist but be stale/partial (e.g. a git pull bumped the code past
