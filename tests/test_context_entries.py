@@ -83,3 +83,45 @@ def test_undistilled_files_filter(tmp_path):
 def test_parse_file_missing_is_empty(tmp_path):
     meta, entries = parse_file(tmp_path / "nope.md")
     assert meta == {} and entries == []
+
+
+def test_block_scalar_value_is_the_body_not_the_indicator():
+    """`key: >` and `key: |` were parsed as the literal value ">" while the
+    indented body below was silently dropped — half the descriptions in a real
+    graph ended up as a bare marker. The body IS the value."""
+    entries = parse(
+        "- [10:00] Discovery: how the thing is wired\n"
+        "  description: >\n"
+        "    Where the triple is declared and how the versions\n"
+        "    interlock. Python side: pyproject.toml.\n"
+        "  rationale: |\n"
+        "    kept because the alternative needs a fork\n"
+        "  aliases: one, two\n",
+        "t.md",
+    )
+    (entry,) = entries
+    assert entry.properties["description"] == (
+        "Where the triple is declared and how the versions "
+        "interlock. Python side: pyproject.toml."
+    )
+    assert entry.properties["rationale"] == "kept because the alternative needs a fork"
+    assert entry.properties["aliases"] == "one, two"   # one-line values unaffected
+
+
+def test_block_scalar_body_ends_at_dedent_and_never_stores_the_marker():
+    """A block must not swallow the next entry, and an empty one stores
+    nothing rather than a stray '>'."""
+    entries = parse(
+        "- [10:00] Discovery: first\n"
+        "  description: >\n"
+        "    the body\n"
+        "- [10:01] Decision: second\n"
+        "  rationale: because\n"
+        "  description: >\n",
+        "t.md",
+    )
+    first, second = entries
+    assert first.properties["description"] == "the body"
+    assert second.name == "second"
+    assert second.properties["rationale"] == "because"
+    assert "description" not in second.properties

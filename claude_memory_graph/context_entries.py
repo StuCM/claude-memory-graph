@@ -22,6 +22,11 @@ from .ontology import RESOURCE_MODELS, CONCEPT_TYPES
 _HEAD = re.compile(r"^- \[([\d:. -]+)\]\s+([A-Z][A-Za-z ]*?):\s+(.+)$")
 _CONT = re.compile(r"^ {2,}([A-Za-z][A-Za-z0-9_]*):\s+(.+)$")
 _LINK_VALUE = re.compile(r"^([A-Z][A-Za-z]*)/(.+)$")
+# `key: >` / `key: |` (with optional chomping) — the value is the indented
+# block beneath, not the indicator. The protocol asks for one-line values, but
+# the shape reads as YAML so long values get written this way; parsing only the
+# indicator silently dropped the content and stored a literal ">".
+_BLOCK_SCALAR = re.compile(r"^[>|][-+]?$")
 _FRONTMATTER_KEY = re.compile(r"^(\w+):\s*(.*)$")
 
 # Head categories that are narrative-only lanes (never mechanical models);
@@ -99,22 +104,55 @@ def _continuation(entry: Entry, key: str, value: str) -> None:
     entry.properties[key] = value.strip()
 
 
+def _indent(line: str) -> int:
+    return len(line) - len(line.lstrip())
+
+
+def _block_value(lines: list[str], start: int, indent: int) -> tuple[str, int]:
+    """Gather a YAML block scalar's body: the lines below `start` indented
+    deeper than its key. Folded to one line — these become single graph
+    properties, so the line breaks carry nothing. Returns (value, next index)."""
+    body: list[str] = []
+    i = start
+    while i < len(lines):
+        line = lines[i]
+        if not line.strip():          # blank lines belong to the block
+            i += 1
+            continue
+        if _indent(line) <= indent:   # dedent ends it
+            break
+        body.append(line.strip())
+        i += 1
+    return " ".join(body), i
+
+
 def parse(text: str, source: str = "") -> list[Entry]:
     entries: list[Entry] = []
     current: Entry | None = None
-    for lineno, line in enumerate(text.splitlines(), start=1):
+    lines = text.splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        lineno = i + 1
         head = _HEAD.match(line)
         if head:
             current = Entry(type=head.group(2).strip(), name=head.group(3).strip(),
                             time=head.group(1), source=source, line=lineno)
             entries.append(current)
+            i += 1
             continue
         cont = _CONT.match(line)
         if cont and current is not None:
-            _continuation(current, cont.group(1), cont.group(2))
+            key, value = cont.group(1), cont.group(2).strip()
+            i += 1
+            if _BLOCK_SCALAR.match(value):
+                value, i = _block_value(lines, i, _indent(line))
+            if value:  # an empty block stores nothing, never the bare indicator
+                _continuation(current, key, value)
             continue
         if line.strip() and not line.startswith(" "):
             current = None  # a non-indented, non-bullet line ends the entry
+        i += 1
     return entries
 
 
