@@ -172,3 +172,63 @@ def test_name_with_a_quote_does_not_break_the_query(store):
     handle_resource(store, "Pattern", {"name": name, "description": "d"})
     assert store.find_resource("Pattern", name) is not None
 
+
+HEADS = """---
+created: 2026-07-06T14:00
+distilled: false
+summary: "s"
+---
+
+## Key Points
+
+- [14:00] Problem: Buttons plugin cannot work on a dashboard
+  description: clickHandler reads the active file, which a dashboard has none of
+  concepts: obsidian
+- [14:01] User preference: Root cause before workaround
+  rationale: a symptom fix leaves every sibling caller broken
+- [14:02] Scope: awaiting confirmation of which patch they meant
+  description: session state, not durable knowledge
+"""
+
+
+def test_narrative_head_words_promote_to_the_model_they_mean(store, tmp_path):
+    """The protocol's own examples say "Problem:" and "User preference:", so
+    real logs are full of them; they carry a Decision entry's structure."""
+    ctx = tmp_path / "ctx"
+    ctx.mkdir()
+    (ctx / "p__1.md").write_text(HEADS)
+    store.create_resource("Person", {"name": "Stuart"})
+    report = distill(store, directory=ctx, keep=True)
+
+    assert store.find_resource(
+        "Pattern", "Buttons plugin cannot work on a dashboard") is not None
+    assert store.find_concept("Preference", "Root cause before workaround") is not None
+
+    # Session-state heads stay unmapped on purpose — the LLM lane decides.
+    assert store.find_resource("Pattern", "awaiting confirmation of which "
+                               "patch they meant") is None
+    assert any("Scope" in reason for _, reason in report.residue)
+
+
+def test_preference_is_attributed_to_the_only_person(store, tmp_path):
+    ctx = tmp_path / "ctx"
+    ctx.mkdir()
+    (ctx / "p__1.md").write_text(HEADS)
+    store.create_resource("Person", {"name": "Stuart"})
+    distill(store, directory=ctx, keep=True)
+    graph_id, iri = store.find_resource("Person", "Stuart")
+    recalled = store.recall(iri, graph_id, 1)
+    assert any(l.relation == "hasPreference" for l in recalled.linked)
+
+
+def test_preference_not_attributed_when_the_person_is_ambiguous(store, tmp_path):
+    """Two people and no way to tell whose preference it is: store the
+    concept, refuse the link, say why."""
+    ctx = tmp_path / "ctx"
+    ctx.mkdir()
+    (ctx / "p__1.md").write_text(HEADS)
+    store.create_resource("Person", {"name": "Stuart"})
+    store.create_resource("Person", {"name": "Phil"})
+    report = distill(store, directory=ctx, keep=True)
+    assert store.find_concept("Preference", "Root cause before workaround") is not None
+    assert any("cannot attribute" in reason for _, reason in report.residue)

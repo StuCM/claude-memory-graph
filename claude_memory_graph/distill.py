@@ -22,6 +22,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .context_entries import Entry, fold, parse_file, undistilled_files
+from .ontology import CONCEPT_TYPES
 from .store import MemoryStore
 from .tools.store_resource import handle_resource
 from .tools.link import handle_link
@@ -56,22 +57,55 @@ class Report:
         return "\n".join(lines)
 
 
-def _apply_entry(store: MemoryStore, entry: Entry, report: Report) -> bool:
-    """One folded entry → node + concepts + links. Refuses (to residue)
-    rather than forcing; returns True when the node was applied."""
+def _apply_node(store: MemoryStore, entry: Entry, report: Report) -> bool:
+    """The node itself. A concept-typed head (Preference) becomes a shared
+    concept attributed to the log's owner; everything else is a resource."""
+    if entry.model in CONCEPT_TYPES:
+        properties = {**entry.properties, "sourceContext": entry.source}
+        try:
+            store.store_concept(entry.model, entry.name, properties)
+        except ValueError as exc:
+            report.residue.append((entry, str(exc)))
+            return False
+        report.stored.append(f"Stored {entry.model} '{entry.name}'")
+
+        # A preference belongs to a person. The context logs are one user's,
+        # so a single Person in the graph is unambiguous; with none or
+        # several, guessing would be worse than leaving it to the LLM lane.
+        people = store.resource_names("Person")
+        if len(people) == 1:
+            try:
+                handle_link(store, "Person", people[0], entry.model,
+                            entry.name, "hasPreference", {})
+                report.linked += 1
+            except ValueError as exc:
+                report.residue.append((entry, f"link hasPreference: {exc}"))
+        else:
+            report.residue.append(
+                (entry, f"{len(people)} Person nodes — cannot attribute"))
+        return True
+
     properties = {"name": entry.name, **entry.properties,
                   "sourceContext": entry.source}
     try:
-        msg = handle_resource(store, entry.type, properties, force=False)
+        report.stored.append(
+            handle_resource(store, entry.model, properties, force=False))
     except ValueError as exc:
         report.residue.append((entry, str(exc)))
         return False
-    report.stored.append(msg)
+    return True
+
+
+def _apply_entry(store: MemoryStore, entry: Entry, report: Report) -> bool:
+    """One folded entry → node + concepts + links. Refuses (to residue)
+    rather than forcing; returns True when the node was applied."""
+    if not _apply_node(store, entry, report):
+        return False
 
     for label in entry.concepts:
         try:
             store.store_concept("Concept", label, {})
-            handle_link(store, entry.type, entry.name, "Concept", label,
+            handle_link(store, entry.model, entry.name, "Concept", label,
                         "hasConcept", {})
             report.linked += 1
         except ValueError as exc:
@@ -79,7 +113,7 @@ def _apply_entry(store: MemoryStore, entry: Entry, report: Report) -> bool:
 
     for relation, model, name in entry.links:
         try:
-            handle_link(store, entry.type, entry.name, model, name, relation, {})
+            handle_link(store, entry.model, entry.name, model, name, relation, {})
             report.linked += 1
         except ValueError as exc:
             # unknown relation / missing target — the skill lane decides
@@ -147,14 +181,14 @@ def distill(store: MemoryStore, directory: Path | None = None,
         promotable = [e for e in entries if e.promotable]
         for entry in fold(promotable).values():
             if dry_run:
-                report.stored.append(f"[dry-run] {entry.type} '{entry.name}'")
+                report.stored.append(f"[dry-run] {entry.model} '{entry.name}'")
                 continue
             _apply_entry(store, entry, report)
 
         for entry in entries:
             if not entry.promotable and entry.structured:
                 report.residue.append(
-                    (entry, f"head type '{entry.type}' is not a graph model"))
+                    (entry, f"head type '{entry.type}' maps to no graph model"))
             elif not entry.structured:
                 report.residue.append((entry, "narrative entry (LLM lane)"))
 

@@ -28,6 +28,26 @@ _FRONTMATTER_KEY = re.compile(r"^(\w+):\s*(.*)$")
 # everything else must be a RESOURCE_MODEL to be promotable.
 _KNOWN_TYPES = set(RESOURCE_MODELS) | set(CONCEPT_TYPES)
 
+# The protocol's worked examples use narrative head words ("Problem:",
+# "User preference:"), so real logs are overwhelmingly written with them —
+# they carry the same structure as a Decision entry and mean a specific
+# model. Map the knowledge-shaped ones on; heads that describe a moment
+# rather than durable knowledge (Scope, Open, Outcome, Status, Implemented,
+# Deliverable) stay unmapped and fall to the LLM lane on purpose.
+HEAD_MODEL = {
+    "Discovery": "Pattern",
+    "Problem": "Pattern",
+    "Gotcha": "Pattern",
+    "Finding": "Pattern",
+    "Investigation finding": "Pattern",
+    "Codebase orientation": "Pattern",
+    "Note": "Pattern",
+    "Reference": "Pattern",
+    "Correction": "Pattern",
+    "User preference": "Preference",
+    "User correction": "Preference",
+}
+
 
 @dataclass
 class Entry:
@@ -45,9 +65,18 @@ class Entry:
         return bool(self.properties or self.links or self.concepts)
 
     @property
+    def model(self) -> str:
+        """The graph model this entry promotes to: its head word, or what
+        that head word means (HEAD_MODEL)."""
+        return HEAD_MODEL.get(self.type, self.type)
+
+    @property
     def promotable(self) -> bool:
-        """Mechanically promotable: structured AND head type is a graph model."""
-        return self.structured and self.type in RESOURCE_MODELS
+        """Mechanically promotable: structured AND the head resolves to a
+        graph model (a resource, or a concept type such as Preference)."""
+        return self.structured and (
+            self.model in RESOURCE_MODELS or self.model in CONCEPT_TYPES
+        )
 
     @property
     def text(self) -> str:
