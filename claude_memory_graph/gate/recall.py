@@ -211,12 +211,8 @@ def _links(store, d: dict) -> str:
         ]
         if not parts:
             return ""
-        # Signpost, not conclusion: telemetry shows the model treats an injected
-        # entry point as the whole answer and almost never traverses. When the
-        # node has more links than this peek shows, say so — an explicit
-        # invitation to recall and walk the graph for the rest.
         extra = len(result.linked) - len(parts)
-        tail = f" · +{extra} more, recall to traverse" if extra > 0 else ""
+        tail = f" · +{extra} more" if extra > 0 else ""
         return f" ({' · '.join(parts)}{tail})"
     except Exception:
         return ""
@@ -295,11 +291,12 @@ class RecallExtension(HookExtension):
             return self._log_recall(ctx, q, views, idf, budget=cfg["TOP_N"])
 
         injected = set(ctx.state.get("injected", []))
-        lines, fresh = [], []
+        lines, fresh, fresh_docs = [], [], []
         for _unused, d in strong:
             if d["gid"] not in injected:
                 lines.append(f"- {d['name'] or d['gid']}: {d['desc']}{_links(store, d)}")
                 fresh.append(d["gid"])
+                fresh_docs.append(d)
         append_jsonl("injections.jsonl", {
             "fired": bool(fresh), "top": round(top, 2), "rest": round(rest, 2),
             "session": session, "project": ctx.project, "terms": sorted(q),
@@ -308,9 +305,14 @@ class RecallExtension(HookExtension):
             # graph already injected this session -> log layer still gets a look
             return self._log_recall(ctx, q, views, idf, budget=cfg["TOP_N"])
         ctx.state["injected"] = sorted(injected | set(fresh))
+        head = fresh_docs[0]
         graph_section = (
-            "Relevant memory (auto-recalled, may be stale — verify before acting):\n"
-            + "\n".join(lines))
+            "Memory entry point (auto-recalled, may be stale). This is a DOOR, not "
+            "the answer — the arrows are its neighbours in the graph, and each one "
+            "opens further. Traverse before re-deriving any of this:\n"
+            + "\n".join(lines)
+            + f'\n  next: memory_recall(model="{head["model"]}", '
+              f'name="{head["name"]}", depth=2)')
         log_section = self._log_recall(ctx, q, views, idf, budget=cfg["TOP_N"] - len(fresh))
         return graph_section + (f"\n\n{log_section}" if log_section else "")
 

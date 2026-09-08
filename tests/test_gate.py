@@ -142,17 +142,33 @@ def test_injection_carries_neighbourhood_links(graph):
     assert out is not None and "affects→ Project 'claude-memory-graph'" in out
 
 
-def test_link_peek_hints_at_untraversed_links(graph):
-    """The peek shows 3 links; when the winner has more, the injection must
-    say '+N more, recall to traverse' — the nudge that turns a signpost into
-    an invitation to walk the graph."""
+def test_link_peek_reports_untraversed_link_count(graph):
+    """The peek shows 3 links; when the winner has more, it must say how many
+    were withheld, so the neighbourhood is not mistaken for complete."""
     _, decision = graph.find_resource("Decision", "Use pyoxigraph over rdflib")
     for i in range(5):
         _, other = graph.create_resource("Pattern", {"name": f"pattern-{i}"})
         graph.create_link(decision, other, "relatesTo", {})
     graph.save()
     out = recall_on("pyoxigraph rdflib quad store")
-    assert out is not None and "+2 more, recall to traverse" in out  # 5 links, 3 shown
+    assert out is not None and "+2 more" in out  # 5 links, 3 shown
+
+
+def test_injection_always_offers_the_next_traversal_call(graph):
+    """The point of an injection is to open the graph, not to answer from it.
+    Whatever the winner's link count, the block must frame itself as an entry
+    point and hand over the literal recall call — the old '+N more, recall to
+    traverse' tail only fired for nodes with >3 links (24.5% of the graph)."""
+    _, decision = graph.find_resource("Decision", "Use pyoxigraph over rdflib")
+    _, other = graph.create_resource("Pattern", {"name": "solo-neighbour"})
+    graph.create_link(decision, other, "relatesTo", {})  # 1 link: no '+N more'
+    graph.save()
+    out = recall_on("pyoxigraph rdflib quad store")
+    assert out is not None
+    assert "+" not in out.split("next:")[0].split("(")[-1]  # nothing withheld
+    assert "DOOR, not the answer" in out
+    assert 'next: memory_recall(model="Decision", ' in out
+    assert 'name="Use pyoxigraph over rdflib", depth=2)' in out
 
 def test_two_concept_prompt_prefers_memory_covering_both_no_cwd(graph):
     """'arches and the memory graph' must pick the memory that knows BOTH
