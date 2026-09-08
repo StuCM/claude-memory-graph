@@ -162,3 +162,13 @@ def test_upsert_not_duplicate_on_rerun(store, tmp_path):
     distill(store, directory=ctx, keep=True)
     report = distill(store, directory=ctx, keep=True)  # second run: update path
     assert any(m.startswith("Updated") for m in report.stored)
+
+
+def test_name_with_a_quote_does_not_break_the_query(store):
+    """Names are free text. An unescaped one used to be interpolated straight
+    into SPARQL, so a single quote raised SyntaxError mid-distill."""
+    from claude_memory_graph.tools.store_resource import handle_resource
+    name = 'Why "Heritage Items" fail with a back\\slash'
+    handle_resource(store, "Pattern", {"name": name, "description": "d"})
+    assert store.find_resource("Pattern", name) is not None
+

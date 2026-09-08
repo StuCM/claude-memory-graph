@@ -16,6 +16,14 @@ from .namespaces import (
 from . import ontology
 from .capture_rules import names_similar, normalize_name
 
+
+def _lit(value: str) -> str:
+    """A string as a SPARQL literal, escaped. Names and labels are free text —
+    a quote or backslash in one would otherwise break the query."""
+    return str(ox.Literal(value))
+
+
+
 log = logging.getLogger(__name__)
 
 # Inside the package so wheel installs (pipx/uvx) ship it too.
@@ -190,7 +198,7 @@ class MemoryStore:
             f'SELECT ?node ?g WHERE {{\n'
             f'    GRAPH ?g {{\n'
             f'        ?node rdf:type mem:{model} .\n'
-            f'        ?node mem:{name_prop} "{name}" .\n'
+            f'        ?node mem:{name_prop} {_lit(name)} .\n'
             f'        FILTER NOT EXISTS {{ ?node mem:invalidated ?inv }}\n'
             f'    }}\n'
             f'    FILTER(STRSTARTS(STR(?g), "{GRAPH_RESOURCE_BASE}"))\n'
@@ -296,7 +304,7 @@ class MemoryStore:
             f'SELECT ?node WHERE {{\n'
             f'    GRAPH <{GRAPH_CONCEPTS}> {{\n'
             f'        ?node rdf:type mem:{concept_type} .\n'
-            f'        ?node mem:label "{label}" .\n'
+            f'        ?node mem:label {_lit(label)} .\n'
             f'    }}\n'
             f'}} LIMIT 1'
         )
@@ -481,7 +489,7 @@ class MemoryStore:
             f'    GRAPH <{GRAPH_LINKS}> {{\n'
             f'        ?link rdf:type mem:CrossLink ;\n'
             f'              mem:linkSource <{source_iri.value}> ;\n'
-            f'              mem:linkRelation "{relation}" ;\n'
+            f'              mem:linkRelation {_lit(relation)} ;\n'
             f'              mem:linkTarget ?t .\n'
             f'        FILTER(?t != <{target_iri.value}>)\n'
             f'        FILTER NOT EXISTS {{ ?link mem:linkValidUntil ?end }}\n'
@@ -511,7 +519,7 @@ class MemoryStore:
             f'        ?link rdf:type mem:CrossLink ;\n'
             f'              mem:linkSource <{source_iri.value}> ;\n'
             f'              mem:linkTarget <{target_iri.value}> ;\n'
-            f'              mem:linkRelation "{relation}" .\n'
+            f'              mem:linkRelation {_lit(relation)} .\n'
             f'        FILTER NOT EXISTS {{ ?link mem:linkValidUntil ?end }}\n'
             f'        FILTER NOT EXISTS {{ ?link mem:linkInvalidatedAt ?inv }}\n'
             f'    }}\n'
@@ -581,7 +589,7 @@ class MemoryStore:
             f'        ?link rdf:type mem:CrossLink ;\n'
             f'              mem:linkSource <{source_iri.value}> ;\n'
             f'              mem:linkTarget <{target_iri.value}> ;\n'
-            f'              mem:linkRelation "{relation}" .\n'
+            f'              mem:linkRelation {_lit(relation)} .\n'
             f'        FILTER NOT EXISTS {{ ?link mem:linkValidUntil ?end }}\n'
             f'        FILTER NOT EXISTS {{ ?link mem:linkInvalidatedAt ?inv }}\n'
             f'    }}\n'
@@ -615,7 +623,7 @@ class MemoryStore:
             f'        ?link rdf:type mem:CrossLink .\n'
             f'        ?link mem:linkSource <{source_iri.value}> .\n'
             f'        ?link mem:linkTarget <{target_iri.value}> .\n'
-            f'        ?link mem:linkRelation "{relation}" .\n'
+            f'        ?link mem:linkRelation {_lit(relation)} .\n'
             f'    }}\n'
             f'}} LIMIT 1'
         )
