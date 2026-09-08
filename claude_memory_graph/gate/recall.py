@@ -312,11 +312,13 @@ class RecallExtension(HookExtension):
             "opens further. Traverse before re-deriving any of this:\n"
             + "\n".join(lines))
         log_section = self._log_recall(
-            ctx, q, views, idf, budget=max(1, cfg["TOP_N"] - len(fresh)))
+            ctx, q, views, idf, budget=max(1, cfg["TOP_N"] - len(fresh)),
+            exclude=frozenset((d["model"], d["name"]) for _s, d in strong))
         return graph_section + (f"\n\n{log_section}" if log_section else "")
 
     def _log_recall(self, ctx: HookContext, q: set, views: list,
-                    idf: dict, budget: int) -> str | None:
+                    idf: dict, budget: int,
+                    exclude: frozenset = frozenset()) -> str | None:
         """Second retrieval layer this prompt: score eligible session-log
         entries with the same machinery. Shares the TOP_N budget with the
         graph injection (graph wins the split); memoed per entry key."""
@@ -340,8 +342,14 @@ class RecallExtension(HookExtension):
         seen = set(ctx.state.get("injected_log", []))
         ranked = sorted(((score_views(views, d, idf), d) for d in docs),
                         key=lambda x: x[0], reverse=True)
-        strong = [(s, d) for s, d in ranked[:budget]
-                  if s >= cfg["LOG_ABS_MIN"] and d["key"] not in seen]
+        # Filter, THEN take the budget: slicing first meant a batch of
+        # already-injected entries at the top silenced the layer even with a
+        # fresh one ranked just below. `exclude` drops entries whose node the
+        # graph layer already injected this prompt — the same memory twice.
+        eligible = [(s, d) for s, d in ranked
+                    if s >= cfg["LOG_ABS_MIN"] and d["key"] not in seen
+                    and (d["model"], d["name"]) not in exclude]
+        strong = eligible[:budget]
         append_jsonl("injections.jsonl", {
             "kind": "log", "fired": bool(strong),
             "top": round(ranked[0][0], 2) if ranked else 0.0,
