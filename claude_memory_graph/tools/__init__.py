@@ -1,7 +1,6 @@
 import os
 
-from mcp.server import Server
-from mcp.types import Tool, TextContent
+from mcp.types import CallToolResult, ListToolsResult, Tool, TextContent
 
 from ..store import MemoryStore
 from . import store_resource, link, recall, search, forget, query, reflect
@@ -325,31 +324,40 @@ _MUTATING = {
 }
 
 
-def _client_id(server: Server) -> str | None:
+def _client_id(ctx) -> str | None:
     """Identify the writing client for mem:capturedBy provenance —
     the MCP client's declared name/version, or MEMORY_GRAPH_CLIENT."""
     try:
-        info = server.request_context.session.client_params.clientInfo
+        info = ctx.session.client_params.client_info
         return f"{info.name}/{info.version}" if info.version else info.name
     except Exception:
         return os.environ.get("MEMORY_GRAPH_CLIENT")
 
 
-def register(server: Server, mem_store: MemoryStore) -> None:
-    @server.list_tools()
-    async def list_tools() -> list[Tool]:
-        return _TOOLS
+def handlers(mem_store: MemoryStore) -> dict:
+    """Request-handler callbacks for the Server constructor.
 
-    @server.call_tool()
-    async def call_tool(name: str, arguments: dict) -> list[TextContent]:
+    mcp 2.0 dropped the @server.list_tools()/@server.call_tool() decorators;
+    handlers are now passed in as on_* callbacks, so this returns them rather
+    than mutating a server. Spread it: Server(name, **handlers(store))."""
+
+    async def on_list_tools(ctx, params) -> ListToolsResult:
+        return ListToolsResult(tools=_TOOLS)
+
+    async def on_call_tool(ctx, params) -> CallToolResult:
+        failed = False
         try:
-            mem_store.capture_client = _client_id(server)
-            text = _dispatch(mem_store, name, arguments)
-            if name in _MUTATING:
+            mem_store.capture_client = _client_id(ctx)
+            text = _dispatch(mem_store, params.name, params.arguments or {})
+            if params.name in _MUTATING:
                 mem_store.save()
         except Exception as exc:
-            text = f"Error: {exc}"
-        return [TextContent(type="text", text=text)]
+            text, failed = f"Error: {exc}", True
+        return CallToolResult(
+            content=[TextContent(type="text", text=text)], is_error=failed
+        )
+
+    return {"on_list_tools": on_list_tools, "on_call_tool": on_call_tool}
 
 
 def _dispatch(store: MemoryStore, name: str, args: dict) -> str:

@@ -5,7 +5,7 @@ description = "Arches-inspired knowledge graph MCP server for Claude Code long-t
 requires-python = ">=3.11"
 dependencies = [
     "pyoxigraph>=0.4",
-    "mcp>=1.0",
+    "mcp>=2",
     "claude-hook-kit",
 ]
 

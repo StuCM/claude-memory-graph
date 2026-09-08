@@ -74,9 +74,8 @@ def serve(store_path, instructions: str, host: str = "127.0.0.1",
     from . import distill as distill_mod
     distill_mod.auto_distill(store)
 
-    server = Server("claude-memory-graph")
-    server.instructions = instructions
-    tools.register(server, store)
+    server = Server("claude-memory-graph", instructions=instructions,
+                    **tools.handlers(store))
 
     # stateless + JSON responses: every client request is self-contained, so
     # any number of clients can share the endpoint with nothing to resume.

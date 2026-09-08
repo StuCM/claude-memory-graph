@@ -55,9 +55,12 @@ async def _run() -> None:
         log.info("auto-distill: %d node(s), %d link(s), %d residue",
                  len(report.stored), report.linked, len(report.residue))
 
-    server = Server(SERVER_INFO["name"])
-    server.instructions = INSTRUCTIONS
-    tools.register(server, store)
+    server = Server(
+        SERVER_INFO["name"],
+        version=SERVER_INFO["version"],
+        instructions=INSTRUCTIONS,
+        **tools.handlers(store),
+    )
 
     log.info("Starting MCP server (stdio)")
     async with stdio_server() as (read_stream, write_stream):
