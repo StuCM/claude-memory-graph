@@ -20,7 +20,12 @@ from pathlib import Path
 from .ontology import RESOURCE_MODELS, CONCEPT_TYPES
 
 _HEAD = re.compile(r"^- \[([\d:. -]+)\]\s+([A-Z][A-Za-z ]*?):\s+(.+)$")
-_CONT = re.compile(r"^ {2,}([A-Za-z][A-Za-z0-9_]*):\s+(.+)$")
+# Keys are lowercase by convention — camelCase properties (anchorPath,
+# sourceContext) and lowercase relations (affects, relatesTo). Prose
+# written as "  Symptom: the page 500s" or "  Stuart: I'm nervous..."
+# otherwise invents a property and a junk predicate in the ontology
+# namespace; ~100 of them reached one real graph that way.
+_CONT = re.compile(r"^ {2,}([a-z][A-Za-z0-9_]*):\s+(.+)$")
 _LINK_VALUE = re.compile(r"^([A-Z][A-Za-z]*)/(.+)$")
 # `key: >` / `key: |` (with optional chomping) — the value is the indented
 # block beneath, not the indicator. The protocol asks for one-line values, but

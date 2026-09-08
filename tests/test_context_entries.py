@@ -125,3 +125,19 @@ def test_block_scalar_body_ends_at_dedent_and_never_stores_the_marker():
     assert second.name == "second"
     assert second.properties["rationale"] == "because"
     assert "description" not in second.properties
+
+
+def test_capitalised_prose_line_does_not_invent_a_property():
+    """'  Symptom: the page 500s' is a narrative line, not a property. Keys are
+    lowercase by convention, so anything capitalised is prose — it used to
+    become a property and a junk predicate in the ontology namespace."""
+    (entry,) = parse(
+        "- [10:00] Discovery: the page breaks\n"
+        "  description: the real property\n"
+        "  Symptom: the page 500s under load\n"
+        "  Stuart: \"I'm nervous running this\"\n"
+        "  anchorPath: /srv/app/views.py\n",
+        "t.md",
+    )
+    assert set(entry.properties) == {"description", "anchorPath"}
+    assert entry.properties["anchorPath"] == "/srv/app/views.py"
