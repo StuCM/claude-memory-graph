@@ -232,3 +232,27 @@ def test_preference_not_attributed_when_the_person_is_ambiguous(store, tmp_path)
     report = distill(store, directory=ctx, keep=True)
     assert store.find_concept("Preference", "Root cause before workaround") is not None
     assert any("cannot attribute" in reason for _, reason in report.residue)
+
+
+def test_overlong_concept_label_is_refused_not_stored(store, tmp_path):
+    """Concept writes used to call store.store_concept directly, skipping
+    check_name — which is why every over-long label in a real graph was a
+    concept and never a resource. A narrative 'User preference:' head is a
+    label, so it has to face the same 120-char rule and land in residue."""
+    ctx = tmp_path / "ctx"
+    ctx.mkdir()
+    sentence = (
+        "the user wants every single one of these long narrative preference "
+        "sentences written out in full as the node label rather than kept as "
+        "a short stable title with the detail in properties where it belongs"
+    )
+    assert len(sentence) > 120
+    (ctx / "p__2026-07-06_14-00.md").write_text(
+        "---\ncreated: 2026-07-06T14:00\ndistilled: false\nsummary: \"s\"\n---\n\n"
+        f"- [14:00] User preference: {sentence}\n"
+        "  rationale: stated outright\n"
+    )
+    report = distill(store, directory=ctx)
+    assert report.stored == []
+    assert any("120 characters" in reason for _entry, reason in report.residue)
+    assert store.find_concept("Preference", sentence) is None

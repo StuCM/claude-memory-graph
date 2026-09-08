@@ -24,7 +24,7 @@ from pathlib import Path
 from .context_entries import Entry, fold, parse_file, undistilled_files
 from .ontology import CONCEPT_TYPES
 from .store import MemoryStore
-from .tools.store_resource import handle_resource
+from .tools.store_resource import handle_resource, handle_concept
 from .tools.link import handle_link
 
 
@@ -63,7 +63,7 @@ def _apply_node(store: MemoryStore, entry: Entry, report: Report) -> bool:
     if entry.model in CONCEPT_TYPES:
         properties = {**entry.properties, "sourceContext": entry.source}
         try:
-            store.store_concept(entry.model, entry.name, properties)
+            handle_concept(store, entry.model, entry.name, properties)
         except ValueError as exc:
             report.residue.append((entry, str(exc)))
             return False
@@ -104,7 +104,7 @@ def _apply_entry(store: MemoryStore, entry: Entry, report: Report) -> bool:
 
     for label in entry.concepts:
         try:
-            store.store_concept("Concept", label, {})
+            handle_concept(store, "Concept", label, {})
             handle_link(store, entry.model, entry.name, "Concept", label,
                         "hasConcept", {})
             report.linked += 1
