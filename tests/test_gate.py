@@ -170,6 +170,30 @@ def test_injection_always_offers_the_next_traversal_call(graph):
     assert 'next: memory_recall(model="Decision", ' in out
     assert 'name="Use pyoxigraph over rdflib", depth=2)' in out
 
+
+def test_every_injected_node_gets_its_own_traversal_call(graph, monkeypatch, tmp_path):
+    """TOP_N is 2, and the traverse line used to name only the top node — the
+    second memory arrived with no handle to open it. One call per node.
+    A wide MARGIN keeps both scorers in the group so two really do inject."""
+    cfg = tmp_path / "gate.json"
+    cfg.write_text('{"MARGIN": 6.0}')
+    monkeypatch.setattr(runtime, "_CONFIG_PATH", cfg)
+    monkeypatch.setattr(runtime, "_config", None)
+    graph.create_resource("Pattern", {
+        "name": "pyoxigraph rdflib quad store trap",
+        "description": "named graph quad store gotcha",
+    })
+    graph.save()
+    out = recall_on("pyoxigraph rdflib quad store")
+    assert out is not None
+    bullets = [l for l in out.splitlines() if l.startswith("- ")]
+    nexts = [l for l in out.splitlines() if l.strip().startswith("next: memory_recall(")]
+    assert len(bullets) == 2, out
+    assert len(nexts) == 2, out
+    # each call names its own bullet, not the top one twice
+    assert 'name="pyoxigraph rdflib quad store trap"' in out
+    assert 'name="Use pyoxigraph over rdflib"' in out
+
 def test_two_concept_prompt_prefers_memory_covering_both_no_cwd(graph):
     """'arches and the memory graph' must pick the memory that knows BOTH
     concepts — via phrase + coverage evidence, with no cwd relied on."""

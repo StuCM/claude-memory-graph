@@ -79,11 +79,13 @@ def preview(prompt: str, project: str = "", show: int = 6) -> str:
 
     # ---- session-log layer ----
     log_docs = session_corpus.docs(project, "", 1, _bigrams) if project else []
-    budget = cfg["TOP_N"] - len(strong)
+    # mirrors recall.py: the log layer keeps a reserved slot, so a graph hit
+    # can no longer bury a stronger log entry. Its LOG_ABS_MIN floor still applies.
+    budget = max(1, cfg["TOP_N"] - len(strong))
     lines.append(f"\nSESSION-LOG LAYER ({len(log_docs)} undistilled entr"
                  f"{'y' if len(log_docs) == 1 else 'ies'} for project "
                  f"'{project or '—'}'; floor LOG_ABS_MIN {cfg['LOG_ABS_MIN']}; "
-                 f"budget {max(budget, 0)} after graph)")
+                 f"budget {budget} after graph)")
     if not project:
         lines.append("  pass --project to preview this layer (entries are per-project)")
     elif not log_docs:
@@ -91,7 +93,7 @@ def preview(prompt: str, project: str = "", show: int = 6) -> str:
     else:
         log_idf = {**_idf(log_docs), **idf}  # same merge as the live layer
         log_ranked = _rank(log_docs, views, log_idf, set(), 1.0)
-        log_strong = [(s, d) for s, d in log_ranked[:max(budget, 0)]
+        log_strong = [(s, d) for s, d in log_ranked[:budget]
                       if s >= cfg["LOG_ABS_MIN"]]
         for s, d in log_ranked[:show]:
             mark = "WOULD INJECT" if any(d is sd for _, sd in log_strong) else ""
