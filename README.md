@@ -6,16 +6,137 @@ An [Arches](https://www.archesproject.org/)-inspired RDF knowledge-graph MCP ser
 - **Self-extending ontology:** the LLM must reuse the built-in relations; if none fits it can add a new one (with a description and provenance timestamp) that persists in the schema graph.
 - **Token-lean:** tool outputs are terse text designed for LLM consumption — no IRIs, no timestamps, no pretty-printed JSON.
 
-## Install (Claude Code plugin — recommended)
+## Install
 
-The repo is its own plugin marketplace. One plugin sets up everything: the MCP server (run via `uvx` from the bundled source — requires [uv](https://docs.astral.sh/uv/)), the conversation context-file protocol (injected each session, dirs auto-created), the `/memory-graph:distill` and `/memory-graph:ingest` skills, and [hook-kit](hook-kit/) — a standalone hook-extension framework (own plugin, also usable without memory-graph) whose installable extensions add session-start memory auto-priming (`memory-recall`) and mechanical context-log enforcement (`context-counter`: an overdue log **blocks the Stop event** until written; a heavy grep/read turn gets asked for a trace entry — see [docs/ORCHESTRATION.md](docs/ORCHESTRATION.md)): enable them with `/hook-kit:install` or `claude-hooks enable <name>`.
+Two pieces, installed separately:
+
+| Piece | Gives you | Installed via |
+|---|---|---|
+| **Plugins** | the MCP server, `/memory-graph:distill`, `/memory-graph:ingest`, `/hook-kit:install` | `claude plugin install` |
+| **Hooks** | session-start priming, ambient recall injection, context-log enforcement | `~/.claude/settings.json` |
+
+The hooks are deliberately **not** shipped in a plugin `hooks.json`. Plugin-scope hooks
+never fire in bridge sessions — which is what the Claude desktop app runs — so a
+plugin-only install silently loses every hook, and you get no ambient recall and no
+capture enforcement while everything still *looks* installed. Registering them in
+`settings.json` works on both surfaces. See [docs/HANDBOOK.md](docs/HANDBOOK.md) for
+how to verify they are live.
+
+### 1. Plugins — MCP server and skills
 
 ```sh
 claude plugin marketplace add <git-url-or-local-path>
 claude plugin install memory-graph@claude-memory-graph --scope user
+claude plugin install hook-kit@claude-memory-graph --scope user
 ```
 
-Optional: set `MEMORY_GRAPH_PATH` to change the data directory (defaults to `~/.claude/memory-graph/store`).
+`memory-graph` brings the MCP server (run via `uvx` from the bundled source — requires
+[uv](https://docs.astral.sh/uv/)) and the distill/ingest skills. [hook-kit](hook-kit/) is
+the standalone hook-extension framework the hooks below run on; installing it adds
+`/hook-kit:install` for enabling and disabling individual extensions. Both extensions
+(`memory-recall` for priming and per-prompt injection, `context-counter` for context-log
+enforcement — see [docs/ORCHESTRATION.md](docs/ORCHESTRATION.md)) are on by default, so
+there is nothing to enable for a standard setup.
+
+Optional: set `MEMORY_GRAPH_PATH` to change the data directory (defaults to
+`~/.claude/memory-graph/store`).
+
+### 2. Hooks — priming, recall injection, context capture
+
+The hooks run out of a checkout, so clone the repo somewhere permanent — the plugin
+cache directory is versioned and not a stable path. Then merge this into
+`~/.claude/settings.json`, replacing `/path/to/claude-memory-graph` with your clone:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"/path/to/claude-memory-graph/hooks/session-start.sh\""
+          },
+          {
+            "type": "command",
+            "command": "\"/path/to/claude-memory-graph/hooks/dispatch.sh\" SessionStart"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"/path/to/claude-memory-graph/hooks/dispatch.sh\" UserPromptSubmit"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "mcp__.*memory_.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"/path/to/claude-memory-graph/hooks/dispatch.sh\" PostToolUse"
+          }
+        ]
+      },
+      {
+        "matcher": "Grep|Glob|Read|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"/path/to/claude-memory-graph/hooks/dispatch.sh\" PostToolUse"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"/path/to/claude-memory-graph/hooks/dispatch.sh\" Stop"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"/path/to/claude-memory-graph/hooks/dispatch.sh\" PreCompact"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"/path/to/claude-memory-graph/hooks/dispatch.sh\" SessionEnd"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Settings are re-read live, so the hooks take effect on your next prompt — no restart
+needed. To confirm they are actually firing:
+
+```sh
+claude-memory-graph pulse          # sessions seen, prompts gated, injections
+```
+
+A session that shows `SessionStart` but no `UserPromptSubmit` means the hooks are
+registered in a plugin rather than in `settings.json`.
 
 ### Shared server (across clients and machines)
 

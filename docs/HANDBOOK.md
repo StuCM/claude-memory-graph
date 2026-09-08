@@ -238,12 +238,16 @@ fields, no error.
 
 ## 3. Getting it running (checklist)
 
-1. **Install/update the plugins** (hooks config is read at session start — new hooks
-   need a plugin update AND a fresh session):
+1. **Install/update the plugins** (MCP server + skills):
    ```sh
    claude plugin marketplace add <repo-url-or-path>
-   claude plugin install memory-graph@claude-memory-graph --scope user   # pulls hook-kit
+   claude plugin install memory-graph@claude-memory-graph --scope user
+   claude plugin install hook-kit@claude-memory-graph --scope user
    ```
+1b. **Register the hooks in `~/.claude/settings.json`** — see the README install
+   section for the block to merge. They are NOT shipped in a plugin `hooks.json`,
+   because plugin-scope hooks never fire in bridge (Claude desktop app) sessions.
+   Settings are re-read live, so no restart is needed.
 2. **Optional env** (set in your shell profile): `MEMORY_GRAPH_USER="Stuart Marshall"`
    (enables Person auto-prime) · `MEMORY_GRAPH_PATH` / `CLAUDE_CONTEXT_DIR` /
    `CLAUDE_HOOK_KIT_HOME` to relocate data (defaults under `~/.claude/`).

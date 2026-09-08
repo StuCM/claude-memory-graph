@@ -6,6 +6,5 @@
     "name": "Stuart Marshall"
   },
   "skills": "./skills/",
-  "hooks": "./hooks/hooks.json",
   "mcpServers": "./mcp-servers.json"
 }

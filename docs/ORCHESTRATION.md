@@ -2,7 +2,8 @@
 
 Status: **v0 implemented as [hook-kit](../hook-kit/)** — a standalone, zero-dependency package
 (`claude-hook-kit`, own plugin, memory-graph depends on it). It provides the `HookExtension`
-base class, the dispatcher CLI (`claude-hooks dispatch <Event>`, wired into hooks.json),
+base class, the dispatcher CLI (`claude-hooks dispatch <Event>`, wired in via
+`~/.claude/settings.json` — see the README install notes on why not a plugin `hooks.json`),
 framework-maintained **core session state** (session id, cwd/project, prompt count, event
 counts, timestamps) plus per-extension namespaced state (session and global scopes), and
 enable/disable via `claude-hooks enable <name>` (surfaced as the `/hook-kit:install` skill).

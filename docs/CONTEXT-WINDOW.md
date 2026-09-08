@@ -33,7 +33,7 @@ conversation history or tool results — they inject context, block, or surface 
 context-window *manager* cannot be a hook extension; it has to sit at one of three other
 levels: steer the compactor, edit server-side via the API, or own the loop entirely. "Could
 be a separate plugin" is right — but it is a separate *component* (a local API shim), not a
-hooks.json plugin.
+hook extension.
 
 ## Mechanism map (what exists, July 2026)
 
