@@ -293,6 +293,15 @@ class MemoryStore:
 
         return iri
 
+    def rename_concept(self, concept_iri: ox.NamedNode, new_label: str) -> None:
+        """Swap a concept's label in place. Links carry IRIs, not labels, so
+        every edge into and out of this concept survives untouched."""
+        graph = ox.NamedNode(GRAPH_CONCEPTS)
+        pred = mem_node("label")
+        for quad in list(self._store.quads_for_pattern(concept_iri, pred, None, graph)):
+            self._store.remove(quad)
+        self._add(concept_iri, pred, ox.Literal(new_label), graph)
+
     def find_concept(
         self, concept_type: str, label: str
     ) -> Optional[ox.NamedNode]:

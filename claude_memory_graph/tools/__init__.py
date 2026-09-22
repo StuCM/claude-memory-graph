@@ -3,7 +3,7 @@ import os
 from mcp.types import CallToolResult, ListToolsResult, Tool, TextContent
 
 from ..store import MemoryStore
-from . import store_resource, link, recall, search, forget, query, reflect
+from . import store_resource, link, recall, search, forget, query, reflect, rename
 
 _TOOLS = [
     Tool(
@@ -247,6 +247,28 @@ _TOOLS = [
         },
     ),
     Tool(
+        name="memory_rename",
+        description=(
+            "Rename a resource or concept IN PLACE, preserving every link. "
+            "Use this — never memory_store_resource — to shorten an over-long "
+            "name: store_resource upserts by name, so it would create a second, "
+            "linkless node and leave the original behind."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "model": {"type": "string",
+                          "description": "Resource model or concept type"},
+                "old_name": {"type": "string",
+                             "description": "The node's current name/label"},
+                "new_name": {"type": "string",
+                             "description": "The new name/label — an identifier, "
+                                            "not a summary; six words or fewer"},
+            },
+            "required": ["model", "old_name", "new_name"],
+        },
+    ),
+    Tool(
         name="memory_query",
         description=(
             "Execute a SPARQL query against the memory graph. "
@@ -321,6 +343,7 @@ _MUTATING = {
     "memory_unlink",
     "memory_forget",
     "memory_amend_relation",
+    "memory_rename",
 }
 
 
@@ -416,6 +439,9 @@ def _dispatch(store: MemoryStore, name: str, args: dict) -> str:
 
     if name == "memory_forget":
         return forget.handle(store, args["model"], args["name"], args["reason"])
+
+    if name == "memory_rename":
+        return rename.handle(store, args["model"], args["old_name"], args["new_name"])
 
     if name == "memory_query":
         return query.handle(store, args["sparql"])
