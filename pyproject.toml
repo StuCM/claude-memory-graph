@@ -15,6 +15,7 @@ claude-memory-graph = "claude_memory_graph.__main__:main"
 [project.entry-points."claude_hook_kit"]
 memory-recall = "claude_memory_graph.gate.recall:RecallExtension"
 context-counter = "claude_memory_graph.gate.nudge:ContextCounterExtension"
+graph-review = "claude_memory_graph.gate.review:ReviewExtension"
 
 [dependency-groups]
 dev = ["pytest>=8"]
