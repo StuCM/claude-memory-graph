@@ -17,10 +17,17 @@ Three detectors, all deterministic:
   weighted, same scorer as the gate). Shared rare words are exactly the
   evidence the analyzer would use at read time, so a high-scoring
   unlinked pair is a traversal the graph is silently missing.
+- **long_names** — names that have grown into sentences. Not cosmetic:
+  every word of every name enters the retrieval vocabulary, so a graph of
+  sentence-shaped names indexes `add`, `check`, `error`, `file`, `fix`,
+  `run`, `test` and stops discriminating (see
+  docs/tasks/grounding-coverage-experiment.md). Worst first, since the
+  longest names pollute the most.
 """
 
 from dataclasses import dataclass, field
 
+from .capture_rules import CONCEPT_WORD_SOFT_MAX, NAME_WORD_SOFT_MAX
 from .gate.recall import _corpus, _idf
 from .gate.runtime import config
 from .namespaces import GRAPH_CONCEPTS, GRAPH_LINKS
@@ -32,10 +39,13 @@ class Gaps:
     orphans: list = field(default_factory=list)        # (model, name)
     conceptless: list = field(default_factory=list)    # (model, name)
     suggestions: list = field(default_factory=list)    # (score, a, b, shared_terms)
+    long_names: list = field(default_factory=list)     # (words, model, name)
+    long_name_total: int = 0                           # before the display cap
 
     @property
     def empty(self) -> bool:
-        return not (self.orphans or self.conceptless or self.suggestions)
+        return not (self.orphans or self.conceptless or self.suggestions
+                    or self.long_names)
 
 
 def _edge_pairs(store: MemoryStore) -> set[frozenset]:
@@ -91,6 +101,19 @@ def analyse(store: MemoryStore, limit: int = 10) -> Gaps:
                 gaps.suggestions.append((round(score, 1), a, b, sorted(shared)))
     gaps.suggestions.sort(key=lambda s: s[0], reverse=True)
     gaps.suggestions = gaps.suggestions[:limit]
+
+    for d in docs:
+        name = d["name"]
+        if not name:
+            continue
+        ceiling = (CONCEPT_WORD_SOFT_MAX if d["iri"] in concepts
+                   else NAME_WORD_SOFT_MAX)
+        words = len(name.split())
+        if words > ceiling:
+            gaps.long_names.append((words, d["model"] or "Concept", name))
+    gaps.long_name_total = len(gaps.long_names)
+    gaps.long_names.sort(reverse=True)
+    gaps.long_names = gaps.long_names[:limit]
     return gaps
 
 
@@ -111,6 +134,13 @@ def render(gaps: Gaps, header: str = "## Gaps (mechanical candidates — judge, 
             f"  (shared: {', '.join(shared[:5])}; {score})"
             for score, a, b, shared in gaps.suggestions
         ]
+    if gaps.long_names:
+        lines.append(
+            f"Sentence-shaped names ({gaps.long_name_total} over the ceiling; "
+            f"worst {len(gaps.long_names)} shown — rename: identifier in the "
+            "name, detail in properties, phrasings in aliases):")
+        lines += [f"- {words}w {model} '{name}'"
+                  for words, model, name in gaps.long_names]
     return "\n".join(lines)
 
 

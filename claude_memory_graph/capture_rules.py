@@ -42,6 +42,24 @@ _REQUIRED_HINTS = {
     "Pattern": "a Pattern needs a description of the phenomenon and its fix or approach",
 }
 
+# Soft naming ceiling, in WORDS. `check_name`'s 120-character limit is the
+# hard rule; it never fired in practice because a sentence fits inside it
+# comfortably. Measured on a real 2010-node graph: Concept labels held the
+# line at a median of 1 word (the skill gives them a concrete shape —
+# "lowercase singular"), while Pattern/Decision/Preference names drifted to
+# a median of 11-12 words because their rule was an abstraction ("a short,
+# specific, stable title"). The cost is not cosmetic: every word of every
+# name enters the retrieval vocabulary, so sentence-shaped names put `add`,
+# `check`, `error`, `file`, `fix`, `run` and `test` into it, which is what
+# made the grounding-coverage metric unable to tell signal from coincidence
+# (docs/tasks/grounding-coverage-experiment.md).
+#
+# A WARNING, not a refusal: a name that is one word over is fine, and
+# refusing a write would lose the knowledge rather than improve the name.
+# The write path returns the warning so the writer can rename immediately.
+NAME_WORD_SOFT_MAX = 6
+CONCEPT_WORD_SOFT_MAX = 3
+
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
 
 
@@ -76,6 +94,23 @@ def check_required_properties(model: str, properties: dict[str, str]) -> None:
             f"{model} requires the '{', '.join(missing)}' property: "
             f"{_REQUIRED_HINTS[model]}"
         )
+
+
+def name_warning(model: str, name: str, kind: str = "name") -> str | None:
+    """A nudge when a name has grown into a sentence, or None when it hasn't.
+
+    Callers append this to their success message — the node is still written.
+    """
+    limit = CONCEPT_WORD_SOFT_MAX if kind == "label" else NAME_WORD_SOFT_MAX
+    words = normalize_name(name).split()
+    if len(words) <= limit:
+        return None
+    return (f" [naming] this {model} {kind} is {len(words)} words; aim for "
+            f"{limit} or fewer. The {kind} is an identifier, not a summary — "
+            "every word in it joins the retrieval vocabulary, so a sentence "
+            "makes recall noisier for every other node. Move the detail into "
+            "properties (description/rationale) and the phrasings into "
+            "aliases, then rename.")
 
 
 def _tokens(name: str) -> set[str]:

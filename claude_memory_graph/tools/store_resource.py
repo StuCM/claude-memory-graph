@@ -1,6 +1,6 @@
 from ..store import MemoryStore
 from ..ontology import name_property
-from ..capture_rules import check_name, check_required_properties
+from ..capture_rules import check_name, check_required_properties, name_warning
 
 
 def handle_resource(
@@ -18,7 +18,7 @@ def handle_resource(
     if result is not None:
         graph_id, iri = result
         store.update_resource(iri, graph_id, properties)
-        return f"Updated {model} '{name}'"
+        return f"Updated {model} '{name}'" + (name_warning(model, name) or "")
 
     # Creation-only checks: updates can't remove properties, and legacy nodes
     # predating a required property shouldn't block harmless updates.
@@ -34,7 +34,7 @@ def handle_resource(
             )
 
     store.create_resource(model, properties)
-    return f"Created {model} '{name}'"
+    return f"Created {model} '{name}'" + (name_warning(model, name) or "")
 
 
 def handle_concept(
@@ -42,4 +42,5 @@ def handle_concept(
 ) -> str:
     label = check_name(label, "label")
     store.store_concept(concept_type, label, properties)
-    return f"Stored {concept_type} concept '{label}'"
+    return (f"Stored {concept_type} concept '{label}'"
+            + (name_warning(concept_type, label, "label") or ""))

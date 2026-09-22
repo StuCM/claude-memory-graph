@@ -42,6 +42,7 @@ summary: "<one-line summary, updated as the session evolves>"
 Entries come in two shapes:
 - **Narrative** — a single bullet line, as in the last two examples. Frictionless; mid-session wrongness and churn are fine.
 - **Structured** — the bullet plus indented `key: value` lines mirroring the graph shape: properties (`rationale`, `description`, `aliases`, …), links written as `relation: Model/name` (e.g. `affects: Project/claude-memory-graph`), and `concepts:` as a comma list. Use this shape whenever the point is graph-worthy — a Decision, Pattern, or preference likely to outlive the session. You know the shape *now*; writing it here lets distill promote it directly instead of re-deriving it from prose. If understanding evolves, restate the same `Type: name` bullet later with new values (the latest wins); a reversal adds `supersedes: Decision/<old name>`.
+  **The head text after `Type:` becomes the node's name in the graph, so keep it to six words or fewer** — an identifier, not a summary. `Problem: tm65point blanks short values`, not `Problem: the tm65point widget is broken for any value that is not already 11 chars`. Every word of a name joins the retrieval vocabulary, so a sentence-shaped name makes recall noisier for every other node; put the detail in `description:`/`rationale:` and the phrasings in `aliases:`.
 
 ## What to capture
 Decisions and their rationale (the *why*), problems and their fixes, user preferences and corrections, non-obvious discoveries, scope changes — plus two kinds of code knowledge:

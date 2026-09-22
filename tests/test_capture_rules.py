@@ -1,7 +1,8 @@
 import pytest
 
 from claude_memory_graph.store import MemoryStore
-from claude_memory_graph.capture_rules import check_name, names_similar
+from claude_memory_graph.capture_rules import (check_name, name_warning,
+                                               names_similar)
 from claude_memory_graph.tools import store_resource, link
 
 
@@ -173,3 +174,18 @@ def test_no_captured_by_when_client_unknown(store):
     graph_id, iri = store.find_resource("Person", "Stuart Marshall")
     props = store.get_resource_properties(iri, graph_id)
     assert "capturedBy" not in props
+
+def test_name_warning_passes_short_names():
+    assert name_warning("Decision", "Use pyoxigraph over rdflib") is None
+
+def test_name_warning_flags_sentence_shaped_names():
+    warning = name_warning(
+        "Pattern", "the log layer no longer repeats a memory the graph just injected")
+    assert warning is not None and "12 words" in warning
+
+def test_name_warning_holds_concepts_to_a_tighter_ceiling():
+    """Concept labels are the one place the naming rule held on a real graph
+    (median 1 word) — it is the only model given a concrete shape."""
+    assert name_warning("Concept", "rdf storage", "label") is None
+    assert name_warning("Concept", "query planning and grounding coverage",
+                        "label") is not None
