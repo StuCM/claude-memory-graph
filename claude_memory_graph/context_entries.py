@@ -69,6 +69,7 @@ class Entry:
     concepts: list = field(default_factory=list)        # labels
     source: str = ""                # file name the entry came from
     line: int = 0                   # 1-based head-line number in the file
+    end_line: int = 0               # 1-based last line of the entry (its span)
 
     @property
     def structured(self) -> bool:
@@ -142,7 +143,8 @@ def parse(text: str, source: str = "") -> list[Entry]:
         head = _HEAD.match(line)
         if head:
             current = Entry(type=head.group(2).strip(), name=head.group(3).strip(),
-                            time=head.group(1), source=source, line=lineno)
+                            time=head.group(1), source=source, line=lineno,
+                            end_line=lineno)
             entries.append(current)
             i += 1
             continue
@@ -154,6 +156,7 @@ def parse(text: str, source: str = "") -> list[Entry]:
                 value, i = _block_value(lines, i, _indent(line))
             if value:  # an empty block stores nothing, never the bare indicator
                 _continuation(current, key, value)
+            current.end_line = i  # i is now 1 past the entry's last line
             continue
         if line.strip() and not line.startswith(" "):
             current = None  # a non-indented, non-bullet line ends the entry
@@ -199,6 +202,37 @@ def undistilled_files(context_dir: Path, project: str | None = None) -> list[Pat
     return files
 
 
+def shape_stats(context_dir: Path, project: str | None = None,
+                since: float | None = None) -> tuple[int, int]:
+    """(structured, narrative) entry counts across the undistilled files.
+
+    The capture-quality number. Every rule that held on a real graph was one
+    something counted; every rule that drifted was an instruction nobody
+    measured — the structured share fell from 86% to 47% over two months with
+    no signal. This is the signal.
+
+    `since` (an mtime floor) is what makes it a DRIFT signal rather than a
+    backlog average: measured over every active file the live share was 82%,
+    while the last month alone was 47% — the good July/August files were
+    hiding the regression. Callers should pass the window they care about.
+    """
+    structured = narrative = 0
+    for path in undistilled_files(context_dir, project):
+        if since is not None:
+            try:
+                if path.stat().st_mtime < since:
+                    continue
+            except OSError:
+                continue
+        _, entries = parse_file(path)
+        for entry in entries:
+            if entry.structured:
+                structured += 1
+            else:
+                narrative += 1
+    return structured, narrative
+
+
 def fold(entries: list[Entry]) -> dict[tuple[str, str], Entry]:
     """Merge repeated (type, name) statements: the LATEST values win — the
     log's churn resolved mechanically. Links and concepts union."""
@@ -210,7 +244,8 @@ def fold(entries: list[Entry]) -> dict[tuple[str, str], Entry]:
             folded[key] = Entry(type=e.type, name=e.name, time=e.time,
                                 properties=dict(e.properties),
                                 links=list(e.links), concepts=list(e.concepts),
-                                source=e.source, line=e.line)
+                                source=e.source, line=e.line,
+                                end_line=e.end_line)
             continue
         prev.properties.update(e.properties)
         for link in e.links:
@@ -220,4 +255,8 @@ def fold(entries: list[Entry]) -> dict[tuple[str, str], Entry]:
             if concept not in prev.concepts:
                 prev.concepts.append(concept)
         prev.time = e.time
+        # The span follows the LATEST restatement, matching the values: a
+        # folded entry that lands in the residue is written back to the log
+        # from these line numbers.
+        prev.line, prev.end_line = e.line, e.end_line
     return folded

@@ -74,6 +74,17 @@ cache directory is versioned and not a stable path. Then merge this into
         ]
       }
     ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"/path/to/claude-memory-graph/hooks/allow-context-writes.sh\""
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "mcp__.*memory_.*",
@@ -128,6 +139,12 @@ cache directory is versioned and not a stable path. Then merge this into
 }
 ```
 
+`PreToolUse` is what makes the capture loop usable in manual approval mode: writes whose
+target resolves inside `~/.claude/context/` are pre-approved, so the Stop block asking for
+a context entry doesn't turn into a permission prompt every few turns. Nothing else is
+touched — the check is on the resolved real path, and `Bash` is deliberately not covered.
+Drop this block if you would rather approve each write.
+
 Settings are re-read live, so the hooks take effect on your next prompt — no restart
 needed. To confirm they are actually firing:
 
@@ -162,7 +179,7 @@ This registers just the MCP server — no context protocol or distill skill.
 ## The workflow
 
 1. **During every session**, Claude keeps a running context file in `~/.claude/context/` (decisions, problems solved, preferences, codebase orientation and dig findings — a handoff log any LLM can pick up; graph-worthy points are written as *structured entries* that distill promotes directly instead of re-deriving).
-2. **Distill happens by itself**: every new session's server starts by mechanically promoting structured entries into the graph (no LLM, idempotent, refuses anything questionable to a residue report; `MEMORY_GRAPH_AUTO_DISTILL=0` to disable). **`/memory-graph:distill`** is for the residue — narrative bullets, near-duplicates, ontology extensions — and archives clean files to `~/.claude/context/archive/` (never deleted). Also available on demand as the `memory_distill` MCP tool and the `claude-memory-graph distill` CLI.
+2. **Distill happens by itself**: every new session's server starts by mechanically promoting structured entries into the graph (no LLM, idempotent, refuses anything questionable to a residue report; `MEMORY_GRAPH_AUTO_DISTILL=0` to disable). A file that left no residue and has been untouched for `DISTILL_AFTER_DAYS` (default 2 — see `~/.claude/memory-graph/gate.json`) is finished, so that run also marks and archives it; mtime is what keeps a live session's own log out of reach. A file still active past that window is one the mechanical lane refused, and the Stop hook blocks once per session asking for a distill run. **`/memory-graph:distill`** is for the residue — narrative bullets, near-duplicates, ontology extensions — and archives clean files to `~/.claude/context/archive/` (never deleted). Also available on demand as the `memory_distill` MCP tool and the `claude-memory-graph distill` CLI.
 3. **Recall** happens naturally: Claude calls `memory_recall`/`memory_query` when past context is relevant, traversing links between projects, decisions, gotchas, and people.
 
 ## MCP tools
@@ -172,6 +189,7 @@ This registers just the MCP server — no context protocol or distill skill.
 | `memory_store_resource` | Create/update a typed resource (Person, Project, Company, Task, Technology, Decision, Pattern). Upserts by model+name; any camelCase properties accepted. |
 | `memory_store_concept` | Create a shared concept node (Skill, Concept, Constraint, Preference). |
 | `memory_link` / `memory_unlink` | Cross-graph relationships. Unknown relations error with the valid list; pass `new_relation_description` to extend the ontology when nothing fits. Links are bi-temporal: single-valued relations (employedBy, assignedTo) auto-close a conflicting earlier edge (`worldChange`) instead of keeping two current facts, and unlink *closes* by default (`worldChange`/`correction`) — `mode: remove` for hard delete. Recall shows only currently-valid edges; history stays queryable. |
+| `memory_rename` | Rename a resource or concept **in place**, preserving every link. The only safe way to shorten an over-long name — `memory_store_resource` upserts by name, so storing a shorter one creates a second, linkless node and leaves the original behind. |
 | `memory_recall` | A resource, its properties, and linked resources — depth 1 or 2 (multi-hop via shared nodes). |
 | `memory_forget` | Soft-delete (invalidated, kept for provenance, hidden from retrieval). |
 | `memory_query` | Raw SPARQL (prefixes `rdf`, `rdfs`, `xsd`, `mem` pre-loaded). |

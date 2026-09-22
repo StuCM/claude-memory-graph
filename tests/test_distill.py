@@ -1,5 +1,8 @@
 """Mechanical distill: parse -> fold -> apply, refusing to residue."""
 
+import os
+import time
+
 import pytest
 
 from claude_memory_graph.distill import distill
@@ -256,3 +259,91 @@ def test_overlong_concept_label_is_refused_not_stored(store, tmp_path):
     assert report.stored == []
     assert any("120 characters" in reason for _entry, reason in report.residue)
     assert store.find_concept("Preference", sentence) is None
+
+
+# ============ age-based retirement (the auto lane) ============
+
+def _aged(path, days=5):
+    old = time.time() - days * 86400
+    os.utime(path, (old, old))
+    return path
+
+
+def test_stale_clean_file_is_retired_by_the_auto_lane(store, tmp_path):
+    """keep=True holds files back, but a clean file older than the window is
+    finished — everything in it is in the graph, so it archives itself."""
+    ctx = tmp_path / "ctx"
+    ctx.mkdir()
+    f = ctx / "claude-memory-graph__2026-07-06_14-00.md"
+    f.write_text(GOOD)
+    _aged(f)
+    report = distill(store, directory=ctx, keep=True, retire_after_days=2)
+    assert report.archived == [f.name] and not f.exists()
+    assert (ctx / "archive" / f.name).exists()
+
+
+def test_fresh_file_is_kept_by_the_auto_lane(store, tmp_path):
+    """mtime is what protects a live session's own log: it is written every
+    few turns, so it never reaches the window."""
+    ctx = tmp_path / "ctx"
+    ctx.mkdir()
+    f = ctx / "claude-memory-graph__2026-07-06_14-00.md"
+    f.write_text(GOOD)
+    report = distill(store, directory=ctx, keep=True, retire_after_days=2)
+    assert not report.archived and f.exists()
+
+
+def test_stale_file_with_residue_is_not_retired(store, tmp_path):
+    """Residue means an LLM pass is still owed — age must not lose it."""
+    ctx = tmp_path / "ctx"
+    ctx.mkdir()
+    f = ctx / "claude-memory-graph__2026-07-06_14-00.md"
+    f.write_text(MIXED)
+    _aged(f)
+    report = distill(store, directory=ctx, keep=True, retire_after_days=2)
+    assert report.residue and not report.archived and f.exists()
+
+
+def test_stale_mixed_file_is_split_not_pinned(store, tmp_path):
+    """Residue used to be per FILE, so one narrative bullet pinned a fully
+    promoted log open forever. The unit is now the entry."""
+    ctx = tmp_path / "ctx"
+    ctx.mkdir()
+    f = ctx / "claude-memory-graph__2026-07-06_14-00.md"
+    f.write_text(MIXED)
+    _aged(f)
+    report = distill(store, directory=ctx, keep=True, retire_after_days=2)
+
+    assert report.split and report.split[0][0] == f.name
+    assert f.exists(), "the file stays active — its residue still needs the skill"
+    remaining = f.read_text()
+    assert "flaky mtime test" in remaining          # the narrative bullet survives
+    assert "Use pyoxigraph over rdflib" not in remaining  # the promoted one is gone
+    assert "## Key Points" in remaining             # still a valid context file
+    original = (ctx / "archive" / f.name).read_text()
+    assert "Use pyoxigraph over rdflib" in original, "the original is preserved whole"
+
+
+def test_split_output_reparses(store, tmp_path):
+    """A split file must still be a context file: parseable, and its residue
+    unchanged in meaning."""
+    from claude_memory_graph.context_entries import parse_file
+    ctx = tmp_path / "ctx"
+    ctx.mkdir()
+    f = ctx / "claude-memory-graph__2026-07-06_14-00.md"
+    f.write_text(MIXED)
+    _aged(f)
+    before = [e.name for e in parse_file(f)[1] if not e.structured]
+    distill(store, directory=ctx, keep=True, retire_after_days=2)
+    after = [e.name for e in parse_file(f)[1] if not e.structured]
+    assert before == after and after
+
+
+def test_fresh_mixed_file_is_left_alone(store, tmp_path):
+    """Splitting a live session's log would rewrite the file underneath it."""
+    ctx = tmp_path / "ctx"
+    ctx.mkdir()
+    f = ctx / "claude-memory-graph__2026-07-06_14-00.md"
+    f.write_text(MIXED)
+    report = distill(store, directory=ctx, keep=True, retire_after_days=2)
+    assert not report.split and f.read_text() == MIXED

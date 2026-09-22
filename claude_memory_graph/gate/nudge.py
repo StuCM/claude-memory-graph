@@ -45,12 +45,21 @@ PreCompact and SessionEnd remain flush points: last chances to capture
 before the in-context knowledge that would write the log is summarised
 away or lost, plus the distill suggestion when undistilled files pile up.
 
+Stale files ride the Stop block too. Auto-distill (distill.auto_distill)
+retires clean context files by itself once they are DISTILL_AFTER_DAYS
+old, so a file that is BOTH that old and still active is one the
+mechanical lane refused — it holds narrative residue only the skill can
+promote, and nothing will move it without a model turn. One block per
+session says so; nagging further would just tax every session that has
+chosen to let a file sit.
+
 N_TURNS and DIG_THRESHOLD come from runtime.config()
 (~/.claude/memory-graph/gate.json).
 """
 
 import os
 import re
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -68,6 +77,13 @@ def _context_dir() -> Path:
 
 # File-inspection tools that make up a dig. Bash counts only when the
 # command itself is search/read-shaped — builds and test runs are not digs.
+# The stale-file ask is a CHORE, not a backlog dump: a real context dir builds
+# up dozens of undistilled files (almost none retire on their own — one
+# narrative bullet is enough to keep a file active), and "distill these 38
+# files before finishing this turn" derails whatever the session was doing.
+# Nag about the oldest few only; the backlog drains a batch per session.
+_DISTILL_BATCH = 3
+
 _DIG_TOOLS = {"Grep", "Glob", "Read"}
 _DIG_BASH = re.compile(r"\b(rg|grep|find|fd|ag|cat|head|tail|tree|ls)\b")
 
@@ -119,9 +135,13 @@ class ContextCounterExtension(HookExtension):
     _FORMAT_HINT = (
         "One '- [HH:MM] Type: point' bullet per key point (Decision / Problem / "
         "User preference / Discovery / Scope); attach the why. Graph-worthy points "
-        "add indented 'key: value' lines (rationale/description, links as "
-        "'relation: Model/name', concepts:, aliases:). Skip routine actions and "
-        "anything derivable from code or git."
+        "MUST use the structured shape — the bullet plus indented 'key: value' "
+        "lines (rationale/description, links as 'relation: Model/name', concepts:, "
+        "aliases:) — because that is what distill promotes without re-deriving it. "
+        "Keep the head after 'Type:' to six words or fewer: it becomes the node's "
+        "name, an identifier rather than a summary, and detail belongs in "
+        "description/rationale with the phrasings in aliases. Skip routine actions "
+        "and anything derivable from code or git."
     )
 
     def on_post_tool_use(self, ctx: HookContext) -> str | None:
@@ -139,11 +159,59 @@ class ContextCounterExtension(HookExtension):
             return 0  # counter belongs to an earlier turn
         return ctx.state.get("dig_count", 0)
 
+    def _stale_files(self, ctx: HookContext) -> list[tuple[float, Path]]:
+        """Undistilled context files older than the auto-distill window —
+        i.e. ones auto-distill has already declined to retire, so what's left
+        in them is residue for the skill. Oldest first, so a capped ask drains
+        the backlog deterministically. Cheap: mtime plus the frontmatter
+        already in the file's first bytes, no parsing and no graph."""
+        cutoff = time.time() - config()["DISTILL_AFTER_DAYS"] * 86400
+        stale = []
+        for f in _context_dir().glob("*.md"):
+            try:
+                mtime = f.stat().st_mtime
+                if mtime >= cutoff:
+                    continue
+                head = f.read_text(encoding="utf-8", errors="ignore")[:300]
+            except OSError:
+                continue
+            if "distilled: false" in head:
+                stale.append((mtime, f))
+        return sorted(stale)
+
+    def _distill_nag(self, ctx: HookContext) -> str | None:
+        if ctx.state.get("distill_nagged"):
+            return None
+        stale = self._stale_files(ctx)
+        if not stale:
+            return None
+        ctx.state["distill_nagged"] = True
+        batch = [f for _mtime, f in stale[:_DISTILL_BATCH]]
+        append_jsonl("capture.jsonl", {
+            "kind": "distill-nag", "files": len(stale), "asked": len(batch),
+            "session": ctx.core.get("session_id", ""), "project": ctx.project})
+        names = ", ".join(f.name for f in batch)
+        backlog = (f" ({len(stale)} are stale in total — the rest wait for later "
+                   "sessions)" if len(stale) > len(batch) else "")
+        return (f"[distill] the {len(batch)} oldest context file(s) have been "
+                f"untouched for over {config()['DISTILL_AFTER_DAYS']} day(s) and "
+                f"are still undistilled: {names}{backlog}. Auto-distill already "
+                "promoted everything mechanical, so what is left is narrative "
+                "residue only a model can fold in. Before finishing this turn, "
+                "run the /memory-graph:distill skill over THOSE FILES ONLY, then "
+                "get back to the user's task.")
+
     def on_stop(self, ctx: HookContext) -> str | None:
         if ctx.stop_hook_active:
             return None  # this stop already follows our block — let it through
         state = ctx.state
         significant = ctx.core.get("significant_prompt_count", 0)
+        # Independent of the write cadence: a stale file is overdue whether or
+        # not this session has been logging diligently.
+        reasons = []
+        nag = self._distill_nag(ctx)
+        if nag:
+            reasons.append(nag)
 
         latest = self._latest_file(ctx.project)
         if latest is not None:
@@ -156,7 +224,7 @@ class ContextCounterExtension(HookExtension):
                 append_jsonl("capture.jsonl", {
                     "kind": "write", "session": ctx.core.get("session_id", ""),
                     "project": ctx.project})
-                return None
+                return "\n\n".join(reasons) or None
 
         overdue = significant - state.get("written_at", 0)
         dig = self._dig_count(ctx)
@@ -168,7 +236,7 @@ class ContextCounterExtension(HookExtension):
             cadence_due = cadence_due or overdue >= 1
         dig_due = dig >= config()["DIG_THRESHOLD"]
         if not (cadence_due or dig_due):
-            return None
+            return "\n\n".join(reasons) or None
 
         path = latest if latest is not None else self._stamp_file(ctx)
         # The capture loop's decision log — the pulse report's evidence that
@@ -177,7 +245,6 @@ class ContextCounterExtension(HookExtension):
             "kind": "block", "cadence": cadence_due, "dig": dig if dig_due else 0,
             "overdue": overdue, "stamped": latest is None,
             "session": ctx.core.get("session_id", ""), "project": ctx.project})
-        reasons = []
         if cadence_due:
             reasons.append(
                 f"[context] {overdue} significant exchanges are uncaptured. Before "

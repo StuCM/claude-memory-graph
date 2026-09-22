@@ -46,6 +46,9 @@ _DEFAULTS = {
     "LOG_ABS_MIN": 3.0, # session-log recall: score floor for undistilled entries
     "PRESSURE_TOKENS": 140000,  # nudge: context size that escalates the flush
     "GAP_MIN": 6.0,     # gaps: IDF mass two unlinked nodes must share to suggest a link
+    "DISTILL_AFTER_DAYS": 2,  # auto-distill: age at which an untouched context file is done
+    "REVIEW_EVERY_DAYS": 7,   # graph-review: period between self-review asks
+    "CAPTURE_SHAPE_MIN": 0.7, # graph-review: structured share of log entries to expect
 }
 _CONFIG_PATH = Path.home() / ".claude" / "memory-graph" / "gate.json"
 _config: dict | None = None

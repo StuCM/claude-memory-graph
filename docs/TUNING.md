@@ -153,6 +153,32 @@ session state (`claude-hooks state <session_id>`, extension `context-counter`):
   entries injected per prompt. `kind: "log"` lines in `injections.jsonl` record its
   decisions; raise it if unvetted entries produce false positives that the graph's
   `ABS_MIN` wouldn't.
+- **`NAME_WORD_SOFT_MAX` / `CONCEPT_WORD_SOFT_MAX`** (6 / 3, in `capture_rules.py`, not
+  `gate.json`) — the naming ceiling. Over it, the write path *appends a `[naming]` warning* to
+  its success message rather than refusing: a bad name is worth less than a lost node. Existing
+  offenders are listed worst-first by `claude-memory-graph gaps`. Measured origin: on a real
+  2010-node graph, Concept labels held a median of 1 word while Pattern/Decision/Preference
+  names drifted to 11-12, because concepts were the only model given a concrete shape.
+- **`DISTILL_AFTER_DAYS`** (default 2) — how long a context file may sit untouched (mtime)
+  before auto-distill treats it as finished. A file with **no residue** is marked
+  `distilled: true` and archived at the next server start, with no human in the loop; a
+  file *with* residue is instead escalated once per session by a Stop block asking for
+  `/memory-graph:distill`. Raise it if files you are still working across sessions get
+  archived out from under you (nothing is lost — the entries are already in the graph, and
+  the file moves to `~/.claude/context/archive/`); lower it if the backlog nags too late.
+  Age, not "chat archived": there is no observable archive signal, and mtime is what keeps
+  a live session's own log — rewritten every few turns — out of reach.
+  Past the window a file with residue is **split** rather than pinned: the whole original is
+  archived and the active file is rewritten with only the entries that still need a model.
+  Measured on a real backlog: 35 of 44 files split, active log 2156 kB → 816 kB, every kept
+  entry a verbatim subset of its original.
+- **`REVIEW_EVERY_DAYS`** (default 7) — period between graph self-review asks
+  (`graph-review`, off by default: `claude-hooks enable graph-review` or `/hook-kit:install`).
+  On the first Stop of a session past the period, the mechanical detectors in `gaps.py` run and
+  their headline numbers become a Stop block asking for `/memory-graph:reflect`. A clean graph
+  is silent and resets the clock without spending a turn. The ask is capped at "fix the worst
+  handful" on purpose — it fires again next period, and a maintenance session that never ends
+  is worse than a slightly untidy graph.
 - **`GAP_MIN`** (default 6.0) — the IDF mass (name hits ×3) two *unlinked* nodes must
   share before `claude-memory-graph gaps` suggests connecting them. Raise if the reflect
   skill keeps dismissing suggestions as coincidence; lower if a visualisation shows

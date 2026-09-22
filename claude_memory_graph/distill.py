@@ -17,6 +17,7 @@ same constraint as every terminal write).
 
 import os
 import re
+import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -42,11 +43,15 @@ class Report:
     linked: int = 0
     residue: list = field(default_factory=list)    # (entry, reason) for the LLM lane
     archived: list = field(default_factory=list)
+    split: list = field(default_factory=list)      # (filename, residue entries kept)
 
     def render(self) -> str:
         lines = [f"files: {len(self.files)} · nodes: {len(self.stored)} · "
                  f"links: {self.linked} · residue: {len(self.residue)} · "
-                 f"archived: {len(self.archived)}"]
+                 f"archived: {len(self.archived)} · split: {len(self.split)}"]
+        for filename, kept in self.split:
+            lines.append(f"  split {filename} — {kept} residue entr"
+                         f"{'y' if kept == 1 else 'ies'} kept, original archived")
         for msg in self.stored:
             lines.append(f"  {msg}")
         if self.residue:
@@ -140,20 +145,57 @@ def _archive(path: Path) -> Path:
     return target
 
 
+def _split_file(path: Path, residue_entries: list) -> Path:
+    """Leave only what still needs a model behind, and archive the original.
+
+    Residue was tracked per FILE, so one `Scope:` bullet in a forty-entry log
+    pinned the whole file open forever — on a real context dir that was 46 of
+    47 files, every one of them already fully promoted apart from a handful of
+    narrative lines. Splitting makes the unit the ENTRY: the promoted entries
+    are in the graph (and in the archived original, which is never deleted),
+    and the active file shrinks to the residue the distill skill actually
+    has to read.
+    """
+    text = path.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    header_end = 0
+    for index, line in enumerate(lines):
+        if line.strip() == "## Key Points":
+            header_end = index + 1
+            break
+    kept: list[str] = []
+    for entry in sorted(residue_entries, key=lambda e: e.line):
+        kept.extend(lines[entry.line - 1:entry.end_line or entry.line])
+    archived = _archive(path)          # the original, whole, as always
+    path.write_text("\n".join(lines[:header_end] + [""] + kept) + "\n",
+                    encoding="utf-8")
+    return archived
+
+
 def auto_distill(store: MemoryStore) -> Report | None:
     """The automated lane: runs at MCP server startup, so every new session
     begins with the log's structured entries already in the graph — no human
-    remembering required. PROMOTE-ONLY (keep=True): files are never marked or
-    archived here, which makes the run idempotent (upserts + idempotent links)
-    and self-healing — if a concurrent session's save ever clobbers the
-    promoted nodes, the still-active files re-promote them next startup.
-    Archiving stays with memory_distill / the skill, where a human is present.
+    remembering required. Mostly PROMOTE-ONLY (keep=True): files are not
+    marked or archived, which makes the run idempotent (upserts + idempotent
+    links) and self-healing — if a concurrent session's save ever clobbers
+    the promoted nodes, the still-active files re-promote them next startup.
+
+    The one exception is retirement: a file that has been untouched for
+    DISTILL_AFTER_DAYS *and* left no residue is finished — everything in it
+    is in the graph, and no LLM pass is owed — so it is marked distilled and
+    archived without a human. Age is measured on mtime, which is what keeps
+    a live session's own file (written every few turns) out of reach. Files
+    WITH residue are never retired: they still need the skill, and the Stop
+    nag in gate/nudge.py is what escalates them.
+
     Fail open: a broken log file must never block a session from starting.
     Disable with MEMORY_GRAPH_AUTO_DISTILL=0."""
     if os.environ.get("MEMORY_GRAPH_AUTO_DISTILL", "1").lower() in ("0", "false", "off"):
         return None
     try:
-        report = distill(store, keep=True)
+        from .gate.runtime import config
+        report = distill(store, keep=True,
+                         retire_after_days=config()["DISTILL_AFTER_DAYS"])
         if report.files:
             from claude_hook_kit import append_jsonl
             append_jsonl("capture.jsonl", {
@@ -167,10 +209,13 @@ def auto_distill(store: MemoryStore) -> Report | None:
 
 def distill(store: MemoryStore, directory: Path | None = None,
             project: str | None = None, dry_run: bool = False,
-            keep: bool = False) -> Report:
+            keep: bool = False, retire_after_days: float | None = None) -> Report:
     """The mechanical lane. Narrative entries and refused promotions land in
     the residue; a file is only marked distilled + archived when NOTHING in
-    it was left behind (a file with residue stays active for the skill)."""
+    it was left behind (a file with residue stays active for the skill).
+
+    keep=True holds every file back; retire_after_days then lets the clean
+    ones through once they are that old (see auto_distill)."""
     directory = directory or context_dir()
     report = Report()
     for path in undistilled_files(directory, project):
@@ -193,9 +238,17 @@ def distill(store: MemoryStore, directory: Path | None = None,
                 report.residue.append((entry, "narrative entry (LLM lane)"))
 
         clean = len(report.residue) == residue_before
-        if not dry_run and clean and not keep:
+        stale = (retire_after_days is not None
+                 and path.stat().st_mtime < time.time() - retire_after_days * 86400)
+        if not dry_run and clean and (not keep or stale):
             _mark_distilled(path)
             report.archived.append(_archive(path).name)
+        elif not dry_run and stale:
+            # Aged but not clean: keep only the residue, archive the whole
+            # original. The file stays active for the skill, at its real size.
+            left = [entry for entry, _reason in report.residue[residue_before:]]
+            report.split.append((path.name, len(left)))
+            _split_file(path, left)
     if not dry_run and report.stored:
         store.save()
     return report

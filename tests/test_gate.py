@@ -1,4 +1,6 @@
 import json
+import os
+import time
 
 import pytest
 
@@ -610,3 +612,45 @@ def test_session_end_suggests_distill(context_dir):
 def test_session_end_quiet_when_distilled(context_dir):
     (context_dir / "p__2026-07-01_10-00.md").write_text("---\ndistilled: true\n---\n")
     assert ContextCounterExtension().on_session_end(prompt_ctx("", event="SessionEnd")) is None
+
+
+def _stale_context_file(directory, name="proj__2026-01-01_00-00.md",
+                        distilled="false", days=5):
+    path = directory / name
+    path.write_text(f"---\ncreated: 2026-01-01T00:00\ndistilled: {distilled}\n"
+                    f"summary: \"s\"\n---\n\n## Key Points\n\n- [00:00] Problem: x\n")
+    old = time.time() - days * 86400
+    os.utime(path, (old, old))
+    return path
+
+def test_stale_undistilled_file_blocks_stop_once(context_dir):
+    """A file past the auto-distill window that is STILL active is one the
+    mechanical lane refused — only a model turn can move it, so the Stop
+    block asks for one. Once per session: nagging further taxes every
+    session that has chosen to let the file sit."""
+    _stale_context_file(context_dir)
+    ext = ContextCounterExtension()
+    state, core = {}, {}
+    first = ext.on_stop(stop_ctx(state, core))
+    assert first is not None and "/memory-graph:distill" in first
+    assert ext.on_stop(stop_ctx(state, core)) is None
+
+def test_fresh_undistilled_file_does_not_nag(context_dir):
+    _stale_context_file(context_dir, days=0)
+    assert ContextCounterExtension().on_stop(stop_ctx({}, {})) is None
+
+def test_stale_distilled_file_does_not_nag(context_dir):
+    _stale_context_file(context_dir, distilled="true")
+    assert ContextCounterExtension().on_stop(stop_ctx({}, {})) is None
+
+def test_distill_nag_asks_for_a_batch_not_the_whole_backlog(context_dir):
+    """A real context dir carries dozens of undistilled files; asking for all
+    of them mid-turn derails the session. Oldest first, capped."""
+    for i in range(7):
+        _stale_context_file(context_dir, name=f"proj__2026-01-0{i + 1}_00-00.md",
+                            days=30 - i)
+    reason = ContextCounterExtension().on_stop(stop_ctx({}, {}))
+    assert "proj__2026-01-01_00-00.md" in reason      # oldest is asked for
+    assert "proj__2026-01-07_00-00.md" not in reason  # newest is not
+    assert reason.count("proj__") == 3
+    assert "7 are stale in total" in reason
