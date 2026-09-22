@@ -148,6 +148,12 @@ def main() -> None:
     p.add_argument("--project", default="",
                    help="apply the proximity prior + session-log layer for this project")
     p.add_argument("--show", type=int, default=6, help="candidates to display per layer")
+    p = sub.add_parser("usage", help="per-node recall usage from the telemetry: "
+                                     "what the graph actually reaches, and what "
+                                     "has never been reached")
+    p.add_argument("--days", type=float, default=None,
+                   help="window in days (default: all time)")
+    p.add_argument("--show", type=int, default=10, help="most-reached rows to list")
     p = sub.add_parser("coverage", help="grounding-coverage experiment over real prompts")
     p.add_argument("--prompts", type=Path, default=None,
                    help="text file, one prompt per line")
@@ -223,6 +229,12 @@ def main() -> None:
         msg = viz.handle(store, args.out, open_browser=not args.no_open)
         if msg:
             print(msg)
+        return
+
+    if args.cmd == "usage":
+        from .gate import usage
+        store = MemoryStore.open_or_create(_store_path())
+        print(usage.report(store, days=args.days, show=args.show))
         return
 
     if args.cmd == "coverage":
