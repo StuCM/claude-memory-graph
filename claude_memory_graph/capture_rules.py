@@ -57,7 +57,13 @@ _REQUIRED_HINTS = {
 # A WARNING, not a refusal: a name that is one word over is fine, and
 # refusing a write would lose the knowledge rather than improve the name.
 # The write path returns the warning so the writer can rename immediately.
-NAME_WORD_SOFT_MAX = 6
+#
+# 7, not 6, after auditing what the rule actually flagged. The most common
+# shape among the flagged names was contrastive -- "fix the shim, not a SQL
+# config", "record where the map was wrong, not where it was right" -- where
+# the second clause carries the insight and the whole thing is a good name at
+# seven words. A ceiling that flags those trains the reader to ignore it.
+NAME_WORD_SOFT_MAX = 7
 CONCEPT_WORD_SOFT_MAX = 3
 
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
