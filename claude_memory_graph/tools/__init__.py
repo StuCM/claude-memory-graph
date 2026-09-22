@@ -263,7 +263,7 @@ _TOOLS = [
                              "description": "The node's current name/label"},
                 "new_name": {"type": "string",
                              "description": "The new name/label — an identifier, "
-                                            "not a summary; six words or fewer"},
+                                            "not a summary; seven words or fewer"},
             },
             "required": ["model", "old_name", "new_name"],
         },
