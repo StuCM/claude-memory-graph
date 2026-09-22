@@ -47,6 +47,13 @@ def test_alias_tokens_ground(store):
     c = cats(store, "remind me about the storage choice")
     assert c["storage"] == "alias" and c["choice"] == "alias"
 
+def test_scattered_alias_words_do_not_ground(store):
+    """A multi-word alias grounds as a PHRASE. Crediting its words
+    individually made ordinary English look like graph vocabulary and
+    inflated the headline by nine points on a real corpus."""
+    c = cats(store, "what is the choice here")
+    assert c["choice"] == "leftover"
+
 def test_modifiers_and_leftovers(store):
     c = cats(store, "recent kubernetes decisions")
     assert c["recent"] == "modifier"

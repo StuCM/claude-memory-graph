@@ -88,12 +88,33 @@ def _verb_phrases(store) -> list[tuple[re.Pattern, set[str]]]:
     return out
 
 
-def _alias_tokens(store) -> set[str]:
-    tokens: set[str] = set()
+def _phrase_pattern(tokens: list[str]) -> re.Pattern:
+    """Match these content words in order, whatever separates them — the
+    tokens come from terms_pos, so the original punctuation is already gone."""
+    return re.compile(r"\b" + r"\W+".join(map(re.escape, tokens)) + r"\b")
+
+
+def _alias_matcher(store) -> tuple[set[str], list[tuple[re.Pattern, set[str]]]]:
+    """Alias vocabulary split by shape: single-word aliases (ground as
+    unigrams — that is all they can do) and multi-word aliases (ground only
+    when the whole phrase appears, exactly like relation verb forms).
+
+    Crediting every word of "fix broken graph properties" individually made
+    `fix`, `broken` and `properties` look like graph vocabulary. On a real
+    1048-prompt corpus that alone moved question-shaped full grounding from
+    48% to 57% — nine points of pure artefact, from an alias vocabulary of
+    2104 unigrams that is mostly ordinary English."""
+    unigrams: set[str] = set()
+    phrases: list[tuple[re.Pattern, set[str]]] = []
     for solution in store.query(
             'SELECT ?o WHERE { GRAPH ?g { ?s mem:aliases ?o } }'):
-        tokens.update(w for _, w in terms_pos(solution["o"].value))
-    return tokens
+        for alias in solution["o"].value.split(","):
+            tokens = [w for _, w in terms_pos(alias)]
+            if len(tokens) == 1:
+                unigrams.add(tokens[0])
+            elif tokens:
+                phrases.append((_phrase_pattern(tokens), set(tokens)))
+    return unigrams, phrases
 
 
 def _entity_tokens(store) -> set[str]:
@@ -110,7 +131,7 @@ def _entity_tokens(store) -> set[str]:
 def analyse(store, prompts: list[str]) -> dict:
     model_nouns = _model_nouns()
     verb_phrases = _verb_phrases(store)
-    aliases = _alias_tokens(store)
+    alias_unigrams, alias_phrases = _alias_matcher(store)
     entities = _entity_tokens(store)
 
     results = []
@@ -123,6 +144,10 @@ def analyse(store, prompts: list[str]) -> dict:
         for pattern, tokens in verb_phrases:
             if pattern.search(lower):
                 relation_words |= tokens
+        alias_words = set(alias_unigrams)
+        for pattern, tokens in alias_phrases:
+            if pattern.search(lower):
+                alias_words |= tokens
 
         categories: dict[str, str] = {}
         for w in words:
@@ -132,7 +157,7 @@ def analyse(store, prompts: list[str]) -> dict:
                 categories[w] = "model"
             elif w in relation_words:
                 categories[w] = "relation"
-            elif w in aliases:
+            elif w in alias_words:
                 categories[w] = "alias"
             elif w in entities:
                 categories[w] = "entity"
