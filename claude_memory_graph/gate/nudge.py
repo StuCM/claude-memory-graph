@@ -138,7 +138,7 @@ class ContextCounterExtension(HookExtension):
         "MUST use the structured shape — the bullet plus indented 'key: value' "
         "lines (rationale/description, links as 'relation: Model/name', concepts:, "
         "aliases:) — because that is what distill promotes without re-deriving it. "
-        "Keep the head after 'Type:' to six words or fewer: it becomes the node's "
+        "Keep the head after 'Type:' to seven words or fewer: it becomes the node's "
         "name, an identifier rather than a summary, and detail belongs in "
         "description/rationale with the phrasings in aliases. Skip routine actions "
         "and anything derivable from code or git."
