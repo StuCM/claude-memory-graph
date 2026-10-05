@@ -41,6 +41,14 @@ there is nothing to enable for a standard setup.
 Optional: set `MEMORY_GRAPH_PATH` to change the data directory (defaults to
 `~/.claude/memory-graph/store`).
 
+On Claude Code 2.1.287 or later the plugin also loads a mod
+([hooks/register.js](hooks/register.js)). It draws memory-graph tool calls as one dim
+line each in the transcript and opens a **Memory graph** pane (or run `/graph-panel`)
+with three tabs: each call's input and output, what the recall hook injected or held
+back this session, and per-tool counts. This only changes what you see: the output
+still reaches the model. `/memory-graph:distill` keeps the distill writes out of the
+main context by running them in the `memory-graph:distiller` subagent.
+
 ### 2. Hooks — priming, recall injection, context capture
 
 The hooks run out of a checkout, so clone the repo somewhere permanent — the plugin
