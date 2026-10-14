@@ -7,6 +7,7 @@ import pytest
 
 from claude_memory_graph.distill import distill
 from claude_memory_graph.store import MemoryStore
+from claude_memory_graph.tools.store_resource import handle_resource
 
 GOOD = """---
 created: 2026-07-06T14:00
@@ -37,10 +38,38 @@ def store(tmp_path):
     return s
 
 
-def test_clean_file_promoted_marked_archived(store, tmp_path):
+def _age(path, hours=2):
+    then = time.time() - hours * 3600
+    os.utime(path, (then, then))
+
+
+def test_live_file_promoted_but_not_archived(store, tmp_path):
     ctx = tmp_path / "ctx"
     ctx.mkdir()
     (ctx / "claude-memory-graph__2026-07-06_14-00.md").write_text(GOOD)
+    report = distill(store, directory=ctx)
+    assert report.stored and not report.archived
+    assert report.live == ["claude-memory-graph__2026-07-06_14-00.md"]
+
+
+def test_unlinked_entry_links_to_its_files_project(store, tmp_path):
+    ctx = tmp_path / "ctx"
+    ctx.mkdir()
+    handle_resource(store, "Project", {"name": "proj"})
+    path = ctx / "proj__2026-07-06_14-00.md"
+    path.write_text("---\ndistilled: false\n---\n\n## Key Points\n\n"
+                    "- [10:00] Pattern: lonely gotcha\n  description: no affects line\n")
+    distill(store, directory=ctx)
+    gid, iri = store.find_resource("Pattern", "lonely gotcha")
+    assert [lr.relation for lr in store.recall(iri, gid, 1).linked] == ["appliesTo"]
+
+
+def test_clean_file_promoted_marked_archived(store, tmp_path):
+    ctx = tmp_path / "ctx"
+    ctx.mkdir()
+    path = ctx / "claude-memory-graph__2026-07-06_14-00.md"
+    path.write_text(GOOD)
+    _age(path)
     report = distill(store, directory=ctx)
     assert any("Decision 'Use pyoxigraph over rdflib'" in m for m in report.stored)
     assert report.linked == 2  # concept + affects
@@ -149,7 +178,9 @@ def test_memory_distill_mcp_tool(store, tmp_path, monkeypatch):
     from claude_memory_graph.tools import _dispatch
     ctx = tmp_path / "ctx"
     ctx.mkdir()
-    (ctx / "claude-memory-graph__2026-07-08_09-00.md").write_text(GOOD)
+    path = ctx / "claude-memory-graph__2026-07-08_09-00.md"
+    path.write_text(GOOD)
+    _age(path)
     monkeypatch.setenv("CLAUDE_CONTEXT_DIR", str(ctx))
     out = _dispatch(store, "memory_distill", {})
     assert "Created Decision 'Use pyoxigraph over rdflib'" in out

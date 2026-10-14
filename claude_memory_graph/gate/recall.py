@@ -46,6 +46,9 @@ def _bigrams(pos_terms: list[tuple[int, str]]) -> set[tuple[str, str]]:
     return bigrams(pos_terms, gap=config()["PHRASE_GAP"])
 
 
+# Hook context past ~10k chars is cut off; a depth-2 prime was ~440KB.
+PRIME_LINKS = 20
+
 _SEGMENT_RE = re.compile(r"[.!?;\n]+")
 _SEGMENT_MIN_TERMS = 12  # prompts shorter than this score fine as one view
 
@@ -121,6 +124,7 @@ def _corpus(store, include_concepts: bool = False) -> list[dict]:
         )
         concept_by = _collect(rows, lambda r: r["s"].value)
 
+    concepts_of = _concept_labels(store)
     docs = []
     for gid, d in list(by.items()) + [(None, d) for d in concept_by.values()]:
         if d["dead"]:
@@ -128,6 +132,11 @@ def _corpus(store, include_concepts: bool = False) -> list[dict]:
         body = " ".join(d["parts"])
         name_pos = terms_pos(d["name"])
         all_pos = terms_pos(f"{d['name']} {body}")
+        concept_bigrams = set()
+        for label in concepts_of.get(d["iri"], ()):
+            label_pos = terms_pos(label)
+            all_pos += label_pos
+            concept_bigrams |= _bigrams(label_pos)
         docs.append({
             "gid": gid,
             "iri": d["iri"],
@@ -137,9 +146,29 @@ def _corpus(store, include_concepts: bool = False) -> list[dict]:
             "name_terms": {w for _, w in name_pos},
             "terms": {w for _, w in all_pos},
             "name_bigrams": _bigrams(name_pos),
-            "bigrams": _bigrams(all_pos),
+            "bigrams": _bigrams(all_pos) | concept_bigrams,
         })
     return docs
+
+
+def _concept_labels(store) -> dict[str, list[str]]:
+    """Resource IRI -> labels of its concepts. The concept links are the
+    graph's linking vocabulary; without them a node only matches its own text."""
+    from ..namespaces import GRAPH_CONCEPTS, GRAPH_LINKS
+    # Three flat queries in Python, not one SPARQL join: the join took ~5s.
+    labels = {r["c"].value: r["label"].value for r in store.query(
+        f'SELECT ?c ?label WHERE {{ GRAPH <{GRAPH_CONCEPTS}> {{ ?c mem:label ?label }} }}')}
+    closed = {r["l"].value for r in store.query(
+        f'SELECT ?l WHERE {{ GRAPH <{GRAPH_LINKS}> {{ '
+        f'{{ ?l mem:linkValidUntil ?e }} UNION {{ ?l mem:linkInvalidatedAt ?i }} }} }}')}
+    out: dict[str, list[str]] = {}
+    for r in store.query(
+            f'SELECT ?l ?s ?c WHERE {{ GRAPH <{GRAPH_LINKS}> {{ ?l mem:linkRelation "hasConcept" ; '
+            f'mem:linkSource ?s ; mem:linkTarget ?c }} }}'):
+        label = labels.get(r["c"].value)
+        if label and r["l"].value not in closed:
+            out.setdefault(r["s"].value, []).append(label)
+    return out
 
 
 def _project_neighbourhood(store, project: str) -> set[str]:
@@ -235,11 +264,11 @@ class RecallExtension(HookExtension):
 
         project = ctx.project or Path(ctx.cwd or os.getcwd()).name
         if store.find_resource("Project", project) is not None:
-            sections.append(recall_tool.handle(store, "Project", project, 2))
+            sections.append(recall_tool.handle(store, "Project", project, 1, limit=PRIME_LINKS))
 
         user = os.environ.get("MEMORY_GRAPH_USER")
         if user and store.find_resource("Person", user) is not None:
-            sections.append(recall_tool.handle(store, "Person", user, 2))
+            sections.append(recall_tool.handle(store, "Person", user, 1, limit=PRIME_LINKS))
 
         if not sections:
             return None  # nothing known -> silence, not noise

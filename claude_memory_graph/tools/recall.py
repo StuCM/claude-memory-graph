@@ -7,8 +7,23 @@ _NOISE = {"name", "label", "createdAt", "updatedAt",
           "invalidated", "invalidatedAt", "invalidationReason"}
 
 
+# Provenance tells the reader where a memory came from, not what it says.
+_PROVENANCE = {"sourceContext", "sourceDocument", "sourceKind", "capturedBy", "anchorCommit"}
+_BRIEF = 200
+
+
 def _props(properties: dict[str, str]) -> str:
     return "; ".join(f"{k}: {v}" for k, v in properties.items() if k not in _NOISE)
+
+
+def _brief(properties: dict[str, str]) -> str:
+    """A neighbour as a line, not a dump: content properties, each clipped."""
+    parts = []
+    for k, v in properties.items():
+        if k in _NOISE or k in _PROVENANCE:
+            continue
+        parts.append(f"{k}: {v[:_BRIEF]}" + ("…" if len(v) > _BRIEF else ""))
+    return "; ".join(parts)
 
 
 def _drift(properties: dict[str, str]) -> str:
@@ -43,14 +58,19 @@ def _line(lr: LinkedResource) -> str:
         head = f"{lr.relation} →"
     elif lr.direction == "incoming":
         head = f"← {lr.relation}"
-    else:  # "via <name>" (second hop)
-        head = f"({lr.direction}) {lr.relation} →"
-    rest = _props(lr.properties)
+    else:  # "via <name>" (second hop): name only, the first hop carries the detail
+        return f"- ({lr.direction}) {lr.relation} → {lr.model} '{name}'"
+    rest = _brief(lr.properties)
     return (f"- {head} {lr.model} '{name}'" + (f" — {rest}" if rest else "")
             + _drift(lr.properties))
 
 
-def handle(store: MemoryStore, model: str, name: str, depth: int) -> str:
+def _newest_first(lr: LinkedResource) -> str:
+    return lr.properties.get("updatedAt") or lr.properties.get("createdAt") or ""
+
+
+def handle(store: MemoryStore, model: str, name: str, depth: int,
+           limit: int | None = None) -> str:
     result = store.find_resource(model, name)
     if result is None:
         raise ValueError(f"{model} '{name}' not found")
@@ -61,9 +81,18 @@ def handle(store: MemoryStore, model: str, name: str, depth: int) -> str:
     rest = _props(recall.properties)
     lines = [f"{recall.model} '{name}'" + (f" — {rest}" if rest else "")
              + _drift(recall.properties)]
-    if recall.linked:
-        lines.append(f"Links ({len(recall.linked)}):")
-        lines.extend(_line(lr) for lr in recall.linked)
+    first = sorted((lr for lr in recall.linked if not lr.direction.startswith("via ")),
+                   key=_newest_first, reverse=True)
+    second = [lr for lr in recall.linked if lr.direction.startswith("via ")]
+    shown = (first + second)[:limit] if limit else first + second
+    if shown:
+        lines.append(f"Links ({len(recall.linked)}, newest first):")
+        lines.extend(_line(lr) for lr in shown)
+        if len(shown) < len(recall.linked):
+            lines.append(f"- +{len(recall.linked) - len(shown)} more — memory_search to find one")
     else:
         lines.append("No links.")
+    if recall.hubs:
+        hubs = ", ".join(f"'{n}' ({c} links)" for n, c in recall.hubs.items())
+        lines.append(f"Not expanded (broad hubs, recall one directly): {hubs}")
     return "\n".join(lines)

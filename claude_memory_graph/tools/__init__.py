@@ -371,6 +371,7 @@ def handlers(mem_store: MemoryStore) -> dict:
         failed = False
         try:
             mem_store.capture_client = _client_id(ctx)
+            mem_store.refresh()
             text = _dispatch(mem_store, params.name, params.arguments or {})
             if params.name in _MUTATING:
                 mem_store.save()

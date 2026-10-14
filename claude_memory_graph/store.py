@@ -1,6 +1,7 @@
 import re
 import uuid
 import logging
+from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -53,12 +54,19 @@ class RecallResult:
     model: str
     properties: dict[str, str]
     linked: list[LinkedResource]
+    hubs: dict[str, int] = field(default_factory=dict)  # name -> links, not expanded
+
+
+# A second hop through a broad concept ('arches': hundreds of links) returned
+# ~1MB; such nodes are named in RecallResult.hubs instead of expanded.
+HUB_DEGREE = 25
 
 
 class MemoryStore:
     def __init__(self, store: ox.Store, data_path: Optional[Path] = None):
         self._store = store
         self._data_path = data_path
+        self._synced = self._disk_mtime()
         # Set per-request by the MCP layer (client name/version); stamped as
         # mem:capturedBy provenance on every node created while set.
         self.capture_client: Optional[str] = None
@@ -89,6 +97,26 @@ class MemoryStore:
         with open(tmp, "wb") as f:
             self._store.dump(f, ox.RdfFormat.N_QUADS)
         tmp.replace(self._data_path)
+        self._synced = self._disk_mtime()
+
+    def _disk_mtime(self) -> Optional[int]:
+        if self._data_path is None or not self._data_path.exists():
+            return None
+        return self._data_path.stat().st_mtime_ns
+
+    def refresh(self) -> None:
+        """Reload when another process has saved since this one last synced.
+
+        Every session runs its own server holding the whole graph, and save()
+        dumps that copy over the file — without this, the last writer silently
+        discards every other session's writes."""
+        # ponytail: still races if two writers interleave within one tool call; flock save() if that shows up.
+        if self._disk_mtime() == self._synced:
+            return
+        self._store.clear()
+        with open(self._data_path, "rb") as f:
+            self._store.load(f, ox.RdfFormat.N_QUADS)
+        self._synced = self._disk_mtime()
 
     def _ensure_base_ontology(self) -> None:
         # Keyed on owl:versionInfo: a store persisted under an older base.ttl
@@ -711,6 +739,7 @@ class MemoryStore:
 
         seen = {resource_iri.value}
         linked: list[LinkedResource] = []
+        hubs: dict[str, int] = {}
         frontier = [resource_iri]
 
         for hop in range(max(depth, 1)):
@@ -721,7 +750,14 @@ class MemoryStore:
                 for lr in linked
             }
             next_frontier: list[ox.NamedNode] = []
-            for me_value, lr in self._neighbours(frontier):
+            pairs = self._neighbours(frontier)
+            if hop > 0:
+                degree = Counter(me for me, _ in pairs)
+                for me, n in degree.items():
+                    if n > HUB_DEGREE:
+                        hubs[via_name.get(me) or me] = n
+                pairs = [(me, lr) for me, lr in pairs if degree[me] <= HUB_DEGREE]
+            for me_value, lr in pairs:
                 if lr.iri.value in seen or lr.properties.get("invalidated") == "true":
                     continue
                 seen.add(lr.iri.value)
@@ -731,7 +767,8 @@ class MemoryStore:
                 next_frontier.append(lr.iri)
             frontier = next_frontier
 
-        return RecallResult(iri=resource_iri, model=model, properties=props, linked=linked)
+        return RecallResult(iri=resource_iri, model=model, properties=props,
+                            linked=linked, hubs=hubs)
 
     # ================================================================
     # Soft delete

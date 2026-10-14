@@ -44,6 +44,7 @@ class Report:
     residue: list = field(default_factory=list)    # (entry, reason) for the LLM lane
     archived: list = field(default_factory=list)
     split: list = field(default_factory=list)      # (filename, residue entries kept)
+    live: list = field(default_factory=list)       # promoted, but still being written
 
     def render(self) -> str:
         lines = [f"files: {len(self.files)} · nodes: {len(self.stored)} · "
@@ -52,6 +53,9 @@ class Report:
         for filename, kept in self.split:
             lines.append(f"  split {filename} — {kept} residue entr"
                          f"{'y' if kept == 1 else 'ies'} kept, original archived")
+        for filename in self.live:
+            lines.append(f"  kept {filename} — written in the last hour, so a session may "
+                         "still be appending; archive it later")
         for msg in self.stored:
             lines.append(f"  {msg}")
         if self.residue:
@@ -101,7 +105,16 @@ def _apply_node(store: MemoryStore, entry: Entry, report: Report) -> bool:
     return True
 
 
-def _apply_entry(store: MemoryStore, entry: Entry, report: Report) -> bool:
+# The relation an unlinked entry takes to its context file's project.
+_PROJECT_RELATION = {"Decision": "affects", "Pattern": "appliesTo", "Task": "partOf"}
+
+# A file written to this recently belongs to a live session: archiving it makes
+# that session recreate the path headless on its next append.
+LIVE_SECONDS = 3600
+
+
+def _apply_entry(store: MemoryStore, entry: Entry, report: Report,
+                 project: str = "") -> bool:
     """One folded entry → node + concepts + links. Refuses (to residue)
     rather than forcing; returns True when the node was applied."""
     if not _apply_node(store, entry, report):
@@ -124,6 +137,12 @@ def _apply_entry(store: MemoryStore, entry: Entry, report: Report) -> bool:
             # unknown relation / missing target — the skill lane decides
             report.residue.append(
                 (entry, f"link {relation} -> {model}/{name}: {exc}"))
+
+    relation = _PROJECT_RELATION.get(entry.model)
+    if (not entry.links and relation and project
+            and store.find_resource("Project", project) is not None):
+        handle_link(store, entry.model, entry.name, "Project", project, relation, {})
+        report.linked += 1
     return True
 
 
@@ -228,7 +247,7 @@ def distill(store: MemoryStore, directory: Path | None = None,
             if dry_run:
                 report.stored.append(f"[dry-run] {entry.model} '{entry.name}'")
                 continue
-            _apply_entry(store, entry, report)
+            _apply_entry(store, entry, report, project=path.name.split("__")[0])
 
         for entry in entries:
             if not entry.promotable and entry.structured:
@@ -238,8 +257,12 @@ def distill(store: MemoryStore, directory: Path | None = None,
                 report.residue.append((entry, "narrative entry (LLM lane)"))
 
         clean = len(report.residue) == residue_before
+        mtime = path.stat().st_mtime
         stale = (retire_after_days is not None
-                 and path.stat().st_mtime < time.time() - retire_after_days * 86400)
+                 and mtime < time.time() - retire_after_days * 86400)
+        if mtime > time.time() - LIVE_SECONDS:
+            report.live.append(path.name)
+            continue
         if not dry_run and clean and (not keep or stale):
             _mark_distilled(path)
             report.archived.append(_archive(path).name)
