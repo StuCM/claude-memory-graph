@@ -26,6 +26,12 @@ def test_terms_keep_distinctive_words():
     assert "pyoxigraph" in terms("why did we pick pyoxigraph?")
 
 
+def test_system_reminders_are_not_prompt_terms():
+    from claude_hook_kit.text import user_text
+    prompt = "check the gate<system-reminder>\nscratch 0a288aef workspace\n</system-reminder>"
+    assert terms(user_text(prompt)) == ["check", "gate"]
+
+
 def test_garbage_stdin_yields_empty_payload(monkeypatch):
     monkeypatch.setattr("sys.stdin", io.StringIO("{not json"))
     assert _read_payload() == {}

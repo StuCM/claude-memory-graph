@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from functools import cached_property
 
-from .text import terms_pos
+from .text import terms_pos, user_text
 
 # Claude Code hook event name -> handler method on HookExtension.
 EVENT_METHODS = {
@@ -36,7 +36,7 @@ class HookContext:
 
     @property
     def prompt(self) -> str:
-        return self.payload.get("prompt", "") or ""
+        return user_text(self.payload.get("prompt", "") or "")
 
     @property
     def cwd(self) -> str:

@@ -16,6 +16,14 @@ _STOP = {
     "thanks", "thank", "yes", "yep", "ok", "okay", "sure", "no", "nope", "please",
 }
 _WORD = re.compile(r"[a-z0-9]+")
+_REMINDER = re.compile(r"<system-reminder>.*?</system-reminder>", re.DOTALL)
+
+
+def user_text(prompt: str) -> str:
+    """The prompt minus harness <system-reminder> blocks — some clients (the
+    desktop app) send them inside the prompt, and scored as the user's words
+    they swamp the gate."""
+    return _REMINDER.sub(" ", prompt)
 
 
 def terms_pos(text: str) -> list[tuple[int, str]]:

@@ -192,14 +192,30 @@ def undistilled_files(context_dir: Path, project: str | None = None) -> list[Pat
     pattern = f"{project}__*.md" if project else "*.md"
     files = []
     for path in sorted(context_dir.glob(pattern)):
-        meta, _ = ({}, None)
         try:
-            head = path.read_text(encoding="utf-8", errors="ignore")[:300]
+            text = path.read_text(encoding="utf-8", errors="ignore")
         except OSError:
             continue
-        if "distilled: false" in head:
+        if not text.startswith("---"):
+            text = _restore_frontmatter(path, text)
+        if "distilled: false" in text[:300]:
             files.append(path)
     return files
+
+
+def _restore_frontmatter(path: Path, text: str) -> str:
+    """A session that keeps appending after distill archived (renamed) its
+    file recreates it headless; without this the file never matches
+    `distilled: false` and everything written after the archive is lost."""
+    date, _, clock = path.stem.split("__")[-1].partition("_")
+    created = f"{date}T{clock.replace('-', ':')}"
+    text = (f"---\ncreated: {created}\ndistilled: false\n"
+            f"summary: \"recovered after archive\"\n---\n\n## Key Points\n\n{text.lstrip()}")
+    try:
+        path.write_text(text, encoding="utf-8")
+    except OSError:
+        pass
+    return text
 
 
 def shape_stats(context_dir: Path, project: str | None = None,

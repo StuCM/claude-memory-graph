@@ -21,7 +21,7 @@ import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .text import terms
+from .text import terms, user_text
 
 HOOK_KIT_HOME_ENV = "CLAUDE_HOOK_KIT_HOME"
 
@@ -98,7 +98,8 @@ def _read_json(path: Path) -> dict:
 
 def _write_json(path: Path, data: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
+    # Per-process: parallel tool calls fire concurrent hooks on the same file.
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=1)
     tmp.replace(path)
@@ -141,7 +142,7 @@ class StateStore:
             core["prompt_count"] += 1
             # significant = real terms survive stopwording; bare "thanks"/"ok"
             # prompts don't advance counters extensions key cadence off
-            if terms(payload.get("prompt", "") or ""):
+            if terms(user_text(payload.get("prompt", "") or "")):
                 core["significant_prompt_count"] += 1
             core["last_prompt_at"] = _now()
         # transcript telemetry: derive, don't duplicate — the transcript is

@@ -80,6 +80,15 @@ def test_undistilled_files_filter(tmp_path):
     assert len(undistilled_files(tmp_path)) == 2
 
 
+def test_headless_file_recovered_as_undistilled(tmp_path):
+    path = tmp_path / "p__2026-09-14_08-45.md"
+    path.write_text("- [10:00] Decision: kept writing after archive\n")
+    assert undistilled_files(tmp_path) == [path]
+    meta, entries = parse_file(path)
+    assert meta["created"] == "2026-09-14T08:45"
+    assert [e.name for e in entries] == ["kept writing after archive"]
+
+
 def test_parse_file_missing_is_empty(tmp_path):
     meta, entries = parse_file(tmp_path / "nope.md")
     assert meta == {} and entries == []

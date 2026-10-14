@@ -21,6 +21,8 @@ Exclusions (the two cases that are NOT gate misses):
 Each miss carries the silent decision's score, so the report can say WHICH
 fix the evidence points at:
 - score close to ABS_MIN  -> threshold miss: the knob is a touch too high
+- score well above ABS_MIN -> margin miss: too many nodes scored alike for
+                             any one to stand out by MARGIN
 - score far below         -> vocabulary miss: no threshold would have caught
                              it; the NODE needs aliases / concept links
 
@@ -62,8 +64,11 @@ def _name_of(target: str) -> str:
     return target.split("/", 1)[-1] if target else ""
 
 
-def _classify(top: float) -> str:
-    abs_min = config()["ABS_MIN"]
+def _classify(top: float, rest: float) -> str:
+    abs_min, margin = config()["ABS_MIN"], config()["MARGIN"]
+    if top >= abs_min and top < margin * rest:
+        return (f"margin miss — scored {top} but the rest scored {rest}, inside MARGIN {margin}; "
+                "the prompt matched too broadly. Give the node distinctive aliases")
     if top >= 0.7 * abs_min:
         return f"threshold miss — scored {top} vs ABS_MIN {abs_min}; consider lowering ABS_MIN"
     return (f"vocabulary miss — scored only {top}; no sane threshold catches this. "
@@ -127,7 +132,7 @@ def report(window: int = WINDOW_SECONDS) -> str:
             f"  gate:   silent  top={d.get('top')}  top_node='{d.get('top_node', '?')}'"
             f"  terms({' '.join(d.get('terms', []))})",
             f"  model:  {r.get('tool')} -> {wanted}  [found]",
-            f"  fix:    {_classify(d.get('top', 0.0))}",
+            f"  fix:    {_classify(d.get('top', 0.0), d.get('rest', 0.0))}",
         ]
 
     for record in result["gaps"]:
