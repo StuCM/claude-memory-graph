@@ -170,7 +170,7 @@ def test_injection_always_offers_the_next_traversal_call(graph):
     assert "+" not in out.split("next:")[0].split("(")[-1]  # nothing withheld
     assert "DOOR, not the answer" in out
     assert 'next: memory_recall(model="Decision", ' in out
-    assert 'name="Use pyoxigraph over rdflib", depth=2)' in out
+    assert 'name="Use pyoxigraph over rdflib", depth=2, focus=' in out
 
 
 def test_every_injected_node_gets_its_own_traversal_call(graph, monkeypatch, tmp_path):

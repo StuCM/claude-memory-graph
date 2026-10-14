@@ -54,11 +54,12 @@ class RecallResult:
     model: str
     properties: dict[str, str]
     linked: list[LinkedResource]
-    hubs: dict[str, int] = field(default_factory=dict)  # name -> links, not expanded
+    # hub name -> its second-hop members, held back from `linked` for ranking
+    hubs: dict[str, list[LinkedResource]] = field(default_factory=dict)
 
 
 # A second hop through a broad concept ('arches': hundreds of links) returned
-# ~1MB; such nodes are named in RecallResult.hubs instead of expanded.
+# ~1MB; such nodes' neighbours go to RecallResult.hubs instead of `linked`.
 HUB_DEGREE = 25
 
 
@@ -739,7 +740,7 @@ class MemoryStore:
 
         seen = {resource_iri.value}
         linked: list[LinkedResource] = []
-        hubs: dict[str, int] = {}
+        hubs: dict[str, list[LinkedResource]] = {}
         frontier = [resource_iri]
 
         for hop in range(max(depth, 1)):
@@ -753,9 +754,11 @@ class MemoryStore:
             pairs = self._neighbours(frontier)
             if hop > 0:
                 degree = Counter(me for me, _ in pairs)
-                for me, n in degree.items():
-                    if n > HUB_DEGREE:
-                        hubs[via_name.get(me) or me] = n
+                for me, lr in pairs:
+                    if (degree[me] > HUB_DEGREE and lr.iri.value not in seen
+                            and lr.properties.get("invalidated") != "true"):
+                        lr.direction = f"via {via_name.get(me) or me}"
+                        hubs.setdefault(via_name.get(me) or me, []).append(lr)
                 pairs = [(me, lr) for me, lr in pairs if degree[me] <= HUB_DEGREE]
             for me_value, lr in pairs:
                 if lr.iri.value in seen or lr.properties.get("invalidated") == "true":

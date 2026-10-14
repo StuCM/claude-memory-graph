@@ -87,6 +87,7 @@ def main() -> None:
     p.add_argument("model", help="e.g. Person, Project")
     p.add_argument("name")
     p.add_argument("--depth", type=int, default=1, choices=[1, 2])
+    p.add_argument("--focus", default="", help="rank broad hubs' neighbours by this text")
     p = sub.add_parser("reflect", help="graph overview: counts, relations, recent")
     p.add_argument("model", nargs="?", default=None)
     p = sub.add_parser("query", help="run a SPARQL query")
@@ -256,7 +257,7 @@ def main() -> None:
 
     store = MemoryStore.open_or_create(_store_path())
     if args.cmd == "recall":
-        print(recall.handle(store, args.model, args.name, args.depth))
+        print(recall.handle(store, args.model, args.name, args.depth, focus=args.focus))
     elif args.cmd == "reflect":
         print(reflect.handle(store, args.model))
     elif args.cmd == "query":

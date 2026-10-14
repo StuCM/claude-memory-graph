@@ -13,6 +13,7 @@ Narrative bullets (no continuation lines) parse too — they carry text for
 retrieval but are never mechanically promoted to the graph.
 """
 
+import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -212,7 +213,10 @@ def _restore_frontmatter(path: Path, text: str) -> str:
     text = (f"---\ncreated: {created}\ndistilled: false\n"
             f"summary: \"recovered after archive\"\n---\n\n## Key Points\n\n{text.lstrip()}")
     try:
+        stat = path.stat()
         path.write_text(text, encoding="utf-8")
+        # keep the age: distill reads mtime to tell a live session's file
+        os.utime(path, ns=(stat.st_atime_ns, stat.st_mtime_ns))
     except OSError:
         pass
     return text

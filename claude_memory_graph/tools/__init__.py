@@ -229,6 +229,12 @@ _TOOLS = [
                     "description": "Traversal depth (1 = direct links, 2 = two hops). Default: 1",
                     "default": 1,
                 },
+                "focus": {
+                    "type": "string",
+                    "description": "What you are looking for. At depth 2, a broad hub "
+                                   "(e.g. 'arches') returns only its neighbours most relevant "
+                                   "to this text; default: the recalled node's own text",
+                },
             },
             "required": ["model", "name"],
         },
@@ -436,7 +442,8 @@ def _dispatch(store: MemoryStore, name: str, args: dict) -> str:
         )
 
     if name == "memory_recall":
-        return recall.handle(store, args["model"], args["name"], args.get("depth") or 1)
+        return recall.handle(store, args["model"], args["name"], args.get("depth") or 1,
+                             focus=args.get("focus") or "")
 
     if name == "memory_forget":
         return forget.handle(store, args["model"], args["name"], args["reason"])

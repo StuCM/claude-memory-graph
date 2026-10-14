@@ -325,7 +325,7 @@ class RecallExtension(HookExtension):
             if d["gid"] not in injected:
                 lines.append(f"- {d['name'] or d['gid']}: {d['desc']}{_links(store, d)}")
                 lines.append(f'  next: memory_recall(model="{d["model"]}", '
-                             f'name="{d["name"]}", depth=2)')
+                             f'name="{d["name"]}", depth=2, focus="<what you need>")')
                 fresh.append(d["gid"])
         append_jsonl("injections.jsonl", {
             "fired": bool(fresh), "top": round(top, 2), "rest": round(rest, 2),

@@ -1,5 +1,8 @@
+import math
 import os
 import subprocess
+
+from claude_hook_kit import terms
 
 from ..store import MemoryStore, LinkedResource
 
@@ -65,12 +68,37 @@ def _line(lr: LinkedResource) -> str:
             + _drift(lr.properties))
 
 
+HUB_PICKS = 5
+
+
+def _text(properties: dict[str, str]) -> str:
+    return " ".join(v for k, v in properties.items() if k not in _PROVENANCE)
+
+
+def _relevant(members: list[LinkedResource], focus: str) -> list[LinkedResource]:
+    """The hub members that share the most rare focus words, best first:
+    'arches' has hundreds of neighbours, only a few concern this recall."""
+    wanted = set(terms(focus))
+    bags = [set(terms(_text(lr.properties))) for lr in members]
+    df: dict[str, int] = {}
+    for bag in bags:
+        for w in bag & wanted:
+            df[w] = df.get(w, 0) + 1
+    scored = []
+    for lr, bag in zip(members, bags):
+        score = sum(math.log(len(members) / df[w]) for w in bag & wanted)
+        if score > 0:
+            scored.append((score, lr))
+    scored.sort(key=lambda pair: pair[0], reverse=True)
+    return [lr for _score, lr in scored[:HUB_PICKS]]
+
+
 def _newest_first(lr: LinkedResource) -> str:
     return lr.properties.get("updatedAt") or lr.properties.get("createdAt") or ""
 
 
 def handle(store: MemoryStore, model: str, name: str, depth: int,
-           limit: int | None = None) -> str:
+           limit: int | None = None, focus: str = "") -> str:
     result = store.find_resource(model, name)
     if result is None:
         raise ValueError(f"{model} '{name}' not found")
@@ -92,7 +120,13 @@ def handle(store: MemoryStore, model: str, name: str, depth: int,
             lines.append(f"- +{len(recall.linked) - len(shown)} more — memory_search to find one")
     else:
         lines.append("No links.")
-    if recall.hubs:
-        hubs = ", ".join(f"'{n}' ({c} links)" for n, c in recall.hubs.items())
-        lines.append(f"Not expanded (broad hubs, recall one directly): {hubs}")
+    against = f" to '{focus[:60]}'" if focus else " to this node"
+    focus = focus or f"{name} {_text(recall.properties)}"
+    for hub, members in recall.hubs.items():
+        picks = _relevant(members, focus)
+        lines.append(f"Hub '{hub}' ({len(members)} links) — {len(picks)} most relevant{against}:")
+        lines.extend(f"  - {lr.model} '{lr.properties.get('name') or lr.properties.get('label', '')}'"
+                     + (f" — {_brief({'description': lr.properties['description']})}"
+                        if lr.properties.get("description") else "")
+                     for lr in picks)
     return "\n".join(lines)
