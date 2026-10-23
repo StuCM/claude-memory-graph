@@ -30,6 +30,8 @@ import json
 import math
 import os
 import re
+import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 from claude_hook_kit import HookContext, HookExtension, append_jsonl, bigrams, terms_pos
@@ -228,8 +230,8 @@ def _score(q_terms: set[str], d: dict, idf: dict[str, float],
     return s * (0.5 + 0.5 * coverage)
 
 
-SNAPSHOT_NAME = "recall-snapshot.json"
-SNAPSHOT_VERSION = 1
+SNAPSHOT_NAME = "recall-snapshot.sqlite"
+SNAPSHOT_VERSION = 2
 
 
 def _generation() -> list | None:
@@ -281,58 +283,91 @@ def _all_links(store, docs: list[dict]) -> tuple[dict[str, str], dict[str, set[s
     return links, near
 
 
-def _build_snapshot(store, generation) -> dict:
+def _write_snapshot(store, generation) -> None:
+    """Build the snapshot from the store into a fresh SQLite file, then swap
+    it in. A term index, not one blob: the prompt hook loads only the docs
+    sharing a word with the prompt, where the whole corpus as Python sets
+    cost ~140MB per prompt."""
     docs = _corpus(store, include_concepts=True)
     links, near = _all_links(store, docs)
     docs = [d for d in docs if d["gid"] is not None]
-    return {"version": SNAPSHOT_VERSION, "generation": generation, "docs": docs,
-            "idf": _idf(docs), "links": links, "near": near}
-
-
-def _write_snapshot(snap: dict) -> None:
     path = store_dir() / SNAPSHOT_NAME
     tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
     try:
-        tmp.write_text(json.dumps(snap, default=lambda x: sorted(x)))
+        tmp.unlink(missing_ok=True)
+        db = sqlite3.connect(tmp)
+        db.executescript(
+            "CREATE TABLE meta (version INTEGER, generation TEXT);"
+            "CREATE TABLE docs (id INTEGER PRIMARY KEY, doc TEXT);"
+            "CREATE TABLE postings (term TEXT, doc INTEGER);"
+            "CREATE TABLE idf (term TEXT PRIMARY KEY, value REAL);"
+            "CREATE TABLE links (iri TEXT PRIMARY KEY, text TEXT);"
+            "CREATE TABLE near (project TEXT, iri TEXT);")
+        db.execute("INSERT INTO meta VALUES (?, ?)", (SNAPSHOT_VERSION, json.dumps(generation)))
+        for i, d in enumerate(docs):
+            db.execute("INSERT INTO docs VALUES (?, ?)", (i, json.dumps(d, default=sorted)))
+            db.executemany("INSERT INTO postings VALUES (?, ?)", ((t, i) for t in d["terms"]))
+        db.executemany("INSERT INTO idf VALUES (?, ?)", _idf(docs).items())
+        db.executemany("INSERT INTO links VALUES (?, ?)", links.items())
+        db.executemany("INSERT INTO near VALUES (?, ?)",
+                       ((p, iri) for p, iris in near.items() for iri in iris))
+        db.execute("CREATE INDEX postings_term ON postings (term)")
+        db.commit()
+        db.close()
         os.replace(tmp, path)
+        (store_dir() / "recall-snapshot.json").unlink(missing_ok=True)  # v1 snapshot
     except Exception:
         tmp.unlink(missing_ok=True)
 
 
-def _read_snapshot(generation) -> dict | None:
+def _read_snapshot(generation) -> sqlite3.Connection | None:
     """The cached snapshot if it matches the graph on disk, else None
     (missing, stale or corrupt) — the caller then rebuilds from the store."""
-    if generation is None:
+    path = store_dir() / SNAPSHOT_NAME
+    if generation is None or not path.exists():
         return None
     try:
-        snap = json.loads((store_dir() / SNAPSHOT_NAME).read_text())
-        if snap["version"] != SNAPSHOT_VERSION or snap["generation"] != generation:
-            return None
-        for d in snap["docs"]:
-            for key in ("name_terms", "terms"):
-                d[key] = set(d[key])
-            for key in ("name_bigrams", "bigrams"):
-                d[key] = {tuple(b) for b in d[key]}
-        snap["near"] = {k: set(v) for k, v in snap["near"].items()}
-        if not (isinstance(snap["idf"], dict) and isinstance(snap["links"], dict)):
-            return None
-        return snap
-    except (OSError, ValueError, KeyError, TypeError):
-        return None
+        db = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        version, gen = db.execute("SELECT version, generation FROM meta").fetchone()
+        if version == SNAPSHOT_VERSION and json.loads(gen) == generation:
+            return db
+        db.close()
+    except (sqlite3.Error, ValueError, TypeError):
+        pass
+    return None
 
 
-def _snapshot() -> dict:
+def _snapshot() -> sqlite3.Connection | None:
+    """None only when the snapshot cannot be written (no graph.nq yet)."""
     generation = _generation()
-    snap = _read_snapshot(generation)
-    if snap is not None:
-        return snap
-    from ..store import MemoryStore
-    store = MemoryStore.open_or_create(store_dir())
-    snap = _build_snapshot(store, generation)
-    if generation is not None:
-        _write_snapshot(snap)
-    snap["near"] = {k: set(v) for k, v in snap["near"].items()}
-    return snap
+    db = _read_snapshot(generation)
+    if db is None and generation is not None:
+        from ..store import MemoryStore
+        _write_snapshot(MemoryStore.open_or_create(store_dir()), generation)
+        db = _read_snapshot(generation)
+    return db
+
+
+def _in(db, sql: str, values) -> list:
+    """Rows of `sql` with its `IN ({})` filled by `values`."""
+    values = list(values)
+    return db.execute(sql.format(",".join("?" * len(values))), values).fetchall()
+
+
+def _candidates(db, terms: set[str]) -> tuple[list[dict], dict[str, float]]:
+    """Docs sharing a word with the prompt, and the prompt's idf. Every
+    other doc scores 0 and _score reads idf only for query words, so the
+    ranking is the same as scoring the whole corpus."""
+    docs = []
+    for (raw,) in _in(db, "SELECT doc FROM docs WHERE id IN "
+                          "(SELECT doc FROM postings WHERE term IN ({})) ORDER BY id", terms):
+        d = json.loads(raw)
+        for key in ("name_terms", "terms"):
+            d[key] = set(d[key])
+        for key in ("name_bigrams", "bigrams"):
+            d[key] = {tuple(b) for b in d[key]}
+        docs.append(d)
+    return docs, dict(_in(db, "SELECT term, value FROM idf WHERE term IN ({})", terms))
 
 
 class RecallExtension(HookExtension):
@@ -372,19 +407,22 @@ class RecallExtension(HookExtension):
             return None
         cfg = config()
         views = query_views(ctx.prompt)  # whole prompt + its sentences
-        snap = _snapshot()
-        docs, idf = snap["docs"], snap["idf"]
-        if not docs:
-            # empty graph: the session log is still a retrieval source
+        db = _snapshot()
+        if db is None:
             return self._log_recall(ctx, q, views, {}, budget=cfg["TOP_N"])
+        with closing(db):
+            return self._graph_recall(ctx, db, q, views, cfg)
 
-        near = snap["near"].get(ctx.project, set()) if ctx.project else set()
+    def _graph_recall(self, ctx: HookContext, db, q: set, views: list, cfg: dict) -> str | None:
+        docs, idf = _candidates(db, set().union(*(terms for terms, _ in views)))
+        near = {iri for (iri,) in db.execute(
+            "SELECT iri FROM near WHERE project = ?", (ctx.project,))} if ctx.project else set()
         boost = cfg["PROX_BOOST"]
         ranked = sorted(
             ((score_views(views, d, idf) * (boost if d["iri"] in near else 1.0), d)
              for d in docs),
             key=lambda x: x[0], reverse=True)
-        top = ranked[0][0]
+        top = ranked[0][0] if ranked else 0.0
         # Candidates: strong on their own (>= ABS_MIN) AND within the band of
         # the top (> top/MARGIN) — so a proximity-boosted winner sheds
         # lexical-only stragglers from other projects.
@@ -400,7 +438,7 @@ class RecallExtension(HookExtension):
             # "what WOULD the gate have injected, and what did it score?"
             append_jsonl("injections.jsonl", {
                 "fired": False, "top": round(top, 2), "rest": round(rest, 2),
-                "top_node": ranked[0][1]["name"], "session": session,
+                "top_node": ranked[0][1]["name"] if ranked else "", "session": session,
                 "project": ctx.project, "terms": sorted(q)})
             # graph silent -> the session log gets the whole budget
             return self._log_recall(ctx, q, views, idf, budget=cfg["TOP_N"])
@@ -409,7 +447,8 @@ class RecallExtension(HookExtension):
         lines, fresh = [], []
         for _unused, d in strong:
             if d["gid"] not in injected:
-                lines.append(f"- {d['name'] or d['gid']}: {d['desc']}{snap['links'].get(d['iri'], '')}")
+                link = db.execute("SELECT text FROM links WHERE iri = ?", (d["iri"],)).fetchone()
+                lines.append(f"- {d['name'] or d['gid']}: {d['desc']}{link[0] if link else ''}")
                 lines.append(f'  next: memory_recall(model="{d["model"]}", '
                              f'name="{d["name"]}", depth=2, focus="<what you need>")')
                 fresh.append(d["gid"])

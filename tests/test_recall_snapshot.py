@@ -1,6 +1,8 @@
 """Recall reads a cached snapshot instead of opening the store per prompt."""
 
+import json
 import re
+import sqlite3
 
 import pytest
 
@@ -47,6 +49,14 @@ def snapshot_file(tmp_path):
     return tmp_path / "store" / recall.SNAPSHOT_NAME
 
 
+def snapshot_docs(db):
+    return [json.loads(raw) for (raw,) in db.execute("SELECT doc FROM docs")]
+
+
+def snapshot_links(db):
+    return dict(db.execute("SELECT iri, text FROM links"))
+
+
 def test_snapshot_output_equals_fresh_build(graph, tmp_path):
     first = run(PROMPT)  # builds and writes the snapshot
     assert first and "pyoxigraph" in first
@@ -57,12 +67,13 @@ def test_snapshot_output_equals_fresh_build(graph, tmp_path):
 
 
 def test_links_match_store_recall(graph):
-    snap = recall._snapshot()
-    for d in snap["docs"]:
+    db = recall._snapshot()
+    links = snapshot_links(db)
+    for d in snapshot_docs(db):
         result = graph.recall(__import__("pyoxigraph").NamedNode(d["iri"]), d["gid"], depth=1)
         want = sorted(f"{lr.relation}→ {lr.model} '{lr.properties.get('name', '')}'"
                       for lr in result.linked)
-        got = sorted(re.findall(r"[^(·]+→ \w+ '[^']*'", snap["links"].get(d["iri"], "")))
+        got = sorted(re.findall(r"[^(·]+→ \w+ '[^']*'", links.get(d["iri"], "")))
         assert [g.strip() for g in got] == want
 
 
@@ -80,7 +91,7 @@ def test_store_write_invalidates_snapshot(graph, tmp_path):
     graph.create_resource("Decision", {"name": "Adopt flurbonium", "rationale": "flurbonium rocks"})
     graph.save()
     assert run("tell me about flurbonium") is not None
-    assert any(d["name"] == "Adopt flurbonium" for d in recall._read_snapshot(recall._generation())["docs"])
+    assert any(d["name"] == "Adopt flurbonium" for d in snapshot_docs(recall._read_snapshot(recall._generation())))
 
 
 def test_corrupt_snapshot_falls_back(graph, tmp_path):
@@ -96,13 +107,10 @@ def test_wrong_shape_snapshot_falls_back(graph, tmp_path):
     assert run(PROMPT) == first
 
 
-def test_missing_key_falls_back(graph, tmp_path):
-    import json
+def test_missing_table_falls_back(graph, tmp_path):
     first = run(PROMPT)
-    f = snapshot_file(tmp_path)
-    snap = json.loads(f.read_text())
-    del snap["links"]
-    f.write_text(json.dumps(snap))
+    with sqlite3.connect(snapshot_file(tmp_path)) as db:
+        db.execute("DROP TABLE meta")
     assert run(PROMPT) == first
 
 
@@ -122,5 +130,5 @@ def test_link_cap_and_forgotten_targets(graph):
     graph.create_link(hub, gone, "has", {})
     graph.forget_resource(gone, gone_id, "x")
     graph.save()
-    links = recall._snapshot()["links"][hub.value]
+    links = snapshot_links(recall._snapshot())[hub.value]
     assert links.count("has→") == 3 and links.endswith("· +2 more)") and "gone" not in links
