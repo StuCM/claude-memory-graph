@@ -94,3 +94,33 @@ def test_wrong_shape_snapshot_falls_back(graph, tmp_path):
     first = run(PROMPT)
     snapshot_file(tmp_path).write_text("[1, 2]")
     assert run(PROMPT) == first
+
+
+def test_missing_key_falls_back(graph, tmp_path):
+    import json
+    first = run(PROMPT)
+    f = snapshot_file(tmp_path)
+    snap = json.loads(f.read_text())
+    del snap["links"]
+    f.write_text(json.dumps(snap))
+    assert run(PROMPT) == first
+
+
+def test_phrase_gap_change_invalidates(graph, monkeypatch):
+    before = recall._generation()
+    monkeypatch.setitem(recall.config(), "PHRASE_GAP", 5)
+    assert recall._generation() != before
+
+
+def test_link_cap_and_forgotten_targets(graph):
+    import pyoxigraph as ox
+    hub_id, hub = graph.create_resource("Project", {"name": "hub"})
+    for i in range(5):
+        _, n = graph.create_resource("Pattern", {"name": f"leaf{i}"})
+        graph.create_link(hub, n, "has", {})
+    gone_id, gone = graph.create_resource("Pattern", {"name": "gone"})
+    graph.create_link(hub, gone, "has", {})
+    graph.forget_resource(gone, gone_id, "x")
+    graph.save()
+    links = recall._snapshot()["links"][hub.value]
+    assert links.count("has→") == 3 and links.endswith("· +2 more)") and "gone" not in links

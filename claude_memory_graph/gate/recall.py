@@ -233,13 +233,14 @@ SNAPSHOT_VERSION = 1
 
 
 def _generation() -> list | None:
-    """Identity of the persisted graph: save() replaces graph.nq atomically,
-    so a new inode/mtime/size means the graph changed. None when absent."""
+    """Identity of the snapshot's inputs: save() replaces graph.nq atomically,
+    so a new inode/mtime/size means the graph changed; PHRASE_GAP is baked
+    into the cached bigrams. None when graph.nq is absent."""
     try:
         st = (store_dir() / "graph.nq").stat()
     except OSError:
         return None
-    return [st.st_ino, st.st_mtime_ns, st.st_size]
+    return [st.st_ino, st.st_mtime_ns, st.st_size, config()["PHRASE_GAP"]]
 
 
 def _all_links(store, docs: list[dict]) -> tuple[dict[str, str], dict[str, set[str]]]:
@@ -294,7 +295,7 @@ def _write_snapshot(snap: dict) -> None:
     try:
         tmp.write_text(json.dumps(snap, default=lambda x: sorted(x)))
         os.replace(tmp, path)
-    except OSError:
+    except Exception:
         tmp.unlink(missing_ok=True)
 
 
@@ -313,6 +314,8 @@ def _read_snapshot(generation) -> dict | None:
             for key in ("name_bigrams", "bigrams"):
                 d[key] = {tuple(b) for b in d[key]}
         snap["near"] = {k: set(v) for k, v in snap["near"].items()}
+        if not (isinstance(snap["idf"], dict) and isinstance(snap["links"], dict)):
+            return None
         return snap
     except (OSError, ValueError, KeyError, TypeError):
         return None
