@@ -5,7 +5,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 import pyoxigraph as ox
 
@@ -730,8 +730,11 @@ class MemoryStore:
         return [(key[0], lr) for key, lr in groups.items()]
 
     def recall(
-        self, resource_iri: ox.NamedNode, graph_id: str, depth: int
+        self, resource_iri: ox.NamedNode, graph_id: str, depth: int,
+        pick: Optional[Callable[[list[LinkedResource]], list[LinkedResource]]] = None,
     ) -> RecallResult:
+        """`pick` chooses which of a hop's new neighbours the next hop
+        expands from; without it every one is."""
         props = self.get_resource_properties(resource_iri, graph_id)
         graph = resource_graph_node(graph_id)
         model = self._get_resource_type(resource_iri, graph)
@@ -748,7 +751,7 @@ class MemoryStore:
                 lr.iri.value: lr.properties.get("name") or lr.properties.get("label", "")
                 for lr in linked
             }
-            next_frontier: list[ox.NamedNode] = []
+            fresh: list[LinkedResource] = []
             pairs = self._neighbours(frontier)
             if hop > 0:
                 degree = Counter(me for me, _ in pairs)
@@ -765,8 +768,8 @@ class MemoryStore:
                 if hop > 0:
                     lr.direction = f"via {via_name.get(me_value) or me_value}"
                 linked.append(lr)
-                next_frontier.append(lr.iri)
-            frontier = next_frontier
+                fresh.append(lr)
+            frontier = [lr.iri for lr in (pick(fresh) if pick else fresh)]
 
         return RecallResult(iri=resource_iri, model=model, properties=props,
                             linked=linked, hubs=hubs)

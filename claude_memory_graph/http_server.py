@@ -66,6 +66,7 @@ def _hook_routes(store: MemoryStore) -> list:
     from starlette.routing import Route
 
     from . import distill as distill_mod
+    from .chain import chain
     from .gate import recall
     from .tools import query
 
@@ -92,7 +93,14 @@ def _hook_routes(store: MemoryStore) -> list:
         store.refresh()
         return JSONResponse({"text": query.handle(store, body["sparql"])})
 
-    return [Route("/hook/recall", hook_recall, methods=["POST"]),
+    async def run_chain(request):
+        body = await request.json()
+        store.refresh()
+        return JSONResponse({"lines": chain(store, body["text"], body.get("depth", 2),
+                                            body.get("limit", 40))})
+
+    return [Route("/chain", run_chain, methods=["POST"]),
+            Route("/hook/recall", hook_recall, methods=["POST"]),
             Route("/hook/prime", hook_prime, methods=["POST"]),
             Route("/hook/distill", hook_distill, methods=["POST"]),
             Route("/query", run_query, methods=["POST"])]

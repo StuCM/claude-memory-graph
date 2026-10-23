@@ -87,3 +87,16 @@ def test_distill_route_promotes_new_entries(store, client, tmp_path):
     (tmp_path / "context" / "quartzproj__2026-10-23_22-00.md").write_text(ENTRY)
     client.post("/hook/distill", json={})  # TestClient runs the background task
     assert store.find_resource("Decision", "Use flurbonium for caching") is not None
+
+
+def test_chain_route_follows_the_best_edge(store, client):
+    from claude_memory_graph.tools.link import handle_link
+    from claude_memory_graph.tools.store_resource import handle_resource
+    handle_resource(store, "Pattern", {"name": "rdf store fix", "description": "pyoxigraph load"})
+    handle_link(store, "Pattern", "rdf store fix", "Decision", "Use pyoxigraph over rdflib",
+                "manifestsIn", {})
+    store.save()
+    lines = client.post("/chain", json={"text": "pyoxigraph rdflib"}).json()["lines"]
+    assert lines[0] == 'Decision "Use pyoxigraph over rdflib"'
+    assert any("Pattern \"rdf store fix\"" in line for line in lines)
+    assert not any("Project" in line for line in lines)

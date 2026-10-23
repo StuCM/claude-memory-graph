@@ -374,8 +374,8 @@ def _candidates(db, terms: set[str]) -> tuple[list[dict], dict[str, float]]:
     return docs, dict(_in(db, "SELECT term, value FROM idf WHERE term IN ({})", terms))
 
 
-def rank(prompt: str, project: str, store=None) -> dict | None:
-    """The graph layer's answer for a prompt: the best TOP_N+1 docs with
+def rank(prompt: str, project: str, store=None, top: int | None = None) -> dict | None:
+    """The graph layer's answer for a prompt: the best `top` (TOP_N+1) docs with
     their scores and link text, and the prompt's idf for the log layer.
     None with no graph on disk. The shared server runs this with its own
     store; a hook runs it only when no server answers."""
@@ -391,7 +391,7 @@ def rank(prompt: str, project: str, store=None) -> dict | None:
         ranked = sorted(
             ((score_views(views, d, idf) * (boost if d["iri"] in near else 1.0), d)
              for d in docs),
-            key=lambda x: x[0], reverse=True)[:config()["TOP_N"] + 1]
+            key=lambda x: x[0], reverse=True)[:top or config()["TOP_N"] + 1]
         out = []
         for score, d in ranked:
             link = db.execute("SELECT text FROM links WHERE iri = ?", (d["iri"],)).fetchone()

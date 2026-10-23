@@ -93,6 +93,11 @@ def main() -> None:
     p.add_argument("model", nargs="?", default=None)
     p = sub.add_parser("query", help="run a SPARQL query")
     p.add_argument("sparql")
+    p = sub.add_parser("chain", help="follow the best edges out from the nodes "
+                                     "that best match free text")
+    p.add_argument("text", nargs="+")
+    p.add_argument("--depth", type=int, default=2)
+    p.add_argument("--limit", type=int, default=40, help="most nodes to show")
     p = sub.add_parser("ask", help="natural-language question → composed SPARQL "
                                    "(query planner v0)")
     p.add_argument("text")
@@ -252,6 +257,16 @@ def main() -> None:
             return
         store = MemoryStore.open_or_create(_store_path())
         print(coverage.report(store, prompts))
+        return
+
+    if args.cmd == "chain":
+        from .client import post
+        body = {"text": " ".join(args.text), "depth": args.depth, "limit": args.limit}
+        answer = post("/chain", body, timeout=30.0)
+        if answer is None:
+            from .chain import chain
+            answer = {"lines": chain(MemoryStore.open_or_create(_store_path()), **body)}
+        print("\n".join(answer["lines"]))
         return
 
     if args.cmd == "query":
