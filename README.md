@@ -30,8 +30,9 @@ claude plugin install memory-graph@claude-memory-graph --scope user
 claude plugin install hook-kit@claude-memory-graph --scope user
 ```
 
-`memory-graph` brings the MCP server (run via `uvx` from the bundled source — requires
-[uv](https://docs.astral.sh/uv/)) and the distill/ingest skills. [hook-kit](hook-kit/) is
+`memory-graph` connects every chat to one shared server at `http://127.0.0.1:8848`
+(see **Shared server** below — start it before opening a chat) and brings the
+distill/ingest skills. [hook-kit](hook-kit/) is
 the standalone hook-extension framework the hooks below run on; installing it adds
 `/hook-kit:install` for enabling and disabling individual extensions. Both extensions
 (`memory-recall` for priming and per-prompt injection, `context-counter` for context-log
@@ -163,17 +164,27 @@ claude-memory-graph pulse          # sessions seen, prompts gated, injections
 A session that shows `SessionStart` but no `UserPromptSubmit` means the hooks are
 registered in a plugin rather than in `settings.json`.
 
-### Shared server (across clients and machines)
+### Shared server
+
+One `claude-memory-graph serve` owns the store and serves every chat, so the graph is
+loaded once rather than once per chat (~185MB each). The hooks and the CLI ask it too —
+priming, per-prompt recall, auto-distill when the context counter sees a write,
+`query` and `chain` — and fall back to reading the store themselves when it is down.
+Run it as a user service; set `ExecStart` in
+[systemd/memory-graph.service](systemd/memory-graph.service) to your checkout first:
+
+```sh
+uv sync                                     # in the checkout, for .venv/bin/claude-memory-graph
+cp systemd/memory-graph.service ~/.config/systemd/user/
+systemctl --user enable --now memory-graph
+```
+
+On another machine, bind beyond localhost with a token and point the clients at it:
 
 ```sh
 claude-memory-graph serve --host 0.0.0.0 --port 8848 --token <secret>   # on the host
-claude mcp add --transport http memory-graph http://host:8848/mcp \
-    --header "Authorization: Bearer <secret>"                            # on each client
+export MEMORY_GRAPH_URL=http://host:8848 MEMORY_GRAPH_TOKEN=<secret>     # for each client
 ```
-
-One process owns the store (no last-writer-wins between sessions). Non-localhost binds
-require the token. v1 scope: the MCP tools travel; ambient injection/capture hooks stay
-per-machine — see [docs/tasks/remote-server.md](docs/tasks/remote-server.md).
 
 ### Manual install (server only)
 
