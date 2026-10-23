@@ -57,6 +57,47 @@ class _BearerAuth:
         await self.app(scope, receive, send)
 
 
+def _hook_routes(store: MemoryStore) -> list:
+    """Plain JSON routes for the local hooks and the CLI, so they never load
+    the graph themselves. Each refreshes first: the CLI can still write
+    graph.nq directly."""
+    from starlette.background import BackgroundTask
+    from starlette.responses import JSONResponse
+    from starlette.routing import Route
+
+    from . import distill as distill_mod
+    from .gate import recall
+    from .tools import query
+
+    async def hook_recall(request):
+        body = await request.json()
+        store.refresh()
+        return JSONResponse(recall.rank(body["prompt"], body.get("project") or "", store))
+
+    async def hook_prime(request):
+        body = await request.json()
+        store.refresh()
+        return JSONResponse({"sections": recall.prime(store, body["project"], body.get("user"))})
+
+    async def run_distill():
+        store.refresh()
+        distill_mod.auto_distill(store)
+
+    async def hook_distill(request):
+        # Answers before the distill runs: the Stop hook that asks must not wait on it.
+        return JSONResponse({}, background=BackgroundTask(run_distill))
+
+    async def run_query(request):
+        body = await request.json()
+        store.refresh()
+        return JSONResponse({"text": query.handle(store, body["sparql"])})
+
+    return [Route("/hook/recall", hook_recall, methods=["POST"]),
+            Route("/hook/prime", hook_prime, methods=["POST"]),
+            Route("/hook/distill", hook_distill, methods=["POST"]),
+            Route("/query", run_query, methods=["POST"])]
+
+
 def serve(store_path, instructions: str, host: str = "127.0.0.1",
           port: int = 8848, token: str = "") -> None:
     import uvicorn
@@ -91,6 +132,7 @@ def serve(store_path, instructions: str, host: str = "127.0.0.1",
         store.save()
         log.info("store saved; goodbye")
 
-    app = Starlette(routes=[Mount("/mcp", app=manager.handle_request)],
+    app = Starlette(routes=[*_hook_routes(store),
+                            Mount("/mcp", app=manager.handle_request)],
                     lifespan=lifespan)
     uvicorn.run(_BearerAuth(app, token), host=host, port=port, log_level="warning")

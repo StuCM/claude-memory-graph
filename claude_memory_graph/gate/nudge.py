@@ -65,6 +65,7 @@ from pathlib import Path
 
 from claude_hook_kit import HookContext, HookExtension, append_jsonl
 
+from ..client import post
 from .runtime import config
 
 
@@ -224,6 +225,8 @@ class ContextCounterExtension(HookExtension):
                 append_jsonl("capture.jsonl", {
                     "kind": "write", "session": ctx.core.get("session_id", ""),
                     "project": ctx.project})
+                # The shared server promotes the new entries now, not at its next start.
+                post("/hook/distill", {}, timeout=2.0)
                 return "\n\n".join(reasons) or None
 
         overdue = significant - state.get("written_at", 0)

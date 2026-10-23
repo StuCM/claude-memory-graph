@@ -1,0 +1,12 @@
+# One memory-graph server for every chat. Point ExecStart at the checkout's
+# venv, copy to ~/.config/systemd/user/, then:
+#   systemctl --user enable --now memory-graph
+[Unit]
+Description=claude-memory-graph shared server
+
+[Service]
+ExecStart=%h/git/personal/claude-memory-graph/.venv/bin/claude-memory-graph serve
+Restart=always
+
+[Install]
+WantedBy=default.target

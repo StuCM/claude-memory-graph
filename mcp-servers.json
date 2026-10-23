@@ -1,8 +1,11 @@
 {
   "mcpServers": {
     "memory-graph": {
-      "command": "uvx",
-      "args": ["--from", "${CLAUDE_PLUGIN_ROOT}", "claude-memory-graph"]
+      "type": "http",
+      "url": "${MEMORY_GRAPH_URL:-http://127.0.0.1:8848}/mcp",
+      "headers": {
+        "Authorization": "Bearer ${MEMORY_GRAPH_TOKEN:-}"
+      }
     }
   }
 }

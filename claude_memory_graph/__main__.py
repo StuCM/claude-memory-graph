@@ -4,11 +4,7 @@ import logging
 import os
 from pathlib import Path
 
-from mcp.server import Server
-from mcp.server.stdio import stdio_server
-
 from .store import MemoryStore
-from . import tools
 
 log = logging.getLogger(__name__)
 
@@ -43,6 +39,11 @@ def _store_path() -> Path:
 
 
 async def _run() -> None:
+    from mcp.server import Server
+    from mcp.server.stdio import stdio_server
+
+    from . import tools
+
     store_path = _store_path()
     log.info("Opening memory store at: %s", store_path)
     store = MemoryStore.open_or_create(store_path)
@@ -252,6 +253,13 @@ def main() -> None:
         store = MemoryStore.open_or_create(_store_path())
         print(coverage.report(store, prompts))
         return
+
+    if args.cmd == "query":
+        from .client import post
+        answer = post("/query", {"sparql": args.sparql}, timeout=30.0)
+        if answer is not None:
+            print(answer["text"])
+            return
 
     from .tools import recall, reflect, query, search
 

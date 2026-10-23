@@ -36,6 +36,7 @@ from pathlib import Path
 
 from claude_hook_kit import HookContext, HookExtension, append_jsonl, bigrams, terms_pos
 
+from ..client import post
 from .runtime import config, store_dir
 
 # Timestamps/provenance carry no retrieval signal — keep them out of the corpus.
@@ -337,13 +338,16 @@ def _read_snapshot(generation) -> sqlite3.Connection | None:
     return None
 
 
-def _snapshot() -> sqlite3.Connection | None:
-    """None only when the snapshot cannot be written (no graph.nq yet)."""
+def _snapshot(store=None) -> sqlite3.Connection | None:
+    """None only when the snapshot cannot be written (no graph.nq yet).
+    A stale one is rebuilt from `store`, or from the store on disk."""
     generation = _generation()
     db = _read_snapshot(generation)
     if db is None and generation is not None:
-        from ..store import MemoryStore
-        _write_snapshot(MemoryStore.open_or_create(store_dir()), generation)
+        if store is None:
+            from ..store import MemoryStore
+            store = MemoryStore.open_or_create(store_dir())
+        _write_snapshot(store, generation)
         db = _read_snapshot(generation)
     return db
 
@@ -370,6 +374,43 @@ def _candidates(db, terms: set[str]) -> tuple[list[dict], dict[str, float]]:
     return docs, dict(_in(db, "SELECT term, value FROM idf WHERE term IN ({})", terms))
 
 
+def rank(prompt: str, project: str, store=None) -> dict | None:
+    """The graph layer's answer for a prompt: the best TOP_N+1 docs with
+    their scores and link text, and the prompt's idf for the log layer.
+    None with no graph on disk. The shared server runs this with its own
+    store; a hook runs it only when no server answers."""
+    db = _snapshot(store)
+    if db is None:
+        return None
+    with closing(db):
+        views = query_views(prompt)
+        docs, idf = _candidates(db, set().union(*(terms for terms, _ in views)))
+        near = {iri for (iri,) in db.execute(
+            "SELECT iri FROM near WHERE project = ?", (project,))} if project else set()
+        boost = config()["PROX_BOOST"]
+        ranked = sorted(
+            ((score_views(views, d, idf) * (boost if d["iri"] in near else 1.0), d)
+             for d in docs),
+            key=lambda x: x[0], reverse=True)[:config()["TOP_N"] + 1]
+        out = []
+        for score, d in ranked:
+            link = db.execute("SELECT text FROM links WHERE iri = ?", (d["iri"],)).fetchone()
+            out.append({"score": score, "link": link[0] if link else "",
+                        **{k: d[k] for k in ("gid", "iri", "name", "model", "desc")}})
+    return {"ranked": out, "idf": idf}
+
+
+def prime(store, project: str, user: str | None) -> list[str]:
+    """Session-start recall of the project's node and the user's."""
+    from ..tools import recall as recall_tool
+    sections = []
+    if project and store.find_resource("Project", project) is not None:
+        sections.append(recall_tool.handle(store, "Project", project, 1, limit=PRIME_LINKS))
+    if user and store.find_resource("Person", user) is not None:
+        sections.append(recall_tool.handle(store, "Person", user, 1, limit=PRIME_LINKS))
+    return sections
+
+
 class RecallExtension(HookExtension):
     """Ambient memory recall: scored per-prompt injection + session-start auto-prime."""
 
@@ -379,20 +420,14 @@ class RecallExtension(HookExtension):
     def on_session_start(self, ctx: HookContext) -> str | None:
         if ctx.state.get("primed"):
             return None
-        from ..store import MemoryStore
-        from ..tools import recall as recall_tool
-
-        store = MemoryStore.open_or_create(store_dir())
-        sections: list[str] = []
-
         project = ctx.project or Path(ctx.cwd or os.getcwd()).name
-        if store.find_resource("Project", project) is not None:
-            sections.append(recall_tool.handle(store, "Project", project, 1, limit=PRIME_LINKS))
-
         user = os.environ.get("MEMORY_GRAPH_USER")
-        if user and store.find_resource("Person", user) is not None:
-            sections.append(recall_tool.handle(store, "Person", user, 1, limit=PRIME_LINKS))
-
+        answer = post("/hook/prime", {"project": project, "user": user})
+        if answer is not None:
+            sections = answer["sections"]
+        else:
+            from ..store import MemoryStore
+            sections = prime(MemoryStore.open_or_create(store_dir()), project, user)
         if not sections:
             return None  # nothing known -> silence, not noise
         ctx.state["primed"] = True
@@ -407,21 +442,14 @@ class RecallExtension(HookExtension):
             return None
         cfg = config()
         views = query_views(ctx.prompt)  # whole prompt + its sentences
-        db = _snapshot()
-        if db is None:
+        answer = post("/hook/recall", {"prompt": ctx.prompt, "project": ctx.project})
+        if answer is None:
+            answer = rank(ctx.prompt, ctx.project)
+        if answer is None:
             return self._log_recall(ctx, q, views, {}, budget=cfg["TOP_N"])
-        with closing(db):
-            return self._graph_recall(ctx, db, q, views, cfg)
 
-    def _graph_recall(self, ctx: HookContext, db, q: set, views: list, cfg: dict) -> str | None:
-        docs, idf = _candidates(db, set().union(*(terms for terms, _ in views)))
-        near = {iri for (iri,) in db.execute(
-            "SELECT iri FROM near WHERE project = ?", (ctx.project,))} if ctx.project else set()
-        boost = cfg["PROX_BOOST"]
-        ranked = sorted(
-            ((score_views(views, d, idf) * (boost if d["iri"] in near else 1.0), d)
-             for d in docs),
-            key=lambda x: x[0], reverse=True)
+        ranked = [(d["score"], d) for d in answer["ranked"]]
+        idf = answer["idf"]
         top = ranked[0][0] if ranked else 0.0
         # Candidates: strong on their own (>= ABS_MIN) AND within the band of
         # the top (> top/MARGIN) — so a proximity-boosted winner sheds
@@ -447,8 +475,7 @@ class RecallExtension(HookExtension):
         lines, fresh = [], []
         for _unused, d in strong:
             if d["gid"] not in injected:
-                link = db.execute("SELECT text FROM links WHERE iri = ?", (d["iri"],)).fetchone()
-                lines.append(f"- {d['name'] or d['gid']}: {d['desc']}{link[0] if link else ''}")
+                lines.append(f"- {d['name'] or d['gid']}: {d['desc']}{d['link']}")
                 lines.append(f'  next: memory_recall(model="{d["model"]}", '
                              f'name="{d["name"]}", depth=2, focus="<what you need>")')
                 fresh.append(d["gid"])
