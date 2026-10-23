@@ -80,8 +80,9 @@ export function register(on) {
     counts[name] = (counts[name] ?? 0) + 1
     const call = { id: e.tool_use_id, name, summary: describeInput(e), output: '', isErrored: false }
     calls = [call, ...calls].slice(0, MAX_CALLS)
-    // Opened by the mod itself, so it only places on a wide terminal.
-    await $.ui.open({ id: PANE, title: 'Memory graph' })
+    // Opened by the mod itself, so it only places on a wide terminal. Rejects
+    // with no surface attached (claude -p), which must not stop the call.
+    await $.ui.open({ id: PANE, title: 'Memory graph' }).catch(() => {})
     const result = await next(e)
     call.output = result.deny ?? textOf(result.result)
     call.isErrored = Boolean(result.deny || result.isError)
