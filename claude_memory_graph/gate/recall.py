@@ -26,6 +26,7 @@ Also handles SessionStart: auto-prime with the current project's (and
 MEMORY_GRAPH_USER's) recall, so sessions begin already primed.
 """
 
+import json
 import math
 import os
 import re
@@ -227,24 +228,108 @@ def _score(q_terms: set[str], d: dict, idf: dict[str, float],
     return s * (0.5 + 0.5 * coverage)
 
 
-def _links(store, d: dict) -> str:
-    """Second, targeted query: the winner's direct links, so the injection
-    carries the neighbourhood (decision + what it affects), not a bare match.
-    Built from the scoring result — this is the dynamic part of the gate."""
+SNAPSHOT_NAME = "recall-snapshot.json"
+SNAPSHOT_VERSION = 1
+
+
+def _generation() -> list | None:
+    """Identity of the persisted graph: save() replaces graph.nq atomically,
+    so a new inode/mtime/size means the graph changed. None when absent."""
     try:
-        import pyoxigraph as ox
-        result = store.recall(ox.NamedNode(d["iri"]), d["gid"], depth=1)
-        parts = [
-            f"{lr.relation}→ {lr.model} '{lr.properties.get('name') or lr.properties.get('label', '')}'"
-            for lr in result.linked[:3]
-        ]
-        if not parts:
-            return ""
-        extra = len(result.linked) - len(parts)
-        tail = f" · +{extra} more" if extra > 0 else ""
-        return f" ({' · '.join(parts)}{tail})"
-    except Exception:
-        return ""
+        st = (store_dir() / "graph.nq").stat()
+    except OSError:
+        return None
+    return [st.st_ino, st.st_mtime_ns, st.st_size]
+
+
+def _all_links(store, docs: list[dict]) -> tuple[dict[str, str], dict[str, set[str]]]:
+    """(link string per node IRI, open-link neighbours per Project IRI),
+    from one pass over the open links — _links per node costs seconds on a
+    real graph. Node names/models come from the corpus, which already drops
+    invalidated nodes, as recall() does."""
+    from ..namespaces import GRAPH_LINKS
+    info = {d["iri"]: d for d in docs}
+    closed = {r["l"].value for r in store.query(
+        f'SELECT ?l WHERE {{ GRAPH <{GRAPH_LINKS}> {{ '
+        f'{{ ?l mem:linkValidUntil ?e }} UNION {{ ?l mem:linkInvalidatedAt ?i }} }} }}')}
+    neighbours: dict[str, list[tuple[str, str]]] = {}
+    for r in store.query(
+            f'SELECT ?l ?s ?t ?rel WHERE {{ GRAPH <{GRAPH_LINKS}> {{ ?l a mem:CrossLink ; '
+            f'mem:linkSource ?s ; mem:linkTarget ?t ; mem:linkRelation ?rel }} }}'):
+        if r["l"].value in closed:
+            continue
+        s, t, rel = r["s"].value, r["t"].value, r["rel"].value
+        neighbours.setdefault(s, []).append((t, rel))
+        neighbours.setdefault(t, []).append((s, rel))
+    links: dict[str, str] = {}
+    for iri, pairs in neighbours.items():
+        linked, seen = [], {iri}
+        for other, rel in pairs:
+            if other in seen or other not in info:
+                continue
+            seen.add(other)
+            linked.append(f"{rel}→ {info[other]['model']} '{info[other]['name']}'")
+        if linked:
+            extra = len(linked) - 3
+            tail = f" · +{extra} more" if extra > 0 else ""
+            links[iri] = f" ({' · '.join(linked[:3])}{tail})"
+    near = {}
+    for d in docs:
+        if d["model"] == "Project" and d["name"] not in near:
+            near[d["name"]] = {d["iri"], *(o for o, _ in neighbours.get(d["iri"], ()))}
+    return links, near
+
+
+def _build_snapshot(store, generation) -> dict:
+    docs = _corpus(store, include_concepts=True)
+    links, near = _all_links(store, docs)
+    docs = [d for d in docs if d["gid"] is not None]
+    return {"version": SNAPSHOT_VERSION, "generation": generation, "docs": docs,
+            "idf": _idf(docs), "links": links, "near": near}
+
+
+def _write_snapshot(snap: dict) -> None:
+    path = store_dir() / SNAPSHOT_NAME
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    try:
+        tmp.write_text(json.dumps(snap, default=lambda x: sorted(x)))
+        os.replace(tmp, path)
+    except OSError:
+        tmp.unlink(missing_ok=True)
+
+
+def _read_snapshot(generation) -> dict | None:
+    """The cached snapshot if it matches the graph on disk, else None
+    (missing, stale or corrupt) — the caller then rebuilds from the store."""
+    if generation is None:
+        return None
+    try:
+        snap = json.loads((store_dir() / SNAPSHOT_NAME).read_text())
+        if snap["version"] != SNAPSHOT_VERSION or snap["generation"] != generation:
+            return None
+        for d in snap["docs"]:
+            for key in ("name_terms", "terms"):
+                d[key] = set(d[key])
+            for key in ("name_bigrams", "bigrams"):
+                d[key] = {tuple(b) for b in d[key]}
+        snap["near"] = {k: set(v) for k, v in snap["near"].items()}
+        return snap
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
+def _snapshot() -> dict:
+    generation = _generation()
+    snap = _read_snapshot(generation)
+    if snap is not None:
+        return snap
+    from ..store import MemoryStore
+    store = MemoryStore.open_or_create(store_dir())
+    snap = _build_snapshot(store, generation)
+    if generation is not None:
+        _write_snapshot(snap)
+    snap["near"] = {k: set(v) for k, v in snap["near"].items()}
+    return snap
 
 
 class RecallExtension(HookExtension):
@@ -284,15 +369,13 @@ class RecallExtension(HookExtension):
             return None
         cfg = config()
         views = query_views(ctx.prompt)  # whole prompt + its sentences
-        from ..store import MemoryStore
-        store = MemoryStore.open_or_create(store_dir())
-        docs = _corpus(store)
+        snap = _snapshot()
+        docs, idf = snap["docs"], snap["idf"]
         if not docs:
             # empty graph: the session log is still a retrieval source
             return self._log_recall(ctx, q, views, {}, budget=cfg["TOP_N"])
 
-        idf = _idf(docs)
-        near = _project_neighbourhood(store, ctx.project)
+        near = snap["near"].get(ctx.project, set()) if ctx.project else set()
         boost = cfg["PROX_BOOST"]
         ranked = sorted(
             ((score_views(views, d, idf) * (boost if d["iri"] in near else 1.0), d)
@@ -323,7 +406,7 @@ class RecallExtension(HookExtension):
         lines, fresh = [], []
         for _unused, d in strong:
             if d["gid"] not in injected:
-                lines.append(f"- {d['name'] or d['gid']}: {d['desc']}{_links(store, d)}")
+                lines.append(f"- {d['name'] or d['gid']}: {d['desc']}{snap['links'].get(d['iri'], '')}")
                 lines.append(f'  next: memory_recall(model="{d["model"]}", '
                              f'name="{d["name"]}", depth=2, focus="<what you need>")')
                 fresh.append(d["gid"])
