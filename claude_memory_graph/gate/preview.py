@@ -16,7 +16,8 @@ Differences from a live session, stated in the output:
 `claude-memory-graph gate "why did we pick pyoxigraph?" [--project P]`
 """
 
-from .recall import _bigrams, _corpus, _idf, _project_neighbourhood, query_views, score_views
+from .recall import (_bigrams, _corpus, _idf, _project_neighbourhood, decide,
+                     query_views, score_views)
 from .runtime import config, store_dir
 
 
@@ -56,9 +57,7 @@ def preview(prompt: str, project: str = "", show: int = 6) -> str:
         near = _project_neighbourhood(store, project)
         ranked = _rank(docs, views, idf, near, cfg["PROX_BOOST"])
         top = ranked[0][0]
-        strong = [(s, d) for s, d in ranked[:cfg["TOP_N"]]
-                  if s >= cfg["ABS_MIN"] and s > top / cfg["MARGIN"]]
-        rest = ranked[len(strong)][0] if len(ranked) > len(strong) else 0.0
+        strong, rest, similar = decide(ranked, cfg)
         for s, d in ranked[:show]:
             marks = []
             if s >= cfg["ABS_MIN"]:
@@ -69,12 +68,17 @@ def preview(prompt: str, project: str = "", show: int = 6) -> str:
                 marks.append("IN GROUP")
             lines.append(f"  {s:6.2f}  {d['model'] or '?':<11} {d['name'][:52]:<52} "
                          f"{' '.join(marks)}")
-        if strong and top >= cfg["MARGIN"] * (rest or 0.0001):
+        if strong and similar:
+            lines.append(f"  → INJECTS {len(strong)} node(s) + '+{similar} similar' pointer: "
+                         f"a topic cluster (top {top:.2f} ≥ CLUSTER_FACTOR × ABS_MIN), "
+                         f"not generic noise")
+        elif strong:
             lines.append(f"  → INJECTS {len(strong)} node(s): group beats the rest "
                          f"({rest:.2f}) by ≥ MARGIN")
         else:
-            why = ("no candidate reached ABS_MIN" if not strong else
-                   f"group ({top:.2f}) doesn't beat the rest ({rest:.2f}) by MARGIN")
+            why = (f"group ({top:.2f}) doesn't beat the rest ({rest:.2f}) by MARGIN "
+                   f"and is too weak to count as a topic cluster"
+                   if top >= cfg["ABS_MIN"] else "no candidate reached ABS_MIN")
             lines.append(f"  → SILENT: {why}")
 
     # ---- session-log layer ----
