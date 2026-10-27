@@ -30,3 +30,17 @@ jobs:
       - run: npm install -g @anthropic-ai/claude-code@2.1.311
       - run: claude plugin validate .
       - run: claude plugin test .
+
+  docs:
+    name: Doc site builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      # Strict build: a broken meta file or bad frontmatter in docs/ fails here.
+      - run: npm ci
+        working-directory: docs-site
+      - run: npm run build
+        working-directory: docs-site

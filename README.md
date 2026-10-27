@@ -126,3 +126,6 @@ retrieval works with you, and the command cadence.
 Each resource instance lives in its own named graph (`…/graph/resource/<uuid>`); cross-links live in a dedicated links graph; shared concepts in a concepts graph; the ontology (including LLM-added relations) in a schema graph. See `claude_memory_graph/base.ttl` for the base ontology.
 
 Each Claude Code session runs its own stdio server; each reloads the file when another has saved since, and `serve` runs one shared process instead. The graph is persisted as NQuads after every write.
+
+The design docs are in [docs/](docs/index.md), also buildable as a site:
+`cd docs-site && npm ci && npm run dev`.

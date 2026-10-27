@@ -5,7 +5,7 @@ Status: **rules drafted (this doc) · protocol/docs wiring done · drift flaggin
 
 ## Why
 
-[CODE-GRAPH.md](../CODE-GRAPH.md) drew a binary line: *intent* (why the code is the way it
+[CODE-GRAPH.md](../future/CODE-GRAPH.md) drew a binary line: *intent* (why the code is the way it
 is) goes in the graph; *structure* (where is X defined, who calls Y) never does. Live use
 showed a middle band the binary misses: a cold session on a known project still burns its
 first minutes re-discovering the **map** — where state lives, what format the store uses,
@@ -20,7 +20,7 @@ be memory.
 | **Intent** — why | "full dump + atomic rename because MCP stdio servers die ungracefully" | graph (Decision / Pattern) — existing rule |
 | **Orientation** — how/where things are stored, located, wired | "hook-kit session state: `~/.claude/hook-kit/sessions/<id>.json`, atomic tmp+rename; `core` is framework-owned, extensions get namespaced dicts" | graph (Pattern, rules below) — **this task** |
 | **Investigation findings** — the answer a long dig paid for | "the state write path: hooks.json → dispatch.sh → `run_dispatch` → `StateStore.save`" | graph (Pattern `kind: trace`, rules below) — **this task** |
-| **Bulk structure** — every symbol-level fact | "`run_dispatch` is defined in dispatch.py and has 14 call sites" | never *authored* — mechanically enumerable, voluminous, stale per commit; the derived code graph's job ([CODE-GRAPH.md](../CODE-GRAPH.md) phase 2) |
+| **Bulk structure** — every symbol-level fact | "`run_dispatch` is defined in dispatch.py and has 14 call sites" | never *authored* — mechanically enumerable, voluminous, stale per commit; the derived code graph's job ([CODE-GRAPH.md](../future/CODE-GRAPH.md) phase 2) |
 
 The noise objection to storing structure was always about the **bulk** lane, and it is a
 volume argument, not a content one: thousands of auto-extracted symbols sharing tokens like
@@ -101,7 +101,7 @@ discriminated by `kind`), forming what is in effect an independent structure thr
 session-start prime recalls the Project at depth 2, so the map and the paid-for traces
 arrive *before* a cold session starts re-deriving them with greps. The **complete**
 structure thread — every symbol, always fresh — is the derived code graph
-([CODE-GRAPH.md](../CODE-GRAPH.md) phase 2): a separate named graph per repo, regenerated
+([CODE-GRAPH.md](../future/CODE-GRAPH.md) phase 2): a separate named graph per repo, regenerated
 on commit, disposable, never authored. The findings lane is the bridge until that exists —
 and stays valuable after, because it records *which* paths mattered enough to investigate,
 which no extractor can know.

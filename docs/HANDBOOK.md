@@ -4,9 +4,8 @@ Everything else in `docs/` explains *why* the system is shaped this way. This do
 *how*: what each piece is doing at runtime, where its code and logs live, the terminology
 with examples, the setup steps, the tuning playbook, and how to work *with* it day to day.
 
-CLI note: examples use `claude-memory-graph …` and `claude-hooks …` as commands. From a
-repo checkout that's `uv run claude-memory-graph …` / `uv run claude-hooks …`; to have
-them on PATH permanently: `uv tool install .` and `uv tool install ./hook-kit`.
+CLI note: examples use `claude-memory-graph …` as the command. From a repo checkout that's
+`uv run claude-memory-graph …`; to have it on PATH permanently: `uv tool install .`.
 
 ---
 
@@ -14,29 +13,34 @@ them on PATH permanently: `uv tool install .` and `uv tool install ./hook-kit`.
 
 Each row: what it does, when it runs, where the code is, and how to see it working.
 
-### hook-kit — the plumbing everything rides on
-Claude Code fires hook events (SessionStart, UserPromptSubmit, PostToolUse, Stop,
-PreCompact, SessionEnd); each one runs `hooks/dispatch.sh`, which calls hook-kit's
-dispatcher. The dispatcher maintains **core session state** (prompt counts, project,
-event counts, transcript telemetry) in `~/.claude/hook-kit/sessions/<session_id>.json`,
-then runs every enabled extension and formats the output for that event's channel (plain
-stdout for injection events, block-JSON for Stop, additionalContext-JSON for PreCompact).
-- Code: `hook-kit/claude_hook_kit/` (`dispatch.py`, `state.py`, `extension.py`, `registry.py`)
-- See it: `claude-hooks list` (what's enabled) · `claude-hooks state <session_id>` (live
-  counters) · `cat ~/.claude/hook-kit/errors.log` (crashes — extensions fail open, so
-  this file is the only place a broken extension is visible)
-- Poke it by hand (this is your main debugging tool — every behaviour below can be
-  triggered from a terminal):
+### The mod — the plumbing everything rides on
+The plugin's mod ([hooks/register.ts](../hooks/register.ts)) loads with the plugin in every
+Claude Code session (2.1.287+) and does the routing:
+- **in-process, no process started:** session state (in the engine's `$.state`, so it
+  survives a mod reload), counting digs on every Read/Grep/Glob/Bash, pre-approving writes
+  to the context log, steering compaction, and the pane;
+- **one Python call** per prompt, per Stop, and at session start/end:
+  `python -m claude_memory_graph.hookrun`, stateless — the session state goes in on stdin
+  and comes back in the reply, and the mod stores it. Python advances the **core
+  counters** (prompt counts, project, transcript telemetry) and runs the three
+  extensions: `memory-recall`, `context-counter`, and `graph-review` (opt-in).
+- Code: `hooks/register.ts` (the mod) · `claude_memory_graph/hookrun.py` (the call) ·
+  `claude_memory_graph/hookcore/` (core counters, state home, tokenizer)
+- See it: the pane (`/graph-panel`) — **State** tab for the live counters and the last
+  Python error, **Injected** tab for everything put in front of the model. Crashes also
+  go to `~/.claude/memory-graph/state/errors.log` (extensions fail open, so a broken one
+  is visible only there and in the pane).
+- Poke it by hand — every behaviour below can be triggered from a terminal:
   ```sh
-  echo '{"session_id":"debug","cwd":"'$PWD'","prompt":"why pyoxigraph?"}' \
-      | claude-hooks dispatch UserPromptSubmit
-  echo '{"session_id":"debug","cwd":"'$PWD'"}' | claude-hooks dispatch Stop
+  claude-memory-graph gate "why pyoxigraph?" --project "$(basename "$PWD")"   # prompt decision, no side effects
+  echo '{"event":"Stop","payload":{"cwd":"'$PWD'"},"core":{"significant_prompt_count":3}}' \
+      | python -m claude_memory_graph.hookrun                                    # one event, as the mod sends it
   ```
 
 ### Project identity — how a session knows where it is
 Everything project-scoped (priming, the proximity boost, context-file grouping,
 session-log recall, distill's `--project`) keys on ONE name, resolved per session:
-1. `CLAUDE_HOOK_KIT_PROJECT` env — explicit override (monorepos; a repo cloned under a
+1. `MEMORY_GRAPH_PROJECT` env — explicit override (monorepos; a repo cloned under a
    different directory name);
 2. the **git repo root's** basename — a session started in `~/dev/charcoal/frontend`
    still belongs to `charcoal`;
@@ -44,7 +48,7 @@ session-log recall, distill's `--project`) keys on ONE name, resolved per sessio
 The convention that makes recall line up: **a Project node's `name` is the repo
 directory's basename.** If they diverge (renamed checkout), set the override — a
 mismatch is silent: no prime, no proximity, a phantom context-file group. Check what a
-session resolved with `claude-hooks state <id>` → `project`.
+session resolved in the pane's **State** tab → `project`.
 
 ### Session-start prime — memory arrives before you ask
 On SessionStart, recalls the current Project (see project identity above) and, if
@@ -58,7 +62,7 @@ Every prompt is tokenized and scored against every live graph node (IDF-weighted
 overlap, ×3 for name hits, phrase bonuses, project-proximity boost). Confident matches
 inject; everything else is silence — and **both outcomes are logged**, which is what makes
 tuning possible.
-- Code: `gate/recall.py` → `on_user_prompt_submit` · Log: `~/.claude/hook-kit/injections.jsonl`
+- Code: `gate/recall.py` → `on_user_prompt_submit` · Log: `~/.claude/memory-graph/state/injections.jsonl`
 - Example: prompt "why did we pick pyoxigraph over rdflib?" → injects
   `Decision 'Use pyoxigraph over rdflib': rationale … (affects→ Project '…')`.
 
@@ -91,8 +95,8 @@ Four behaviours in one extension (`gate/nudge.py`):
    blocks — compaction is near.
 4. **Flush points:** PreCompact steers the compaction summary (carry forward uncaptured
    points; point at the context file); SessionEnd suggests distill at ≥3 undistilled files.
-- See it: `claude-hooks state <id>` → extension `context-counter` (`written_at`,
-  `last_mtime`, `dig_turn`/`dig_count`).
+- See it: the pane's **State** tab (uncaptured turns, digs this turn); the raw fields
+  (`written_at`, `last_mtime`, `dig_turn`/`dig_count`) are in the mod's session state.
 
 ### The context file — the write-ahead log
 `~/.claude/context/<project>__YYYY-MM-DD_HH-MM.md`. Two entry shapes: narrative one-liners
@@ -153,7 +157,7 @@ per-question instruments below.
 
 | You did | It logged to | Read it with |
 |---|---|---|
-| worked in a session (prompts) | `injections.jsonl` (fired AND silent) | `pulse`, `misses`, `claude-hooks log` |
+| worked in a session (prompts) | `injections.jsonl` (fired AND silent) | `pulse`, `misses`, `claude-memory-graph log` |
 | the model called a memory tool in-session | `explicit-recalls.jsonl` | `misses` (the join) |
 | ran `ask` (planner) anywhere | `ask-decisions.jsonl` | `asks` — **never** `misses` |
 | wondered "what would this prompt inject?" | nothing — side-effect-free | `gate "<prompt>"` |
@@ -204,7 +208,7 @@ running `ask` is expected, not a wiring gap.
   `Pattern kind: trace`, with the *question phrasings as aliases* so the next session's
   question matches before the greps start.
 - **Orientation memory** — convention-level "how/where things live":
-  `Pattern "hook-kit state layout", kind: storage, anchorPath: hook-kit/claude_hook_kit/state.py`.
+  `Pattern "Session state layout", kind: storage, anchorPath: claude_memory_graph/hookcore/state.py`.
   Passes the keep test because re-deriving it means reading several files.
 - **Structured entry / narrative entry** — see the format above. Structured = the
   mechanical lane can promote it. Narrative = residue, LLM lane.
@@ -232,8 +236,8 @@ running `ask` is expected, not a wiring gap.
 
 ### Transcript telemetry (your question)
 Claude Code writes every session to a JSONL **transcript** (`~/.claude/projects/...`),
-and each assistant message in it records exact token usage. On every hook dispatch,
-hook-kit reads just the transcript's *tail* (last 64KB — milliseconds) and puts the
+and each assistant message in it records exact token usage. On every hook event the mod sends,
+the Python side reads just the transcript's *tail* (last 64KB — milliseconds) and puts the
 numbers into core state:
 - `context_tokens` — the model's current context size (input + cache reads + cache
   writes of the last turn). This is how the hooks know how full the window is.
@@ -241,34 +245,27 @@ numbers into core state:
 It exists so decisions that depend on context pressure are **measured, not guessed**: the
 Stop block escalates past `PRESSURE_TOKENS` (capture everything now — compaction is
 close), and it's the phase-0 instrument for the deferred context-window work. See it:
-`claude-hooks state <session_id>` → `context_tokens`. Fail-open: no transcript, no
+the pane's **State** tab → context tokens. Fail-open: no transcript, no
 fields, no error.
 
 ---
 
 ## 3. Getting it running (checklist)
 
-1. **Install/update the plugins** (MCP server + skills):
+1. **Install or update the plugin** (needs Claude Code 2.1.287+ and `uv`):
    ```sh
-   claude plugin marketplace add <repo-url-or-path>
+   claude plugin marketplace add StuCM/claude-memory-graph
    claude plugin install memory-graph@claude-memory-graph --scope user
-   claude plugin install hook-kit@claude-memory-graph --scope user
    ```
-1b. **Register the hooks in `~/.claude/settings.json`** — see the README install
-   section for the block to merge. They are NOT shipped in a plugin `hooks.json`,
-   because plugin-scope hooks never fire in bridge (Claude desktop app) sessions.
-   Settings are re-read live, so no restart is needed.
+   Upgrading from 0.13 or earlier: remove the memory-graph entries from the `"hooks"`
+   block of `~/.claude/settings.json` and uninstall `hook-kit` — `doctor` flags leftovers.
 2. **Optional env** (set in your shell profile): `MEMORY_GRAPH_USER="Stuart Marshall"`
    (enables Person auto-prime) · `MEMORY_GRAPH_PATH` / `CLAUDE_CONTEXT_DIR` /
-   `CLAUDE_HOOK_KIT_HOME` to relocate data (defaults under `~/.claude/`).
-3. **Verify in a fresh session**: `/hooks` should list SessionStart, UserPromptSubmit,
-   PostToolUse, Stop, PreCompact, SessionEnd. Then from a terminal:
-   ```sh
-   claude-hooks list                    # both extensions [enabled]
-   echo '{"session_id":"t","cwd":"'$PWD'","prompt":"test one two"}' \
-       | claude-hooks dispatch UserPromptSubmit
-   claude-hooks state t                 # counters advanced
-   ```
+   `MEMORY_GRAPH_STATE` to relocate data (defaults under `~/.claude/`) ·
+   `MEMORY_GRAPH_PROJECT` to override the project name.
+3. **Verify in a fresh session**: send a prompt, then open `/graph-panel` — the **State**
+   tab should show the project and a prompt count, with no error. From a terminal,
+   `claude-memory-graph doctor` gives one verdict for the whole setup.
 4. **Seed the graph** so priming has something to say: in a session, tell Claude a few
    durable facts ("we chose X because Y — store that"), or run `/memory-graph:distill`
    on your first context files.
@@ -281,14 +278,13 @@ claude-memory-graph pulse                # ONE SCREEN: is memory reaching sessio
 claude-memory-graph dashboard            # same + trends, as HTML (open the printed path)
 claude-memory-graph gate "my prompt"     # what WOULD this prompt inject, and why?
 claude-memory-graph serve --token S      # share this memory over HTTP (see README)
-claude-hooks log                         # last 20 gate decisions, pretty-printed
-claude-hooks log -f                      # follow live while you work in another pane
-claude-hooks log explicit-recalls.jsonl  # every explicit memory tool call
-claude-hooks state <session_id>          # counters, dig state, context_tokens
+claude-memory-graph log                  # last 20 gate decisions, pretty-printed
+claude-memory-graph log -f               # follow live while you work in another pane
+claude-memory-graph log explicit-recalls.jsonl  # every explicit memory tool call
 claude-memory-graph misses               # retrieval false negatives, graded, with fixes
 claude-memory-graph asks                 # planner outcomes + vocabulary gaps
 claude-memory-graph coverage --transcripts ~/.claude/projects
-cat ~/.claude/hook-kit/errors.log        # extension crashes (fail-open evidence)
+cat ~/.claude/memory-graph/state/errors.log  # extension crashes (fail-open evidence)
 ```
 `INJECT` lines you'd call irrelevant are false positives — note them; silences followed
 by you asking Claude to "check memory" are misses — `misses` catches those automatically.
@@ -314,7 +310,7 @@ prompt, no restart). Defaults in `gate/runtime.py`.
 | Session-start prime too long / too short | `PRIME_MAX_CHARS` (3000) | move — decisions/patterns/constraints rank first; the rest sit behind a "+N more" pointer |
 
 Rule of thumb from TUNING.md: false negatives label themselves (the miss detector);
-false positives need your eyes on `claude-hooks log`. The gate is biased toward silence,
+false positives need your eyes on `claude-memory-graph log`. The gate is biased toward silence,
 so most tuning pressure should come from the miss report, not from gut feel.
 
 ## 6. How to prompt so the system works with you
@@ -346,19 +342,20 @@ so most tuning pressure should come from the miss report, not from gut feel.
 | Occasionally (weekly-ish) | `claude-memory-graph dashboard` → open the printed HTML | the whole picture: payouts, enforcement, gaps, backlog |
 | When pulse/dashboard shows residue piling up | `/memory-graph:distill` in a session | LLM pass over narrative leftovers + archive clean files |
 | Weekly, or after a "why didn't it remember?" moment | `claude-memory-graph misses` | evidence-based threshold/alias fixes |
-| Weekly | `claude-hooks log -n 50` | eyeball false positives |
+| Weekly | `claude-memory-graph log -n 50` | eyeball false positives |
 | After ~a week of sessions | `claude-memory-graph coverage --transcripts ~/.claude/projects` | is the lexical grounder enough? (the embeddings go/no-go metric) |
 | When `ask` answers feel wrong | `claude-memory-graph asks` | misgrounding suspects, vocabulary gaps |
-| Any weirdness | `claude-hooks state <id>` + `errors.log` | counters + crash evidence |
+| Any weirdness | the pane's **State** tab + `errors.log` | counters + crash evidence |
 
 ## 8. Debugging recipes
 
 - **Nothing ever injects** → `claude-memory-graph reflect` (is there anything in the
-  graph?); `claude-hooks list` (extensions enabled?); manual `dispatch UserPromptSubmit`
-  with a prompt containing an exact node name; check `MEMORY_GRAPH_PATH` matches between
+  graph?); `claude-memory-graph gate "<a prompt naming a node exactly>"`;
+  the pane's **State** tab for a Python error; check `MEMORY_GRAPH_PATH` matches between
   the MCP server and the gate.
-- **Stop block never fires** → `/hooks` shows Stop? (plugin updated + fresh session?);
-  manual `dispatch Stop` after 3 significant `dispatch UserPromptSubmit`s; check
+- **Stop block never fires** → plugin updated, fresh session, and the pane's **State**
+  tab counting uncaptured turns? Run a Stop by hand with `hookrun` (above) and
+  `"core": {"significant_prompt_count": 3}`; check
   `context-counter` state — a moving `last_mtime` means write-detection thinks the log
   is fresh (is something else touching the context dir?).
 - **Stop block fires but no file appears** → it stamps on *overdue*, so check the block's
@@ -382,4 +379,5 @@ so most tuning pressure should come from the miss report, not from gut feel.
   *older* than the current session for the handoff case; check `injections.jsonl`
   `kind:"log"` lines for the scores it saw.
 - **An extension broke** → sessions degrade to normal Claude (fail-open, by design);
-  the traceback is in `~/.claude/hook-kit/errors.log`.
+  the traceback is in `~/.claude/memory-graph/state/errors.log` and the pane's
+  **State** tab.

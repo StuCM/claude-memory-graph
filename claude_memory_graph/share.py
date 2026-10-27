@@ -7,7 +7,7 @@ SPARQL reaches every graph, and one shared concept ("arches") bridges into
 every other project linked to it. A copy can only ever leak what is in it,
 and you can read it before anyone connects (`--dry-run`, or `reflect` on it).
 
-The boundary (reachability is not exposure — docs/SHARING.md):
+The boundary (reachability is not exposure — docs/future/SHARING.md):
 - the Project node, everything linked to it, and one hop further out from
   those memories (a Decision's Technology, a Pattern's Task);
 - never expanded THROUGH a concept or another Project/Person/Company: those

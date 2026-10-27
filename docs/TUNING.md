@@ -5,7 +5,7 @@ field-by-field: what it means, why it exists, and what to do about what you see.
 stance behind all of it: **a deterministic system can afford perfect bookkeeping** — the gate
 has no LLM in it, so every decision has exact, replayable reasons, and we write them all down.
 
-## The three logs (all in the hook-kit home, default `~/.claude/hook-kit/`)
+## The three logs (all in the state home, default `~/.claude/memory-graph/state/`)
 
 | File | Written by | One line per |
 |---|---|---|
@@ -13,7 +13,7 @@ has no LLM in it, so every decision has exact, replayable reasons, and we write 
 | `explicit-recalls.jsonl` | the recall extension, on PostToolUse | explicit memory tool call by the model |
 | `errors.log` | the dispatcher | extension crash (traceback) |
 
-View them with `claude-hooks log [file] [-n N] [-f]` (pretty-printed) or raw with `jq`.
+View them with `claude-memory-graph log [file] [-n N] [-f]` (pretty-printed) or raw with `jq`.
 
 ## `injections.jsonl` — the decision log
 
@@ -115,7 +115,7 @@ How each verdict is reached, and why the exclusions exist:
 False negatives label themselves (the explicit recall is an observable event); **false
 positives don't** — a wrong injection just sits in context being ignored, producing no signal.
 So this machinery applies downward pressure on thresholds automatically, while upward pressure
-(against noise) stays human: skim `claude-hooks log` for INJECT lines that look irrelevant.
+(against noise) stays human: skim `claude-memory-graph log` for INJECT lines that look irrelevant.
 That division is acceptable because the gate is already biased hard toward silence — the
 direction that needed data is the direction the data now flows.
 
@@ -131,7 +131,7 @@ after they've earned trust. That's the `gate-tuner` task when we want it.
 
 The same `~/.claude/memory-graph/gate.json` file tunes the capture loop's two triggers —
 both enforced via **Stop blocks** ([ORCHESTRATION.md](ORCHESTRATION.md)), both observable in
-session state (`claude-hooks state <session_id>`, extension `context-counter`):
+session state (the pane's **State** tab; raw fields in the mod's state for `context-counter`):
 
 - **`N_TURNS`** (default 3) — significant prompts the context log may fall behind before the
   Stop hook blocks with "write the context file now". The baseline is the count at the last
@@ -173,7 +173,7 @@ session state (`claude-hooks state <session_id>`, extension `context-counter`):
   Measured on a real backlog: 35 of 44 files split, active log 2156 kB → 816 kB, every kept
   entry a verbatim subset of its original.
 - **`REVIEW_EVERY_DAYS`** (default 7) — period between graph self-review asks
-  (`graph-review`, off by default: `claude-hooks enable graph-review` or `/hook-kit:install`).
+  (`graph-review`, off by default: turn on **Periodic graph review** in `/config`).
   On the first Stop of a session past the period, the mechanical detectors in `gaps.py` run and
   their headline numbers become a Stop block asking for `/memory-graph:reflect`. A clean graph
   is silent and resets the clock without spending a turn. The ask is capped at "fix the worst
@@ -195,10 +195,9 @@ cadence is the backstop.
 ## Commands, in one place
 
 ```sh
-claude-hooks log                    # last 20 gate decisions, pretty
-claude-hooks log -f                 # follow live while you work
-claude-hooks log explicit-recalls.jsonl
-claude-hooks state <session_id>     # core counters + extension state
+claude-memory-graph log            # last 20 gate decisions, pretty
+claude-memory-graph log -f         # follow live while you work
+claude-memory-graph log explicit-recalls.jsonl
 claude-memory-graph misses          # the join: misses + capture gaps
-cat ~/.claude/hook-kit/errors.log   # extension crashes
+cat ~/.claude/memory-graph/state/errors.log  # extension crashes
 ```

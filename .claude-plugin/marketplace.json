@@ -1,5 +1,6 @@
 {
   "name": "claude-memory-graph",
+  "description": "Persistent knowledge-graph memory for Claude Code: ambient recall, mechanical capture, and a session pane.",
   "owner": {
     "name": "Stuart Marshall"
   },

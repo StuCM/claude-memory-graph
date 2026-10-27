@@ -1,7 +1,7 @@
 # Retrieval instigation — when and how recall happens
 
 Status: **gate, search, and miss detector implemented; planner designed.** Track B of
-[ROADMAP.md](ROADMAP.md).
+[ROADMAP.md](future/ROADMAP.md).
 
 ## The retrieval stack in one table
 

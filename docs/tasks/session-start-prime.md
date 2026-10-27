@@ -13,7 +13,7 @@ and injects the *results* (not instructions) into session context.
 - Simplest case of ambient retrieval: the "prompt" is cwd + user.
 - Inject nothing if the Project node doesn't exist (silence, not noise).
 - Needs a small `--budget` cap on recall output so hub projects don't flood context.
-- Extends [hooks/session-start.sh](../../hooks/session-start.sh); no new deps.
+- Extended the session-start hook (now the mod's `classic.SessionStart`, [hooks/register.ts](../../hooks/register.ts)); no new deps.
 
 ## Test
 
