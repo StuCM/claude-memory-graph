@@ -75,7 +75,7 @@ How dates and negation compile:
 | not (value, date) | `not` | clause quantifier `NONE` | `FILTER NOT EXISTS` |
 | not (link) | a second query, subtracted (Rós Madair refuses `not` over a link, which is chunk-coarse) | quantifier `NONE` / `traversal_quantifier: NONE` | `FILTER NOT EXISTS` |
 
-One Rós Madair behaviour to know about: a query with no filter, or only a `backlink`, isn't limited to its `model`, so "how many buildings are there?" counts every record. `ceist.rosmadair.ask` resolves such queries and keeps only the model's own records.
+One Rós Madair behaviour to know about: a query with no filter, or only a `backlink`, isn't limited to its `model`, so "how many buildings are there?" counts every record. `ceist.rosmadair.ask` resolves such queries and keeps only the model's own records. This and the other Rós Madair workarounds are written up, ready to raise upstream, in [ROS-MADAIR.md](ROS-MADAIR.md).
 
 A compiler that can't express a condition raises `Unsupported` with the reason. It never drops a condition silently. The runners then fall back to the next relaxation, or say what they couldn't do.
 

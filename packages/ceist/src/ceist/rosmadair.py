@@ -29,6 +29,9 @@ backwards (Rós Madair walks links forward), a negated link inside a hop,
 free text (the substrate indexes concepts, ranges, geometry and links, not
 text), and "most recent".
 
+Every workaround for Rós Madair's current behaviour is written up, ready to
+raise upstream, in packages/ceist/ROS-MADAIR.md.
+
 Before a query runs it is read back (`read_back`) into a plan and narrated;
 if that differs from what the question was understood to mean, it doesn't run.
 """
