@@ -84,8 +84,7 @@ claude plugin install memory-graph@claude-memory-graph --scope user \
 ```
 
 and add `https://memory.example.com/mcp` as a custom connector in claude.ai; you sign in
-with your server password. `claude-memory-graph share <project>` exports one project for
-a colleague to query read-only while you're away. Both are covered in
+with your server password. The server's home page is a chat that answers from the memory, so you can ask it things from any browser. `claude-memory-graph share <project>` exports one project for a colleague, who just opens the link, signs in and asks questions while you're away. Both are covered in
 **[docs/REMOTE.md](docs/REMOTE.md)**.
 
 ### MCP server only (no ambient memory)

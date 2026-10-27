@@ -119,15 +119,24 @@ class OwnerAuth:
         self.failures = [t for t in self.failures if t > cutoff]
         return len(self.failures) >= MAX_FAILURES
 
+    def check_password(self, password: str) -> bool:
+        """The owner password, as typed on a sign-in page (connector or chat).
+        Wrong guesses count towards the shared lockout."""
+        if self.locked():
+            return False
+        if hmac.compare_digest(password.encode(), self.password.encode()):
+            return True
+        self.failures.append(time.time())
+        log.warning("wrong password on a sign-in page")
+        return False
+
     def login(self, request_id: str, password: str) -> str | None:
         """The owner typed a password on /login. Returns the redirect back to
         the client (carrying the authorization code), or None on failure."""
         self._expire_pending()
         if self.locked() or request_id not in self.pending:
             return None
-        if not hmac.compare_digest(password.encode(), self.password.encode()):
-            self.failures.append(time.time())
-            log.warning("oauth: wrong password on /login")
+        if not self.check_password(password):
             return None
         _, client_id, params = self.pending.pop(request_id)
         code = AuthorizationCode(

@@ -6,8 +6,12 @@ the two ways to take it beyond that machine:
 - **Host your memory on a server.** Every Claude Code machine you log in to,
   claude.ai, and the phone and desktop apps all read from and write to the
   same memory. Your laptop no longer holds it.
-- **Hand over one project.** A colleague can query a scoped, read-only copy
-  while you're away.
+- **Hand over one project.** A colleague can ask questions of a scoped,
+  read-only copy while you're away, in a browser, with nothing to install.
+
+Either way, the server's home page is a **chat**: sign in with the password
+and ask questions as you would ask Claude. Claude answers from the memory
+only.
 
 ## Host your memory on a server
 
@@ -23,8 +27,9 @@ the two ways to take it beyond that machine:
 
 | Client | How it connects | What it gets |
 |---|---|---|
-| **Claude Code** on any machine with the plugin | the plugin's `server` and `server_token` settings | everything: the tools; ambient recall, from a local copy of the graph that refreshes at most once a minute; the context log and Stop-block capture, with the log distilled into the server |
-| **claude.ai, the phone app, the desktop app** | a custom connector, signed in with your server password | the tools, reads and writes. These apps have no hooks, so nothing is injected automatically: the model calls the memory tools when the conversation needs them |
+| **Claude Code** on any machine with the plugin, including the desktop app's Code tab | the plugin's `server` and `server_token` settings | everything: the tools; ambient recall, from a local copy of the graph that refreshes at most once a minute; the context log and Stop-block capture, with the log distilled into the server |
+| **a browser**, on any device | `https://<host>/`, signed in with your server password | a chat that answers from the memory, read-only ([below](#chat-in-the-browser)) |
+| **ordinary chats** in claude.ai, the phone app and the desktop app (not its Code tab) | a custom connector, signed in with your server password | the tools, reads and writes. Chats have no hooks, so nothing is injected automatically: the model calls the memory tools when the conversation needs them |
 | any other MCP client | `https://<host>/mcp` with `Authorization: Bearer <token>` | the tools |
 
 Context logs never leave the machine that wrote them, except as the upload
@@ -122,12 +127,34 @@ page for five minutes. Tokens are stored only as hashes in
 delete that file. To lock out Claude Code machines, change
 `MEMORY_GRAPH_TOKEN`.
 
+### Chat in the browser
+
+Open `https://memory.example.com/` and sign in with the password. Ask what
+you'd ask Claude ("what did we decide about tile caching, and why?"). The
+answer streams in, with a note of each lookup it made ("searched for…",
+"recalled Decision…"). Behind it, Claude runs on your server with four
+read-only tools: search, recall, SPARQL query and an overview. It is told
+to answer from the memory and to say when the memory doesn't hold the
+answer, not to fill the gap from general knowledge.
+
+- **It needs an Anthropic API key on the server**: set `ANTHROPIC_API_KEY`
+  in `.env`. Every answer is billed to that key. `MEMORY_GRAPH_CHAT_DAILY_LIMIT`
+  (default 300 messages a day, across everyone) caps what a shared link can
+  spend. The model is `claude-opus-5-5` at medium effort; set
+  `MEMORY_GRAPH_CHAT_MODEL` and `MEMORY_GRAPH_CHAT_EFFORT` to change them.
+- **It can't change anything.** Writing still happens from Claude Code, and
+  from the apps through the connector.
+- Conversations are kept in the server's memory only, and a restart clears
+  them. Sign-ins last a week. Wrong passwords count towards the same
+  lockout as the connector sign-in.
+- `serve --no-chat` turns the page off.
+
 ### Security in one paragraph
 
 This is your memory, so treat the server like your email: HTTPS only (the
 server warns if `--public-url` isn't https), a long random token, and a
-password you don't use anywhere else. Every route except `/healthz` needs
-the token or a signed-in app's token. Binding beyond localhost refuses to
+password you don't use anywhere else. Every route needs the token, a signed-in
+app's token, or a signed-in browser, except `/healthz` and the sign-in pages. Binding beyond localhost refuses to
 start without a token. Uploaded context files are processed in a scratch
 directory and are never stored as files on the server; only what distill
 promotes is kept. The connectors you add can read and write everything, so
@@ -172,26 +199,38 @@ MEMORY_GRAPH_PATH=~/handover-quartz claude-memory-graph reflect   # read it back
 
 ```sh
 claude-memory-graph serve --store ~/handover-quartz --read-only \
-    --host 0.0.0.0 --port 8848 --token "$(openssl rand -hex 24)"
+    --host 0.0.0.0 --port 8848 --token "$(openssl rand -hex 24)" \
+    --password "<something to give your colleague>"
 ```
 
-or, with the container: `docker run -e MEMORY_GRAPH_READ_ONLY=1 -e
-MEMORY_GRAPH_TOKEN=<secret> -v ~/handover-quartz:/data/store …`.
+with `ANTHROPIC_API_KEY` set for the chat. With the container:
+`docker run -e MEMORY_GRAPH_READ_ONLY=1 -e MEMORY_GRAPH_TOKEN=<secret> -e
+MEMORY_GRAPH_PASSWORD=<for them> -e ANTHROPIC_API_KEY=<key> -v
+~/handover-quartz:/data/store …`, or the `deploy/` compose setup on its own
+domain with `MEMORY_GRAPH_READ_ONLY=1` added to `.env`.
 
 `--read-only` offers four tools: `memory_search`, `memory_recall`,
 `memory_reflect` and `memory_query`. It refuses everything else, including
 any write tool added in future, because it works from an allow-list. It
 never auto-distills or saves, and it doesn't accept distill uploads.
 
-**4. Your colleague connects**
+**4. Send your colleague the link and the password**
+
+They open `https://<host>/`, sign in, and ask: *"what's the state of the
+tile cache work?"*, *"what should I watch out for when deploying quartz?"*.
+The page is titled "quartz — handover memory", and Claude knows it is
+talking to someone picking the work up. Nothing to install, and they don't
+need Claude Code.
+
+**Or connect from Claude Code**
 
 ```sh
 claude mcp add --transport http stuart-memory https://<host>/mcp \
     --header "Authorization: Bearer <token>"
 ```
 
-Their Claude can then ask things like *"search Stuart's memory for the tile
-cache problem"*. To revoke access, stop the server or change the token. To
-refresh what they see, export again. Serve it from somewhere that stays up,
+if they'd rather query it from their own Claude Code. To revoke access,
+stop the server or change the password and token. To refresh what they see,
+export again. Serve it from somewhere that stays up,
 not your laptop: a work VM is simplest, and the hosting options above all
 apply.
