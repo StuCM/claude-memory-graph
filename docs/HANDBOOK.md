@@ -308,6 +308,7 @@ prompt, no restart). Defaults in `gate/runtime.py`.
 | A paraphrase you'd expect to match stays silent (log: `sem_top` just under 0.40) | `SEM_MIN` (0.40) | lower a little; better, add a symptom-style alias to that memory |
 | Memories injected "by meaning" that aren't relevant (log: `"via": "semantic"`) | `SEM_MIN` / `SEM_GAP` (0.08) | raise |
 | Prompts feel slow, or you want word matching only | `SEMANTIC` (true) | `false` |
+| You'd rather the injection carried the memory's content and an explicit recall call | `INJECT_STYLE` ("pointer") | `"full"` |
 | Silent on a topic you've distilled heavily (log: high `top`, `rest` ≈ `top`) | `CLUSTER_FACTOR` (3.0) | lower — a tied group scoring ≥ this × `ABS_MIN` injects its head plus a "+N similar" pointer |
 | "+N similar" pointers on matches you'd call generic | `CLUSTER_FACTOR` | raise |
 | Session-start prime too long / too short | `PRIME_MAX_CHARS` (3000) | move — decisions/patterns/constraints rank first; the rest sit behind a "+N more" pointer |

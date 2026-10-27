@@ -132,7 +132,7 @@ def test_two_strong_memories_both_inject(graph):
     graph.save()
     out = recall_on("pyoxigraph rdflib quad store")
     assert out is not None
-    assert "Use pyoxigraph over rdflib" in out and "pyoxigraph:" in out
+    assert "Use pyoxigraph over rdflib" in out and "Technology 'pyoxigraph'" in out
 
 def test_injection_carries_neighbourhood_links(graph):
     graph.create_resource("Project", {"name": "claude-memory-graph"})
@@ -144,7 +144,25 @@ def test_injection_carries_neighbourhood_links(graph):
     assert out is not None and "affects→ Project 'claude-memory-graph'" in out
 
 
-def test_link_peek_reports_untraversed_link_count(graph):
+@pytest.fixture
+def full_style(monkeypatch):
+    """The older injection format: content plus a literal recall call per memory."""
+    monkeypatch.setattr(runtime, "_config", {**runtime._DEFAULTS, "INJECT_STYLE": "full"})
+
+
+def test_pointer_style_nominates_and_hands_over_the_decision(graph):
+    """The default: one line per memory with why it matched, then one line
+    handing the judgment to the model (recall, ask, delegate or ignore)."""
+    out = recall_on("pyoxigraph rdflib quad store")
+    assert out is not None
+    bullet = next(l for l in out.splitlines() if l.startswith("- Decision"))
+    assert "'Use pyoxigraph over rdflib'" in bullet and "matched: " in bullet
+    assert "pyoxigraph" in bullet.split("matched: ")[1]
+    assert "memory-researcher" in out and "Otherwise ignore it" in out
+    assert "next: memory_recall" not in out
+
+
+def test_link_peek_reports_untraversed_link_count(graph, full_style):
     """The peek shows 3 links; when the winner has more, it must say how many
     were withheld, so the neighbourhood is not mistaken for complete."""
     _, decision = graph.find_resource("Decision", "Use pyoxigraph over rdflib")
@@ -156,7 +174,7 @@ def test_link_peek_reports_untraversed_link_count(graph):
     assert out is not None and "+2 more" in out  # 5 links, 3 shown
 
 
-def test_injection_always_offers_the_next_traversal_call(graph):
+def test_injection_always_offers_the_next_traversal_call(graph, full_style):
     """The point of an injection is to open the graph, not to answer from it.
     Whatever the winner's link count, the block must frame itself as an entry
     point and hand over the literal recall call — the old '+N more, recall to
@@ -173,12 +191,13 @@ def test_injection_always_offers_the_next_traversal_call(graph):
     assert 'name="Use pyoxigraph over rdflib", depth=2, focus=' in out
 
 
-def test_every_injected_node_gets_its_own_traversal_call(graph, monkeypatch, tmp_path):
+def test_every_injected_node_gets_its_own_traversal_call(graph, monkeypatch, tmp_path,
+                                                        full_style):
     """TOP_N is 2, and the traverse line used to name only the top node — the
     second memory arrived with no handle to open it. One call per node.
     A wide MARGIN keeps both scorers in the group so two really do inject."""
     cfg = tmp_path / "gate.json"
-    cfg.write_text('{"MARGIN": 6.0}')
+    cfg.write_text('{"MARGIN": 6.0, "INJECT_STYLE": "full"}')
     monkeypatch.setattr(runtime, "_CONFIG_PATH", cfg)
     monkeypatch.setattr(runtime, "_config", None)
     graph.create_resource("Pattern", {

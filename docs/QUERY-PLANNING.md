@@ -1,6 +1,7 @@
 # Query planning — composing SPARQL from language, without an LLM
 
-Status: **v0 implemented** (`planner.py`, `claude-memory-graph ask "…" [--explain]`;
+Status: **v0 implemented, and Claude can call it** as the `memory_ask` tool (0.18)
+(`planner.py`, `claude-memory-graph ask "…" [--explain]`;
 tasks [query-planner-v0](tasks/query-planner-v0.md) and
 [planner-telemetry](tasks/planner-telemetry.md)). Part of track B
 ([RETRIEVAL.md](RETRIEVAL.md)); this is the component that makes retrieval more than RAG.
@@ -269,6 +270,47 @@ Three lessons from the first day of live asks, each now encoded in the planner:
   are Zipf-distributed: curate the head from evidence rather than guessing the tail.
   Only if gaps prove synonym-shaped does the embeddings tier (RETRIEVAL.md phase 3)
   earn its dependency.
+
+## 0.18: everyday phrasings, and the planner as a tool
+
+Exposing it as `memory_ask` meant it had to handle how people actually ask. On a 12-question
+sample it went from 7 direct answers to 11 (the twelfth correctly falls back: nothing in the
+graph answers it):
+
+- **Commands are questions**: "list all decisions", "show me the projects".
+- **Counting**: "how many patterns are there?" → `N Patterns:` plus the list.
+- **Filler isn't content**: "what decisions were *made* recently" no longer turns "made" into
+  a CONTAINS filter that empties the result; any leftover filter that matches nothing is
+  retried without it.
+- **A relation with nowhere to attach is dropped, not fatal**: "what technologies do we
+  use?" lists the technologies, and says it ignored "use".
+- **"… about X"** ("what do we know about varnish?", "tell me about quartz") goes straight
+  to X's neighbourhood. The verb never grounds as a relation ("know" → hasSkill was a real
+  misgrounding), and a node named exactly X beats one that only mentions it.
+- **Everyday nouns for the types**: problems, issues, bugs, gotchas → Pattern; tools,
+  libraries → Technology; clients → Company; choices → Decision; tickets → Task.
+
+## Beyond this project: plain-English questions over any RDF graph
+
+Nothing in the core of the planner is specific to memories. It works because **the graph
+describes itself**: the lexicon is read from the schema (relations with their verb forms
+and domain/range, the type names), and entities are found with the same index that serves
+search. Point the same pipeline at another ontology and it answers questions there, still
+with no LLM, deterministic, explainable (`--explain` shows the grounding and the SPARQL),
+and cheap enough to run on every keystroke.
+
+What would need to become pluggable to make it a standalone library:
+
+| Today (memory-graph specific) | Generalised |
+|---|---|
+| verb forms stored on `mem:` relations | `rdfs:label`/`skos:altLabel` on properties, plus a verb-form annotation property |
+| `RESOURCE_MODELS` + the synonym table | classes and their labels/altLabels from the ontology |
+| named graph per resource, `CrossLink` reification for links | direct triples, or a configurable link pattern (CIDOC/Arches use direct properties) |
+| `_SALIENT` properties per model | "display properties" per class, from config or `rdfs:comment` hints |
+| the gate corpus for entity grounding | any text index over labels (FTS, or the same IDF + embedding index) |
+
+The large-ontology concerns are in §"Scaling to large ontologies (CIDOC CRM, Arches)" above:
+there, the vocabulary layer (SKOS labels, Getty AAT) does what aliases do here.
 
 ## Phasing (extends RETRIEVAL.md's)
 

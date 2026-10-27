@@ -147,13 +147,32 @@ def test_unknown_entity_never_fabricates(store):
 def test_misgrounded_relation_never_self_joins(store):
     # "under" false-grounds to partOf; its only type-fitting endpoint is the
     # node already on the other end — must refuse, not compose ?v partOf ?v
+    # node already on the other end. It must never compose ?v partOf ?v;
+    # the misplaced relation is dropped and the type it asked for is listed.
     g = planner.ground(store, "Which projects are under active development?")
-    assert g.refuse
-    out = planner.handle(store, "Which projects are under active development?")
-    assert "fallback" in out
+    assert not g.edges and g.loose == "'under'"
+    out = planner.handle(store, "Which projects are under active development?", explain=True)
+    assert "partOf" not in out.split("── sparql ──")[1]
+    assert "Project 'quartz'" in out and "memory graph" not in out.split("── answer ──")[1]
 
 
 def test_explain_shows_grounding_and_sparql(store):
     out = planner.handle(store, "What decisions affect quartz?", explain=True)
     assert "grounding" in out and "SELECT" in out
     assert "relation affects" in out
+
+
+@pytest.mark.parametrize("question, expect, absent", [
+    ("list all decisions", ["Use pyoxigraph over rdflib", "Serve static via nginx image"], []),
+    ("show me the projects", ["quartz", "memory graph"], []),
+    ("how many projects are there?", ["2 Projects"], []),
+    ("what decisions were made recently?", ["Decision '"], ["fallback"]),
+    ("what do we know about pyoxigraph?", ["Technology 'pyoxigraph'"], ["hasSkill"]),
+    ("which tools are there?", ["Technology 'pyoxigraph'"], []),
+])
+def test_everyday_phrasings(store, question, expect, absent):
+    out = planner.handle(store, question, explain=True)
+    for e in expect:
+        assert e in out, out
+    for a in absent:
+        assert a not in out, out

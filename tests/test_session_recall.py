@@ -112,7 +112,7 @@ def test_graph_and_log_sections_combine(context_dir, tmp_path, monkeypatch):
     out = RecallExtension().on_user_prompt_submit(
         ctx("pyoxigraph rdflib quad store"))
     assert out is not None
-    assert "Memory entry point" in out        # graph section
+    assert "Memory may bear on this" in out   # graph section
     assert "Session log (undistilled" in out  # log section, shared budget
 
 

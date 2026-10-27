@@ -46,6 +46,16 @@ _STATUS = {"active": "active", "open": "active", "ongoing": "active",
 _SALIENT = {"Decision": ["rationale", "outcome"], "Pattern": ["description"],
             "Task": ["status", "description"]}
 _WORD_RE = re.compile(r"[a-z0-9][a-z0-9'-]*")
+# commands that ask a question: "list all decisions", "show me patterns"
+_IMPERATIVE = {"list", "show", "find", "give", "tell", "name"}
+# words that shape a question but name nothing: never a CONTAINS filter
+_FILLER = {"me", "all", "every", "please", "made", "make", "been", "exist", "exists",
+           "there", "we", "us", "our", "i", "you", "about", "ever", "currently", "have",
+           "got", "keep", "kept"}
+# "what do we know about X", "tell me about X": the answer is X's neighbourhood,
+# and the verb ("know") must not ground as a relation (hasSkill)
+_ABOUT_RE = re.compile(r"^\s*(?:what\s+(?:do|does|did)\s+(?:we|i|you)\s+(?:know|have|remember)"
+                       r"|tell\s+me|what(?:'s| is)\s+(?:known|there))\s+about\s+", re.I)
 
 
 def _salient(model: str, wh: str = "") -> list[str]:
@@ -62,7 +72,25 @@ def _model_nouns() -> dict[str, str]:
         if low.endswith("y"):
             nouns[low[:-1] + "ies"] = t
     nouns["people"] = nouns["persons"] = "Person"
+    # everyday words for the models, as people actually ask
+    for model, words in _SYNONYMS.items():
+        if model in RESOURCE_MODELS + CONCEPT_TYPES:
+            for w in words:
+                nouns.setdefault(w, model)
     return nouns
+
+
+_SYNONYMS = {
+    "Pattern": ["problem", "problems", "issue", "issues", "bug", "bugs", "gotcha", "gotchas",
+                "pitfall", "pitfalls", "lesson", "lessons", "fix", "fixes", "workaround",
+                "workarounds"],
+    "Decision": ["choice", "choices", "tradeoff", "tradeoffs"],
+    "Technology": ["tool", "tools", "library", "libraries", "framework", "frameworks",
+                   "stack", "dependency", "dependencies"],
+    "Company": ["client", "clients", "customer", "customers", "organisation",
+                "organisations", "organization", "organizations"],
+    "Task": ["todo", "todos", "ticket", "tickets"],
+}
 
 
 @dataclass
@@ -102,6 +130,9 @@ class Grounding:
     coverage: float = 0.0
     uncovered: list[str] = field(default_factory=list)
     refuse: str = ""                              # out-of-grammar reason
+    count: bool = False                           # "how many …"
+    loose: str = ""                               # relation words dropped to list a type
+    about: bool = False                           # "what do we know about X"
     notes: list[str] = field(default_factory=list)  # --explain lines
 
     def vars(self) -> list[Node]:
@@ -112,7 +143,7 @@ def is_question(text: str) -> bool:
     stripped = text.strip()
     words = _WORD_RE.findall(stripped.lower())
     return bool(stripped.endswith("?")
-                or (words and (words[0] in WH or words[0] in _AUX)))
+                or (words and (words[0] in WH or words[0] in _AUX or words[0] in _IMPERATIVE)))
 
 
 def ground(store: MemoryStore, text: str) -> Grounding:
@@ -127,10 +158,21 @@ def ground(store: MemoryStore, text: str) -> Grounding:
         # raw words like "memory-graph" must meet terms ("memory","graph")
         return {p for p in re.split(r"[^a-z0-9]+", word) if p} & terms
 
-    if words and (words[0][3] in WH or words[0][3] in _AUX):
+    if words and (words[0][3] in WH or words[0][3] in _AUX or words[0][3] in _IMPERATIVE):
         if words[0][3] in WH:
             g.wh = words[0][3]
+        elif words[0][3] in _IMPERATIVE:
+            g.wh = "what"                 # "list decisions" = "what decisions"
         consumed.add(0)
+    if len(words) > 1 and words[0][3] == "how" and words[1][3] in ("many", "much"):
+        g.count, g.wh = True, "what"      # not "how" → Pattern
+        consumed.add(1)
+        g.notes.append("'how many' → count")
+    about = _ABOUT_RE.match(text)
+    if about:
+        g.about = True
+        consumed.update(i for i, s, _e, _w in words if s < about.end())
+        g.notes.append("'… about X' → X's neighbourhood")
 
     # ── relations: longest verb-form first, matched on the RAW text
     # (verb forms contain stopwords the tokenizer drops: "works on")
@@ -139,7 +181,7 @@ def ground(store: MemoryStore, text: str) -> Grounding:
                    key=lambda x: -len(x[0]))
     taken_spans: list[tuple[int, int]] = []
     matched_rels: set[str] = set()
-    for form, rel in forms:
+    for form, rel in ([] if g.about else forms):
         if rel in matched_rels:
             continue
         m = re.search(rf"(?<![a-z0-9]){re.escape(form)}(?![a-z0-9])", raw)
@@ -186,7 +228,7 @@ def ground(store: MemoryStore, text: str) -> Grounding:
                 seen_types[_HINTS[w]] = node
                 g.nodes.append(node)
                 g.notes.append(f"'{w}' → implies {_HINTS[w]} variable {node.var}")
-        elif w in _AUX:
+        elif w in _AUX or w in _FILLER:
             consumed.add(i)
 
     # wh-words that imply a typed subject
@@ -217,6 +259,16 @@ def ground(store: MemoryStore, text: str) -> Grounding:
             expected = {t for e in g.edges if e.relation in lexicon
                         for t in (lexicon[e.relation]["domain"]
                                   + lexicon[e.relation]["range"])}
+            # a node NAMED exactly what was asked beats one that mentions it
+            # ("about pyoxigraph" → Technology 'pyoxigraph', not the Decision
+            # 'Use pyoxigraph over rdflib')
+            exact = next((d for s, d in ranked[1:]
+                          if s > 0 and d["name_terms"] == left_terms
+                          and top["name_terms"] != left_terms), None)
+            if exact is not None:
+                g.notes.append(f"anchor exact name: {exact['model']} '{exact['name']}' "
+                               f"preferred over {top['model']} '{top['name']}'")
+                score, top = next(s for s, d in ranked if d is exact), exact
             if expected and top["model"] not in expected:
                 for s, d in ranked[1:]:
                     if (s >= 0.75 * score and d["model"] in expected
@@ -256,6 +308,14 @@ def ground(store: MemoryStore, text: str) -> Grounding:
         g.refuse = f"{len(g.edges)} relations — v0 grammar caps at 2"
         return g
     _assign_edges(g, lexicon, seen_types)
+    if (g.refuse.startswith("cannot resolve") and g.anchor is None
+            and any(n.kind == "var" for n in g.nodes)):
+        # "what technologies do we use?": the relation has no second end to
+        # attach to, but the question still names what it wants — list that
+        dropped = ", ".join(f"'{e.form}'" for e in g.edges)
+        g.edges, g.refuse = [], ""
+        g.notes.append(f"could not place {dropped}; listing the type instead")
+        g.loose = dropped
     if len(g.vars()) > 2:
         g.refuse = f"{len(g.vars())} typed variables — v0 grammar caps at 2"
         return g
@@ -315,7 +375,7 @@ def _lit(s: str) -> str:
 
 
 def compose(g: Grounding, anchor_attach: str = "link",
-            drop_contains: bool = False) -> str:
+            drop_contains: bool = False, limit: int | None = ROW_LIMIT) -> str:
     """One SPARQL query from the grounding. anchor_attach applies only when
     an anchor grounded but no relation did: 'link' joins subject↔anchor
     through any open CrossLink; 'contains' falls back to text mention.
@@ -383,8 +443,8 @@ def compose(g: Grounding, anchor_attach: str = "link",
     tail = ""
     if g.recent:
         tail = f"\nORDER BY DESC(?upd)\nLIMIT {RECENT_LIMIT}"
-    else:
-        tail = f"\nLIMIT {ROW_LIMIT}"
+    elif limit:
+        tail = f"\nLIMIT {limit}"
     return (f"SELECT DISTINCT {' '.join(select)} WHERE {{\n  "
             + "\n  ".join(where + top_filters) + "\n}" + tail)
 
@@ -466,10 +526,21 @@ def handle(store: MemoryStore, text: str, explain: bool = False) -> str:
         _log(text, g, "no-subject")
         return prefix + _fallback(store, text, g, "no queryable subject")
 
-    sparql = compose(g)
+    if g.loose:
+        prefix += (f"(couldn't place {g.loose} in the graph — listing every "
+                   f"{g.subject.type} instead)\n")
+    sparql = compose(g, limit=None if g.count else ROW_LIMIT)
     if explain:
         prefix += "── sparql ──\n" + sparql + "\n── answer ──\n"
     lines = _run_rows(store, sparql, g)
+    if not lines and g.contains and (g.edges or g.anchor is None):
+        # the leftover word was probably phrasing ("made"), not content:
+        # it filtered out an otherwise-answerable query
+        lines = _run_rows(store, compose(g, drop_contains=True,
+                                         limit=None if g.count else ROW_LIMIT), g)
+        if lines:
+            prefix += f"(ignored '{g.contains}' — it matched nothing)\n"
+            g.uncovered.append(g.contains)
     if not lines and not g.edges and g.anchor is not None:
         # loose link attach found nothing — retry as a text mention
         sparql2 = compose(g, anchor_attach="contains")
@@ -493,6 +564,9 @@ def handle(store: MemoryStore, text: str, explain: bool = False) -> str:
         _log(text, g, "no-rows")
         return prefix + _fallback(store, text, g, "composed query returned no rows")
     _log(text, g, "answered", len(lines))
+    if g.count:
+        noun = g.subject.type + ("" if len(lines) == 1 else "s")
+        prefix += f"{len(lines)} {noun}" + (":" if lines else "") + "\n"
     if len(lines) > 10:
         lines = lines[:10] + [f"(+{len(lines) - 10} more)"]
     return prefix + "\n".join(lines)
