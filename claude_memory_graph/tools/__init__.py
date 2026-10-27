@@ -363,17 +363,30 @@ def _client_id(ctx) -> str | None:
         return os.environ.get("MEMORY_GRAPH_CLIENT")
 
 
-def handlers(mem_store: MemoryStore) -> dict:
+# What a read-only server offers: an allow-list, so a tool added later is
+# refused until someone decides it is safe to share.
+READ_TOOLS = {"memory_search", "memory_recall", "memory_reflect", "memory_query"}
+
+
+def handlers(mem_store: MemoryStore, read_only: bool = False) -> dict:
     """Request-handler callbacks for the Server constructor.
 
     mcp 2.0 dropped the @server.list_tools()/@server.call_tool() decorators;
     handlers are now passed in as on_* callbacks, so this returns them rather
-    than mutating a server. Spread it: Server(name, **handlers(store))."""
+    than mutating a server. Spread it: Server(name, **handlers(store)).
+
+    read_only: list and serve only READ_TOOLS — a handover server, where
+    someone else queries your memory and must not change it."""
+    tools = [t for t in _TOOLS if not read_only or t.name in READ_TOOLS]
 
     async def on_list_tools(ctx, params) -> ListToolsResult:
-        return ListToolsResult(tools=_TOOLS)
+        return ListToolsResult(tools=tools)
 
     async def on_call_tool(ctx, params) -> CallToolResult:
+        if read_only and params.name not in READ_TOOLS:
+            return CallToolResult(content=[TextContent(
+                type="text", text=f"Error: {params.name} is not available on this "
+                                  "read-only memory server.")], is_error=True)
         failed = False
         try:
             mem_store.capture_client = _client_id(ctx)

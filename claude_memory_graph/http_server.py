@@ -58,7 +58,7 @@ class _BearerAuth:
 
 
 def serve(store_path, instructions: str, host: str = "127.0.0.1",
-          port: int = 8848, token: str = "") -> None:
+          port: int = 8848, token: str = "", read_only: bool = False) -> None:
     import uvicorn
     from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
     from starlette.applications import Starlette
@@ -71,11 +71,12 @@ def serve(store_path, instructions: str, host: str = "127.0.0.1",
             "(or set MEMORY_GRAPH_TOKEN) — this is your memory; protect it.")
 
     store = MemoryStore.open_or_create(store_path)
-    from . import distill as distill_mod
-    distill_mod.auto_distill(store)
+    if not read_only:
+        from . import distill as distill_mod
+        distill_mod.auto_distill(store)
 
     server = Server("claude-memory-graph", instructions=instructions,
-                    **tools.handlers(store))
+                    **tools.handlers(store, read_only=read_only))
 
     # stateless + JSON responses: every client request is self-contained, so
     # any number of clients can share the endpoint with nothing to resume.
@@ -85,10 +86,12 @@ def serve(store_path, instructions: str, host: str = "127.0.0.1",
     @contextlib.asynccontextmanager
     async def lifespan(app):
         async with manager.run():
-            log.info("memory-graph serving at http://%s:%d/mcp (%s)",
-                     host, port, "token required" if token else "loopback, no token")
+            log.info("memory-graph serving at http://%s:%d/mcp (%s%s)",
+                     host, port, "token required" if token else "loopback, no token",
+                     ", read-only" if read_only else "")
             yield
-        store.save()
+        if not read_only:
+            store.save()
         log.info("store saved; goodbye")
 
     app = Starlette(routes=[Mount("/mcp", app=manager.handle_request)],
