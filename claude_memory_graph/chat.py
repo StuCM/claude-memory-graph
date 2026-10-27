@@ -8,8 +8,8 @@ key (a Pro/Max plan can't be used for an app you host).
 
 The chat: you (or a colleague, on a handover
 share) sign in with the server password and ask questions; Claude answers
-from the graph using the read-only memory tools — search, recall, query,
-reflect — run in-process against the server's store. Nobody needs Claude
+from the graph using the read-only memory tools — search, ask, recall,
+query, reflect — run in-process against the server's store. Nobody needs Claude
 Code, an MCP client or a token, and the chat can't change the memory.
 
 On when the server has an Anthropic API key (ANTHROPIC_API_KEY). Every
@@ -52,7 +52,9 @@ Answer from the memory, using the tools:
 know a node's exact model and name.
 - memory_recall (depth 2) on the nodes that matter shows their properties and \
 what they link to. Follow links when the question is about how things relate.
-- memory_query runs SPARQL, for lists, counts and filters across the graph.
+- memory_ask answers plain-English relational and list questions ("which decisions \
+affect quartz?", "how many patterns are there?") without you writing SPARQL.
+- memory_query runs SPARQL, for what plain questions can't express.
 - memory_reflect gives an overview of what the memory holds.
 
 Base every answer on what the tools return. When the memory doesn't hold the \
@@ -74,6 +76,8 @@ def _summary(name: str, args: dict) -> str:
         return f"searched for “{args.get('text', '')}”"
     if name == "memory_recall":
         return f"recalled {args.get('model', '')} “{args.get('name', '')}”"
+    if name == "memory_ask":
+        return f"asked “{args.get('question', '')}”"
     if name == "memory_query":
         return "ran a query over the graph"
     if name == "memory_reflect":

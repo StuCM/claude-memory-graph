@@ -56,7 +56,8 @@ def test_strong_tied_cluster_injects_head_and_points_at_the_rest(store):
     out = RecallExtension().on_user_prompt_submit(
         ctx("why does the arches graph restore fire post_save twice"))
     assert out is not None
-    assert out.count("next: memory_recall(") == 2           # TOP_N heads
+    heads = [l for l in out.splitlines() if l.startswith("- Pattern 'arches graph restore")]
+    assert len(heads) == 2                                   # TOP_N heads
     assert "+3 similar — memory_search(" in out
 
 
@@ -92,7 +93,7 @@ def test_desc_hides_aliases_and_status_but_aliases_still_match(store):
     out = RecallExtension().on_user_prompt_submit(
         ctx("the map shows deleted features again, stale tiles", project=""))
     assert out is not None and "flush the varnish layer" in out   # matched via aliases
-    bullet = next(l for l in out.splitlines() if l.startswith("- Tile"))
+    bullet = next(l for l in out.splitlines() if l.startswith("- Pattern 'Tile"))
     assert "stale tiles" not in bullet and "active" not in bullet
 
 

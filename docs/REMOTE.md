@@ -140,8 +140,9 @@ must use an API key.
 Sign in with the password and ask what
 you'd ask Claude ("what did we decide about tile caching, and why?"). The
 answer streams in, with a note of each lookup it made ("searched for…",
-"recalled Decision…"). Behind it, Claude runs on your server with four
-read-only tools: search, recall, SPARQL query and an overview. It is told
+"recalled Decision…"). Behind it, Claude runs on your server with five
+read-only tools: search, plain-English questions, recall, SPARQL query and an
+overview. It is told
 to answer from the memory and to say when the memory doesn't hold the
 answer, not to fill the gap from general knowledge.
 
@@ -242,8 +243,8 @@ HTTPS in front. The simplest way is the `deploy/` compose setup on its own
 domain, with `MEMORY_GRAPH_READ_ONLY=1` added to `.env` and the share's
 `graph.nq` in `data/store/`.
 
-`--read-only` offers four tools: `memory_search`, `memory_recall`,
-`memory_reflect` and `memory_query`. It refuses everything else, including
+`--read-only` offers five tools: `memory_search`, `memory_ask` (plain-English
+questions), `memory_recall`, `memory_reflect` and `memory_query`. It refuses everything else, including
 any write tool added in future, because it works from an allow-list. It
 never auto-distills or saves, and it doesn't accept distill uploads.
 

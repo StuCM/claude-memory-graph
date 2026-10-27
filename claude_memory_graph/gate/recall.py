@@ -356,6 +356,30 @@ def _semantic_index(docs: list[dict]) -> dict | None:
         return None
 
 
+_GIST_CHARS = 90
+
+
+def _pointer_line(d: dict, link_suffix: str, q: set, idf: dict, via: str) -> str:
+    """One line per nominated memory: what it is, a gist, its first link, and
+    why it matched, so the model can judge relevance without opening it."""
+    gist = d["desc"].split("; ")[0].split(". ")[0]
+    if len(gist) > _GIST_CHARS:
+        gist = gist[:_GIST_CHARS].rsplit(" ", 1)[0] + "…"
+    link = ""
+    if link_suffix:
+        first = link_suffix.strip(" ()").split(" · ")[0]
+        link = f" · {first}"
+    if via == "semantic":
+        why = "by meaning"
+    else:
+        # rarest first; ties alphabetical, so the same prompt gives the same line
+        shared = sorted(q & d["terms"], key=lambda w: (-idf.get(w, 0.0), w))[:3]
+        why = ", ".join(shared) if shared else "words"
+    model = d["model"] or "Concept"
+    return (f"- {model} '{d['name'] or d['gid']}'" + (f" — {gist}" if gist else "")
+            + f"{link} · matched: {why}")
+
+
 def semantic_pick(prompt: str, docs: list[dict], cfg: dict) -> tuple[list, float, float]:
     """The meaning channel, consulted when the lexical gate stays silent.
     Fires on one memory when its best field is close enough to the prompt
@@ -495,13 +519,18 @@ class RecallExtension(HookExtension):
             return self._log_recall(ctx, q, views, idf, budget=cfg["TOP_N"])
 
         injected = set(ctx.state.get("injected", []))
+        pointer = cfg["INJECT_STYLE"] != "full"
         lines, fresh = [], []
         for _unused, d in strong:
-            if d["gid"] not in injected:
+            if d["gid"] in injected:
+                continue
+            fresh.append(d["gid"])
+            if pointer:
+                lines.append(_pointer_line(d, links.get(d["iri"], ""), q, idf, via))
+            else:
                 lines.append(f"- {d['name'] or d['gid']}: {d['desc']}{links.get(d['iri'], '')}")
                 lines.append(f'  next: memory_recall(model="{d["model"]}", '
                              f'name="{d["name"]}", depth=2, focus="<what you need>")')
-                fresh.append(d["gid"])
         entry = {"fired": bool(fresh), "top": round(top, 2), "rest": round(rest, 2),
                  "session": session, "project": ctx.project, "terms": sorted(q),
                  "nodes": [d["name"] for _, d in strong], "via": via}
@@ -517,10 +546,18 @@ class RecallExtension(HookExtension):
         if similar:
             topic = " ".join(sorted(q, key=lambda t: idf.get(t, 0.0), reverse=True)[:4])
             lines.append(f'- +{similar} similar — memory_search("{topic}")')
-        graph_section = (
-            "Memory entry points (auto-recalled, may be stale) — doors, not answers; "
-            "traverse before re-deriving:\n"
-            + "\n".join(lines))
+        if pointer:
+            graph_section = (
+                "Memory may bear on this (auto-matched, may be stale; your call):\n"
+                + "\n".join(lines)
+                + "\nIf it bears on the task: memory_recall(model, name, depth=2) to open one, "
+                  "memory_ask a question, or hand it to the memory-researcher agent if it "
+                  "needs digging. Otherwise ignore it.")
+        else:
+            graph_section = (
+                "Memory entry points (auto-recalled, may be stale) — doors, not answers; "
+                "traverse before re-deriving:\n"
+                + "\n".join(lines))
         log_section = self._log_recall(
             ctx, q, views, idf, budget=max(1, cfg["TOP_N"] - len(fresh)),
             exclude=frozenset((d["model"], d["name"]) for _s, d in strong))

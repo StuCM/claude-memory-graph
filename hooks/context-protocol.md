@@ -2,10 +2,12 @@
 
 Before re-deriving knowledge with codebase searches, big greps, or re-investigation, check the memory graph:
 
-- **If the memory tools are deferred**, load them in one call before anything else: `ToolSearch` with query `select:mcp__plugin_memory-graph_memory-graph__memory_recall,mcp__plugin_memory-graph_memory-graph__memory_search,mcp__plugin_memory-graph_memory-graph__memory_query`. A deferred tool that is never loaded is a recall that never happens.
+- **If the memory tools are deferred**, load them in one call before anything else: `ToolSearch` with query `select:mcp__plugin_memory-graph_memory-graph__memory_recall,mcp__plugin_memory-graph_memory-graph__memory_search,mcp__plugin_memory-graph_memory-graph__memory_ask,mcp__plugin_memory-graph_memory-graph__memory_query`. A deferred tool that is never loaded is a recall that never happens.
 
 - **At the start of substantive work**: `memory_recall` the current project (model Project, name = working-directory basename) and the user. This surfaces past decisions, known gotchas, constraints, and preferences in one call.
-- **Before investigating a problem**: `memory_recall`/`memory_query` for related Patterns and Decisions — a gotcha may already be recorded with its fix and rationale.
+- **Before investigating a problem**: `memory_ask` it ("what gotchas apply to quartz?", "why did we choose X?") or `memory_search` the symptom: a gotcha may already be recorded with its fix and rationale.
+- **When it needs digging** (the question touches several decisions or projects, or an injected memory pointer looks relevant but thin): hand it to the **memory-researcher** agent. It follows the links across projects and returns a short brief with exact names, without filling this conversation with lookups.
+- **Injected pointers** ("Memory may bear on this…") are nominations, not answers: you judge. Recall one if it bears on the task, delegate if it needs digging, ignore it if it doesn't.
 - **Scope discipline**: the graph answers *why/what-do-we-know* questions (decisions, rationale, gotchas, preferences, project relationships). Code-structure questions (where is X defined, who calls Y) still belong to code search tools.
 - If recall returns nothing relevant, proceed normally — and consider whether what you then learn belongs in the graph.
 

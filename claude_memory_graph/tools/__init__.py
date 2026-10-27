@@ -213,6 +213,29 @@ _TOOLS = [
         },
     ),
     Tool(
+        name="memory_ask",
+        description=(
+            "Ask the graph a question in plain English and get the matching memories, "
+            "with no SPARQL: 'which decisions affect quartz?', 'what gotchas apply to "
+            "charcoal?', 'who works on quartz?', 'how many patterns are there?', "
+            "'what decisions were made recently?', 'what do we know about varnish?'. "
+            "The question is matched against the graph's own relations, types and names "
+            "and answered with one query; when it can't be answered exactly, you get the "
+            "nearest neighbourhood or search hits instead, labelled as a fallback. Use it "
+            "for relational and list questions; memory_search for a fuzzy topic; "
+            "memory_query only for what plain questions can't express."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "question": {"type": "string", "description": "The question, in plain English"},
+                "explain": {"type": "boolean", "default": False,
+                            "description": "Also show how it was understood and the query run"},
+            },
+            "required": ["question"],
+        },
+    ),
+    Tool(
         name="memory_recall",
         description=(
             "Recall all relevant context for a resource. Returns the resource's properties, "
@@ -365,7 +388,7 @@ def _client_id(ctx) -> str | None:
 
 # What a read-only server offers: an allow-list, so a tool added later is
 # refused until someone decides it is safe to share.
-READ_TOOLS = {"memory_search", "memory_recall", "memory_reflect", "memory_query"}
+READ_TOOLS = {"memory_search", "memory_ask", "memory_recall", "memory_reflect", "memory_query"}
 
 
 def handlers(mem_store: MemoryStore, read_only: bool = False) -> dict:
@@ -453,6 +476,10 @@ def _dispatch(store: MemoryStore, name: str, args: dict) -> str:
         return search.handle(
             store, args["text"], args.get("model"), args.get("limit") or 5
         )
+
+    if name == "memory_ask":
+        from .. import planner
+        return planner.handle(store, args["question"], explain=bool(args.get("explain")))
 
     if name == "memory_recall":
         return recall.handle(store, args["model"], args["name"], args.get("depth") or 1,

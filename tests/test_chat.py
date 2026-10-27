@@ -137,7 +137,7 @@ def test_request_shape(store, tmp_path):
     req = claude.requests[0]
     assert req["model"] == chat_mod.MODEL
     assert [t["name"] for t in req["tools"]] == sorted(
-        ["memory_query", "memory_recall", "memory_reflect", "memory_search"])
+        ["memory_ask", "memory_query", "memory_recall", "memory_reflect", "memory_search"])
     assert req["cache_control"] == {"type": "ephemeral"}
     assert req["fallbacks"] == "default"
 
