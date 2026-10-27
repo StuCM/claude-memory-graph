@@ -157,7 +157,8 @@ def test_pointer_style_nominates_and_hands_over_the_decision(graph):
     assert out is not None
     bullet = next(l for l in out.splitlines() if l.startswith("- Decision"))
     assert "'Use pyoxigraph over rdflib'" in bullet and "matched: " in bullet
-    assert "pyoxigraph" in bullet.split("matched: ")[1]
+    matched = bullet.split("matched: ")[1].split(", ")
+    assert matched and set(matched) <= {"pyoxigraph", "rdflib", "quad", "store"}
     assert "memory-researcher" in out and "Otherwise ignore it" in out
     assert "next: memory_recall" not in out
 

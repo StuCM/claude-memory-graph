@@ -372,7 +372,8 @@ def _pointer_line(d: dict, link_suffix: str, q: set, idf: dict, via: str) -> str
     if via == "semantic":
         why = "by meaning"
     else:
-        shared = sorted(q & d["terms"], key=lambda w: idf.get(w, 0.0), reverse=True)[:3]
+        # rarest first; ties alphabetical, so the same prompt gives the same line
+        shared = sorted(q & d["terms"], key=lambda w: (-idf.get(w, 0.0), w))[:3]
         why = ", ".join(shared) if shared else "words"
     model = d["model"] or "Concept"
     return (f"- {model} '{d['name'] or d['gid']}'" + (f" — {gist}" if gist else "")
