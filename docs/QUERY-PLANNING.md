@@ -299,15 +299,21 @@ search. Point the same pipeline at another ontology and it answers questions the
 with no LLM, deterministic, explainable (`--explain` shows the grounding and the SPARQL),
 and cheap enough to run on every keystroke.
 
-What would need to become pluggable to make it a standalone library:
+**It is now one.** The planner lives in [`packages/ceist`](../packages/ceist/README.md)
+(*ceist*, Irish for "question"), which the memory graph consumes:
 
-| Today (memory-graph specific) | Generalised |
-|---|---|
-| verb forms stored on `mem:` relations | `rdfs:label`/`skos:altLabel` on properties, plus a verb-form annotation property |
-| `RESOURCE_MODELS` + the synonym table | classes and their labels/altLabels from the ontology |
-| named graph per resource, `CrossLink` reification for links | direct triples, or a configurable link pattern (CIDOC/Arches use direct properties) |
-| `_SALIENT` properties per model | "display properties" per class, from config or `rdfs:comment` hints |
-| the gate corpus for entity grounding | any text index over labels (FTS, or the same IDF + embedding index) |
+| layer | in ceist | the memory graph's side |
+|---|---|---|
+| vocabulary | the `Vocabulary` protocol | `MemoryVocabulary`: relation lexicon, status values, the gate corpus for names |
+| grounding + plan | `ground`, `interpret` → a backend-neutral `Plan` plus relaxations | — |
+| explanation | `narrate(plan)` ("Find Decisions that affect Project 'quartz'.") | `--explain` shows it under "understood" |
+| output | Alizarin (in-process, over a data_dir), Rós Madair (Query IR), Arches Search (GroupPayload) | `compile_sparql` for Oxigraph |
+
+The Arches vocabulary (`ceist.arches.ArchesVocabulary`) reads resource models, SKOS thesauri
+(through Alizarin, so concept ids match what Rós Madair interns) and business data from the
+data_dir layout that Alizarin and Rós Madair share. Each output refuses, by name, what its
+engine can't express. Rós Madair walks links forward only, and Arches Search seeds no
+concept facets. The runner then falls back to a relaxation instead of dropping a condition.
 
 The large-ontology concerns are in §"Scaling to large ontologies (CIDOC CRM, Arches)" above:
 there, the vocabulary layer (SKOS labels, Getty AAT) does what aliases do here.

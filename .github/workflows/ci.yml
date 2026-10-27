@@ -17,6 +17,19 @@ jobs:
       - run: uv sync --locked
       - run: uv run pytest -q
 
+  ceist:
+    name: ceist with Arches outputs (Alizarin, Arches Search)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      # Alizarin reads the SKOS thesauri; the Rós Madair end-to-end tests skip
+      # without its bindings and emitter (a long Rust build).
+      - run: uv venv && uv pip install ./packages/ceist alizarin pytest
+      - run: .venv/bin/python -m pytest -q packages/ceist/tests
+
   mod:
     name: Mod validate + tests
     runs-on: ubuntu-latest
