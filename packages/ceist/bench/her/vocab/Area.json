@@ -1,0 +1,1640 @@
+{
+ "model": "Area",
+ "entries": [
+  {
+   "phrases": [
+    "built",
+    "constructed",
+    "erected",
+    "put up",
+    "when was it built",
+    "date built",
+    "construction date",
+    "year built",
+    "when was it constructed",
+    "laid out",
+    "founded",
+    "established",
+    "dates from",
+    "date of construction",
+    "building date",
+    "origins",
+    "construction phase"
+   ],
+   "kind": "date",
+   "node": "construction_phase_start_date",
+   "end_node": "construction_phase_end_date"
+  },
+  {
+   "phrases": [
+    "altered",
+    "alterations",
+    "modified",
+    "extended",
+    "remodelled",
+    "when was it altered",
+    "date of alteration",
+    "enlarged",
+    "added to"
+   ],
+   "kind": "date",
+   "node": "construction_phase_start_date",
+   "end_node": "construction_phase_end_date",
+   "qualifier": {
+    "node": "construction_phase_type",
+    "value": "Alteration"
+   }
+  },
+  {
+   "phrases": [
+    "demolished",
+    "destroyed",
+    "torn down",
+    "pulled down",
+    "knocked down",
+    "razed",
+    "when was it demolished",
+    "date of demolition",
+    "demolition",
+    "destruction",
+    "levelled",
+    "cleared"
+   ],
+   "kind": "date",
+   "node": "construction_phase_start_date",
+   "end_node": "construction_phase_end_date",
+   "qualifier": {
+    "node": "construction_phase_type",
+    "value": "Destruction"
+   }
+  },
+  {
+   "phrases": [
+    "converted",
+    "conversion",
+    "when was it converted",
+    "change of use",
+    "repurposed",
+    "adapted for"
+   ],
+   "kind": "date",
+   "node": "construction_phase_start_date",
+   "end_node": "construction_phase_end_date",
+   "qualifier": {
+    "node": "construction_phase_type",
+    "value": "Conversion"
+   }
+  },
+  {
+   "phrases": [
+    "repaired",
+    "repairs",
+    "restored",
+    "restoration",
+    "renovated",
+    "refurbished",
+    "when was it repaired",
+    "rebuilt"
+   ],
+   "kind": "date",
+   "node": "construction_phase_start_date",
+   "end_node": "construction_phase_end_date",
+   "qualifier": {
+    "node": "construction_phase_type",
+    "value": "Repairs"
+   }
+  },
+  {
+   "phrases": [
+    "used",
+    "in use",
+    "when was it used",
+    "period of use",
+    "occupied",
+    "occupation",
+    "inhabited",
+    "active",
+    "in operation",
+    "operated",
+    "when was it occupied",
+    "date of use",
+    "use phase",
+    "abandoned",
+    "disused"
+   ],
+   "kind": "date",
+   "node": "use_phase_start_date",
+   "end_node": "use_phase_end_date"
+  },
+  {
+   "phrases": [
+    "scientific date",
+    "scientifically dated",
+    "radiocarbon date",
+    "carbon dated",
+    "c14 date",
+    "calibrated date",
+    "lab date",
+    "dendro date",
+    "absolute date"
+   ],
+   "kind": "date",
+   "node": "scientific_date_start_date",
+   "end_node": "scientific_date_end_date"
+  },
+  {
+   "phrases": [
+    "when was the date determined",
+    "date determined",
+    "date of analysis",
+    "when was it sampled",
+    "when was it tested"
+   ],
+   "kind": "date",
+   "node": "when_determined_start_date",
+   "end_node": "when_determined_end_date"
+  },
+  {
+   "phrases": [
+    "when was it listed",
+    "when was it scheduled",
+    "when was it designated",
+    "date listed",
+    "date scheduled",
+    "date of designation",
+    "designated in",
+    "listed in",
+    "scheduled in",
+    "protected since",
+    "listed since",
+    "designation date"
+   ],
+   "kind": "date",
+   "node": "designation_start_date",
+   "end_node": "designation_end_date"
+  },
+  {
+   "phrases": [
+    "designation amended",
+    "listing amended",
+    "amendment date",
+    "when was the listing amended",
+    "list entry amended"
+   ],
+   "kind": "date",
+   "node": "designation_amendment_date"
+  },
+  {
+   "phrases": [
+    "area status date",
+    "status since",
+    "status assigned",
+    "when was the status given"
+   ],
+   "kind": "date",
+   "node": "area_status_start_date",
+   "end_node": "area_status_end_date"
+  },
+  {
+   "phrases": [
+    "association date",
+    "period of involvement",
+    "when was involved",
+    "dates of association",
+    "when were they involved"
+   ],
+   "kind": "date",
+   "node": "associated_actor_start_date",
+   "end_node": "associated_actor_end_date"
+  },
+  {
+   "phrases": [
+    "land use assessed",
+    "land use assessment date",
+    "when was land use assessed"
+   ],
+   "kind": "date",
+   "node": "land_use_assessment_start_date",
+   "end_node": "land_use_assessment_end_date"
+  },
+  {
+   "phrases": [
+    "associated with",
+    "involved",
+    "people",
+    "organisations",
+    "organizations",
+    "who was involved",
+    "connected with",
+    "associated people",
+    "associated person",
+    "associated organisation",
+    "linked to person"
+   ],
+   "kind": "link",
+   "node": "actor"
+  },
+  {
+   "phrases": [
+    "designed by",
+    "architect",
+    "who designed",
+    "which architect",
+    "architect of"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Architect"
+   }
+  },
+  {
+   "phrases": [
+    "designer",
+    "design by",
+    "who was the designer"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Designer"
+   }
+  },
+  {
+   "phrases": [
+    "built by",
+    "builder",
+    "who built",
+    "constructed by",
+    "erected by",
+    "building contractor"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Builder"
+   }
+  },
+  {
+   "phrases": [
+    "excavated by",
+    "excavator",
+    "who excavated",
+    "dug by",
+    "excavation by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Excavator"
+   }
+  },
+  {
+   "phrases": [
+    "director of fieldwork",
+    "fieldwork director",
+    "directed by",
+    "excavation director",
+    "who directed the excavation"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Director of Fieldwork"
+   }
+  },
+  {
+   "phrases": [
+    "investigated by",
+    "field investigator",
+    "archaeological investigator",
+    "who investigated"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Archaeological Field Investigator"
+   }
+  },
+  {
+   "phrases": [
+    "surveyed by",
+    "surveyor",
+    "who surveyed"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Surveyor"
+   }
+  },
+  {
+   "phrases": [
+    "owned by",
+    "owner",
+    "who owns it",
+    "who owned",
+    "proprietor",
+    "owners"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Owner"
+   }
+  },
+  {
+   "phrases": [
+    "landscaped by",
+    "landscape gardener",
+    "landscape designer",
+    "garden designed by",
+    "gardens laid out by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Landscape Gardener"
+   }
+  },
+  {
+   "phrases": [
+    "engineer",
+    "engineered by",
+    "civil engineer"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Engineer"
+   }
+  },
+  {
+   "phrases": [
+    "commissioned by",
+    "patron",
+    "who commissioned"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Patron"
+   }
+  },
+  {
+   "phrases": [
+    "client",
+    "built for",
+    "made for"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Client"
+   }
+  },
+  {
+   "phrases": [
+    "developer",
+    "developed by",
+    "property developer"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Developer"
+   }
+  },
+  {
+   "phrases": [
+    "funded by",
+    "financed by",
+    "paid for by",
+    "funder",
+    "financier"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Funding Body/Financier"
+   }
+  },
+  {
+   "phrases": [
+    "found by",
+    "finder",
+    "discovered by",
+    "who discovered"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Finder"
+   }
+  },
+  {
+   "phrases": [
+    "person of historic interest",
+    "famous person",
+    "historic figure",
+    "notable person",
+    "famous resident"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Person of Historic Interest"
+   }
+  },
+  {
+   "phrases": [
+    "recorded by",
+    "recorder",
+    "who recorded"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Recorder"
+   }
+  },
+  {
+   "phrases": [
+    "photographed by",
+    "photographer",
+    "who took the photograph"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Photographer"
+   }
+  },
+  {
+   "phrases": [
+    "sculptor",
+    "sculpted by",
+    "carved by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Sculptor"
+   }
+  },
+  {
+   "phrases": [
+    "stonemason",
+    "mason",
+    "masonry by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Stonemason"
+   }
+  },
+  {
+   "phrases": [
+    "antiquarian",
+    "antiquarian interest",
+    "recorded by antiquarian"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Antiquarian"
+   }
+  },
+  {
+   "phrases": [
+    "researched by",
+    "researcher",
+    "studied by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Researcher"
+   }
+  },
+  {
+   "phrases": [
+    "activities",
+    "investigations",
+    "fieldwork",
+    "excavations",
+    "surveys",
+    "events",
+    "archaeological work",
+    "work carried out",
+    "what investigations",
+    "was it excavated",
+    "evaluation"
+   ],
+   "kind": "link",
+   "node": "associated_activities"
+  },
+  {
+   "phrases": [
+    "consultations",
+    "planning applications",
+    "planning cases",
+    "casework",
+    "planning consultation",
+    "development proposals"
+   ],
+   "kind": "link",
+   "node": "associated_consultations"
+  },
+  {
+   "phrases": [
+    "related monuments",
+    "associated monuments",
+    "associated sites",
+    "related sites",
+    "linked monuments",
+    "associated artefacts",
+    "related artefacts",
+    "finds from",
+    "buildings within",
+    "monuments within",
+    "contains"
+   ],
+   "kind": "link",
+   "node": "associated_monument_area_or_artefact"
+  },
+  {
+   "phrases": [
+    "sources",
+    "bibliography",
+    "references",
+    "published in",
+    "literature",
+    "cited in",
+    "books about",
+    "reports on",
+    "publications",
+    "further reading",
+    "source citation"
+   ],
+   "kind": "link",
+   "node": "bibliographic_source_citation"
+  },
+  {
+   "phrases": [
+    "period",
+    "era",
+    "what period",
+    "which period",
+    "cultural period",
+    "historic period",
+    "epoch",
+    "date period",
+    "age",
+    "what era",
+    "dates to"
+   ],
+   "kind": "link",
+   "node": "cultural_period"
+  },
+  {
+   "phrases": [
+    "period of use era",
+    "used during period",
+    "use period",
+    "period when used",
+    "era of use"
+   ],
+   "kind": "link",
+   "node": "use_phase_period"
+  },
+  {
+   "phrases": [
+    "parent area",
+    "part of",
+    "within area",
+    "larger area",
+    "belongs to",
+    "parent site",
+    "wider area"
+   ],
+   "kind": "link",
+   "node": "parent_area"
+  },
+  {
+   "phrases": [
+    "digital files",
+    "documents",
+    "attachments",
+    "files",
+    "pdfs"
+   ],
+   "kind": "link",
+   "node": "digital_file_s_"
+  },
+  {
+   "phrases": [
+    "designation document",
+    "listing document",
+    "list entry document",
+    "designation files"
+   ],
+   "kind": "link",
+   "node": "digital_file_s__n1"
+  },
+  {
+   "phrases": [
+    "archive held by",
+    "archive holder",
+    "who holds the archive",
+    "archive location",
+    "where is the archive"
+   ],
+   "kind": "link",
+   "node": "archive_holder"
+  },
+  {
+   "phrases": [
+    "image copyright holder",
+    "who owns the copyright",
+    "copyright owner",
+    "image rights holder"
+   ],
+   "kind": "link",
+   "node": "copyright_holder"
+  },
+  {
+   "phrases": [
+    "name",
+    "called",
+    "area name",
+    "what is it called",
+    "known as",
+    "name of site",
+    "site name",
+    "title"
+   ],
+   "kind": "property",
+   "node": "area_name_n1"
+  },
+  {
+   "phrases": [
+    "description",
+    "describe",
+    "about",
+    "summary",
+    "details",
+    "overview",
+    "history",
+    "what is known",
+    "tell me about",
+    "information"
+   ],
+   "kind": "property",
+   "node": "description"
+  },
+  {
+   "phrases": [
+    "type",
+    "site type",
+    "what type",
+    "kind of site",
+    "what kind",
+    "classification",
+    "monument type",
+    "category",
+    "what sort",
+    "area type",
+    "phase type"
+   ],
+   "kind": "property",
+   "node": "area_type"
+  },
+  {
+   "phrases": [
+    "function",
+    "used as",
+    "purpose",
+    "what was it used for",
+    "functional type",
+    "use",
+    "role",
+    "what was it for"
+   ],
+   "kind": "property",
+   "node": "functional_type"
+  },
+  {
+   "phrases": [
+    "evidence",
+    "evidence type",
+    "form of evidence",
+    "what survives",
+    "remains",
+    "survival",
+    "how is it evidenced",
+    "extant"
+   ],
+   "kind": "property",
+   "node": "construction_phase_evidence_type"
+  },
+  {
+   "phrases": [
+    "component evidence",
+    "component evidence type",
+    "evidence for components"
+   ],
+   "kind": "property",
+   "node": "evidence_type"
+  },
+  {
+   "phrases": [
+    "components",
+    "features",
+    "parts",
+    "elements",
+    "component type",
+    "what features",
+    "architectural features"
+   ],
+   "kind": "property",
+   "node": "component_type"
+  },
+  {
+   "phrases": [
+    "component material",
+    "material of components",
+    "features made of"
+   ],
+   "kind": "property",
+   "node": "component_material"
+  },
+  {
+   "phrases": [
+    "material",
+    "made of",
+    "built of",
+    "what is it made of",
+    "construction material",
+    "building material",
+    "built from",
+    "main material",
+    "constructed of",
+    "fabric"
+   ],
+   "kind": "property",
+   "node": "main_construction_material"
+  },
+  {
+   "phrases": [
+    "roof covering",
+    "roofing material",
+    "covering material",
+    "roofed with",
+    "roof",
+    "what is the roof made of"
+   ],
+   "kind": "property",
+   "node": "covering_material"
+  },
+  {
+   "phrases": [
+    "construction technique",
+    "building technique",
+    "how was it built",
+    "technique",
+    "method of building"
+   ],
+   "kind": "property",
+   "node": "construction_technique_n1"
+  },
+  {
+   "phrases": [
+    "component technique",
+    "component construction technique",
+    "technique of components"
+   ],
+   "kind": "property",
+   "node": "construction_technique"
+  },
+  {
+   "phrases": [
+    "construction method",
+    "method",
+    "production method",
+    "how was it made",
+    "fabrication method"
+   ],
+   "kind": "property",
+   "node": "construction_method"
+  },
+  {
+   "phrases": [
+    "confidence of interpretation",
+    "certainty",
+    "how certain",
+    "interpretation confidence",
+    "how sure"
+   ],
+   "kind": "property",
+   "node": "phase_certainty"
+  },
+  {
+   "phrases": [
+    "dating confidence",
+    "how sure is the date",
+    "date certainty",
+    "how reliable is the date",
+    "dating certainty"
+   ],
+   "kind": "property",
+   "node": "confidence_of_dating"
+  },
+  {
+   "phrases": [
+    "phase description",
+    "phase notes",
+    "phase details"
+   ],
+   "kind": "property",
+   "node": "phase_description"
+  },
+  {
+   "phrases": [
+    "use description",
+    "use notes",
+    "function notes",
+    "use phase description"
+   ],
+   "kind": "property",
+   "node": "use_phase_description"
+  },
+  {
+   "phrases": [
+    "designation",
+    "protection",
+    "protected",
+    "legal protection",
+    "designation type",
+    "is it listed",
+    "is it scheduled",
+    "heritage status",
+    "statutory protection",
+    "listed status",
+    "protection status",
+    "is it protected",
+    "designated status"
+   ],
+   "kind": "property",
+   "node": "designation_or_protection_type"
+  },
+  {
+   "phrases": [
+    "grade",
+    "listing grade",
+    "what grade",
+    "graded",
+    "grade of listing",
+    "listed grade"
+   ],
+   "kind": "property",
+   "node": "grade"
+  },
+  {
+   "phrases": [
+    "designation name",
+    "list entry name",
+    "listing name",
+    "name on the list"
+   ],
+   "kind": "property",
+   "node": "designation_name"
+  },
+  {
+   "phrases": [
+    "at risk",
+    "heritage at risk",
+    "risk status",
+    "endangered",
+    "threatened",
+    "is it at risk",
+    "risk register",
+    "vulnerable"
+   ],
+   "kind": "property",
+   "node": "risk_status"
+  },
+  {
+   "phrases": [
+    "local list criteria",
+    "local heritage criteria",
+    "why locally listed",
+    "significance criteria",
+    "local listing criteria",
+    "reason for local listing"
+   ],
+   "kind": "property",
+   "node": "local_heritage_list_criteria_type"
+  },
+  {
+   "phrases": [
+    "designation link",
+    "list entry link",
+    "listing url",
+    "designation url"
+   ],
+   "kind": "property",
+   "node": "reference_url"
+  },
+  {
+   "phrases": [
+    "area status",
+    "status",
+    "land status",
+    "special area status",
+    "status of the area"
+   ],
+   "kind": "property",
+   "node": "area_status"
+  },
+  {
+   "phrases": [
+    "land ownership",
+    "ownership",
+    "ownership type",
+    "owned land"
+   ],
+   "kind": "property",
+   "node": "ownership"
+  },
+  {
+   "phrases": [
+    "shine form",
+    "form of survival",
+    "above ground features",
+    "below ground features",
+    "shine feature form"
+   ],
+   "kind": "property",
+   "node": "shine_form"
+  },
+  {
+   "phrases": [
+    "shine significance",
+    "shine",
+    "significance"
+   ],
+   "kind": "property",
+   "node": "shine_significance"
+  },
+  {
+   "phrases": [
+    "borough",
+    "local authority",
+    "council",
+    "administrative area",
+    "which borough",
+    "district",
+    "council area",
+    "london borough",
+    "local council"
+   ],
+   "kind": "property",
+   "node": "area_name"
+  },
+  {
+   "phrases": [
+    "administrative area type",
+    "type of administrative area",
+    "area level"
+   ],
+   "kind": "property",
+   "node": "area_type_n1"
+  },
+  {
+   "phrases": [
+    "area reference",
+    "area assignment reference",
+    "area reference value"
+   ],
+   "kind": "property",
+   "node": "area_reference_value"
+  },
+  {
+   "phrases": [
+    "location",
+    "where is it",
+    "location description",
+    "whereabouts",
+    "situated",
+    "where",
+    "how to find it",
+    "setting",
+    "position"
+   ],
+   "kind": "property",
+   "node": "location_description"
+  },
+  {
+   "phrases": [
+    "grid reference",
+    "ngr",
+    "os grid reference",
+    "national grid reference",
+    "grid ref",
+    "os reference"
+   ],
+   "kind": "property",
+   "node": "national_grid_reference"
+  },
+  {
+   "phrases": [
+    "geology",
+    "bedrock",
+    "rock type",
+    "drift geology",
+    "solid geology",
+    "underlying geology"
+   ],
+   "kind": "property",
+   "node": "geology"
+  },
+  {
+   "phrases": [
+    "subsoil",
+    "sub soil",
+    "soil",
+    "soil type",
+    "what soil"
+   ],
+   "kind": "property",
+   "node": "sub_soil"
+  },
+  {
+   "phrases": [
+    "land use",
+    "land classification",
+    "landscape type",
+    "current land use",
+    "land use classification"
+   ],
+   "kind": "property",
+   "node": "land_use_classification"
+  },
+  {
+   "phrases": [
+    "land use notes",
+    "land use note",
+    "notes on land use"
+   ],
+   "kind": "property",
+   "node": "land_use_notes_value"
+  },
+  {
+   "phrases": [
+    "dating method",
+    "how was it dated",
+    "dating technique",
+    "method of dating",
+    "dated using",
+    "scientific dating method"
+   ],
+   "kind": "property",
+   "node": "dating_method"
+  },
+  {
+   "phrases": [
+    "lab reference",
+    "laboratory reference",
+    "laboratory code",
+    "lab number",
+    "sample number"
+   ],
+   "kind": "property",
+   "node": "laboratory_reference"
+  },
+  {
+   "phrases": [
+    "standard deviation",
+    "error margin",
+    "plus or minus",
+    "date error",
+    "uncertainty range"
+   ],
+   "kind": "property",
+   "node": "standard_deviation_value"
+  },
+  {
+   "phrases": [
+    "scientific date notes",
+    "dating notes",
+    "notes on dating"
+   ],
+   "kind": "property",
+   "node": "note"
+  },
+  {
+   "phrases": [
+    "archive reference",
+    "archive number",
+    "archive object reference"
+   ],
+   "kind": "property",
+   "node": "archive_object_reference"
+  },
+  {
+   "phrases": [
+    "archive title",
+    "archive object",
+    "archive object title",
+    "archive item"
+   ],
+   "kind": "property",
+   "node": "archive_object_title"
+  },
+  {
+   "phrases": [
+    "images",
+    "photos",
+    "pictures",
+    "photographs",
+    "image",
+    "photo"
+   ],
+   "kind": "property",
+   "node": "images"
+  },
+  {
+   "phrases": [
+    "image caption",
+    "caption",
+    "photo caption"
+   ],
+   "kind": "property",
+   "node": "captiion"
+  },
+  {
+   "phrases": [
+    "copyright",
+    "licence",
+    "license",
+    "rights",
+    "copyright status",
+    "reuse rights"
+   ],
+   "kind": "property",
+   "node": "copyright_type"
+  },
+  {
+   "phrases": [
+    "copyright note",
+    "copyright notes",
+    "credit line"
+   ],
+   "kind": "property",
+   "node": "copyright_note_text"
+  },
+  {
+   "phrases": [
+    "page",
+    "pages",
+    "page number",
+    "page reference"
+   ],
+   "kind": "property",
+   "node": "page_s_"
+  },
+  {
+   "phrases": [
+    "figures",
+    "figure number",
+    "figs"
+   ],
+   "kind": "property",
+   "node": "figs_"
+  },
+  {
+   "phrases": [
+    "plates",
+    "plate number",
+    "plate"
+   ],
+   "kind": "property",
+   "node": "plate_s_"
+  },
+  {
+   "phrases": [
+    "source comment",
+    "citation comment",
+    "note on source"
+   ],
+   "kind": "property",
+   "node": "comment"
+  },
+  {
+   "phrases": [
+    "updated by",
+    "who updated the record",
+    "last edited by",
+    "record updater",
+    "who last edited"
+   ],
+   "kind": "property",
+   "node": "updater_name_n1"
+  },
+  {
+   "phrases": [
+    "spatial record updated by",
+    "who updated the mapping",
+    "map updater"
+   ],
+   "kind": "property",
+   "node": "updater_name"
+  },
+  {
+   "phrases": [
+    "record created",
+    "date record created",
+    "when was the record created",
+    "record creation date",
+    "entered into the record",
+    "added to the database"
+   ],
+   "kind": "date",
+   "node": "creation_date",
+   "end_node": "creation_end_date"
+  },
+  {
+   "phrases": [
+    "last updated",
+    "record updated",
+    "last modified",
+    "last edited",
+    "date of last update",
+    "when was the record updated"
+   ],
+   "kind": "date",
+   "node": "date_of_last_update",
+   "end_node": "update_end_date_n1"
+  },
+  {
+   "phrases": [
+    "spatial record compiled",
+    "mapping compiled",
+    "date of compilation",
+    "when was it mapped",
+    "geometry compiled"
+   ],
+   "kind": "date",
+   "node": "compilation_start_date",
+   "end_node": "compilation_end_date"
+  },
+  {
+   "phrases": [
+    "spatial record updated",
+    "map updated",
+    "geometry updated",
+    "mapping last updated",
+    "location data updated"
+   ],
+   "kind": "date",
+   "node": "update_start_date",
+   "end_node": "update_end_date"
+  },
+  {
+   "phrases": [
+    "spatial record authorized",
+    "mapping authorized",
+    "date of authorization",
+    "location authorised"
+   ],
+   "kind": "date",
+   "node": "date_of_authorization",
+   "end_node": "authorization_end_date"
+  },
+  {
+   "phrases": [
+    "reference number",
+    "record number",
+    "her number",
+    "smr number",
+    "id number",
+    "primary reference",
+    "record id",
+    "her reference"
+   ],
+   "kind": "property",
+   "node": "primary_reference_number"
+  },
+  {
+   "phrases": [
+    "legacy id",
+    "old reference",
+    "previous id",
+    "former reference number",
+    "legacy reference"
+   ],
+   "kind": "property",
+   "node": "legacy_id"
+  },
+  {
+   "phrases": [
+    "uuid",
+    "resource id",
+    "system id",
+    "unique identifier"
+   ],
+   "kind": "property",
+   "node": "resourceid"
+  },
+  {
+   "phrases": [
+    "validation",
+    "validation status",
+    "record checked",
+    "quality check",
+    "needs work",
+    "possible duplicate"
+   ],
+   "kind": "property",
+   "node": "validation"
+  },
+  {
+   "phrases": [
+    "audit note",
+    "record notes",
+    "audit notes",
+    "administrative notes"
+   ],
+   "kind": "property",
+   "node": "audit_note"
+  },
+  {
+   "phrases": [
+    "cross reference",
+    "external reference",
+    "other reference",
+    "external id",
+    "related reference number"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference"
+  },
+  {
+   "phrases": [
+    "cross reference source",
+    "reference source",
+    "source of reference",
+    "which database"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_source"
+  },
+  {
+   "phrases": [
+    "url",
+    "website",
+    "web link",
+    "web address",
+    "online link",
+    "link to website"
+   ],
+   "kind": "property",
+   "node": "url"
+  },
+  {
+   "phrases": [
+    "address",
+    "full address",
+    "street address",
+    "what is the address",
+    "postal address"
+   ],
+   "kind": "property",
+   "node": "full_address"
+  },
+  {
+   "phrases": [
+    "postcode",
+    "post code",
+    "zip code",
+    "postal code",
+    "what postcode"
+   ],
+   "kind": "property",
+   "node": "postcode_value"
+  },
+  {
+   "phrases": [
+    "town",
+    "city",
+    "which town",
+    "which city",
+    "town or city",
+    "in what town"
+   ],
+   "kind": "property",
+   "node": "town_or_city_value"
+  },
+  {
+   "phrases": [
+    "street",
+    "road",
+    "which street",
+    "street name",
+    "what road",
+    "lane"
+   ],
+   "kind": "property",
+   "node": "street_value"
+  },
+  {
+   "phrases": [
+    "locality",
+    "village",
+    "neighbourhood",
+    "hamlet",
+    "suburb",
+    "which village"
+   ],
+   "kind": "property",
+   "node": "locality_value"
+  },
+  {
+   "phrases": [
+    "county",
+    "shire",
+    "which county",
+    "in what county"
+   ],
+   "kind": "property",
+   "node": "county_value"
+  },
+  {
+   "phrases": [
+    "building name",
+    "name of building",
+    "house name"
+   ],
+   "kind": "property",
+   "node": "building_name_value"
+  },
+  {
+   "phrases": [
+    "house number",
+    "building number",
+    "street number",
+    "number on the street"
+   ],
+   "kind": "property",
+   "node": "building_number_value"
+  },
+  {
+   "phrases": [
+    "sub-street",
+    "sub street",
+    "minor street"
+   ],
+   "kind": "property",
+   "node": "sub_street_value"
+  },
+  {
+   "phrases": [
+    "coordinates",
+    "map",
+    "on the map",
+    "geometry",
+    "boundary",
+    "footprint",
+    "extent",
+    "map location",
+    "gps",
+    "latitude and longitude",
+    "polygon",
+    "mapped"
+   ],
+   "kind": "property",
+   "node": "geospatial_coordinates"
+  },
+  {
+   "phrases": [
+    "feature shape",
+    "shape",
+    "point or polygon",
+    "geometry type"
+   ],
+   "kind": "property",
+   "node": "feature_shape"
+  },
+  {
+   "phrases": [
+    "capture scale",
+    "map scale",
+    "scale of mapping",
+    "digitised scale"
+   ],
+   "kind": "property",
+   "node": "capture_scale"
+  },
+  {
+   "phrases": [
+    "coordinate system",
+    "projection",
+    "spatial reference system"
+   ],
+   "kind": "property",
+   "node": "coordinate_system_value"
+  },
+  {
+   "phrases": [
+    "spatial accuracy",
+    "location accuracy",
+    "how accurate is the location",
+    "positional accuracy"
+   ],
+   "kind": "property",
+   "node": "spatial_accuracy_qualifier"
+  },
+  {
+   "phrases": [
+    "spatial notes",
+    "mapping notes",
+    "spatial metadata",
+    "geometry notes"
+   ],
+   "kind": "property",
+   "node": "spatial_metadata_notes"
+  },
+  {
+   "phrases": [
+    "base map",
+    "current base map",
+    "background map"
+   ],
+   "kind": "property",
+   "node": "current_base_map_name"
+  },
+  {
+   "phrases": [
+    "authorization status",
+    "authorisation status",
+    "spatial authorization",
+    "awaiting authorization"
+   ],
+   "kind": "property",
+   "node": "authorization_type"
+  },
+  {
+   "phrases": [
+    "record creator",
+    "who created the record",
+    "record created by",
+    "record author"
+   ],
+   "kind": "property",
+   "node": "creator_name"
+  },
+  {
+   "phrases": [
+    "compiler",
+    "compiled by",
+    "who compiled the mapping"
+   ],
+   "kind": "property",
+   "node": "compiler_name"
+  },
+  {
+   "phrases": [
+    "authorizer",
+    "authorised by",
+    "authorized by",
+    "who authorised"
+   ],
+   "kind": "property",
+   "node": "authorizer_name"
+  }
+ ]
+}

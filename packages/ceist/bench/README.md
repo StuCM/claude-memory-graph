@@ -65,6 +65,45 @@ As in the memory graph, the intelligence goes in when the data is written, not w
 
 The ONNX and Qwen matchers still run once their weights are reachable. They now have to beat 48/50 *at query time* to be worth their size in the browser.
 
+## At HER scale: the real Arches HER models (2026-10-27)
+
+```
+git clone https://github.com/archesproject/arches-her
+P=arches-her/arches_her/pkg
+python her_models.py "$P/graphs/resource_models" her/models "$P/reference_data"   # needs alizarin
+uv run python her_compare.py
+```
+
+(`her_models.py` writes one file per model. The extracted descriptions aren't committed: arches-her is AGPL, so regenerate them from a clone.)
+
+- **What was read, through Alizarin:**
+  - 16 resource models, 4,571 nodes, 2,327 of them searchable (structural and `*_metatype` nodes dropped);
+  - each node with its card, its path through the model tree, its UI label and its link targets;
+  - the labels of every small concept collection (roles, phase types; ≤120 terms). The 108 SKOS thesauri and 122 collections load in about 7 s.
+- **Vocabulary (`her/vocab/`):** four fresh agents, about 4 minutes in all, writing 1,301 entries and 7,392 phrasings (276 KB). Entries can carry a qualifier value, so "designed by" means actor + role = Architect, and a date entry names both ends of its event's timespan.
+- **Questions (`her/cases.json`):** 120, written by a separate agent from the model descriptions alone, which never saw the vocabulary. 102 have a fitting node and 18 have none.
+
+| matcher | right | partial (qualifier missing) | dangerous | missed | "nothing fits" refused | ms/question |
+| --- | --- | --- | --- | --- | --- | --- |
+| WordLlama on node names + cards | 20/102 | 0 | 0 | 82 | 18/18 | 3 |
+| vocabulary + exact words | 61/102 | 2 | 1 | 38 | 18/18 | 0.4 |
+| vocabulary + WordLlama (gate threshold 0.40) | 81/102 | 2 | 5 | 17 | 15/18 | 1.5–3 |
+| vocabulary + WordLlama, threshold 0.6* | 81/102 | 2 | 3 | 17 | 17/18 | 1.5 |
+| vocabulary + WordLlama, threshold 0.7* | 77/102 | 2 | 2 | 21 | 18/18 | 1.7 |
+
+\* Threshold sensitivity, shown on the test set, so not a tuned result.
+
+What the failures show:
+- **Static vectors ignore little words.** "sailing from" lands on *destination* (0.98) over *departure* (0.85), and at 0.40, "copies" → copyright, "camera" → file, "read" → audience. A stricter threshold removes most of these.
+- **Idioms the vocabulary didn't anticipate:** "turned down" (planning outcome), "put in by" (applicant), "brought out" (publisher), "kick off", "fall under", "thrown on a wheel". These are what a model that reads the whole question should fix, and what the build-time loop (log the misses, have the LLM assign them) is for.
+- **Qualifiers the vocabulary left out:** contact point + Email or Telephone.
+- **Disputable expected answers:** "captain" (`crew_member` or `actor` + Captain: both exist), and "named location or an address". These need a heritage officer's call.
+
+The HER models also show what the planner has to understand beyond phrase matching:
+- **Events are timespans** (start and end, often EDTF), so "built before 1900" needs range semantics.
+- **People link through a generic actor plus a role,** so a phrase maps to a node *and* a concept value.
+- **"Church" or "mill" is a value in a 5,009-term monument-type thesaurus,** not a model.
+
 ## In the browser
 
 | matcher | size | browser runtime |

@@ -1,0 +1,301 @@
+{
+ "model": "Digital Object",
+ "entries": [
+  {
+   "phrases": [
+    "created",
+    "made",
+    "taken",
+    "date taken",
+    "when was it taken",
+    "creation date",
+    "when was it created",
+    "when was it made",
+    "produced",
+    "photographed",
+    "scanned",
+    "date of creation",
+    "dated",
+    "when was the photo taken",
+    "drawn",
+    "written"
+   ],
+   "kind": "date",
+   "node": "start_date",
+   "end_node": "end_date"
+  },
+  {
+   "phrases": [
+    "creator",
+    "created by",
+    "made by",
+    "taken by",
+    "author",
+    "photographer",
+    "who took it",
+    "who made it",
+    "who created it",
+    "produced by",
+    "authored by",
+    "who wrote it",
+    "drawn by",
+    "written by",
+    "photographed by"
+   ],
+   "kind": "link",
+   "node": "creator"
+  },
+  {
+   "phrases": [
+    "copyright holder",
+    "copyright owner",
+    "who owns the copyright",
+    "rights holder",
+    "credit",
+    "owned by",
+    "who owns it",
+    "image credit",
+    "copyright belongs to"
+   ],
+   "kind": "link",
+   "node": "copyright_holder"
+  },
+  {
+   "phrases": [
+    "copyright",
+    "licence",
+    "license",
+    "rights",
+    "copyright status",
+    "can i use it",
+    "public domain",
+    "creative commons",
+    "usage rights",
+    "crown copyright",
+    "reuse",
+    "terms of use"
+   ],
+   "kind": "property",
+   "node": "copyright_type"
+  },
+  {
+   "phrases": [
+    "copyright note",
+    "rights statement",
+    "copyright statement",
+    "attribution",
+    "credit line"
+   ],
+   "kind": "property",
+   "node": "copyright_note_text"
+  },
+  {
+   "phrases": [
+    "name",
+    "title",
+    "called",
+    "file name",
+    "what is it called",
+    "filename",
+    "caption",
+    "known as"
+   ],
+   "kind": "property",
+   "node": "name"
+  },
+  {
+   "phrases": [
+    "description",
+    "about",
+    "summary",
+    "details",
+    "describe",
+    "what does it show",
+    "what is it",
+    "tell me about",
+    "contents",
+    "what is in it"
+   ],
+   "kind": "property",
+   "node": "description"
+  },
+  {
+   "phrases": [
+    "file",
+    "download",
+    "attachment",
+    "the file",
+    "image",
+    "document",
+    "picture",
+    "photo",
+    "view the file",
+    "open"
+   ],
+   "kind": "property",
+   "node": "file"
+  },
+  {
+   "phrases": [
+    "format",
+    "file format",
+    "file type",
+    "extension",
+    "what format",
+    "pdf or jpg",
+    "type of file",
+    "mime type",
+    "kind of file"
+   ],
+   "kind": "property",
+   "node": "file_format_type"
+  },
+  {
+   "phrases": [
+    "record created",
+    "date record created",
+    "when was the record created",
+    "added to the record",
+    "date added",
+    "entered into the database",
+    "record creation date"
+   ],
+   "kind": "date",
+   "node": "creation_date",
+   "end_node": "creation_end_date"
+  },
+  {
+   "phrases": [
+    "last updated",
+    "record updated",
+    "date of last update",
+    "when was the record updated",
+    "last modified",
+    "last edited",
+    "record last changed"
+   ],
+   "kind": "date",
+   "node": "date_of_last_update",
+   "end_node": "update_end_date"
+  },
+  {
+   "phrases": [
+    "record created by",
+    "who created the record",
+    "record creator",
+    "who entered the record"
+   ],
+   "kind": "property",
+   "node": "creator_name"
+  },
+  {
+   "phrases": [
+    "last updated by",
+    "who updated the record",
+    "record updated by",
+    "record editor"
+   ],
+   "kind": "property",
+   "node": "updater_name"
+  },
+  {
+   "phrases": [
+    "validation",
+    "validation status",
+    "record checked",
+    "has the record been checked",
+    "quality check",
+    "needs work"
+   ],
+   "kind": "property",
+   "node": "validation"
+  },
+  {
+   "phrases": [
+    "audit note",
+    "audit notes",
+    "record notes",
+    "editorial notes"
+   ],
+   "kind": "property",
+   "node": "audit_note"
+  },
+  {
+   "phrases": [
+    "reference number",
+    "record number",
+    "her number",
+    "her reference",
+    "record id",
+    "id number",
+    "primary reference",
+    "file number",
+    "object number"
+   ],
+   "kind": "property",
+   "node": "primary_reference_number"
+  },
+  {
+   "phrases": [
+    "legacy id",
+    "legacy reference",
+    "old reference",
+    "former id",
+    "previous reference number",
+    "old record number"
+   ],
+   "kind": "property",
+   "node": "legacy_id"
+  },
+  {
+   "phrases": [
+    "uuid",
+    "resource id",
+    "system id",
+    "unique identifier"
+   ],
+   "kind": "property",
+   "node": "resourceid"
+  },
+  {
+   "phrases": [
+    "cross reference",
+    "external reference",
+    "other reference numbers",
+    "cross references",
+    "references in other databases"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference"
+  },
+  {
+   "phrases": [
+    "cross reference source",
+    "which database",
+    "source of the cross reference"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_source"
+  },
+  {
+   "phrases": [
+    "cross reference note",
+    "cross reference notes",
+    "note on cross reference"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_description"
+  },
+  {
+   "phrases": [
+    "website",
+    "web link",
+    "url",
+    "online link",
+    "more information online"
+   ],
+   "kind": "property",
+   "node": "url"
+  }
+ ]
+}

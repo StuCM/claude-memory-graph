@@ -1,0 +1,830 @@
+{
+ "model": "Person",
+ "entries": [
+  {
+   "phrases": [
+    "born",
+    "birth",
+    "date of birth",
+    "when was he born",
+    "when was she born",
+    "when were they born",
+    "birth date",
+    "birthday",
+    "year of birth",
+    "dob",
+    "when born",
+    "birth year"
+   ],
+   "kind": "date",
+   "node": "date_of_birth"
+  },
+  {
+   "phrases": [
+    "died",
+    "death",
+    "date of death",
+    "when did he die",
+    "when did she die",
+    "when did they die",
+    "year of death",
+    "passed away",
+    "death date",
+    "deceased",
+    "death year",
+    "when died"
+   ],
+   "kind": "date",
+   "node": "date_of_death"
+  },
+  {
+   "phrases": [
+    "association dates",
+    "associated from",
+    "period of association",
+    "when were they associated",
+    "association start",
+    "involvement dates",
+    "dates of involvement"
+   ],
+   "kind": "date",
+   "node": "associated_actor_start_date",
+   "end_node": "associated_actor_end_date"
+  },
+  {
+   "phrases": [
+    "birthplace",
+    "place of birth",
+    "where was he born",
+    "where was she born",
+    "where were they born",
+    "where born",
+    "native of",
+    "hometown",
+    "home town",
+    "came from",
+    "birth place",
+    "born where"
+   ],
+   "kind": "property",
+   "node": "birth_place"
+  },
+  {
+   "phrases": [
+    "place of death",
+    "where did he die",
+    "where did she die",
+    "where did they die",
+    "deathplace",
+    "death place",
+    "died where",
+    "where died",
+    "died at"
+   ],
+   "kind": "property",
+   "node": "death_place"
+  },
+  {
+   "phrases": [
+    "father",
+    "dad",
+    "his father",
+    "her father",
+    "father's name",
+    "paternal",
+    "who was his father",
+    "who was her father",
+    "fathered by"
+   ],
+   "kind": "link",
+   "node": "father"
+  },
+  {
+   "phrases": [
+    "mother",
+    "mum",
+    "mom",
+    "his mother",
+    "her mother",
+    "mother's name",
+    "maternal",
+    "who was his mother",
+    "who was her mother"
+   ],
+   "kind": "link",
+   "node": "mother"
+  },
+  {
+   "phrases": [
+    "associated with",
+    "associates",
+    "associated people",
+    "associated organisations",
+    "associated organizations",
+    "connected with",
+    "linked to",
+    "related people",
+    "worked with",
+    "colleagues",
+    "network",
+    "relationships",
+    "people connected",
+    "organisations",
+    "organizations",
+    "contacts",
+    "involved with"
+   ],
+   "kind": "link",
+   "node": "actor"
+  },
+  {
+   "phrases": [
+    "worked for",
+    "employed by",
+    "employer",
+    "employee of",
+    "job at",
+    "employment"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Employee"
+   }
+  },
+  {
+   "phrases": [
+    "patron",
+    "patron of",
+    "patronage",
+    "benefactor"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Patron"
+   }
+  },
+  {
+   "phrases": [
+    "client",
+    "clients",
+    "client of"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Client"
+   }
+  },
+  {
+   "phrases": [
+    "architect",
+    "architects",
+    "architect for"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Architect"
+   }
+  },
+  {
+   "phrases": [
+    "builder",
+    "builders",
+    "building firm"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Builder"
+   }
+  },
+  {
+   "phrases": [
+    "owner",
+    "owned",
+    "owner of"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Owner"
+   }
+  },
+  {
+   "phrases": [
+    "contributor",
+    "contributed to",
+    "collaborator"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Contributor"
+   }
+  },
+  {
+   "phrases": [
+    "sponsor",
+    "sponsored by",
+    "funded by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Sponsor"
+   }
+  },
+  {
+   "phrases": [
+    "monuments",
+    "buildings",
+    "sites",
+    "associated sites",
+    "associated buildings",
+    "associated monuments",
+    "works",
+    "what did he build",
+    "what did she build",
+    "what did he design",
+    "what did she design",
+    "buildings designed",
+    "places associated",
+    "artefacts",
+    "related sites",
+    "heritage assets",
+    "where did he work",
+    "projects",
+    "known for building"
+   ],
+   "kind": "link",
+   "node": "monument_area_or_artefact"
+  },
+  {
+   "phrases": [
+    "activities",
+    "associated activities",
+    "events",
+    "investigations",
+    "fieldwork",
+    "excavations",
+    "surveys",
+    "took part in"
+   ],
+   "kind": "link",
+   "node": "associated_activities"
+  },
+  {
+   "phrases": [
+    "consultations",
+    "planning applications",
+    "casework",
+    "planning consultations"
+   ],
+   "kind": "link",
+   "node": "associated_consultations"
+  },
+  {
+   "phrases": [
+    "digital files",
+    "files",
+    "documents",
+    "attachments",
+    "scans"
+   ],
+   "kind": "link",
+   "node": "digital_file_s_"
+  },
+  {
+   "phrases": [
+    "name",
+    "full name",
+    "called",
+    "what is his name",
+    "what is her name",
+    "person name",
+    "who is",
+    "known as",
+    "named",
+    "whose name"
+   ],
+   "kind": "property",
+   "node": "full_name"
+  },
+  {
+   "phrases": [
+    "first name",
+    "forename",
+    "forenames",
+    "given name",
+    "christian name",
+    "first names"
+   ],
+   "kind": "property",
+   "node": "forename"
+  },
+  {
+   "phrases": [
+    "surname",
+    "last name",
+    "family name",
+    "second name"
+   ],
+   "kind": "property",
+   "node": "surname"
+  },
+  {
+   "phrases": [
+    "initials",
+    "initial",
+    "middle initial"
+   ],
+   "kind": "property",
+   "node": "initial_s_"
+  },
+  {
+   "phrases": [
+    "epithet",
+    "nickname",
+    "byname",
+    "sobriquet",
+    "also called"
+   ],
+   "kind": "property",
+   "node": "epithet"
+  },
+  {
+   "phrases": [
+    "title",
+    "honorific",
+    "rank",
+    "peerage",
+    "style",
+    "sir",
+    "lord",
+    "lady",
+    "dr",
+    "rev",
+    "styled as"
+   ],
+   "kind": "property",
+   "node": "title"
+  },
+  {
+   "phrases": [
+    "biography",
+    "bio",
+    "life",
+    "description",
+    "about",
+    "who was",
+    "background",
+    "career",
+    "tell me about",
+    "life story",
+    "history",
+    "summary",
+    "profile",
+    "achievements",
+    "occupation",
+    "profession",
+    "what did he do",
+    "what did she do",
+    "known for"
+   ],
+   "kind": "property",
+   "node": "description"
+  },
+  {
+   "phrases": [
+    "contact",
+    "email",
+    "e-mail",
+    "phone",
+    "telephone",
+    "phone number",
+    "email address",
+    "contact details",
+    "how to contact",
+    "fax"
+   ],
+   "kind": "property",
+   "node": "contact_point"
+  },
+  {
+   "phrases": [
+    "contact name",
+    "correspondence name",
+    "name for correspondence"
+   ],
+   "kind": "property",
+   "node": "contact_name_for_correspondence"
+  },
+  {
+   "phrases": [
+    "contact method",
+    "contact type",
+    "type of contact"
+   ],
+   "kind": "property",
+   "node": "contact_point_type"
+  },
+  {
+   "phrases": [
+    "address",
+    "home address",
+    "lived at",
+    "where did he live",
+    "where did she live",
+    "where does he live",
+    "where does she live",
+    "residence",
+    "lived",
+    "resided",
+    "full address",
+    "where lived",
+    "home"
+   ],
+   "kind": "property",
+   "node": "full_address"
+  },
+  {
+   "phrases": [
+    "street",
+    "road",
+    "which street",
+    "street name"
+   ],
+   "kind": "property",
+   "node": "street_value"
+  },
+  {
+   "phrases": [
+    "town",
+    "city",
+    "which town",
+    "which city",
+    "town or city"
+   ],
+   "kind": "property",
+   "node": "town_or_city_value"
+  },
+  {
+   "phrases": [
+    "locality",
+    "village",
+    "neighbourhood",
+    "neighborhood",
+    "suburb"
+   ],
+   "kind": "property",
+   "node": "locality_value"
+  },
+  {
+   "phrases": [
+    "county",
+    "which county",
+    "shire"
+   ],
+   "kind": "property",
+   "node": "county_value"
+  },
+  {
+   "phrases": [
+    "postcode",
+    "post code",
+    "postal code",
+    "zip code"
+   ],
+   "kind": "property",
+   "node": "postcode_value"
+  },
+  {
+   "phrases": [
+    "house name",
+    "building name",
+    "name of house"
+   ],
+   "kind": "property",
+   "node": "building_name_value"
+  },
+  {
+   "phrases": [
+    "house number",
+    "building number",
+    "street number"
+   ],
+   "kind": "property",
+   "node": "building_number_value"
+  },
+  {
+   "phrases": [
+    "address type",
+    "personal or organisational address",
+    "personal address",
+    "work address"
+   ],
+   "kind": "property",
+   "node": "address_type"
+  },
+  {
+   "phrases": [
+    "address status",
+    "former address",
+    "current address",
+    "previous address"
+   ],
+   "kind": "property",
+   "node": "address_status"
+  },
+  {
+   "phrases": [
+    "sources",
+    "source",
+    "references",
+    "bibliography",
+    "publications",
+    "cited in",
+    "books",
+    "literature",
+    "further reading",
+    "written about in",
+    "documentary sources",
+    "published in"
+   ],
+   "kind": "link",
+   "node": "bibliographic_source_citation"
+  },
+  {
+   "phrases": [
+    "page",
+    "pages",
+    "page number",
+    "page numbers"
+   ],
+   "kind": "property",
+   "node": "page_s_"
+  },
+  {
+   "phrases": [
+    "figure",
+    "figures",
+    "figs",
+    "fig number"
+   ],
+   "kind": "property",
+   "node": "figs_"
+  },
+  {
+   "phrases": [
+    "plate",
+    "plates",
+    "plate number"
+   ],
+   "kind": "property",
+   "node": "plate_s_"
+  },
+  {
+   "phrases": [
+    "source comment",
+    "citation note",
+    "citation comment"
+   ],
+   "kind": "property",
+   "node": "comment"
+  },
+  {
+   "phrases": [
+    "source number",
+    "citation number",
+    "source reference number"
+   ],
+   "kind": "property",
+   "node": "source_number_value"
+  },
+  {
+   "phrases": [
+    "cross reference",
+    "cross-reference",
+    "external reference",
+    "other reference number",
+    "other record number",
+    "external id",
+    "list entry number"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference"
+  },
+  {
+   "phrases": [
+    "cross reference source",
+    "reference source",
+    "which database",
+    "external database"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_source"
+  },
+  {
+   "phrases": [
+    "cross reference note",
+    "cross reference notes",
+    "external reference note"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_description"
+  },
+  {
+   "phrases": [
+    "website",
+    "web link",
+    "web page",
+    "url",
+    "online link",
+    "link"
+   ],
+   "kind": "property",
+   "node": "url"
+  },
+  {
+   "phrases": [
+    "reference number",
+    "record number",
+    "her number",
+    "her reference",
+    "smr number",
+    "primary reference",
+    "primary reference number",
+    "id number",
+    "record id"
+   ],
+   "kind": "property",
+   "node": "primary_reference_number"
+  },
+  {
+   "phrases": [
+    "legacy id",
+    "old reference",
+    "previous id",
+    "former reference number",
+    "old record number",
+    "old smr number"
+   ],
+   "kind": "property",
+   "node": "legacy_id"
+  },
+  {
+   "phrases": [
+    "uuid",
+    "resource id",
+    "resourceid",
+    "system id"
+   ],
+   "kind": "property",
+   "node": "resourceid"
+  },
+  {
+   "phrases": [
+    "images",
+    "image",
+    "photos",
+    "photo",
+    "pictures",
+    "picture",
+    "photographs",
+    "what does it look like",
+    "illustrations"
+   ],
+   "kind": "property",
+   "node": "images"
+  },
+  {
+   "phrases": [
+    "caption",
+    "image caption",
+    "photo caption",
+    "picture caption"
+   ],
+   "kind": "property",
+   "node": "caption"
+  },
+  {
+   "phrases": [
+    "copyright holder",
+    "copyright owner",
+    "image copyright owned by",
+    "photo credit",
+    "who owns the copyright",
+    "image credit"
+   ],
+   "kind": "link",
+   "node": "copyright_holder"
+  },
+  {
+   "phrases": [
+    "copyright",
+    "copyright type",
+    "licence",
+    "license",
+    "image licence",
+    "rights",
+    "reuse rights",
+    "creative commons",
+    "crown copyright"
+   ],
+   "kind": "property",
+   "node": "copyright_type"
+  },
+  {
+   "phrases": [
+    "copyright note",
+    "copyright statement",
+    "rights statement"
+   ],
+   "kind": "property",
+   "node": "copyright_note_text"
+  },
+  {
+   "phrases": [
+    "record created",
+    "date record created",
+    "record creation date",
+    "when was the record created",
+    "added to the record",
+    "added to the database",
+    "entered into the her"
+   ],
+   "kind": "date",
+   "node": "creation_date",
+   "end_node": "creation_end_date"
+  },
+  {
+   "phrases": [
+    "last updated",
+    "record updated",
+    "last modified",
+    "last edited",
+    "date of last update",
+    "when was the record updated",
+    "most recent update",
+    "recently updated"
+   ],
+   "kind": "date",
+   "node": "date_of_last_update",
+   "end_node": "update_end_date"
+  },
+  {
+   "phrases": [
+    "record created by",
+    "who created the record",
+    "record author",
+    "entered by"
+   ],
+   "kind": "property",
+   "node": "creator_name"
+  },
+  {
+   "phrases": [
+    "last updated by",
+    "who updated the record",
+    "record edited by",
+    "updated by"
+   ],
+   "kind": "property",
+   "node": "updater_name"
+  },
+  {
+   "phrases": [
+    "audit note",
+    "audit notes",
+    "record notes",
+    "editorial note"
+   ],
+   "kind": "property",
+   "node": "audit_note"
+  },
+  {
+   "phrases": [
+    "validation",
+    "validation status",
+    "record checked",
+    "quality check",
+    "needs work",
+    "record status",
+    "checked ok"
+   ],
+   "kind": "property",
+   "node": "validation"
+  }
+ ]
+}

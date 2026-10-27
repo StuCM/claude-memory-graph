@@ -1,0 +1,1248 @@
+{
+ "model": "Artefact",
+ "entries": [
+  {
+   "phrases": [
+    "made",
+    "produced",
+    "manufactured",
+    "when was it made",
+    "production date",
+    "date of manufacture",
+    "date made",
+    "year made",
+    "dates from",
+    "how old",
+    "made in",
+    "crafted",
+    "created",
+    "fashioned",
+    "when was it produced",
+    "date of production",
+    "age of object"
+   ],
+   "kind": "date",
+   "node": "from_date",
+   "end_node": "to_date"
+  },
+  {
+   "phrases": [
+    "condition assessed",
+    "condition assessment date",
+    "when was its condition assessed",
+    "date of assessment",
+    "assessed",
+    "inspected",
+    "when was it inspected",
+    "condition checked"
+   ],
+   "kind": "date",
+   "node": "date_of_assessment_start",
+   "end_node": "date_of_assessment_end"
+  },
+  {
+   "phrases": [
+    "scientific date",
+    "scientifically dated",
+    "radiocarbon date",
+    "carbon dated",
+    "c14 date",
+    "calibrated date",
+    "lab date",
+    "absolute date"
+   ],
+   "kind": "date",
+   "node": "scientific_date_start_date",
+   "end_node": "scientific_date_end_date"
+  },
+  {
+   "phrases": [
+    "when was the date determined",
+    "date determined",
+    "date of analysis",
+    "when was it sampled",
+    "when was it tested"
+   ],
+   "kind": "date",
+   "node": "when_determined_start_date",
+   "end_node": "when_determined_end_date"
+  },
+  {
+   "phrases": [
+    "area status date",
+    "status since",
+    "status assigned"
+   ],
+   "kind": "date",
+   "node": "area_status_start_date",
+   "end_node": "area_status_end_date"
+  },
+  {
+   "phrases": [
+    "land use assessed",
+    "land use assessment date",
+    "when was land use assessed"
+   ],
+   "kind": "date",
+   "node": "land_use_assessment_start_date",
+   "end_node": "land_use_assessment_end_date"
+  },
+  {
+   "phrases": [
+    "made by",
+    "maker",
+    "manufacturer",
+    "produced by",
+    "who made it",
+    "manufactured by",
+    "workshop",
+    "craftsman",
+    "producer",
+    "crafted by",
+    "potter"
+   ],
+   "kind": "link",
+   "node": "producer"
+  },
+  {
+   "phrases": [
+    "period",
+    "era",
+    "what period",
+    "which period",
+    "cultural period",
+    "historic period",
+    "epoch",
+    "date period",
+    "what era",
+    "dates to",
+    "age"
+   ],
+   "kind": "link",
+   "node": "cultural_period"
+  },
+  {
+   "phrases": [
+    "held by",
+    "museum",
+    "repository",
+    "where is it kept",
+    "who holds it",
+    "in the collection of",
+    "collection",
+    "owned by",
+    "owner",
+    "curated by",
+    "which museum",
+    "where is it now",
+    "held in"
+   ],
+   "kind": "link",
+   "node": "repository_owner"
+  },
+  {
+   "phrases": [
+    "named location",
+    "place found",
+    "find place",
+    "findplace",
+    "named place",
+    "place name of findspot"
+   ],
+   "kind": "link",
+   "node": "named_location"
+  },
+  {
+   "phrases": [
+    "associated monument",
+    "related monument",
+    "related site",
+    "associated site",
+    "linked sites",
+    "related artefacts",
+    "associated artefacts",
+    "found at site",
+    "from which site",
+    "associated area"
+   ],
+   "kind": "link",
+   "node": "monument_area_or_artefact"
+  },
+  {
+   "phrases": [
+    "activities",
+    "excavation project",
+    "fieldwork",
+    "recovered during",
+    "investigation",
+    "found during",
+    "which excavation",
+    "events",
+    "survey"
+   ],
+   "kind": "link",
+   "node": "associated_activities"
+  },
+  {
+   "phrases": [
+    "sources",
+    "bibliography",
+    "references",
+    "published in",
+    "literature",
+    "cited in",
+    "publications",
+    "further reading",
+    "reports on"
+   ],
+   "kind": "link",
+   "node": "bibliographic_source_citation"
+  },
+  {
+   "phrases": [
+    "digital files",
+    "documents",
+    "attachments",
+    "files",
+    "pdfs"
+   ],
+   "kind": "link",
+   "node": "digital_file_s_"
+  },
+  {
+   "phrases": [
+    "condition report file",
+    "condition documents",
+    "condition photos"
+   ],
+   "kind": "link",
+   "node": "digital_file_s__n1"
+  },
+  {
+   "phrases": [
+    "copyright holder",
+    "copyright owner",
+    "who owns the copyright",
+    "rights holder"
+   ],
+   "kind": "link",
+   "node": "copyright_holder"
+  },
+  {
+   "phrases": [
+    "image copyright holder",
+    "photo copyright owner",
+    "image rights holder",
+    "who owns the image copyright"
+   ],
+   "kind": "link",
+   "node": "copyright_holder_n1"
+  },
+  {
+   "phrases": [
+    "name",
+    "called",
+    "object name",
+    "artefact name",
+    "artifact name",
+    "known as",
+    "title",
+    "what is it called"
+   ],
+   "kind": "property",
+   "node": "artefact_name"
+  },
+  {
+   "phrases": [
+    "type",
+    "object type",
+    "artefact type",
+    "artifact type",
+    "kind of object",
+    "what kind",
+    "classification",
+    "category",
+    "what sort of object",
+    "what type",
+    "find type",
+    "object category"
+   ],
+   "kind": "property",
+   "node": "artefact_type"
+  },
+  {
+   "phrases": [
+    "material",
+    "made of",
+    "what is it made of",
+    "made from",
+    "composition",
+    "what material",
+    "material type",
+    "metal",
+    "constructed from"
+   ],
+   "kind": "property",
+   "node": "material"
+  },
+  {
+   "phrases": [
+    "production method",
+    "method of manufacture",
+    "how was it made",
+    "manufacturing method",
+    "method of production",
+    "cast or forged"
+   ],
+   "kind": "property",
+   "node": "production_method"
+  },
+  {
+   "phrases": [
+    "production technique",
+    "technique",
+    "manufacturing technique",
+    "craft technique",
+    "technique used"
+   ],
+   "kind": "property",
+   "node": "production_technique"
+  },
+  {
+   "phrases": [
+    "certainty",
+    "confidence",
+    "how certain",
+    "confidence of identification",
+    "how sure"
+   ],
+   "kind": "property",
+   "node": "phase_certainty"
+  },
+  {
+   "phrases": [
+    "production notes",
+    "classification description",
+    "production description"
+   ],
+   "kind": "property",
+   "node": "phase_description"
+  },
+  {
+   "phrases": [
+    "evidence type",
+    "type of evidence",
+    "form of evidence"
+   ],
+   "kind": "property",
+   "node": "phase_evidence_type"
+  },
+  {
+   "phrases": [
+    "condition",
+    "state",
+    "state of preservation",
+    "preservation",
+    "damaged",
+    "how well preserved",
+    "condition rating",
+    "intact",
+    "what condition",
+    "broken",
+    "condition state"
+   ],
+   "kind": "property",
+   "node": "condition_type"
+  },
+  {
+   "phrases": [
+    "dimensions",
+    "size",
+    "measurements",
+    "how big",
+    "measurement",
+    "measurement value",
+    "measures",
+    "how large"
+   ],
+   "kind": "property",
+   "node": "dimension_value"
+  },
+  {
+   "phrases": [
+    "height",
+    "how tall",
+    "tall",
+    "high",
+    "how high"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Height"
+   }
+  },
+  {
+   "phrases": [
+    "length",
+    "how long",
+    "long",
+    "longest dimension"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Length"
+   }
+  },
+  {
+   "phrases": [
+    "breadth",
+    "width",
+    "how wide",
+    "wide",
+    "across"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Breadth"
+   }
+  },
+  {
+   "phrases": [
+    "depth",
+    "how deep",
+    "deep",
+    "thickness",
+    "how thick",
+    "thick"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Depth"
+   }
+  },
+  {
+   "phrases": [
+    "weight",
+    "how heavy",
+    "weighs",
+    "heavy",
+    "mass",
+    "how much does it weigh"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Weight"
+   }
+  },
+  {
+   "phrases": [
+    "quantity",
+    "how many",
+    "number of items",
+    "count",
+    "number of objects",
+    "how many pieces"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Quantity"
+   }
+  },
+  {
+   "phrases": [
+    "volume",
+    "capacity",
+    "how much does it hold"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Volume"
+   }
+  },
+  {
+   "phrases": [
+    "unit",
+    "measurement unit",
+    "units",
+    "measured in"
+   ],
+   "kind": "property",
+   "node": "dimension_measurement_unit"
+  },
+  {
+   "phrases": [
+    "inscription",
+    "inscribed",
+    "writing",
+    "text on it",
+    "legend",
+    "what does it say",
+    "inscribed text",
+    "lettering",
+    "engraved text",
+    "words on it"
+   ],
+   "kind": "property",
+   "node": "inscription_content"
+  },
+  {
+   "phrases": [
+    "translation",
+    "what does the inscription mean",
+    "translated",
+    "meaning of inscription",
+    "english translation"
+   ],
+   "kind": "property",
+   "node": "translation_text"
+  },
+  {
+   "phrases": [
+    "inscription notes",
+    "inscription note",
+    "notes on inscription"
+   ],
+   "kind": "property",
+   "node": "inscription_note_text"
+  },
+  {
+   "phrases": [
+    "description",
+    "describe",
+    "about",
+    "details",
+    "summary",
+    "overview",
+    "tell me about",
+    "information"
+   ],
+   "kind": "property",
+   "node": "description"
+  },
+  {
+   "phrases": [
+    "discovery method",
+    "how was it found",
+    "how discovered",
+    "metal detecting",
+    "metal detector find",
+    "method of discovery",
+    "metal detected"
+   ],
+   "kind": "property",
+   "node": "discovery_method"
+  },
+  {
+   "phrases": [
+    "recovery technique",
+    "recovery method",
+    "how was it recovered",
+    "recovered by"
+   ],
+   "kind": "property",
+   "node": "recovery_technique"
+  },
+  {
+   "phrases": [
+    "discovery notes",
+    "circumstances of discovery",
+    "find circumstances",
+    "discovery details",
+    "how it was discovered",
+    "story of the find"
+   ],
+   "kind": "property",
+   "node": "discovery_note"
+  },
+  {
+   "phrases": [
+    "found by",
+    "finder",
+    "discovered by",
+    "who found it",
+    "who discovered it",
+    "detectorist",
+    "name of finder"
+   ],
+   "kind": "property",
+   "node": "finder_name"
+  },
+  {
+   "phrases": [
+    "storage area",
+    "stored in",
+    "store room",
+    "storage location",
+    "shelf",
+    "where is it stored"
+   ],
+   "kind": "property",
+   "node": "storage_area_name"
+  },
+  {
+   "phrases": [
+    "storage building",
+    "store building",
+    "which building is it stored in",
+    "storage building name"
+   ],
+   "kind": "property",
+   "node": "storage_building_name"
+  },
+  {
+   "phrases": [
+    "findspot",
+    "find spot",
+    "where was it found",
+    "location found",
+    "location",
+    "where",
+    "findspot description",
+    "location description",
+    "whereabouts",
+    "found at"
+   ],
+   "kind": "property",
+   "node": "location_description"
+  },
+  {
+   "phrases": [
+    "grid reference",
+    "ngr",
+    "os grid reference",
+    "national grid reference",
+    "grid ref",
+    "findspot grid reference"
+   ],
+   "kind": "property",
+   "node": "national_grid_reference"
+  },
+  {
+   "phrases": [
+    "borough",
+    "local authority",
+    "council",
+    "administrative area",
+    "which borough",
+    "district",
+    "council area",
+    "london borough"
+   ],
+   "kind": "property",
+   "node": "area_name"
+  },
+  {
+   "phrases": [
+    "administrative area type",
+    "type of administrative area",
+    "area level"
+   ],
+   "kind": "property",
+   "node": "area_type"
+  },
+  {
+   "phrases": [
+    "area status",
+    "land status",
+    "status of the area",
+    "special area status"
+   ],
+   "kind": "property",
+   "node": "area_status"
+  },
+  {
+   "phrases": [
+    "land ownership",
+    "ownership",
+    "ownership type"
+   ],
+   "kind": "property",
+   "node": "ownership"
+  },
+  {
+   "phrases": [
+    "area reference",
+    "area assignment reference",
+    "area reference value"
+   ],
+   "kind": "property",
+   "node": "area_reference_value"
+  },
+  {
+   "phrases": [
+    "geology",
+    "bedrock",
+    "rock type",
+    "drift geology",
+    "underlying geology"
+   ],
+   "kind": "property",
+   "node": "geology"
+  },
+  {
+   "phrases": [
+    "subsoil",
+    "sub soil",
+    "soil",
+    "soil type"
+   ],
+   "kind": "property",
+   "node": "sub_soil"
+  },
+  {
+   "phrases": [
+    "land use",
+    "land classification",
+    "current land use",
+    "land use classification"
+   ],
+   "kind": "property",
+   "node": "land_use_classification"
+  },
+  {
+   "phrases": [
+    "land use notes",
+    "land use note",
+    "notes on land use"
+   ],
+   "kind": "property",
+   "node": "land_use_notes_value"
+  },
+  {
+   "phrases": [
+    "shine form",
+    "form of survival",
+    "shine feature form"
+   ],
+   "kind": "property",
+   "node": "shine_form"
+  },
+  {
+   "phrases": [
+    "dating method",
+    "how was it dated",
+    "dating technique",
+    "method of dating",
+    "dated using",
+    "scientific dating method"
+   ],
+   "kind": "property",
+   "node": "dating_method"
+  },
+  {
+   "phrases": [
+    "lab reference",
+    "laboratory reference",
+    "laboratory code",
+    "lab number",
+    "sample number"
+   ],
+   "kind": "property",
+   "node": "laboratory_reference"
+  },
+  {
+   "phrases": [
+    "standard deviation",
+    "error margin",
+    "plus or minus",
+    "date error"
+   ],
+   "kind": "property",
+   "node": "standard_deviation_value"
+  },
+  {
+   "phrases": [
+    "scientific date notes",
+    "dating notes",
+    "notes on dating"
+   ],
+   "kind": "property",
+   "node": "note"
+  },
+  {
+   "phrases": [
+    "images",
+    "photos",
+    "pictures",
+    "photographs",
+    "image",
+    "photo"
+   ],
+   "kind": "property",
+   "node": "images"
+  },
+  {
+   "phrases": [
+    "image caption",
+    "caption",
+    "photo caption"
+   ],
+   "kind": "property",
+   "node": "caption_note"
+  },
+  {
+   "phrases": [
+    "copyright",
+    "licence",
+    "license",
+    "rights",
+    "copyright status",
+    "reuse rights"
+   ],
+   "kind": "property",
+   "node": "copyright_type"
+  },
+  {
+   "phrases": [
+    "image copyright",
+    "image licence",
+    "photo copyright",
+    "image rights"
+   ],
+   "kind": "property",
+   "node": "copyright_type_n1"
+  },
+  {
+   "phrases": [
+    "copyright note",
+    "copyright notes",
+    "credit line"
+   ],
+   "kind": "property",
+   "node": "copyright_note_text"
+  },
+  {
+   "phrases": [
+    "page",
+    "pages",
+    "page number",
+    "page reference"
+   ],
+   "kind": "property",
+   "node": "page_s_"
+  },
+  {
+   "phrases": [
+    "figures",
+    "figure number",
+    "figs"
+   ],
+   "kind": "property",
+   "node": "figs_"
+  },
+  {
+   "phrases": [
+    "plates",
+    "plate number",
+    "plate"
+   ],
+   "kind": "property",
+   "node": "plate_s_"
+  },
+  {
+   "phrases": [
+    "source comment",
+    "citation comment",
+    "note on source"
+   ],
+   "kind": "property",
+   "node": "comment"
+  },
+  {
+   "phrases": [
+    "updated by",
+    "who updated the record",
+    "last edited by",
+    "record updater",
+    "who last edited"
+   ],
+   "kind": "property",
+   "node": "updater_name"
+  },
+  {
+   "phrases": [
+    "spatial record updated by",
+    "who updated the mapping",
+    "map updater"
+   ],
+   "kind": "property",
+   "node": "updater_name_n1"
+  },
+  {
+   "phrases": [
+    "record created",
+    "date record created",
+    "when was the record created",
+    "record creation date",
+    "entered into the record",
+    "added to the database"
+   ],
+   "kind": "date",
+   "node": "creation_date",
+   "end_node": "creation_end_date"
+  },
+  {
+   "phrases": [
+    "last updated",
+    "record updated",
+    "last modified",
+    "last edited",
+    "date of last update",
+    "when was the record updated"
+   ],
+   "kind": "date",
+   "node": "date_of_last_update",
+   "end_node": "update_end_date"
+  },
+  {
+   "phrases": [
+    "spatial record compiled",
+    "mapping compiled",
+    "date of compilation",
+    "when was it mapped",
+    "geometry compiled"
+   ],
+   "kind": "date",
+   "node": "compilation_start_date",
+   "end_node": "compilation_end_date"
+  },
+  {
+   "phrases": [
+    "spatial record updated",
+    "map updated",
+    "geometry updated",
+    "mapping last updated",
+    "location data updated"
+   ],
+   "kind": "date",
+   "node": "update_start_date",
+   "end_node": "update_end_date_n1"
+  },
+  {
+   "phrases": [
+    "spatial record authorized",
+    "mapping authorized",
+    "date of authorization",
+    "location authorised"
+   ],
+   "kind": "date",
+   "node": "date_of_authorization",
+   "end_node": "authorization_end_date"
+  },
+  {
+   "phrases": [
+    "reference number",
+    "record number",
+    "her number",
+    "smr number",
+    "id number",
+    "primary reference",
+    "record id",
+    "her reference"
+   ],
+   "kind": "property",
+   "node": "primary_reference_number"
+  },
+  {
+   "phrases": [
+    "legacy id",
+    "old reference",
+    "previous id",
+    "former reference number",
+    "legacy reference"
+   ],
+   "kind": "property",
+   "node": "legacy_id"
+  },
+  {
+   "phrases": [
+    "uuid",
+    "resource id",
+    "system id",
+    "unique identifier"
+   ],
+   "kind": "property",
+   "node": "resourceid"
+  },
+  {
+   "phrases": [
+    "validation",
+    "validation status",
+    "record checked",
+    "quality check",
+    "needs work",
+    "possible duplicate"
+   ],
+   "kind": "property",
+   "node": "validation"
+  },
+  {
+   "phrases": [
+    "audit note",
+    "record notes",
+    "audit notes",
+    "administrative notes"
+   ],
+   "kind": "property",
+   "node": "audit_note"
+  },
+  {
+   "phrases": [
+    "cross reference",
+    "external reference",
+    "other reference",
+    "external id",
+    "related reference number"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference"
+  },
+  {
+   "phrases": [
+    "cross reference source",
+    "reference source",
+    "source of reference",
+    "which database"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_source"
+  },
+  {
+   "phrases": [
+    "url",
+    "website",
+    "web link",
+    "web address",
+    "online link",
+    "link to website"
+   ],
+   "kind": "property",
+   "node": "url"
+  },
+  {
+   "phrases": [
+    "address",
+    "full address",
+    "street address",
+    "what is the address",
+    "postal address"
+   ],
+   "kind": "property",
+   "node": "full_address"
+  },
+  {
+   "phrases": [
+    "postcode",
+    "post code",
+    "zip code",
+    "postal code",
+    "what postcode"
+   ],
+   "kind": "property",
+   "node": "postcode_value"
+  },
+  {
+   "phrases": [
+    "town",
+    "city",
+    "which town",
+    "which city",
+    "town or city",
+    "in what town"
+   ],
+   "kind": "property",
+   "node": "town_or_city_value"
+  },
+  {
+   "phrases": [
+    "street",
+    "road",
+    "which street",
+    "street name",
+    "what road",
+    "lane"
+   ],
+   "kind": "property",
+   "node": "street_value"
+  },
+  {
+   "phrases": [
+    "locality",
+    "village",
+    "neighbourhood",
+    "hamlet",
+    "suburb",
+    "which village"
+   ],
+   "kind": "property",
+   "node": "locality_value"
+  },
+  {
+   "phrases": [
+    "county",
+    "shire",
+    "which county",
+    "in what county"
+   ],
+   "kind": "property",
+   "node": "county_value"
+  },
+  {
+   "phrases": [
+    "building name",
+    "name of building",
+    "house name"
+   ],
+   "kind": "property",
+   "node": "building_name_value"
+  },
+  {
+   "phrases": [
+    "house number",
+    "building number",
+    "street number",
+    "number on the street"
+   ],
+   "kind": "property",
+   "node": "building_number_value"
+  },
+  {
+   "phrases": [
+    "sub-street",
+    "sub street",
+    "minor street"
+   ],
+   "kind": "property",
+   "node": "sub_street_value"
+  },
+  {
+   "phrases": [
+    "coordinates",
+    "map",
+    "on the map",
+    "geometry",
+    "boundary",
+    "footprint",
+    "extent",
+    "map location",
+    "gps",
+    "latitude and longitude",
+    "polygon",
+    "mapped"
+   ],
+   "kind": "property",
+   "node": "geospatial_coordinates"
+  },
+  {
+   "phrases": [
+    "feature shape",
+    "shape",
+    "point or polygon",
+    "geometry type"
+   ],
+   "kind": "property",
+   "node": "feature_shape"
+  },
+  {
+   "phrases": [
+    "capture scale",
+    "map scale",
+    "scale of mapping",
+    "digitised scale"
+   ],
+   "kind": "property",
+   "node": "capture_scale"
+  },
+  {
+   "phrases": [
+    "coordinate system",
+    "projection",
+    "spatial reference system"
+   ],
+   "kind": "property",
+   "node": "coordinate_system_value"
+  },
+  {
+   "phrases": [
+    "spatial accuracy",
+    "location accuracy",
+    "how accurate is the location",
+    "positional accuracy"
+   ],
+   "kind": "property",
+   "node": "spatial_accuracy_qualifier"
+  },
+  {
+   "phrases": [
+    "spatial notes",
+    "mapping notes",
+    "spatial metadata",
+    "geometry notes"
+   ],
+   "kind": "property",
+   "node": "spatial_metadata_notes"
+  },
+  {
+   "phrases": [
+    "base map",
+    "current base map",
+    "background map"
+   ],
+   "kind": "property",
+   "node": "current_base_map_name"
+  },
+  {
+   "phrases": [
+    "authorization status",
+    "authorisation status",
+    "spatial authorization",
+    "awaiting authorization"
+   ],
+   "kind": "property",
+   "node": "authorization_type"
+  },
+  {
+   "phrases": [
+    "record creator",
+    "who created the record",
+    "record created by",
+    "record author"
+   ],
+   "kind": "property",
+   "node": "creator_name"
+  },
+  {
+   "phrases": [
+    "compiler",
+    "compiled by",
+    "who compiled the mapping"
+   ],
+   "kind": "property",
+   "node": "compiler_name"
+  },
+  {
+   "phrases": [
+    "authorizer",
+    "authorised by",
+    "authorized by",
+    "who authorised"
+   ],
+   "kind": "property",
+   "node": "authorizer_name"
+  }
+ ]
+}

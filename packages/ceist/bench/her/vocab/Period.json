@@ -1,0 +1,420 @@
+{
+ "model": "Period",
+ "entries": [
+  {
+   "phrases": [
+    "dates",
+    "date range",
+    "when was it",
+    "span",
+    "time span",
+    "from when to when",
+    "how long ago",
+    "when",
+    "period dates",
+    "covering",
+    "duration",
+    "how long did it last",
+    "what years",
+    "between which dates",
+    "chronology"
+   ],
+   "kind": "date",
+   "node": "earliest_possible_start_date",
+   "end_node": "latest_possible_end_date"
+  },
+  {
+   "phrases": [
+    "began",
+    "start",
+    "start date",
+    "beginning",
+    "when did it start",
+    "when did it begin",
+    "starting",
+    "onset",
+    "earliest start",
+    "commenced"
+   ],
+   "kind": "date",
+   "node": "earliest_possible_start_date",
+   "end_node": "latest_possible_start_date"
+  },
+  {
+   "phrases": [
+    "ended",
+    "end",
+    "end date",
+    "when did it end",
+    "finished",
+    "close of",
+    "came to an end",
+    "latest end",
+    "concluded"
+   ],
+   "kind": "date",
+   "node": "earliest_possible_end_date",
+   "end_node": "latest_possible_end_date"
+  },
+  {
+   "phrases": [
+    "name used",
+    "name in use from",
+    "when was the name used",
+    "name usage dates",
+    "alternative name dates"
+   ],
+   "kind": "date",
+   "node": "alternative_name_use_period_earliest_date",
+   "end_node": "alternative_name_use_period_latest_date"
+  },
+  {
+   "phrases": [
+    "part of",
+    "parent period",
+    "sub-period of",
+    "within",
+    "broader period",
+    "belongs to",
+    "subdivision of",
+    "larger period",
+    "main period"
+   ],
+   "kind": "link",
+   "node": "parent_period"
+  },
+  {
+   "phrases": [
+    "name used by",
+    "who uses this name",
+    "alternative name used by",
+    "name coined by"
+   ],
+   "kind": "link",
+   "node": "alternative_name_used_by"
+  },
+  {
+   "phrases": [
+    "name",
+    "called",
+    "period name",
+    "what is it called",
+    "preferred name",
+    "title"
+   ],
+   "kind": "property",
+   "node": "period_name"
+  },
+  {
+   "phrases": [
+    "alternative name",
+    "also known as",
+    "aka",
+    "other names",
+    "synonym",
+    "alias",
+    "otherwise known as",
+    "alternate name"
+   ],
+   "kind": "property",
+   "node": "alternative_name"
+  },
+  {
+   "phrases": [
+    "type of period",
+    "period type",
+    "kind of period",
+    "what kind of period",
+    "category of period",
+    "cultural period",
+    "historic period",
+    "geological period",
+    "political period"
+   ],
+   "kind": "property",
+   "node": "period_type"
+  },
+  {
+   "phrases": [
+    "description",
+    "summary",
+    "about",
+    "characteristics",
+    "what was it like",
+    "history",
+    "overview",
+    "tell me about",
+    "definition",
+    "describe"
+   ],
+   "kind": "property",
+   "node": "period_description"
+  },
+  {
+   "phrases": [
+    "description language",
+    "language"
+   ],
+   "kind": "property",
+   "node": "period_description_language_type"
+  },
+  {
+   "phrases": [
+    "location",
+    "where is it",
+    "coordinates",
+    "map",
+    "position",
+    "on the map",
+    "geographic location",
+    "whereabouts on map",
+    "lat long",
+    "latitude and longitude",
+    "spatial extent",
+    "region",
+    "geographic extent",
+    "area covered",
+    "where was it"
+   ],
+   "kind": "property",
+   "node": "geospatial_coordinates"
+  },
+  {
+   "phrases": [
+    "cross reference",
+    "external reference",
+    "other reference numbers",
+    "external id",
+    "external record number",
+    "see also reference"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference"
+  },
+  {
+   "phrases": [
+    "reference source",
+    "cross reference source",
+    "source of external reference",
+    "which database"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_source"
+  },
+  {
+   "phrases": [
+    "cross reference note",
+    "external reference note"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_description"
+  },
+  {
+   "phrases": [
+    "url",
+    "web link",
+    "website",
+    "link"
+   ],
+   "kind": "property",
+   "node": "url"
+  },
+  {
+   "phrases": [
+    "reference number",
+    "record number",
+    "her number",
+    "primary reference",
+    "id number",
+    "prn",
+    "sites and monuments record number"
+   ],
+   "kind": "property",
+   "node": "primary_reference_number"
+  },
+  {
+   "phrases": [
+    "legacy id",
+    "old reference",
+    "previous reference number",
+    "former id",
+    "legacy reference"
+   ],
+   "kind": "property",
+   "node": "legacy_id"
+  },
+  {
+   "phrases": [
+    "uuid",
+    "resource id",
+    "system id"
+   ],
+   "kind": "property",
+   "node": "resourceid"
+  },
+  {
+   "phrases": [
+    "spatial record compiled",
+    "date of compilation",
+    "map record compiled",
+    "when was the geometry compiled"
+   ],
+   "kind": "date",
+   "node": "compilation_start_date",
+   "end_node": "compilation_end_date"
+  },
+  {
+   "phrases": [
+    "spatial record authorized",
+    "date of authorization",
+    "map record authorised",
+    "when was the location authorised"
+   ],
+   "kind": "date",
+   "node": "date_of_authorization",
+   "end_node": "authorization_end_date"
+  },
+  {
+   "phrases": [
+    "spatial record updated",
+    "geometry updated",
+    "map record last updated",
+    "location last updated"
+   ],
+   "kind": "date",
+   "node": "update_start_date",
+   "end_node": "update_end_date"
+  },
+  {
+   "phrases": [
+    "authorization status",
+    "spatial authorization",
+    "authorised location"
+   ],
+   "kind": "property",
+   "node": "authorization_type"
+  },
+  {
+   "phrases": [
+    "feature shape",
+    "geometry type",
+    "shape of feature",
+    "point or area"
+   ],
+   "kind": "property",
+   "node": "feature_shape"
+  },
+  {
+   "phrases": [
+    "spatial accuracy",
+    "how accurate is the location",
+    "location accuracy",
+    "positional accuracy"
+   ],
+   "kind": "property",
+   "node": "spatial_accuracy_qualifier"
+  },
+  {
+   "phrases": [
+    "capture scale",
+    "map scale",
+    "digitised at scale"
+   ],
+   "kind": "property",
+   "node": "capture_scale"
+  },
+  {
+   "phrases": [
+    "spatial metadata",
+    "spatial notes",
+    "geometry notes"
+   ],
+   "kind": "property",
+   "node": "spatial_metadata_notes"
+  },
+  {
+   "phrases": [
+    "spatial record compiled by",
+    "map compiled by",
+    "geometry compiler"
+   ],
+   "kind": "property",
+   "node": "compiler_name"
+  },
+  {
+   "phrases": [
+    "spatial record authorised by",
+    "location authorised by"
+   ],
+   "kind": "property",
+   "node": "authorizer_name"
+  },
+  {
+   "phrases": [
+    "record created",
+    "date record created",
+    "when was the record created",
+    "record creation date",
+    "added to the record",
+    "first recorded on the database"
+   ],
+   "kind": "date",
+   "node": "creation_date",
+   "end_node": "creation_end_date"
+  },
+  {
+   "phrases": [
+    "last updated",
+    "record updated",
+    "last modified",
+    "date of last update",
+    "when was the record updated",
+    "record last edited"
+   ],
+   "kind": "date",
+   "node": "date_of_last_update",
+   "end_node": "update_end_date_n1"
+  },
+  {
+   "phrases": [
+    "record created by",
+    "record creator",
+    "who created the record",
+    "who entered the record"
+   ],
+   "kind": "property",
+   "node": "creator_name"
+  },
+  {
+   "phrases": [
+    "audit note",
+    "record notes",
+    "audit notes",
+    "record keeping note"
+   ],
+   "kind": "property",
+   "node": "audit_note"
+  },
+  {
+   "phrases": [
+    "validation",
+    "validation status",
+    "record checked",
+    "checked ok",
+    "needs work",
+    "possible duplicate"
+   ],
+   "kind": "property",
+   "node": "validation"
+  },
+  {
+   "phrases": [
+    "updated by",
+    "who last updated the record",
+    "record updater"
+   ],
+   "kind": "property",
+   "node": "updater_name_n1"
+  }
+ ]
+}

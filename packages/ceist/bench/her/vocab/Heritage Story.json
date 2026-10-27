@@ -1,0 +1,852 @@
+{
+ "model": "Heritage Story",
+ "entries": [
+  {
+   "phrases": [
+    "name",
+    "title",
+    "story title",
+    "what is the story called",
+    "called",
+    "story name",
+    "headline",
+    "named",
+    "titled"
+   ],
+   "kind": "property",
+   "node": "name"
+  },
+  {
+   "phrases": [
+    "story",
+    "narrative",
+    "description",
+    "what is the story",
+    "tell me",
+    "summary",
+    "about",
+    "content",
+    "text",
+    "account",
+    "the story of",
+    "what happened",
+    "tale",
+    "overview",
+    "history",
+    "tell me about",
+    "details"
+   ],
+   "kind": "property",
+   "node": "description"
+  },
+  {
+   "phrases": [
+    "audience",
+    "intended audience",
+    "who is it for",
+    "target audience",
+    "suitable for",
+    "aimed at",
+    "readership",
+    "audience type"
+   ],
+   "kind": "property",
+   "node": "audience_type"
+  },
+  {
+   "phrases": [
+    "for children",
+    "children",
+    "kids",
+    "for kids",
+    "for schools",
+    "child-friendly",
+    "family-friendly"
+   ],
+   "kind": "property",
+   "node": "audience_type",
+   "qualifier": {
+    "node": "audience_type",
+    "value": "Children"
+   }
+  },
+  {
+   "phrases": [
+    "for academics",
+    "academic",
+    "scholarly",
+    "for researchers",
+    "for scholars"
+   ],
+   "kind": "property",
+   "node": "audience_type",
+   "qualifier": {
+    "node": "audience_type",
+    "value": "Academics"
+   }
+  },
+  {
+   "phrases": [
+    "for adults",
+    "adults",
+    "grown-ups"
+   ],
+   "kind": "property",
+   "node": "audience_type",
+   "qualifier": {
+    "node": "audience_type",
+    "value": "Adults"
+   }
+  },
+  {
+   "phrases": [
+    "for the public",
+    "general public",
+    "public audience",
+    "for everyone"
+   ],
+   "kind": "property",
+   "node": "audience_type",
+   "qualifier": {
+    "node": "audience_type",
+    "value": "Public"
+   }
+  },
+  {
+   "phrases": [
+    "period",
+    "time period",
+    "era",
+    "when is the story set",
+    "temporal coverage",
+    "what period does it cover",
+    "historical period",
+    "set in",
+    "which period",
+    "period covered",
+    "age",
+    "what era",
+    "when does it take place",
+    "date period"
+   ],
+   "kind": "link",
+   "node": "temporal_coverage"
+  },
+  {
+   "phrases": [
+    "monuments",
+    "sites",
+    "places in the story",
+    "buildings",
+    "related sites",
+    "artefacts",
+    "objects",
+    "featured sites",
+    "which monuments",
+    "associated monuments",
+    "associated sites",
+    "places featured",
+    "heritage assets",
+    "related monuments",
+    "which buildings",
+    "places mentioned"
+   ],
+   "kind": "link",
+   "node": "associated_monuments_areas_and_artefacts"
+  },
+  {
+   "phrases": [
+    "people",
+    "people in the story",
+    "characters",
+    "who is in the story",
+    "associated people",
+    "organisations",
+    "organizations",
+    "involved",
+    "who was involved",
+    "associated with",
+    "people mentioned",
+    "who features",
+    "featured people",
+    "connected people"
+   ],
+   "kind": "link",
+   "node": "actor"
+  },
+  {
+   "phrases": [
+    "author",
+    "written by",
+    "who wrote",
+    "who wrote it",
+    "storyteller",
+    "writer",
+    "authored by",
+    "told by",
+    "narrated by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Author"
+   }
+  },
+  {
+   "phrases": [
+    "contributor",
+    "contributed by",
+    "contributors",
+    "who contributed"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Contributor"
+   }
+  },
+  {
+   "phrases": [
+    "historic figure",
+    "famous person",
+    "featured person",
+    "about whom",
+    "who is the story about",
+    "subject of the story",
+    "main character",
+    "historical figure"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Person of Historic Interest"
+   }
+  },
+  {
+   "phrases": [
+    "editor",
+    "edited by",
+    "editors"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Editor"
+   }
+  },
+  {
+   "phrases": [
+    "translated by",
+    "translator",
+    "who translated"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Translator"
+   }
+  },
+  {
+   "phrases": [
+    "illustrated by",
+    "illustrator",
+    "illustrations by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Illustrator"
+   }
+  },
+  {
+   "phrases": [
+    "photographer",
+    "photos by",
+    "photographed by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Photographer"
+   }
+  },
+  {
+   "phrases": [
+    "publisher",
+    "published by",
+    "who published"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Publisher"
+   }
+  },
+  {
+   "phrases": [
+    "researcher",
+    "researched by",
+    "research by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Researcher"
+   }
+  },
+  {
+   "phrases": [
+    "curator",
+    "curated by",
+    "who curated"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Curator"
+   }
+  },
+  {
+   "phrases": [
+    "association dates",
+    "associated from",
+    "period of association",
+    "when were they associated",
+    "association start",
+    "involvement dates",
+    "dates of involvement"
+   ],
+   "kind": "date",
+   "node": "associated_actor_start_date",
+   "end_node": "associated_actor_end_date"
+  },
+  {
+   "phrases": [
+    "part of",
+    "parent story",
+    "series",
+    "part of a larger story",
+    "main story",
+    "chapter of",
+    "broader story",
+    "belongs to",
+    "larger narrative",
+    "story collection"
+   ],
+   "kind": "link",
+   "node": "parent_story"
+  },
+  {
+   "phrases": [
+    "translation",
+    "translations",
+    "translated version",
+    "other languages",
+    "in another language",
+    "language versions",
+    "in welsh",
+    "in french"
+   ],
+   "kind": "link",
+   "node": "translation"
+  },
+  {
+   "phrases": [
+    "activities",
+    "associated activities",
+    "events",
+    "projects",
+    "related events",
+    "investigations"
+   ],
+   "kind": "link",
+   "node": "associated_activities"
+  },
+  {
+   "phrases": [
+    "media",
+    "files",
+    "audio",
+    "video",
+    "documents",
+    "attachments",
+    "podcast",
+    "recording",
+    "digital files",
+    "multimedia",
+    "downloads"
+   ],
+   "kind": "link",
+   "node": "digital_file_s_"
+  },
+  {
+   "phrases": [
+    "location",
+    "where",
+    "map",
+    "coordinates",
+    "geographic coverage",
+    "where is it set",
+    "geography",
+    "on the map",
+    "where did it happen",
+    "where does it take place",
+    "footprint",
+    "boundary",
+    "lat long"
+   ],
+   "kind": "property",
+   "node": "geospatial_coordinates"
+  },
+  {
+   "phrases": [
+    "borough",
+    "london borough",
+    "district",
+    "parish",
+    "local authority",
+    "council area",
+    "administrative area",
+    "which borough",
+    "which council",
+    "county council area",
+    "local planning authority",
+    "area name"
+   ],
+   "kind": "property",
+   "node": "area_name"
+  },
+  {
+   "phrases": [
+    "area type",
+    "type of administrative area",
+    "administrative unit"
+   ],
+   "kind": "property",
+   "node": "area_type"
+  },
+  {
+   "phrases": [
+    "sources",
+    "source",
+    "references",
+    "bibliography",
+    "publications",
+    "cited in",
+    "books",
+    "literature",
+    "further reading",
+    "written about in",
+    "documentary sources",
+    "published in"
+   ],
+   "kind": "link",
+   "node": "bibliographic_source_citation"
+  },
+  {
+   "phrases": [
+    "page",
+    "pages",
+    "page number",
+    "page numbers"
+   ],
+   "kind": "property",
+   "node": "page_s_"
+  },
+  {
+   "phrases": [
+    "figure",
+    "figures",
+    "figs",
+    "fig number"
+   ],
+   "kind": "property",
+   "node": "figs_"
+  },
+  {
+   "phrases": [
+    "plate",
+    "plates",
+    "plate number"
+   ],
+   "kind": "property",
+   "node": "plate_s_"
+  },
+  {
+   "phrases": [
+    "source comment",
+    "citation note",
+    "citation comment"
+   ],
+   "kind": "property",
+   "node": "comment"
+  },
+  {
+   "phrases": [
+    "source number",
+    "citation number",
+    "source reference number"
+   ],
+   "kind": "property",
+   "node": "source_number_value"
+  },
+  {
+   "phrases": [
+    "cross reference",
+    "cross-reference",
+    "external reference",
+    "other reference number",
+    "other record number",
+    "external id",
+    "list entry number"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference"
+  },
+  {
+   "phrases": [
+    "cross reference source",
+    "reference source",
+    "which database",
+    "external database"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_source"
+  },
+  {
+   "phrases": [
+    "cross reference note",
+    "cross reference notes",
+    "external reference note"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_description"
+  },
+  {
+   "phrases": [
+    "website",
+    "web link",
+    "web page",
+    "url",
+    "online link",
+    "link"
+   ],
+   "kind": "property",
+   "node": "url"
+  },
+  {
+   "phrases": [
+    "reference number",
+    "record number",
+    "her number",
+    "her reference",
+    "smr number",
+    "primary reference",
+    "primary reference number",
+    "id number",
+    "record id"
+   ],
+   "kind": "property",
+   "node": "primary_reference_number"
+  },
+  {
+   "phrases": [
+    "legacy id",
+    "old reference",
+    "previous id",
+    "former reference number",
+    "old record number",
+    "old smr number"
+   ],
+   "kind": "property",
+   "node": "legacy_id"
+  },
+  {
+   "phrases": [
+    "uuid",
+    "resource id",
+    "resourceid",
+    "system id"
+   ],
+   "kind": "property",
+   "node": "resourceid"
+  },
+  {
+   "phrases": [
+    "images",
+    "image",
+    "photos",
+    "photo",
+    "pictures",
+    "picture",
+    "photographs",
+    "what does it look like",
+    "illustrations"
+   ],
+   "kind": "property",
+   "node": "images"
+  },
+  {
+   "phrases": [
+    "caption",
+    "image caption",
+    "photo caption",
+    "picture caption"
+   ],
+   "kind": "property",
+   "node": "caption"
+  },
+  {
+   "phrases": [
+    "copyright holder",
+    "copyright owner",
+    "image copyright owned by",
+    "photo credit",
+    "who owns the copyright",
+    "image credit"
+   ],
+   "kind": "link",
+   "node": "copyright_holder"
+  },
+  {
+   "phrases": [
+    "copyright",
+    "copyright type",
+    "licence",
+    "license",
+    "image licence",
+    "rights",
+    "reuse rights",
+    "creative commons",
+    "crown copyright"
+   ],
+   "kind": "property",
+   "node": "copyright_type"
+  },
+  {
+   "phrases": [
+    "copyright note",
+    "copyright statement",
+    "rights statement"
+   ],
+   "kind": "property",
+   "node": "copyright_note_text"
+  },
+  {
+   "phrases": [
+    "record created",
+    "date record created",
+    "record creation date",
+    "when was the record created",
+    "added to the record",
+    "added to the database",
+    "entered into the her"
+   ],
+   "kind": "date",
+   "node": "creation_date",
+   "end_node": "creation_end_date"
+  },
+  {
+   "phrases": [
+    "last updated",
+    "record updated",
+    "last modified",
+    "last edited",
+    "date of last update",
+    "when was the record updated",
+    "most recent update",
+    "recently updated"
+   ],
+   "kind": "date",
+   "node": "date_of_last_update",
+   "end_node": "update_end_date_n1"
+  },
+  {
+   "phrases": [
+    "record created by",
+    "who created the record",
+    "record author",
+    "entered by"
+   ],
+   "kind": "property",
+   "node": "creator_name"
+  },
+  {
+   "phrases": [
+    "last updated by",
+    "who updated the record",
+    "record edited by",
+    "updated by"
+   ],
+   "kind": "property",
+   "node": "updater_name_n1"
+  },
+  {
+   "phrases": [
+    "audit note",
+    "audit notes",
+    "record notes",
+    "editorial note"
+   ],
+   "kind": "property",
+   "node": "audit_note"
+  },
+  {
+   "phrases": [
+    "validation",
+    "validation status",
+    "record checked",
+    "quality check",
+    "needs work",
+    "record status",
+    "checked ok"
+   ],
+   "kind": "property",
+   "node": "validation"
+  },
+  {
+   "phrases": [
+    "feature shape",
+    "shape on the map",
+    "point or polygon",
+    "geometry type"
+   ],
+   "kind": "property",
+   "node": "feature_shape"
+  },
+  {
+   "phrases": [
+    "spatial accuracy",
+    "location accuracy",
+    "positional accuracy",
+    "how accurate is the location",
+    "mapping accuracy"
+   ],
+   "kind": "property",
+   "node": "spatial_accuracy_qualifier"
+  },
+  {
+   "phrases": [
+    "capture scale",
+    "map scale",
+    "digitised at scale",
+    "digitizing scale"
+   ],
+   "kind": "property",
+   "node": "capture_scale"
+  },
+  {
+   "phrases": [
+    "coordinate system",
+    "projection",
+    "crs",
+    "spatial reference system",
+    "osgb36",
+    "wgs84"
+   ],
+   "kind": "property",
+   "node": "coordinate_system_value"
+  },
+  {
+   "phrases": [
+    "base map",
+    "current base map",
+    "base mapping"
+   ],
+   "kind": "property",
+   "node": "current_base_map_name"
+  },
+  {
+   "phrases": [
+    "spatial notes",
+    "mapping notes",
+    "geometry notes",
+    "spatial metadata"
+   ],
+   "kind": "property",
+   "node": "spatial_metadata_notes"
+  },
+  {
+   "phrases": [
+    "spatial record authorised",
+    "spatial record authorized",
+    "date of authorisation",
+    "date of authorization",
+    "when was the mapping authorised"
+   ],
+   "kind": "date",
+   "node": "date_of_authorization",
+   "end_node": "authorization_end_date"
+  },
+  {
+   "phrases": [
+    "authorisation status",
+    "authorization status",
+    "mapping approved"
+   ],
+   "kind": "property",
+   "node": "authorization_type"
+  },
+  {
+   "phrases": [
+    "authorised by",
+    "authorized by",
+    "authoriser",
+    "authorizer"
+   ],
+   "kind": "property",
+   "node": "authorizer_name"
+  },
+  {
+   "phrases": [
+    "spatial record compiled",
+    "date of compilation",
+    "when was the mapping compiled",
+    "compilation date"
+   ],
+   "kind": "date",
+   "node": "compilation_start_date",
+   "end_node": "compilation_end_date"
+  },
+  {
+   "phrases": [
+    "compiled by",
+    "compiler",
+    "spatial record compiler",
+    "mapped by"
+   ],
+   "kind": "property",
+   "node": "compiler_name"
+  },
+  {
+   "phrases": [
+    "spatial record updated",
+    "geometry updated",
+    "mapping updated",
+    "map last updated"
+   ],
+   "kind": "date",
+   "node": "update_start_date",
+   "end_node": "update_end_date"
+  },
+  {
+   "phrases": [
+    "geometry updated by",
+    "mapping updated by",
+    "spatial record updated by"
+   ],
+   "kind": "property",
+   "node": "updater_name"
+  }
+ ]
+}

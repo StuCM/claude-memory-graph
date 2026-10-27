@@ -1,0 +1,546 @@
+{
+ "model": "Organization",
+ "entries": [
+  {
+   "phrases": [
+    "founded",
+    "established",
+    "formed",
+    "set up",
+    "when was it founded",
+    "incorporated",
+    "founding date",
+    "date founded",
+    "year established",
+    "started",
+    "created",
+    "in existence",
+    "active dates",
+    "operating dates"
+   ],
+   "kind": "date",
+   "node": "start_date",
+   "end_node": "end_date"
+  },
+  {
+   "phrases": [
+    "dissolved",
+    "closed",
+    "wound up",
+    "ceased",
+    "disbanded",
+    "shut down",
+    "when did it close",
+    "defunct since",
+    "ceased trading"
+   ],
+   "kind": "date",
+   "node": "end_date"
+  },
+  {
+   "phrases": [
+    "associated people",
+    "members",
+    "staff",
+    "partners",
+    "associated organisations",
+    "people involved",
+    "linked to",
+    "affiliated with",
+    "employees",
+    "who worked there",
+    "related organisations",
+    "connected people"
+   ],
+   "kind": "link",
+   "node": "associated_actors"
+  },
+  {
+   "phrases": [
+    "parent organisation",
+    "parent organization",
+    "part of",
+    "subsidiary of",
+    "parent company",
+    "belongs to",
+    "department of",
+    "branch of",
+    "owned by",
+    "umbrella organisation"
+   ],
+   "kind": "link",
+   "node": "parent_organization"
+  },
+  {
+   "phrases": [
+    "activities",
+    "projects",
+    "fieldwork carried out",
+    "what work did they do",
+    "events",
+    "investigations",
+    "excavations carried out",
+    "surveys"
+   ],
+   "kind": "link",
+   "node": "associated_activities"
+  },
+  {
+   "phrases": [
+    "monuments",
+    "sites",
+    "heritage assets",
+    "associated sites",
+    "buildings",
+    "associated monuments",
+    "wrecks",
+    "artefacts",
+    "what sites"
+   ],
+   "kind": "link",
+   "node": "monument_area_or_artefact"
+  },
+  {
+   "phrases": [
+    "association type",
+    "type of association"
+   ],
+   "kind": "property",
+   "node": "association_type"
+  },
+  {
+   "phrases": [
+    "digital files",
+    "documents",
+    "attachments",
+    "files"
+   ],
+   "kind": "link",
+   "node": "digital_file_s_"
+  },
+  {
+   "phrases": [
+    "name",
+    "called",
+    "organisation name",
+    "organization name",
+    "title",
+    "company name",
+    "what is it called",
+    "firm name",
+    "trading name"
+   ],
+   "kind": "property",
+   "node": "organization_name"
+  },
+  {
+   "phrases": [
+    "former name",
+    "alternative name",
+    "registered name",
+    "previously known as"
+   ],
+   "kind": "property",
+   "node": "organization_name_use_type"
+  },
+  {
+   "phrases": [
+    "type",
+    "kind of organisation",
+    "organisation type",
+    "organization type",
+    "what sort of organisation",
+    "sector",
+    "what type of organisation",
+    "kind of body"
+   ],
+   "kind": "property",
+   "node": "organization_type"
+  },
+  {
+   "phrases": [
+    "current",
+    "still active",
+    "defunct",
+    "still exists",
+    "historic organisation",
+    "still operating",
+    "currency"
+   ],
+   "kind": "property",
+   "node": "organization_currency_type"
+  },
+  {
+   "phrases": [
+    "description",
+    "summary",
+    "about",
+    "history",
+    "overview",
+    "tell me about",
+    "what do they do",
+    "background",
+    "profile"
+   ],
+   "kind": "property",
+   "node": "description"
+  },
+  {
+   "phrases": [
+    "contact",
+    "phone",
+    "email",
+    "telephone",
+    "contact details",
+    "fax",
+    "how to contact",
+    "phone number",
+    "email address",
+    "get in touch"
+   ],
+   "kind": "property",
+   "node": "contact_point"
+  },
+  {
+   "phrases": [
+    "contact method",
+    "contact type"
+   ],
+   "kind": "property",
+   "node": "contact_point_type"
+  },
+  {
+   "phrases": [
+    "contact name",
+    "contact person",
+    "correspondence name",
+    "who to contact",
+    "named contact"
+   ],
+   "kind": "property",
+   "node": "contact_name_for_correspondence"
+  },
+  {
+   "phrases": [
+    "address",
+    "full address",
+    "street address",
+    "postal address",
+    "what is the address",
+    "where is it based",
+    "headquarters",
+    "office",
+    "based in",
+    "premises",
+    "located at"
+   ],
+   "kind": "property",
+   "node": "full_address"
+  },
+  {
+   "phrases": [
+    "town",
+    "city",
+    "which town",
+    "which city",
+    "town or city"
+   ],
+   "kind": "property",
+   "node": "town_or_city_value"
+  },
+  {
+   "phrases": [
+    "county",
+    "which county"
+   ],
+   "kind": "property",
+   "node": "county_value"
+  },
+  {
+   "phrases": [
+    "postcode",
+    "post code",
+    "postal code",
+    "zip code"
+   ],
+   "kind": "property",
+   "node": "postcode_value"
+  },
+  {
+   "phrases": [
+    "street",
+    "road",
+    "which street",
+    "street name"
+   ],
+   "kind": "property",
+   "node": "street_value"
+  },
+  {
+   "phrases": [
+    "locality",
+    "village",
+    "neighbourhood",
+    "hamlet"
+   ],
+   "kind": "property",
+   "node": "locality_value"
+  },
+  {
+   "phrases": [
+    "building name",
+    "name of building"
+   ],
+   "kind": "property",
+   "node": "building_name_value"
+  },
+  {
+   "phrases": [
+    "building number",
+    "house number",
+    "street number"
+   ],
+   "kind": "property",
+   "node": "building_number_value"
+  },
+  {
+   "phrases": [
+    "sub-street",
+    "sub street"
+   ],
+   "kind": "property",
+   "node": "sub_street_value"
+  },
+  {
+   "phrases": [
+    "address status",
+    "primary address",
+    "former address"
+   ],
+   "kind": "property",
+   "node": "address_status"
+  },
+  {
+   "phrases": [
+    "sources",
+    "bibliography",
+    "references",
+    "published in",
+    "literature",
+    "publications",
+    "books",
+    "cited in",
+    "reading list"
+   ],
+   "kind": "link",
+   "node": "bibliographic_source_citation"
+  },
+  {
+   "phrases": [
+    "page number",
+    "pages",
+    "which page"
+   ],
+   "kind": "property",
+   "node": "page_s_"
+  },
+  {
+   "phrases": [
+    "source comment",
+    "citation comment"
+   ],
+   "kind": "property",
+   "node": "comment"
+  },
+  {
+   "phrases": [
+    "images",
+    "photos",
+    "pictures",
+    "photographs",
+    "pics",
+    "photo"
+   ],
+   "kind": "property",
+   "node": "images"
+  },
+  {
+   "phrases": [
+    "caption",
+    "image caption",
+    "photo caption"
+   ],
+   "kind": "property",
+   "node": "caption_note"
+  },
+  {
+   "phrases": [
+    "copyright holder",
+    "image copyright owner",
+    "who owns the copyright",
+    "photo credit"
+   ],
+   "kind": "link",
+   "node": "copyright_holder"
+  },
+  {
+   "phrases": [
+    "copyright",
+    "licence",
+    "rights",
+    "copyright status",
+    "crown copyright",
+    "creative commons"
+   ],
+   "kind": "property",
+   "node": "copyright_type"
+  },
+  {
+   "phrases": [
+    "copyright note"
+   ],
+   "kind": "property",
+   "node": "copyright_note_text"
+  },
+  {
+   "phrases": [
+    "cross reference",
+    "external reference",
+    "other reference numbers",
+    "external id",
+    "external record number",
+    "see also reference"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference"
+  },
+  {
+   "phrases": [
+    "reference source",
+    "cross reference source",
+    "source of external reference",
+    "which database"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_source"
+  },
+  {
+   "phrases": [
+    "cross reference note",
+    "external reference note"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_description"
+  },
+  {
+   "phrases": [
+    "url",
+    "web link",
+    "website",
+    "link"
+   ],
+   "kind": "property",
+   "node": "url"
+  },
+  {
+   "phrases": [
+    "reference number",
+    "record number",
+    "her number",
+    "primary reference",
+    "id number",
+    "prn",
+    "sites and monuments record number"
+   ],
+   "kind": "property",
+   "node": "primary_reference_number"
+  },
+  {
+   "phrases": [
+    "legacy id",
+    "old reference",
+    "previous reference number",
+    "former id",
+    "legacy reference"
+   ],
+   "kind": "property",
+   "node": "legacy_id"
+  },
+  {
+   "phrases": [
+    "uuid",
+    "resource id",
+    "system id"
+   ],
+   "kind": "property",
+   "node": "resourceid"
+  },
+  {
+   "phrases": [
+    "record created",
+    "date record created",
+    "when was the record created",
+    "record creation date",
+    "added to the record",
+    "first recorded on the database"
+   ],
+   "kind": "date",
+   "node": "creation_date",
+   "end_node": "creation_end_date"
+  },
+  {
+   "phrases": [
+    "last updated",
+    "record updated",
+    "last modified",
+    "date of last update",
+    "when was the record updated",
+    "record last edited"
+   ],
+   "kind": "date",
+   "node": "date_of_last_update",
+   "end_node": "update_end_date"
+  },
+  {
+   "phrases": [
+    "record created by",
+    "record creator",
+    "who created the record",
+    "who entered the record"
+   ],
+   "kind": "property",
+   "node": "creator_name"
+  },
+  {
+   "phrases": [
+    "audit note",
+    "record notes",
+    "audit notes",
+    "record keeping note"
+   ],
+   "kind": "property",
+   "node": "audit_note"
+  },
+  {
+   "phrases": [
+    "validation",
+    "validation status",
+    "record checked",
+    "checked ok",
+    "needs work",
+    "possible duplicate"
+   ],
+   "kind": "property",
+   "node": "validation"
+  },
+  {
+   "phrases": [
+    "updated by",
+    "who last updated the record",
+    "record updater"
+   ],
+   "kind": "property",
+   "node": "updater_name"
+  }
+ ]
+}

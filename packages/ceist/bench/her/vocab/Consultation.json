@@ -1,0 +1,1217 @@
+{
+ "model": "Consultation",
+ "entries": [
+  {
+   "phrases": [
+    "consultation dates",
+    "consulted",
+    "consultation period",
+    "during the consultation",
+    "consultation timeframe",
+    "how long did the consultation take",
+    "duration of consultation"
+   ],
+   "kind": "date",
+   "node": "log_date",
+   "end_node": "completion_date"
+  },
+  {
+   "phrases": [
+    "logged",
+    "received",
+    "date received",
+    "log date",
+    "date logged",
+    "when was it logged",
+    "when was it received",
+    "registered",
+    "submitted",
+    "opened",
+    "start of consultation",
+    "when did it come in"
+   ],
+   "kind": "date",
+   "node": "log_date"
+  },
+  {
+   "phrases": [
+    "completed",
+    "closed",
+    "finished",
+    "completion date",
+    "date completed",
+    "when was it completed",
+    "when was it closed",
+    "responded",
+    "response date",
+    "date closed",
+    "signed off"
+   ],
+   "kind": "date",
+   "node": "completion_date"
+  },
+  {
+   "phrases": [
+    "target date",
+    "deadline",
+    "due",
+    "due date",
+    "response due",
+    "by when",
+    "target response date",
+    "when is it due",
+    "deadline for response"
+   ],
+   "kind": "date",
+   "node": "target_date_start",
+   "end_node": "target_date_end"
+  },
+  {
+   "phrases": [
+    "communication date",
+    "contacted",
+    "emailed",
+    "phoned",
+    "rang",
+    "wrote to",
+    "date of correspondence",
+    "when were they contacted",
+    "date of email",
+    "date of phone call",
+    "telephoned",
+    "corresponded"
+   ],
+   "kind": "date",
+   "node": "date",
+   "end_node": "end_date_n1"
+  },
+  {
+   "phrases": [
+    "site visit",
+    "visited",
+    "visit date",
+    "date of visit",
+    "inspected",
+    "went on site",
+    "when was the site visited",
+    "site inspection",
+    "site meeting"
+   ],
+   "kind": "date",
+   "node": "date_of_visit",
+   "end_node": "end_date"
+  },
+  {
+   "phrases": [
+    "visit display date",
+    "approximate visit date",
+    "visit date as written"
+   ],
+   "kind": "property",
+   "node": "display_date"
+  },
+  {
+   "phrases": [
+    "advice given",
+    "advised",
+    "advice date",
+    "date of advice",
+    "when was advice given",
+    "advice issued",
+    "advice provided"
+   ],
+   "kind": "date",
+   "node": "date_advice_applied",
+   "end_node": "advice_applied_end_date"
+  },
+  {
+   "phrases": [
+    "name",
+    "title",
+    "consultation name",
+    "called",
+    "what is it called",
+    "consultation title",
+    "case name",
+    "known as"
+   ],
+   "kind": "property",
+   "node": "consultation_name"
+  },
+  {
+   "phrases": [
+    "description",
+    "about",
+    "summary",
+    "details",
+    "describe",
+    "tell me about",
+    "what is it about",
+    "information",
+    "background"
+   ],
+   "kind": "property",
+   "node": "consultation_description"
+  },
+  {
+   "phrases": [
+    "consultation type",
+    "type of consultation",
+    "pre-application",
+    "pre app",
+    "post-application",
+    "condition application",
+    "stage of application",
+    "kind of consultation"
+   ],
+   "kind": "property",
+   "node": "consultation_type"
+  },
+  {
+   "phrases": [
+    "application type",
+    "type of application",
+    "planning application type",
+    "what kind of application",
+    "kind of application",
+    "consent type",
+    "type of consent"
+   ],
+   "kind": "property",
+   "node": "application_type"
+  },
+  {
+   "phrases": [
+    "development type",
+    "type of development",
+    "what is being built",
+    "what kind of development",
+    "kind of development",
+    "development",
+    "works type",
+    "nature of development"
+   ],
+   "kind": "property",
+   "node": "development_type"
+  },
+  {
+   "phrases": [
+    "proposal",
+    "proposed works",
+    "what is proposed",
+    "proposal description",
+    "scheme",
+    "the proposal",
+    "plans for the site",
+    "what do they want to build",
+    "description of works"
+   ],
+   "kind": "property",
+   "node": "proposal_text"
+  },
+  {
+   "phrases": [
+    "proposal documents",
+    "proposal files",
+    "plans",
+    "drawings",
+    "submitted plans",
+    "application documents"
+   ],
+   "kind": "link",
+   "node": "digital_file_s__n1"
+  },
+  {
+   "phrases": [
+    "outcome",
+    "decision",
+    "planning decision",
+    "was it approved",
+    "approved",
+    "refused",
+    "result",
+    "granted",
+    "planning outcome",
+    "was permission granted",
+    "was it refused",
+    "decision outcome"
+   ],
+   "kind": "property",
+   "node": "planning_outcome"
+  },
+  {
+   "phrases": [
+    "audit outcome",
+    "reason for delay",
+    "why was it late",
+    "delay reason",
+    "why delayed",
+    "missed deadline reason"
+   ],
+   "kind": "property",
+   "node": "audit_outcome"
+  },
+  {
+   "phrases": [
+    "advice type",
+    "type of advice",
+    "what advice",
+    "kind of advice",
+    "condition",
+    "condition type",
+    "recommended condition",
+    "what condition"
+   ],
+   "kind": "property",
+   "node": "advice_type"
+  },
+  {
+   "phrases": [
+    "advice",
+    "advice text",
+    "what was the advice",
+    "advice details",
+    "content of advice",
+    "our advice"
+   ],
+   "kind": "property",
+   "node": "advice_text"
+  },
+  {
+   "phrases": [
+    "action",
+    "action type",
+    "required action",
+    "mitigation",
+    "what work is required",
+    "archaeological requirement",
+    "type of action",
+    "what archaeology is required",
+    "work required"
+   ],
+   "kind": "property",
+   "node": "action_type"
+  },
+  {
+   "phrases": [
+    "action notes",
+    "action details",
+    "action text",
+    "description of action"
+   ],
+   "kind": "property",
+   "node": "action_text"
+  },
+  {
+   "phrases": [
+    "significance",
+    "assessment of significance",
+    "heritage significance",
+    "how significant",
+    "importance",
+    "significance assessment",
+    "why is it significant",
+    "statement of significance"
+   ],
+   "kind": "property",
+   "node": "notes"
+  },
+  {
+   "phrases": [
+    "communication type",
+    "how were they contacted",
+    "email or phone",
+    "contact method",
+    "type of communication",
+    "method of communication"
+   ],
+   "kind": "property",
+   "node": "communication_type"
+  },
+  {
+   "phrases": [
+    "communication notes",
+    "what was discussed",
+    "notes of communication",
+    "conversation notes",
+    "call notes",
+    "meeting notes"
+   ],
+   "kind": "property",
+   "node": "communication_description"
+  },
+  {
+   "phrases": [
+    "subject",
+    "email subject",
+    "topic",
+    "subject of communication",
+    "regarding",
+    "re"
+   ],
+   "kind": "property",
+   "node": "subject"
+  },
+  {
+   "phrases": [
+    "follow on actions",
+    "follow up",
+    "follow-up",
+    "next steps",
+    "follow up actions",
+    "actions arising"
+   ],
+   "kind": "property",
+   "node": "follow_on_actions_n1"
+  },
+  {
+   "phrases": [
+    "communication file",
+    "email attachment",
+    "communication attachment",
+    "correspondence file"
+   ],
+   "kind": "link",
+   "node": "digital_file_s_"
+  },
+  {
+   "phrases": [
+    "participants",
+    "who was contacted",
+    "communication participants",
+    "spoke to",
+    "who was spoken to",
+    "who was in the conversation",
+    "contacted person"
+   ],
+   "kind": "link",
+   "node": "attendees_n1"
+  },
+  {
+   "phrases": [
+    "attendees",
+    "who attended",
+    "who was at the site visit",
+    "site visit attendees",
+    "attended by",
+    "who went on the visit",
+    "visitors"
+   ],
+   "kind": "link",
+   "node": "attendee"
+  },
+  {
+   "phrases": [
+    "inspector of ancient monuments",
+    "historic england inspector",
+    "inspector"
+   ],
+   "kind": "link",
+   "node": "attendee",
+   "qualifier": {
+    "node": "attendee_type",
+    "value": "HIstoric England Inspector of Ancient Monuments"
+   }
+  },
+  {
+   "phrases": [
+    "conservation officer",
+    "borough conservation officer",
+    "council conservation officer"
+   ],
+   "kind": "link",
+   "node": "attendee",
+   "qualifier": {
+    "node": "attendee_type",
+    "value": "Borough Conservation Officer"
+   }
+  },
+  {
+   "phrases": [
+    "enforcement officer",
+    "borough enforcement officer",
+    "planning enforcement officer"
+   ],
+   "kind": "link",
+   "node": "attendee",
+   "qualifier": {
+    "node": "attendee_type",
+    "value": "Borough Enforcement Officer"
+   }
+  },
+  {
+   "phrases": [
+    "archaeological contractor",
+    "contractor archaeologist",
+    "field unit"
+   ],
+   "kind": "link",
+   "node": "attendee",
+   "qualifier": {
+    "node": "attendee_type",
+    "value": "Archaeological Contractor"
+   }
+  },
+  {
+   "phrases": [
+    "archaeological consultant",
+    "heritage consultant",
+    "consultant archaeologist"
+   ],
+   "kind": "link",
+   "node": "attendee",
+   "qualifier": {
+    "node": "attendee_type",
+    "value": "Archaeological Consultant"
+   }
+  },
+  {
+   "phrases": [
+    "glaas advisor",
+    "glaas adviser",
+    "historic england advisor"
+   ],
+   "kind": "link",
+   "node": "attendee",
+   "qualifier": {
+    "node": "attendee_type",
+    "value": "Historic England GLAAS Advisor"
+   }
+  },
+  {
+   "phrases": [
+    "buildings inspector",
+    "historic england buildings inspector",
+    "inspector of historic buildings"
+   ],
+   "kind": "link",
+   "node": "attendee",
+   "qualifier": {
+    "node": "attendee_type",
+    "value": "Historic England Buildings Inspector"
+   }
+  },
+  {
+   "phrases": [
+    "construction contractor",
+    "building contractor",
+    "main contractor"
+   ],
+   "kind": "link",
+   "node": "attendee",
+   "qualifier": {
+    "node": "attendee_type",
+    "value": "Construction Contractor"
+   }
+  },
+  {
+   "phrases": [
+    "attendee type",
+    "attendee role",
+    "who were they",
+    "capacity of attendee"
+   ],
+   "kind": "property",
+   "node": "attendee_type"
+  },
+  {
+   "phrases": [
+    "visit location",
+    "where was the visit",
+    "site visit location",
+    "location of visit"
+   ],
+   "kind": "property",
+   "node": "location_description"
+  },
+  {
+   "phrases": [
+    "observations",
+    "what was observed",
+    "site observations",
+    "findings on site",
+    "what was seen",
+    "observation notes",
+    "what did they see"
+   ],
+   "kind": "property",
+   "node": "observation_notes"
+  },
+  {
+   "phrases": [
+    "observed by",
+    "observations by",
+    "who observed",
+    "observer",
+    "who made the observations"
+   ],
+   "kind": "link",
+   "node": "observed_by"
+  },
+  {
+   "phrases": [
+    "recommendation",
+    "recommendations",
+    "what was recommended",
+    "recommended",
+    "site visit recommendation"
+   ],
+   "kind": "property",
+   "node": "recommendation_value"
+  },
+  {
+   "phrases": [
+    "recommended by",
+    "who recommended",
+    "recommender",
+    "recommendation made by"
+   ],
+   "kind": "link",
+   "node": "recommended_by"
+  },
+  {
+   "phrases": [
+    "photos",
+    "photographs",
+    "site photos",
+    "pictures",
+    "images",
+    "site photographs",
+    "photo",
+    "picture"
+   ],
+   "kind": "property",
+   "node": "photographs"
+  },
+  {
+   "phrases": [
+    "photo caption",
+    "caption",
+    "image caption"
+   ],
+   "kind": "property",
+   "node": "caption_note"
+  },
+  {
+   "phrases": [
+    "copyright holder",
+    "photo copyright holder",
+    "who owns the copyright",
+    "photo credit"
+   ],
+   "kind": "link",
+   "node": "copyright_holder"
+  },
+  {
+   "phrases": [
+    "copyright",
+    "licence",
+    "license",
+    "photo rights",
+    "copyright status"
+   ],
+   "kind": "property",
+   "node": "copyright_type"
+  },
+  {
+   "phrases": [
+    "copyright note",
+    "copyright statement",
+    "rights statement"
+   ],
+   "kind": "property",
+   "node": "copyright_note_text"
+  },
+  {
+   "phrases": [
+    "applicant",
+    "who applied",
+    "applied by",
+    "submitted by",
+    "who is the applicant",
+    "applicants",
+    "application made by",
+    "who made the application",
+    "client"
+   ],
+   "kind": "link",
+   "node": "applicant"
+  },
+  {
+   "phrases": [
+    "developer",
+    "developed by",
+    "who is the developer",
+    "development company"
+   ],
+   "kind": "link",
+   "node": "applicant",
+   "qualifier": {
+    "node": "applicant_role_type",
+    "value": "Developer"
+   }
+  },
+  {
+   "phrases": [
+    "agent",
+    "planning agent",
+    "acting on behalf",
+    "represented by",
+    "consultant",
+    "agents",
+    "applicant's agent",
+    "who is the agent"
+   ],
+   "kind": "link",
+   "node": "agent"
+  },
+  {
+   "phrases": [
+    "architect",
+    "architects",
+    "designed by",
+    "who is the architect"
+   ],
+   "kind": "link",
+   "node": "agent",
+   "qualifier": {
+    "node": "agent_role_type",
+    "value": "Architect"
+   }
+  },
+  {
+   "phrases": [
+    "owner",
+    "landowner",
+    "site owner",
+    "who owns the site",
+    "owned by",
+    "owners",
+    "property owner",
+    "freeholder"
+   ],
+   "kind": "link",
+   "node": "owner"
+  },
+  {
+   "phrases": [
+    "casework officer",
+    "case officer",
+    "caseworker",
+    "who is handling it",
+    "assigned officer",
+    "archaeology advisor",
+    "archaeological advisor",
+    "officer in charge",
+    "who dealt with it",
+    "handled by"
+   ],
+   "kind": "link",
+   "node": "casework_officer"
+  },
+  {
+   "phrases": [
+    "planning officer",
+    "borough planner",
+    "council officer",
+    "planner",
+    "council planning officer",
+    "lpa officer"
+   ],
+   "kind": "link",
+   "node": "planning_officer"
+  },
+  {
+   "phrases": [
+    "planning authority",
+    "local planning authority",
+    "council",
+    "lpa",
+    "planning body",
+    "borough council",
+    "which council",
+    "local authority",
+    "determining authority"
+   ],
+   "kind": "link",
+   "node": "planning_body"
+  },
+  {
+   "phrases": [
+    "advice given by",
+    "who advised",
+    "advisor",
+    "adviser",
+    "advised by",
+    "who gave the advice",
+    "who gave advice"
+   ],
+   "kind": "link",
+   "node": "advice_applied_by"
+  },
+  {
+   "phrases": [
+    "consulting contact",
+    "contact",
+    "point of contact",
+    "contact details"
+   ],
+   "kind": "property",
+   "node": "consulting_contact"
+  },
+  {
+   "phrases": [
+    "application area",
+    "application site",
+    "red line boundary",
+    "site boundary",
+    "development site",
+    "application boundary",
+    "site area"
+   ],
+   "kind": "link",
+   "node": "related_application_area"
+  },
+  {
+   "phrases": [
+    "affected monuments",
+    "heritage assets affected",
+    "related monuments",
+    "nearby monuments",
+    "archaeological sites",
+    "monuments",
+    "heritage assets",
+    "historic sites affected",
+    "impact on monuments",
+    "related areas"
+   ],
+   "kind": "link",
+   "node": "related_monuments_and_areas"
+  },
+  {
+   "phrases": [
+    "related activities",
+    "fieldwork",
+    "excavations",
+    "investigations",
+    "archaeological work carried out",
+    "associated activities",
+    "events",
+    "surveys carried out"
+   ],
+   "kind": "link",
+   "node": "associated_activities"
+  },
+  {
+   "phrases": [
+    "related consultations",
+    "previous consultations",
+    "linked cases",
+    "other applications",
+    "related cases",
+    "associated consultations",
+    "earlier applications",
+    "previous applications"
+   ],
+   "kind": "link",
+   "node": "associated_consultations"
+  },
+  {
+   "phrases": [
+    "files",
+    "documents",
+    "attachments",
+    "digital files",
+    "associated files",
+    "reports",
+    "file"
+   ],
+   "kind": "link",
+   "node": "file_s_"
+  },
+  {
+   "phrases": [
+    "letter",
+    "response letter",
+    "advice letter",
+    "letter file",
+    "consultation letter",
+    "letter sent out"
+   ],
+   "kind": "link",
+   "node": "letter"
+  },
+  {
+   "phrases": [
+    "letter type",
+    "which letter",
+    "type of letter",
+    "standard letter",
+    "letter template"
+   ],
+   "kind": "property",
+   "node": "letter_type"
+  },
+  {
+   "phrases": [
+    "agency",
+    "external agency",
+    "reference agency",
+    "issuing agency"
+   ],
+   "kind": "link",
+   "node": "agency"
+  },
+  {
+   "phrases": [
+    "planning reference",
+    "application number",
+    "planning application number",
+    "council reference",
+    "planning ref",
+    "lpa reference",
+    "borough reference",
+    "application reference",
+    "external system reference"
+   ],
+   "kind": "property",
+   "node": "reference"
+  },
+  {
+   "phrases": [
+    "location",
+    "where is it",
+    "site location",
+    "location description",
+    "address",
+    "where",
+    "whereabouts",
+    "situated",
+    "where is the site"
+   ],
+   "kind": "property",
+   "node": "consultation_location_description"
+  },
+  {
+   "phrases": [
+    "map",
+    "coordinates",
+    "geometry",
+    "on the map",
+    "mapped location",
+    "show on map",
+    "spatial extent"
+   ],
+   "kind": "property",
+   "node": "geospatial_coordinates"
+  },
+  {
+   "phrases": [
+    "borough",
+    "district",
+    "parish",
+    "administrative area",
+    "local authority area",
+    "council area",
+    "which borough",
+    "what borough",
+    "which district"
+   ],
+   "kind": "property",
+   "node": "area_name"
+  },
+  {
+   "phrases": [
+    "area type",
+    "type of administrative area",
+    "kind of area"
+   ],
+   "kind": "property",
+   "node": "area_type"
+  },
+  {
+   "phrases": [
+    "status",
+    "open",
+    "active",
+    "is it open",
+    "live",
+    "ongoing",
+    "current status",
+    "is it still open",
+    "open or closed",
+    "consultation status"
+   ],
+   "kind": "property",
+   "node": "status"
+  },
+  {
+   "phrases": [
+    "contested heritage",
+    "contested",
+    "controversial",
+    "disputed heritage",
+    "is it contested"
+   ],
+   "kind": "property",
+   "node": "contested_heritage"
+  },
+  {
+   "phrases": [
+    "cross reference",
+    "external reference",
+    "other reference numbers",
+    "cross references"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference"
+  },
+  {
+   "phrases": [
+    "cross reference source",
+    "which database",
+    "source of the cross reference"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_source"
+  },
+  {
+   "phrases": [
+    "website",
+    "web link",
+    "url",
+    "online link"
+   ],
+   "kind": "property",
+   "node": "url"
+  },
+  {
+   "phrases": [
+    "reference number",
+    "record number",
+    "her number",
+    "case number",
+    "consultation number",
+    "record id",
+    "id number",
+    "consultation reference"
+   ],
+   "kind": "property",
+   "node": "primary_reference_number"
+  },
+  {
+   "phrases": [
+    "legacy id",
+    "legacy reference",
+    "old reference",
+    "former id",
+    "old case number"
+   ],
+   "kind": "property",
+   "node": "legacy_id"
+  },
+  {
+   "phrases": [
+    "uuid",
+    "resource id",
+    "system id",
+    "unique identifier"
+   ],
+   "kind": "property",
+   "node": "resourceid"
+  },
+  {
+   "phrases": [
+    "record created",
+    "date record created",
+    "when was the record created",
+    "added to the record",
+    "date added",
+    "entered into the database",
+    "record creation date"
+   ],
+   "kind": "date",
+   "node": "creation_date",
+   "end_node": "creation_end_date"
+  },
+  {
+   "phrases": [
+    "last updated",
+    "record updated",
+    "date of last update",
+    "when was the record updated",
+    "last modified",
+    "last edited",
+    "record last changed"
+   ],
+   "kind": "date",
+   "node": "date_of_last_update",
+   "end_node": "update_end_date"
+  },
+  {
+   "phrases": [
+    "record created by",
+    "who created the record",
+    "record creator",
+    "who entered the record"
+   ],
+   "kind": "property",
+   "node": "creator_name"
+  },
+  {
+   "phrases": [
+    "last updated by",
+    "who updated the record",
+    "record updated by",
+    "record editor"
+   ],
+   "kind": "property",
+   "node": "updater_name"
+  },
+  {
+   "phrases": [
+    "validation",
+    "validation status",
+    "record checked",
+    "has the record been checked",
+    "quality check",
+    "needs work"
+   ],
+   "kind": "property",
+   "node": "validation"
+  },
+  {
+   "phrases": [
+    "audit note",
+    "audit notes",
+    "record notes",
+    "editorial notes"
+   ],
+   "kind": "property",
+   "node": "audit_note"
+  },
+  {
+   "phrases": [
+    "spatial record authorised",
+    "spatial record authorized",
+    "date of authorisation",
+    "mapping authorised"
+   ],
+   "kind": "date",
+   "node": "date_of_authorization",
+   "end_node": "authorization_end_date"
+  },
+  {
+   "phrases": [
+    "spatial record compiled",
+    "date of compilation",
+    "mapping compiled",
+    "when was it mapped"
+   ],
+   "kind": "date",
+   "node": "compilation_start_date",
+   "end_node": "compilation_end_date"
+  },
+  {
+   "phrases": [
+    "spatial record updated",
+    "geometry updated",
+    "map updated",
+    "mapping updated"
+   ],
+   "kind": "date",
+   "node": "update_start_date",
+   "end_node": "update_end_date_n1"
+  },
+  {
+   "phrases": [
+    "authorisation status",
+    "authorization status",
+    "is the mapping authorised"
+   ],
+   "kind": "property",
+   "node": "authorization_type"
+  },
+  {
+   "phrases": [
+    "spatial record authorised by",
+    "mapping authorised by",
+    "who authorised the mapping"
+   ],
+   "kind": "property",
+   "node": "authorizer_name"
+  },
+  {
+   "phrases": [
+    "spatial record compiled by",
+    "mapped by",
+    "who mapped it"
+   ],
+   "kind": "property",
+   "node": "compiler_name"
+  },
+  {
+   "phrases": [
+    "spatial record updated by",
+    "map updated by",
+    "who updated the map"
+   ],
+   "kind": "property",
+   "node": "updater_name_n1"
+  },
+  {
+   "phrases": [
+    "capture scale",
+    "map scale",
+    "scale of capture"
+   ],
+   "kind": "property",
+   "node": "capture_scale"
+  },
+  {
+   "phrases": [
+    "coordinate system",
+    "projection",
+    "crs"
+   ],
+   "kind": "property",
+   "node": "coordinate_system_value"
+  },
+  {
+   "phrases": [
+    "feature shape",
+    "geometry type",
+    "point or polygon"
+   ],
+   "kind": "property",
+   "node": "feature_shape"
+  },
+  {
+   "phrases": [
+    "spatial accuracy",
+    "how accurate is the location",
+    "positional accuracy"
+   ],
+   "kind": "property",
+   "node": "spatial_accuracy_qualifier"
+  },
+  {
+   "phrases": [
+    "spatial metadata",
+    "mapping notes",
+    "spatial notes"
+   ],
+   "kind": "property",
+   "node": "spatial_metadata_notes"
+  },
+  {
+   "phrases": [
+    "base map",
+    "current base map",
+    "which base map"
+   ],
+   "kind": "property",
+   "node": "current_base_map_name"
+  }
+ ]
+}

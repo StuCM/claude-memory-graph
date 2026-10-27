@@ -1,0 +1,1101 @@
+{
+ "_about": "Held-out HER questions, written from the model descriptions only (vocabulary not seen).",
+ "cases": [
+  {
+   "model": "Monument",
+   "q": "Which buildings in Southwark were put up before 1850?",
+   "phrase": "put up",
+   "slot": "date",
+   "expect": {
+    "node": "construction_phase_start_date"
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "Show me churches designed by Christopher Wren",
+   "phrase": "designed by",
+   "slot": "link:Person",
+   "expect": {
+    "node": "actor",
+    "qualifier": {
+     "node": "role_type",
+     "value": "Architect"
+    }
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "What's the old manor house made of?",
+   "phrase": "made of",
+   "slot": "property",
+   "expect": {
+    "node": "main_construction_material"
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "Which of these sites are scheduled?",
+   "phrase": "scheduled",
+   "slot": "property",
+   "expect": {
+    "node": "designation_or_protection_type"
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "What grade is St Mary's church listed at?",
+   "phrase": "grade",
+   "slot": "property",
+   "expect": {
+    "node": "grade"
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "Which monuments are on the at-risk register?",
+   "phrase": "at-risk register",
+   "slot": "property",
+   "expect": {
+    "node": "risk_status"
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "What was the mill used for in the nineteenth century?",
+   "phrase": "used for",
+   "slot": "property",
+   "expect": {
+    "node": "functional_type"
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "Which barrows have been radiocarbon dated?",
+   "phrase": "radiocarbon dated",
+   "slot": "property",
+   "expect": {
+    "node": "dating_method"
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "What kind of monument is it, a hillfort or a barrow?",
+   "phrase": "kind of monument",
+   "slot": "property",
+   "expect": {
+    "node": "monument_type"
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "Which terraces were built by Cubitt & Co?",
+   "phrase": "built by",
+   "slot": "link:Organization",
+   "expect": {
+    "node": "actor",
+    "qualifier": {
+     "node": "role_type",
+     "value": "Builder"
+    }
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "When was the abbey knocked down?",
+   "phrase": "knocked down",
+   "slot": "date",
+   "expect": {
+    "node": "construction_phase_start_date",
+    "qualifier": {
+     "node": "construction_phase_type",
+     "value": "Destruction"
+    }
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "Which monuments were still in use during the Roman period?",
+   "phrase": "in use during",
+   "slot": "link:Period",
+   "expect": {
+    "node": "use_phase_period"
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "When was the pub first listed?",
+   "phrase": "first listed",
+   "slot": "date",
+   "expect": {
+    "node": "designation_start_date"
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "Which monuments are in the borough of Camden?",
+   "phrase": "borough of",
+   "slot": "property",
+   "expect": {
+    "node": "area_name"
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "Which sites were looked at during the Thames Foreshore Survey?",
+   "phrase": "looked at during",
+   "slot": "link:Activity",
+   "expect": {
+    "node": "associated_activities"
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "Which houses were owned by the Duke of Bedford?",
+   "phrase": "owned by",
+   "slot": "link:Person",
+   "expect": {
+    "node": "actor",
+    "qualifier": {
+     "node": "role_type",
+     "value": "Owner"
+    }
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "Which milecastles are part of Hadrian's Wall?",
+   "phrase": "part of",
+   "slot": "link:Monument",
+   "expect": {
+    "node": "parent_monument_or_area"
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "Which monuments are written up in the Victoria County History?",
+   "phrase": "written up in",
+   "slot": "link:Bibliographic Source",
+   "expect": {
+    "node": "bibliographic_source_citation"
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "Which houses round here are timber-framed?",
+   "phrase": "timber-framed",
+   "slot": "property",
+   "expect": {
+    "node": "construction_technique"
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "How much did the restoration of the castle cost?",
+   "phrase": "cost",
+   "slot": "property",
+   "expect": null
+  },
+  {
+   "model": "Monument",
+   "q": "How many visitors does the hillfort get a year?",
+   "phrase": "visitors",
+   "slot": "property",
+   "expect": null
+  },
+  {
+   "model": "Monument",
+   "q": "How tall is the church spire?",
+   "phrase": "How tall",
+   "slot": "property",
+   "expect": null
+  },
+  {
+   "model": "Area",
+   "q": "Which conservation areas were designated after 1970?",
+   "phrase": "designated after",
+   "slot": "date",
+   "expect": {
+    "node": "designation_start_date"
+   }
+  },
+  {
+   "model": "Area",
+   "q": "Find areas named Bankside",
+   "phrase": "named",
+   "slot": "property",
+   "expect": {
+    "node": "area_name_n1"
+   }
+  },
+  {
+   "model": "Area",
+   "q": "What's the underlying geology of the area?",
+   "phrase": "underlying geology",
+   "slot": "property",
+   "expect": {
+    "node": "geology"
+   }
+  },
+  {
+   "model": "Area",
+   "q": "Which character zones fall inside the Maritime Greenwich area?",
+   "phrase": "fall inside",
+   "slot": "link:Area",
+   "expect": {
+    "node": "parent_area"
+   }
+  },
+  {
+   "model": "Area",
+   "q": "What was the area used for in the medieval period?",
+   "phrase": "used for",
+   "slot": "property",
+   "expect": {
+    "node": "functional_type"
+   }
+  },
+  {
+   "model": "Area",
+   "q": "Which estates were laid out in the 18th century?",
+   "phrase": "laid out",
+   "slot": "date",
+   "expect": {
+    "node": "construction_phase_start_date"
+   }
+  },
+  {
+   "model": "Area",
+   "q": "Which areas were surveyed by Historic England?",
+   "phrase": "surveyed by",
+   "slot": "link:Organization",
+   "expect": {
+    "node": "actor",
+    "qualifier": {
+     "node": "role_type",
+     "value": "Surveyor"
+    }
+   }
+  },
+  {
+   "model": "Area",
+   "q": "Is the land under arable or pasture at the moment?",
+   "phrase": "arable or pasture",
+   "slot": "property",
+   "expect": {
+    "node": "land_use_classification"
+   }
+  },
+  {
+   "model": "Area",
+   "q": "Are any of these priority areas at risk?",
+   "phrase": "at risk",
+   "slot": "property",
+   "expect": {
+    "node": "risk_status"
+   }
+  },
+  {
+   "model": "Area",
+   "q": "What's the population of the area?",
+   "phrase": "population",
+   "slot": "property",
+   "expect": null
+  },
+  {
+   "model": "Artefact",
+   "q": "What's the brooch made of?",
+   "phrase": "made of",
+   "slot": "property",
+   "expect": {
+    "node": "material"
+   }
+  },
+  {
+   "model": "Artefact",
+   "q": "Who found the coin hoard?",
+   "phrase": "Who found",
+   "slot": "property",
+   "expect": {
+    "node": "finder_name"
+   }
+  },
+  {
+   "model": "Artefact",
+   "q": "Which finds were turned up by metal detectorists?",
+   "phrase": "turned up by metal detectorists",
+   "slot": "property",
+   "expect": {
+    "node": "discovery_method"
+   }
+  },
+  {
+   "model": "Artefact",
+   "q": "How old is the pot?",
+   "phrase": "How old",
+   "slot": "date",
+   "expect": {
+    "node": "from_date"
+   }
+  },
+  {
+   "model": "Artefact",
+   "q": "Which objects were made in the Bronze Age?",
+   "phrase": "made in",
+   "slot": "link:Period",
+   "expect": {
+    "node": "cultural_period"
+   }
+  },
+  {
+   "model": "Artefact",
+   "q": "What does the inscription on the altar say?",
+   "phrase": "inscription",
+   "slot": "property",
+   "expect": {
+    "node": "inscription_content"
+   }
+  },
+  {
+   "model": "Artefact",
+   "q": "How heavy is the axe head?",
+   "phrase": "How heavy",
+   "slot": "property",
+   "expect": {
+    "node": "dimension_value",
+    "qualifier": {
+     "node": "dimension_type",
+     "value": "Weight"
+    }
+   }
+  },
+  {
+   "model": "Artefact",
+   "q": "Which artefacts are held by the Museum of London?",
+   "phrase": "held by",
+   "slot": "link:Organization",
+   "expect": {
+    "node": "repository_owner"
+   }
+  },
+  {
+   "model": "Artefact",
+   "q": "Which pots were thrown on a wheel?",
+   "phrase": "thrown on a wheel",
+   "slot": "property",
+   "expect": {
+    "node": "production_method"
+   }
+  },
+  {
+   "model": "Artefact",
+   "q": "How much is the hoard worth?",
+   "phrase": "worth",
+   "slot": "property",
+   "expect": null
+  },
+  {
+   "model": "Activity",
+   "q": "Who dug the site at Mucking?",
+   "phrase": "Who dug",
+   "slot": "link:Person",
+   "expect": {
+    "node": "actor",
+    "qualifier": {
+     "node": "role_type",
+     "value": "Excavator"
+    }
+   }
+  },
+  {
+   "model": "Activity",
+   "q": "Which excavations took place in the 1990s?",
+   "phrase": "took place",
+   "slot": "date",
+   "expect": {
+    "node": "activity_start_date"
+   }
+  },
+  {
+   "model": "Activity",
+   "q": "Which investigations were commissioned by Thames Water?",
+   "phrase": "commissioned by",
+   "slot": "link:Organization",
+   "expect": {
+    "node": "actor",
+    "qualifier": {
+     "node": "role_type",
+     "value": "Client"
+    }
+   }
+  },
+  {
+   "model": "Activity",
+   "q": "Who ran the fieldwork at Sutton Hoo?",
+   "phrase": "ran the fieldwork",
+   "slot": "link:Person",
+   "expect": {
+    "node": "actor",
+    "qualifier": {
+     "node": "role_type",
+     "value": "Director of Fieldwork"
+    }
+   }
+  },
+  {
+   "model": "Activity",
+   "q": "What kind of investigation was it, a watching brief or an evaluation?",
+   "phrase": "kind of investigation",
+   "slot": "property",
+   "expect": {
+    "node": "activity_type"
+   }
+  },
+  {
+   "model": "Activity",
+   "q": "Which events looked at the moated site at Eltham?",
+   "phrase": "looked at",
+   "slot": "link:Monument",
+   "expect": {
+    "node": "associated_monuments_and_areas"
+   }
+  },
+  {
+   "model": "Activity",
+   "q": "Which fieldwork was done in response to the Battersea planning consultation?",
+   "phrase": "in response to",
+   "slot": "link:Consultation",
+   "expect": {
+    "node": "associated_consultations"
+   }
+  },
+  {
+   "model": "Activity",
+   "q": "Which watching briefs were part of the Terminal 5 project?",
+   "phrase": "part of",
+   "slot": "link:Activity",
+   "expect": {
+    "node": "parent_activity"
+   }
+  },
+  {
+   "model": "Activity",
+   "q": "Which surveys were paid for by the Heritage Lottery Fund?",
+   "phrase": "paid for by",
+   "slot": "link:Organization",
+   "expect": {
+    "node": "actor",
+    "qualifier": {
+     "node": "role_type",
+     "value": "Funding Body/Financier"
+    }
+   }
+  },
+  {
+   "model": "Activity",
+   "q": "How many volunteers took part in the dig?",
+   "phrase": "volunteers",
+   "slot": "property",
+   "expect": null
+  },
+  {
+   "model": "Person",
+   "q": "When was John Soane born?",
+   "phrase": "born",
+   "slot": "date",
+   "expect": {
+    "node": "date_of_birth"
+   }
+  },
+  {
+   "model": "Person",
+   "q": "Which architects died before 1800?",
+   "phrase": "died",
+   "slot": "date",
+   "expect": {
+    "node": "date_of_death"
+   }
+  },
+  {
+   "model": "Person",
+   "q": "Where was she born?",
+   "phrase": "Where was she born",
+   "slot": "property",
+   "expect": {
+    "node": "birth_place"
+   }
+  },
+  {
+   "model": "Person",
+   "q": "Who was his father?",
+   "phrase": "father",
+   "slot": "link:Person",
+   "expect": {
+    "node": "father"
+   }
+  },
+  {
+   "model": "Person",
+   "q": "Find people with the surname Brunel",
+   "phrase": "surname",
+   "slot": "property",
+   "expect": {
+    "node": "surname"
+   }
+  },
+  {
+   "model": "Person",
+   "q": "Which people are linked to the Crystal Palace?",
+   "phrase": "linked to",
+   "slot": "link:Monument",
+   "expect": {
+    "node": "monument_area_or_artefact"
+   }
+  },
+  {
+   "model": "Person",
+   "q": "What's his email address?",
+   "phrase": "email address",
+   "slot": "property",
+   "expect": {
+    "node": "contact_point",
+    "qualifier": {
+     "node": "contact_point_type",
+     "value": "Email"
+    }
+   }
+  },
+  {
+   "model": "Person",
+   "q": "Who went by the nickname 'Capability'?",
+   "phrase": "nickname",
+   "slot": "property",
+   "expect": {
+    "node": "epithet"
+   }
+  },
+  {
+   "model": "Person",
+   "q": "Which people took part in the Verulamium excavations?",
+   "phrase": "took part in",
+   "slot": "link:Activity",
+   "expect": {
+    "node": "associated_activities"
+   }
+  },
+  {
+   "model": "Person",
+   "q": "What was his annual salary?",
+   "phrase": "salary",
+   "slot": "property",
+   "expect": null
+  },
+  {
+   "model": "Maritime Vessel",
+   "q": "When did the ship go down?",
+   "phrase": "go down",
+   "slot": "date",
+   "expect": {
+    "node": "date_of_loss_start"
+   }
+  },
+  {
+   "model": "Maritime Vessel",
+   "q": "How did the Mary Rose sink?",
+   "phrase": "sink",
+   "slot": "property",
+   "expect": {
+    "node": "manner_of_loss"
+   }
+  },
+  {
+   "model": "Maritime Vessel",
+   "q": "Who built the steamer?",
+   "phrase": "Who built",
+   "slot": "link:Organization",
+   "expect": {
+    "node": "builder"
+   }
+  },
+  {
+   "model": "Maritime Vessel",
+   "q": "When was the vessel launched?",
+   "phrase": "launched",
+   "slot": "date",
+   "expect": {
+    "node": "construction_phase_start_date"
+   }
+  },
+  {
+   "model": "Maritime Vessel",
+   "q": "Was it steam or sail powered?",
+   "phrase": "powered",
+   "slot": "property",
+   "expect": {
+    "node": "propulsion_type"
+   }
+  },
+  {
+   "model": "Maritime Vessel",
+   "q": "What was the ship carrying when she sank?",
+   "phrase": "carrying",
+   "slot": "property",
+   "expect": {
+    "node": "cargo_type"
+   }
+  },
+  {
+   "model": "Maritime Vessel",
+   "q": "Where was the collier sailing from?",
+   "phrase": "sailing from",
+   "slot": "property",
+   "expect": {
+    "node": "place_of_departure_name"
+   }
+  },
+  {
+   "model": "Maritime Vessel",
+   "q": "Who was the captain on her last voyage?",
+   "phrase": "captain",
+   "slot": "link:Person",
+   "expect": {
+    "node": "crew_member",
+    "qualifier": {
+     "node": "crew_role",
+     "value": "Captain"
+    }
+   }
+  },
+  {
+   "model": "Maritime Vessel",
+   "q": "Who owned the barge?",
+   "phrase": "owned",
+   "slot": "link:Person",
+   "expect": {
+    "node": "owner"
+   }
+  },
+  {
+   "model": "Maritime Vessel",
+   "q": "How many passengers drowned?",
+   "phrase": "passengers",
+   "slot": "property",
+   "expect": null
+  },
+  {
+   "model": "Historic Aircraft",
+   "q": "Which planes came down at the Hornchurch Marshes site?",
+   "phrase": "came down at",
+   "slot": "link:Monument",
+   "expect": {
+    "node": "crash_site"
+   }
+  },
+  {
+   "model": "Historic Aircraft",
+   "q": "When was the bomber shot down?",
+   "phrase": "shot down",
+   "slot": "date",
+   "expect": {
+    "node": "date_of_loss"
+   }
+  },
+  {
+   "model": "Historic Aircraft",
+   "q": "Who made the aircraft, Supermarine or Hawker?",
+   "phrase": "Who made",
+   "slot": "property",
+   "expect": {
+    "node": "manufacturer"
+   }
+  },
+  {
+   "model": "Historic Aircraft",
+   "q": "Which airmen flew in the Lancaster?",
+   "phrase": "flew in",
+   "slot": "link:Person",
+   "expect": {
+    "node": "crew_member"
+   }
+  },
+  {
+   "model": "Historic Aircraft",
+   "q": "How many sorties did it fly before it was lost?",
+   "phrase": "sorties",
+   "slot": "property",
+   "expect": null
+  },
+  {
+   "model": "Consultation",
+   "q": "Which applications were turned down?",
+   "phrase": "turned down",
+   "slot": "property",
+   "expect": {
+    "node": "planning_outcome"
+   }
+  },
+  {
+   "model": "Consultation",
+   "q": "When was the consultation logged?",
+   "phrase": "logged",
+   "slot": "date",
+   "expect": {
+    "node": "log_date"
+   }
+  },
+  {
+   "model": "Consultation",
+   "q": "Who's the case officer on this one?",
+   "phrase": "case officer",
+   "slot": "link:Person",
+   "expect": {
+    "node": "casework_officer"
+   }
+  },
+  {
+   "model": "Consultation",
+   "q": "Which applications were put in by Berkeley Homes?",
+   "phrase": "put in by",
+   "slot": "link:Organization",
+   "expect": {
+    "node": "applicant"
+   }
+  },
+  {
+   "model": "Consultation",
+   "q": "How much was the planning fee?",
+   "phrase": "planning fee",
+   "slot": "property",
+   "expect": null
+  },
+  {
+   "model": "Organization",
+   "q": "When was the society set up?",
+   "phrase": "set up",
+   "slot": "date",
+   "expect": {
+    "node": "start_date"
+   }
+  },
+  {
+   "model": "Organization",
+   "q": "What kind of organisation is it, a museum or a contractor?",
+   "phrase": "kind of organisation",
+   "slot": "property",
+   "expect": {
+    "node": "organization_type"
+   }
+  },
+  {
+   "model": "Organization",
+   "q": "What's their phone number?",
+   "phrase": "phone number",
+   "slot": "property",
+   "expect": {
+    "node": "contact_point",
+    "qualifier": {
+     "node": "contact_point_type",
+     "value": "Telephone"
+    }
+   }
+  },
+  {
+   "model": "Organization",
+   "q": "Who's the parent body of the unit?",
+   "phrase": "parent body",
+   "slot": "link:Organization",
+   "expect": {
+    "node": "parent_organization"
+   }
+  },
+  {
+   "model": "Organization",
+   "q": "How many staff do they employ?",
+   "phrase": "staff",
+   "slot": "property",
+   "expect": null
+  },
+  {
+   "model": "Place",
+   "q": "What's the place called?",
+   "phrase": "called",
+   "slot": "property",
+   "expect": {
+    "node": "placename"
+   }
+  },
+  {
+   "model": "Place",
+   "q": "Is it a named location or an address?",
+   "phrase": "named location or an address",
+   "slot": "property",
+   "expect": {
+    "node": "place_type"
+   }
+  },
+  {
+   "model": "Place",
+   "q": "Is it a parish or a borough?",
+   "phrase": "parish or a borough",
+   "slot": "property",
+   "expect": {
+    "node": "area_type"
+   }
+  },
+  {
+   "model": "Place",
+   "q": "What's the elevation above sea level?",
+   "phrase": "elevation",
+   "slot": "property",
+   "expect": null
+  },
+  {
+   "model": "Period",
+   "q": "When did the Bronze Age kick off?",
+   "phrase": "kick off",
+   "slot": "date",
+   "expect": {
+    "node": "earliest_possible_start_date"
+   }
+  },
+  {
+   "model": "Period",
+   "q": "What else is the Romano-British period known as?",
+   "phrase": "known as",
+   "slot": "property",
+   "expect": {
+    "node": "alternative_name"
+   }
+  },
+  {
+   "model": "Period",
+   "q": "Which period does the Early Iron Age fall under?",
+   "phrase": "fall under",
+   "slot": "link:Period",
+   "expect": {
+    "node": "parent_period"
+   }
+  },
+  {
+   "model": "Period",
+   "q": "Is that a political period or a cultural one?",
+   "phrase": "political period or a cultural one",
+   "slot": "property",
+   "expect": {
+    "node": "period_type"
+   }
+  },
+  {
+   "model": "Period",
+   "q": "Which monarch was on the throne during the period?",
+   "phrase": "monarch",
+   "slot": "property",
+   "expect": null
+  },
+  {
+   "model": "Bibliographic Source",
+   "q": "When was the book published?",
+   "phrase": "published",
+   "slot": "date",
+   "expect": {
+    "node": "date_of_publication"
+   }
+  },
+  {
+   "model": "Bibliographic Source",
+   "q": "Who brought out the report?",
+   "phrase": "brought out",
+   "slot": "property",
+   "expect": {
+    "node": "publisher"
+   }
+  },
+  {
+   "model": "Bibliographic Source",
+   "q": "Which journal did the article appear in?",
+   "phrase": "appear in",
+   "slot": "link:Bibliographic Source",
+   "expect": {
+    "node": "journal_or_serial"
+   }
+  },
+  {
+   "model": "Bibliographic Source",
+   "q": "What language is it written in?",
+   "phrase": "language",
+   "slot": "property",
+   "expect": {
+    "node": "language"
+   }
+  },
+  {
+   "model": "Bibliographic Source",
+   "q": "How many copies were sold?",
+   "phrase": "copies",
+   "slot": "property",
+   "expect": null
+  },
+  {
+   "model": "Digital Object",
+   "q": "When was the photo taken?",
+   "phrase": "taken",
+   "slot": "date",
+   "expect": {
+    "node": "start_date"
+   }
+  },
+  {
+   "model": "Digital Object",
+   "q": "Is it a PDF or a JPEG?",
+   "phrase": "PDF or a JPEG",
+   "slot": "property",
+   "expect": {
+    "node": "file_format_type"
+   }
+  },
+  {
+   "model": "Digital Object",
+   "q": "Who holds the copyright on the image?",
+   "phrase": "holds the copyright",
+   "slot": "link:Organization",
+   "expect": {
+    "node": "copyright_holder"
+   }
+  },
+  {
+   "model": "Digital Object",
+   "q": "What's the file called?",
+   "phrase": "called",
+   "slot": "property",
+   "expect": {
+    "node": "name"
+   }
+  },
+  {
+   "model": "Digital Object",
+   "q": "What camera was the photo shot on?",
+   "phrase": "camera",
+   "slot": "property",
+   "expect": null
+  },
+  {
+   "model": "Heritage Story",
+   "q": "Which stories are aimed at children?",
+   "phrase": "aimed at",
+   "slot": "property",
+   "expect": {
+    "node": "audience_type"
+   }
+  },
+  {
+   "model": "Heritage Story",
+   "q": "Which stories cover the Victorian period?",
+   "phrase": "cover",
+   "slot": "link:Period",
+   "expect": {
+    "node": "temporal_coverage"
+   }
+  },
+  {
+   "model": "Heritage Story",
+   "q": "Are there any stories about the Thames Barrier?",
+   "phrase": "stories about",
+   "slot": "link:Monument",
+   "expect": {
+    "node": "associated_monuments_areas_and_artefacts"
+   }
+  },
+  {
+   "model": "Heritage Story",
+   "q": "Which stories are translations of 'The Lost Rivers of London'?",
+   "phrase": "translations of",
+   "slot": "link:Heritage Story",
+   "expect": {
+    "node": "translation"
+   }
+  },
+  {
+   "model": "Heritage Story",
+   "q": "How many people have read this story?",
+   "phrase": "read",
+   "slot": "property",
+   "expect": null
+  },
+  {
+   "model": "Application Area",
+   "q": "What's the planning reference for the site?",
+   "phrase": "planning reference",
+   "slot": "property",
+   "expect": {
+    "node": "reference_number"
+   }
+  },
+  {
+   "model": "Application Area",
+   "q": "Which application sites fall in a conservation area?",
+   "phrase": "conservation area",
+   "slot": "property",
+   "expect": {
+    "node": "designation_or_protection_type"
+   }
+  },
+  {
+   "model": "Application Area",
+   "q": "Which application areas overlap the Roman villa?",
+   "phrase": "overlap",
+   "slot": "link:Monument",
+   "expect": {
+    "node": "associated_monuments_areas_and_artefacts"
+   }
+  },
+  {
+   "model": "Application Area",
+   "q": "Who is the landowner?",
+   "phrase": "landowner",
+   "slot": "property",
+   "expect": null
+  },
+  {
+   "model": "Historic Landscape Characterization",
+   "q": "How tall are the buildings, typically?",
+   "phrase": "How tall are the buildings",
+   "slot": "property",
+   "expect": {
+    "node": "average_height"
+   }
+  },
+  {
+   "model": "Historic Landscape Characterization",
+   "q": "Do the houses have big back gardens?",
+   "phrase": "back gardens",
+   "slot": "property",
+   "expect": {
+    "node": "rear_gardens"
+   }
+  },
+  {
+   "model": "Historic Landscape Characterization",
+   "q": "Which old map was the characterisation drawn from?",
+   "phrase": "old map",
+   "slot": "link:Bibliographic Source",
+   "expect": {
+    "node": "historic_map"
+   }
+  },
+  {
+   "model": "Historic Landscape Characterization",
+   "q": "Which character areas date from before 1800?",
+   "phrase": "date from",
+   "slot": "date",
+   "expect": {
+    "node": "hlc_phase_start_date"
+   }
+  },
+  {
+   "model": "Historic Landscape Characterization",
+   "q": "What's the average house price there?",
+   "phrase": "house price",
+   "slot": "property",
+   "expect": null
+  }
+ ]
+}
