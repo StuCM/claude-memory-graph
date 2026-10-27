@@ -28,7 +28,7 @@ Work **per entry**: store the node, then immediately its concepts and links, bef
 - `memory_link` — connect everything. Prefer the existing relations (an unknown relation errors with the full current list); only when nothing genuinely fits, pass `new_relation_description` plus `new_relation_verb_forms` (the phrasings a future question would use — required; they make the relation groundable by retrieval). Typical shape: Person worksOn Project; Project uses Technology; Decision affects Project; Pattern appliesTo Project; Decision manifestsIn Pattern (the anchored layout/trace where the choice lives in code — put file paths in that Pattern's `anchorPath`, not in the Decision's properties); Project hasConstraint Constraint; Person hasPreference Preference.
 
 Write for retrieval — future recall is lexical and link-walking, so the associations must be in the data:
-- **`aliases` property on every substantial node**: the 2–3 phrasings a future prompt would plausibly use (Pattern "RocksDB exclusive lock" → `aliases: "db locking, database lock"`). This is what lets a dumb matcher bridge paraphrase.
+- **`aliases` property on every substantial node**: the 2–4 phrasings a future prompt would plausibly use, in the words of someone hitting it again: the symptom as noticed, not only the fix (Pattern "RocksDB exclusive lock" → `aliases: "db locking, database lock, second session can't open the store"`). Recall matches on meaning as well as words, and a memory's aliases are usually the field a paraphrase lands on.
 - **Link every node to at least one concept** — concepts are the associative index; a node with no concept link is invisible to associative recall.
 - **Property values use the words future-you would search with**, not session-local shorthand.
 

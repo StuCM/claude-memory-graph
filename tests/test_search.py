@@ -60,3 +60,20 @@ def test_invalidated_nodes_excluded(store):
 
 def test_output_points_to_recall(store):
     assert "memory_recall" in search.handle(store, "pyoxigraph")
+
+
+def test_search_finds_a_paraphrase_by_meaning(tmp_path):
+    from claude_memory_graph.store import MemoryStore
+    from claude_memory_graph.tools.search import handle
+    s = MemoryStore.open_or_create(tmp_path / "s")
+    s.create_resource("Pattern", {
+        "name": "Tile cache poisoning after reindex",
+        "description": "reindexing Elasticsearch leaves stale map tiles; flush varnish",
+        "aliases": "stale tiles, map shows deleted features"})
+    s.create_resource("Decision", {"name": "Use pyoxigraph over rdflib", "rationale": "speed"})
+    from claude_memory_graph.gate.recall import _corpus
+    from claude_memory_graph.tools.search import _by_meaning
+    docs = _corpus(s, include_concepts=True)
+    hits = _by_meaning("map still draws things we removed", docs, exclude=set(), room=2)
+    assert [d["name"] for d in hits] == ["Tile cache poisoning after reindex"]
+    assert handle(s, "write a haiku about autumn").startswith("No matches")

@@ -19,6 +19,7 @@ the graph without an LLM.
 | know what it's doing at runtime, debug it, tune it | [Handbook](HANDBOOK.md) |
 | read the injection log and act on misses | [Tuning](TUNING.md) |
 | let a colleague query a project, or reach your memory remotely | [Remote access](REMOTE.md) |
+| find out whether the graph beats Claude's built-in memory for you | [The 10-question comparison](COMPARE.md) |
 | look up a term | [Glossary](GLOSSARY.md) |
 
 ## How it works

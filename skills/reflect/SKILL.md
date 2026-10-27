@@ -73,5 +73,15 @@ Run `claude-memory-graph asks` (read-only CLI — note it is only on PATH from a
 - **Misgrounding suspects** — a verb form that fires but its asks always end with no rows (e.g. a prose word like "under" colliding with a relation). Remove it with `memory_amend_relation` if the relation is LLM-added; for base-ontology relations suggest the base.ttl edit (+ version bump) to the user.
 - **Vocabulary gaps** — terms that repeatedly ground to nothing in failed asks. If a gap term is a phrasing of an existing relation, `memory_amend_relation` with `add_verb_forms`; if it's an alternate name of an existing node, add it to that node's `aliases`; if it names something real and absent, capture the node.
 
+### 6b. Alias backfill (how memories get found)
+Recall matches a prompt's meaning against each memory's fields, and the field it lands on is usually an alias. Find knowledge nodes without any:
+```sparql
+SELECT ?model ?name WHERE { GRAPH ?g { ?n rdf:type ?t ; mem:name ?name .
+  VALUES ?t { mem:Decision mem:Pattern mem:Task }
+  FILTER NOT EXISTS { ?n mem:aliases ?a } FILTER NOT EXISTS { ?n mem:invalidated ?x }
+  BIND(STRAFTER(STR(?t), "#") AS ?model) } } LIMIT 25
+```
+For each, `memory_recall` it, then `memory_store_resource` the same model and exact name with `aliases`: 2–4 phrasings in the words someone would use when running into it again — the symptom as noticed ("map shows deleted features"), not only the fix. Work through one batch per run; say how many remain.
+
 ### 7. Report
 Terse: graph state, links created and why, orphans/stale nodes found, suggested missing knowledge.

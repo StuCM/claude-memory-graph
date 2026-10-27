@@ -127,6 +127,12 @@ claude-memory-graph query 'SELECT ?name WHERE { GRAPH ?g { ?n rdf:type mem:Proje
 
 Writes are deliberately MCP-only: a running server holds the graph in memory and saves after each mutation, so terminal writes would be overwritten by the next in-session save.
 
+## Is it worth it?
+
+Claude Code has its own memory (`CLAUDE.md`, and per-repo auto memory). To see whether
+the graph answers questions that doesn't, run your own questions through both:
+`claude-memory-graph compare my-questions.toml`. See **[docs/COMPARE.md](docs/COMPARE.md)**.
+
 ## Running, debugging, tuning
 
 **[docs/HANDBOOK.md](docs/HANDBOOK.md)** is the operator's guide: what each subsystem is

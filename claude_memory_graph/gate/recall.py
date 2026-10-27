@@ -31,7 +31,8 @@ import os
 import re
 from pathlib import Path
 
-from claude_memory_graph.hookcore import HookContext, HookExtension, append_jsonl, bigrams, terms_pos
+from claude_memory_graph.hookcore import (HookContext, HookExtension, append_jsonl, bigrams,
+                                          log_error, terms_pos)
 
 from .runtime import config, store_dir
 
@@ -159,6 +160,7 @@ def _corpus(store, include_concepts: bool = False) -> list[dict]:
             "terms": {w for _, w in all_pos},
             "name_bigrams": _bigrams(name_pos),
             "bigrams": _bigrams(all_pos) | concept_bigrams,
+            "parts": d["parts"],          # the semantic channel embeds these
         })
     return docs
 
@@ -272,7 +274,7 @@ def decide(ranked: list[tuple[float, dict]], cfg: dict) -> tuple[list, float, in
 # ----------------------------------------------------------------
 
 # Bump when the doc dict shape or scoring inputs change.
-_INDEX_VERSION = 1
+_INDEX_VERSION = 2   # 2: docs carry parts; the index carries field embeddings
 
 
 def _index_key() -> tuple | None:
@@ -316,7 +318,7 @@ def gate_index(project: str, opener) -> tuple[list[dict], dict, set[str], dict[s
         store = opener()
         docs = _corpus(store)
         cached = {"key": key, "docs": docs, "idf": _idf(docs), "near": {},
-                  "links": _link_summaries(store, docs)}
+                  "links": _link_summaries(store, docs), "sem": _semantic_index(docs)}
         dirty = True
     near = cached["near"].get(project)
     if near is None:
@@ -332,7 +334,53 @@ def gate_index(project: str, opener) -> tuple[list[dict], dict, set[str], dict[s
             tmp.replace(path)
         except Exception:
             pass
+    global _last_semantic
+    _last_semantic = cached.get("sem")
     return cached["docs"], cached["idf"], near, cached["links"]
+
+
+_ENTITY_MODELS = frozenset({"Project", "Person", "Company", "Technology"})
+
+# The field embeddings that came with the gate index this process loaded.
+_last_semantic = None
+
+
+def _semantic_index(docs: list[dict]) -> dict | None:
+    if not config()["SEMANTIC"]:
+        return None
+    try:
+        from . import semantic
+        return semantic.build_index(docs)
+    except Exception as exc:  # embeddings are an extra channel — fail open
+        log_error("semantic index", exc)
+        return None
+
+
+def semantic_pick(prompt: str, docs: list[dict], cfg: dict) -> tuple[list, float, float]:
+    """The meaning channel, consulted when the lexical gate stays silent.
+    Fires on one memory when its best field is close enough to the prompt
+    AND clearly ahead of the runner-up — a flat field of weak similarities
+    is noise, not a match. Returns ([(score, doc)] or [], top, second)."""
+    index = _last_semantic
+    if index is None or not docs:
+        return [], 0.0, 0.0
+    try:
+        from . import semantic
+        ranked = semantic.rank(index, prompt, len(docs))
+    except Exception as exc:
+        log_error("semantic rank", exc)
+        return [], 0.0, 0.0
+    # Knowledge, not entities: a prompt about search is near the Elasticsearch
+    # node in meaning without needing it. Entities are matched by name — the
+    # lexical channel's job; meaning is for decisions, patterns, problems.
+    ranked = [(s, i) for s, i in ranked if docs[i]["model"] not in _ENTITY_MODELS]
+    if not ranked:
+        return [], 0.0, 0.0
+    top, best = ranked[0]
+    second = ranked[1][0] if len(ranked) > 1 else 0.0
+    if top >= cfg["SEM_MIN"] and top - second >= cfg["SEM_GAP"]:
+        return [(top, docs[best])], top, second
+    return [], top, second
 
 
 def _link_summaries(store, docs: list[dict]) -> dict[str, str]:
@@ -427,13 +475,22 @@ class RecallExtension(HookExtension):
         top = ranked[0][0]
         strong, rest, similar = decide(ranked, cfg)
         session = ctx.core.get("session_id", "")
+        via = "lexical"
+        sem_top = sem_second = 0.0
+        if not strong:
+            # the words didn't match; does the meaning? (gate/semantic.py)
+            strong, sem_top, sem_second = semantic_pick(ctx.prompt, docs, cfg)
+            similar = 0
+            if strong:
+                via = "semantic"
         if not strong:
             # top_node makes silent decisions joinable by the miss detector:
             # "what WOULD the gate have injected, and what did it score?"
             append_jsonl("injections.jsonl", {
                 "fired": False, "top": round(top, 2), "rest": round(rest, 2),
                 "top_node": ranked[0][1]["name"], "session": session,
-                "project": ctx.project, "terms": sorted(q)})
+                "project": ctx.project, "terms": sorted(q),
+                "sem_top": round(sem_top, 3), "sem_second": round(sem_second, 3)})
             # graph silent -> the session log gets the whole budget
             return self._log_recall(ctx, q, views, idf, budget=cfg["TOP_N"])
 
@@ -447,7 +504,9 @@ class RecallExtension(HookExtension):
                 fresh.append(d["gid"])
         entry = {"fired": bool(fresh), "top": round(top, 2), "rest": round(rest, 2),
                  "session": session, "project": ctx.project, "terms": sorted(q),
-                 "nodes": [d["name"] for _, d in strong]}
+                 "nodes": [d["name"] for _, d in strong], "via": via}
+        if via == "semantic":
+            entry["sem_top"], entry["sem_second"] = round(sem_top, 3), round(sem_second, 3)
         if similar:
             entry["cluster"] = similar
         append_jsonl("injections.jsonl", entry)

@@ -41,6 +41,9 @@ _DEFAULTS = {
     "TOP_N": 2,         # recall: max memories per injection
     "CLUSTER_FACTOR": 3.0,  # recall: a group scoring >= this x ABS_MIN is a topic cluster, not noise
     "PRIME_MAX_CHARS": 3000,  # auto-prime: size budget for each session-start section
+    "SEMANTIC": True,   # recall: when the words don't match, try the meaning (gate/semantic.py)
+    "SEM_MIN": 0.40,    # recall: best-field cosine a semantic match needs
+    "SEM_GAP": 0.08,    # recall: ...and its lead over the runner-up (a flat field is noise)
     "PROX_BOOST": 1.5,  # recall: multiplier for current project's node + 1-hop neighbours
     "PHRASE_GAP": 2,    # recall: max original-token distance for a bigram (2 = one word between)
     "N_TURNS": 3,       # nudge: remind every N significant prompts

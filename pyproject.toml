@@ -1,12 +1,15 @@
 [project]
 name = "claude-memory-graph"
-version = "0.16.0"
+version = "0.17.0"
 description = "Arches-inspired knowledge graph MCP server for Claude Code long-term memory"
 requires-python = ">=3.11"
 dependencies = [
     "pyoxigraph>=0.4",
     "mcp>=2",
     "anthropic>=1.1",
+    # meaning-level matching (gate/semantic.py); only where a prebuilt wheel
+    # exists — elsewhere the gate matches words only, as before
+    "wordllama>=0.4,<0.5; python_version < '3.14' and (sys_platform == 'darwin' or (sys_platform == 'win32' and platform_machine == 'AMD64') or (sys_platform == 'linux' and platform_machine == 'x86_64'))",
 ]
 
 [project.scripts]

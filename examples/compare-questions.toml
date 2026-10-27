@@ -1,0 +1,29 @@
+# Your 10 real questions: things you've actually asked, or wished you could,
+# across your projects. Run:  claude-memory-graph compare examples/compare-questions.toml
+#
+# text    — the question, worded as you'd type it (not as the memory is named)
+# project — the repo/folder you'd be in when you ask it
+# expect  — words a right answer has to contain (all of them, any case)
+# path    — optional: the repo's path, so its CLAUDE.md counts as built-in memory
+# note    — optional: anything to remember when reading the result
+
+[[question]]
+text = "what did we decide about caching map tiles, and why?"
+project = "quartz"
+expect = ["varnish"]
+
+[[question]]
+text = "where else have we hit duplicated rows after an Arches restore?"
+project = "charcoal"
+expect = ["post_save"]
+note = "cross-project: asked in charcoal, the memory is from quartz"
+
+[[question]]
+text = "the celery workers keep restarting, is that expected?"
+project = "quartz"
+expect = ["memory", "512"]
+
+# ... add yours, up to 10 or more. Mix:
+#  - questions inside one project (built-in memory's home ground)
+#  - questions that need another project's knowledge (the graph's claim)
+#  - questions phrased the way you'd describe the symptom, not the fix
