@@ -1,0 +1,41 @@
+{"_about": "Phrases per node, written once by an LLM from models.json alone (no test cases seen).",
+ "heritage_asset": {
+  "construction_date": ["built", "constructed", "erected", "put up", "raised", "completed", "finished", "went up", "were built", "was built", "date of construction", "construction date", "built in", "built before", "built after", "dating from", "dates from", "date built", "year built", "when was it built", "how old", "age", "construction", "founded", "established"],
+  "constructed_by": ["built by", "constructed by", "erected by", "put up by", "builder", "builders", "contractor", "contractors", "construction firm", "mason", "masons", "who built", "who constructed", "who erected", "carried out the construction", "construction carried out by"],
+  "architect": ["architect", "architects", "designed by", "design by", "who designed", "designer", "planned by", "drawn up by", "architectural design", "the work of", "by the architect", "drew the plans", "plans by"],
+  "demolition_date": ["demolished", "torn down", "pulled down", "knocked down", "razed", "levelled", "leveled", "destroyed", "taken down", "flattened", "bulldozed", "cleared", "lost", "no longer standing", "demolition", "date of demolition", "demolition date", "when was it demolished"],
+  "designation_date": ["designated", "listed", "scheduled", "protected", "given protection", "date of designation", "designation date", "date listed", "listing date", "when was it listed", "when designated", "added to the list", "received listed status", "gained protection", "became listed"],
+  "designation_type": ["designation", "designation type", "type of designation", "listed building", "listing", "listing grade", "grade", "grade i", "grade ii", "category a", "category b", "scheduled monument", "scheduled ancient monument", "conservation area", "protection status", "protected status", "statutory protection", "what designation", "what grade"],
+  "survey_date": ["surveyed", "recorded", "survey", "survey date", "date of survey", "date surveyed", "when was it surveyed", "field visit", "visited", "fieldwork", "measured", "documented", "recorded on site"],
+  "surveyor": ["surveyor", "surveyors", "surveyed by", "recorded by", "who surveyed", "survey carried out by", "survey by", "fieldworker", "documented by", "measured by"],
+  "owner": ["owner", "owners", "owned by", "belongs to", "belonging to", "property of", "who owns", "in the possession of", "held by", "proprietor", "landlord", "ownership", "possessed by", "owns"],
+  "ownership_start_date": ["acquired", "bought", "purchased", "came into ownership", "took ownership", "took over", "changed hands", "sold to", "inherited", "transferred to", "acquisition", "date of acquisition", "purchase date", "ownership start", "since when owned", "became owner", "acquired in"],
+  "site": ["site", "located at", "located on", "on the site of", "situated at", "sits on", "stands on", "part of the site", "which site", "at the site", "location", "where is", "found at", "lies within"],
+  "condition": ["condition", "state", "state of repair", "state of preservation", "in good condition", "in poor condition", "at risk", "derelict", "ruinous", "ruined", "dilapidated", "decaying", "well preserved", "intact", "damaged", "deteriorating", "disrepair", "how well preserved", "what condition"],
+  "condition_assessment_date": ["assessed", "inspected", "condition assessment", "assessment date", "date of assessment", "condition checked", "last inspected", "last assessed", "inspection", "inspection date", "condition survey date", "when was it assessed", "when was it inspected", "evaluated", "checked"],
+  "use": ["use", "used as", "used for", "function", "functions as", "purpose", "serves as", "type of use", "current use", "original use", "what is it used for", "what was it used for", "role", "functioning as", "house", "church", "mill", "school", "residential", "industrial", "agricultural", "religious"]
+ },
+ "person": {
+  "birth_date": ["born", "birth", "date of birth", "birth date", "birthday", "dob", "year of birth", "when was born", "born in", "born before", "born after", "came into the world", "age", "how old", "birth year"],
+  "death_date": ["died", "death", "date of death", "death date", "passed away", "passed on", "deceased", "dead", "year of death", "when did die", "died in", "died before", "died after", "killed", "perished", "lost their life", "buried"],
+  "member_of": ["member of", "members of", "membership", "belonged to", "belongs to", "joined", "affiliated with", "affiliation", "part of", "in the", "member", "fellow of", "worked for", "employed by", "associated with", "which organisation", "which organization"],
+  "nationality": ["nationality", "national", "citizen of", "citizenship", "from which country", "what country", "country of origin", "scottish", "irish", "english", "welsh", "british", "french", "american", "german", "of nationality", "native of"]
+ },
+ "building": {
+  "site": ["site", "located at", "located on", "on the site", "situated at", "stands on", "sits on", "which site", "at the site", "part of site", "where is", "location", "lies within", "found at"],
+  "heritage_status": ["heritage status", "heritage", "listed", "listing", "protected", "protection status", "historic", "historic status", "conservation status", "heritage designation", "designated", "heritage listed", "of heritage value", "landmark", "is it listed"],
+  "gem_taxonomy": ["gem taxonomy", "gem", "taxonomy", "construction type", "building type", "structural type", "structural system", "lateral load resisting system", "material", "materials", "made of", "built of", "built from", "construction material", "masonry", "concrete", "reinforced concrete", "timber", "wood frame", "steel frame", "unreinforced masonry", "brick", "stone"],
+  "service_roles": ["service roles", "service role", "services", "service", "serves as", "provides", "role", "roles", "facility type", "emergency services", "hospital", "school", "shelter", "fire station", "police station", "used as", "functions", "what services"],
+  "cluster_type": ["cluster type", "cluster", "clustered", "grouping", "group type", "settlement type", "kind of cluster", "urban cluster", "rural cluster", "block type", "arrangement", "which cluster"],
+  "height_m": ["height", "tall", "high", "how tall", "how high", "taller than", "higher than", "shorter than", "metres tall", "meters tall", "metres high", "storeys", "stories", "floors", "tallest", "highest", "lowest", "elevation"],
+  "capacity": ["capacity", "occupant capacity", "occupants", "occupancy", "how many people", "hold", "holds", "accommodate", "accommodates", "can house", "seats", "people", "max occupancy", "maximum occupancy", "fit", "largest capacity", "number of people"],
+  "insured_value": ["insured value", "insurance", "insured for", "insurance value", "value", "worth", "how much is it worth", "valued at", "cost", "price", "expensive", "cheap", "most valuable", "sum insured", "cover", "replacement value", "pounds", "euros", "dollars"]
+ },
+ "organisation": {
+  "registered_site": ["registered site", "registered at", "registered address", "registered office", "registered in", "headquartered at", "headquarters", "hq", "head office", "based at site", "official address", "registered location", "domiciled at", "incorporated at"],
+  "occupies": ["occupies", "occupy", "occupied", "occupying", "operates from", "operates out of", "based in", "housed in", "located in", "uses building", "works out of", "in the building", "tenant of", "tenants", "premises", "building", "buildings", "which building"],
+  "sector": ["sector", "industry", "field", "line of business", "business area", "public sector", "private sector", "voluntary sector", "charity", "nonprofit", "non-profit", "commercial", "government", "what kind of organisation", "type of organisation", "works in"],
+  "size_band": ["size band", "size", "how big", "how large", "large", "small", "medium", "big", "number of employees", "employees", "staff", "headcount", "sme", "small business", "large organisation", "workforce", "biggest", "smallest"],
+  "service_roles": ["service roles", "service role", "services", "service", "provides", "offers", "role", "roles", "what services", "emergency services", "responsible for", "delivers", "function", "functions", "supplies", "provider of"]
+ }
+}

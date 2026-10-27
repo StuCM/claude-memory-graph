@@ -25,21 +25,45 @@ Each matcher runs in two conditions:
 
 A **dangerous** answer is a wrong node, or a node where none fits. A miss only means the planner asks or refuses, so a dangerous answer is worse.
 
-## Baseline (2026-10-27, what runs in this environment)
+## Results so far (2026-10-27)
 
-| | exact words (today's ceist) | WordLlama, gate thresholds | WordLlama, best-scored node (top-1) | WordLlama, tuned* |
+Out of 50 cases where a node fits. In every row below, all 7 "nothing fits" cases were correctly refused.
+
+| matcher | restricted: right | restricted: dangerous | all nodes: right | all nodes: dangerous |
 | --- | --- | --- | --- | --- |
-| restricted | 7/50 right, 0 dangerous | 20/50, 0 dangerous | 44/50 | 34/50, 0 dangerous (≥0.14, gap 0.04) |
-| all nodes | 5/50, 1 dangerous | 13/50, 4 dangerous | 28/50 | 15/50, 0 dangerous |
+| exact words (today's ceist) | 7 | 0 | 5 | 1 |
+| WordLlama on node names | 20 | 0 | 13 | 4 |
+| **vocabulary + exact words** | **43** | **0** | 42 | 0 |
+| **vocabulary + WordLlama** | **48** | **0** | 47 | 1 |
 
-\* Tuned on the same cases it's scored on, so it's an upper bound until checked on held-out questions.
+The **vocabulary** is `vocab.json`: 514 phrasings for the 31 nodes. A fresh LLM agent wrote it once, offline, from `models.json` alone. It was told not to open the cases, and it used only two tool calls (read the models, write the file). At question time nothing runs but a word lookup and WordLlama. The thresholds are the gate's defaults (0.40, gap 0.08), not tuned.
 
-What this shows so far:
-- **The structure matters most.** WordLlama's top-scoring node is right 44 of 50 times when the planner narrows the candidates first, and 28 of 50 when it doesn't. That narrowing is what reading the models through Alizarin provides.
-- **The gate's thresholds (0.40, gap 0.08) don't suit single words.** They were set for whole prompts against whole memories.
-- **WordLlama's misses** are phrasal and idiomatic: "put up", "date from", "kind of protection", "worked for", "based in", "built of". A model that reads the whole question should help with exactly these.
+What's left:
+- **"date from":** every date node scores about 0.8, so the gap rule refuses. Correct: the phrase really is ambiguous.
+- **"made by":** 0.40, just at the threshold.
+- **The one dangerous pick:** with all nodes and no narrowing, "kind of protection" goes to the designation *date*. With narrowing (a property question excludes dates), it's refused.
 
-The ONNX and GGUF matchers haven't been run yet. Their weights are on huggingface.co, which this environment's network policy blocks. The adapters in `compare.py` are written but **untested until they run**.
+**Caveat.** The person who wrote the cases and the agent that wrote the vocabulary are from the same model family, so they may think alike, and these numbers are probably optimistic. The real test is questions from real users, held out from vocabulary building.
+
+For comparison, WordLlama on bare node names is right 44/50 when you take its single best-scoring node (restricted), but only 34/50 once thresholds keep it safe (tuned on these same cases, so an upper bound). The vocabulary gets 48/50 with untuned thresholds.
+
+### The design this points to: spend the LLM at build time, not query time
+
+As in the memory graph, the intelligence goes in when the data is written, not when it's queried:
+
+1. **Build (when the graphs change):** `ceist vocab build <data_dir>`.
+   - Read each model through Alizarin: node names, cards and groups, datatypes, link targets, descriptions, concept labels.
+   - Ask a strong LLM for each node's everyday phrasings.
+   - Write `vocab.json` next to the data. It's reviewed like code, and records a hash of the graphs so a stale file is detected.
+2. **Question time (every question, in the browser):**
+   - the planner's structure narrows the candidates;
+   - an exact match on a phrasing wins;
+   - otherwise WordLlama picks the nearest phrasing, with a minimum score and a gap to the runner-up;
+   - otherwise ask or refuse.
+   This means static files and no model at query time.
+3. **Learn from use:** phrases the planner couldn't place get logged, and the next build hands them to the LLM to assign. A person approves the result.
+
+The ONNX and Qwen matchers still run once their weights are reachable. They now have to beat 48/50 *at query time* to be worth their size in the browser.
 
 ## In the browser
 

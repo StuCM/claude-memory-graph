@@ -103,6 +103,47 @@ class Exact:
         return (hits[0]["alias"] if len(hits) == 1 else None), None
 
 
+def _vocab():
+    path = HERE / "vocab.json"
+    return json.loads(path.read_text()) if path.exists() else None
+
+
+def _norm(s: str) -> str:
+    return " ".join(re.findall(r"[a-z0-9]+", s.lower()))
+
+
+class VocabExact:
+    """An LLM-written vocabulary (vocab.json, built once offline), matched by
+    words: the phrase equals one of a node's phrasings, or one contains the
+    other as whole words. One node must win, else abstain."""
+    name = "vocabulary + exact words"
+    size, browser = "the vocabulary file (~20 KB)", "yes"
+
+    def __init__(self):
+        self.vocab = _vocab()
+        if self.vocab is None:
+            raise Skip("no vocab.json")
+
+    def pick(self, q, phrase, cands, model=None):
+        p = _norm(phrase)
+        best = {}
+        for n in cands:
+            for v in self.vocab.get(model, {}).get(n["alias"], []):
+                v = _norm(v)
+                if v == p:
+                    score = 3
+                elif f" {v} " in f" {p} " or f" {p} " in f" {v} ":
+                    score = 1 + (len(v) > 3)
+                else:
+                    continue
+                best[n["alias"]] = max(best.get(n["alias"], 0), score)
+        if not best:
+            return None, None
+        top = max(best.values())
+        winners = [a for a, s in best.items() if s == top]
+        return (winners[0] if len(winners) == 1 else None), None
+
+
 class Threshold:
     """Pick the best score if it clears `low` and beats the runner-up by `gap`."""
     low, gap = 0.40, 0.08
@@ -137,6 +178,37 @@ class WordLlama(Threshold):
     def pick(self, q, phrase, cands):
         p = self.vec(phrase)
         scored = [(float(p @ self.vec(describe(n))), n["alias"]) for n in cands]
+        return self.choose(scored), scored
+
+
+class VocabWordLlama(WordLlama):
+    """The vocabulary's phrasings, matched by meaning with WordLlama: a node
+    scores its best phrasing. Exact vocabulary hits win outright."""
+    name = "vocabulary + WordLlama"
+    size, browser = "16 MB + the vocabulary file", "yes"
+
+    def __init__(self):
+        super().__init__()
+        self.vocab = _vocab()
+        if self.vocab is None:
+            raise Skip("no vocab.json")
+        self.exact = VocabExact()
+        self._cache = {}
+
+    def cvec(self, text):
+        if text not in self._cache:
+            self._cache[text] = self.vec(text)
+        return self._cache[text]
+
+    def pick(self, q, phrase, cands, model=None):
+        hit, _ = self.exact.pick(q, phrase, cands, model)
+        p = self.vec(phrase)
+        scored = []
+        for n in cands:
+            texts = [describe(n)] + self.vocab.get(model, {}).get(n["alias"], [])
+            scored.append((max(float(p @ self.cvec(x)) for x in texts), n["alias"]))
+        if hit:
+            return hit, [(1.0 if a == hit else s, a) for s, a in scored]
         return self.choose(scored), scored
 
 
@@ -252,7 +324,7 @@ class GgufChooser:
 
 
 def matchers():
-    built = [lambda: Exact(), lambda: WordLlama(),
+    built = [lambda: Exact(), lambda: WordLlama(), lambda: VocabExact(), lambda: VocabWordLlama(),
              lambda: OnnxBiEncoder("minilm", "bi-encoder (all-MiniLM-L6-v2, ONNX)"),
              lambda: OnnxBiEncoder("bge-small", "bi-encoder (bge-small-en-v1.5, ONNX)", pooling="cls"),
              lambda: OnnxCrossEncoder(),
@@ -275,7 +347,10 @@ def run(m, models, cases, restricted: bool):
     rows, t0 = [], time.perf_counter()
     for case in cases:
         cands = candidates(models, case, restricted)
-        got, scored = m.pick(case["q"], case["phrase"], cands)
+        if isinstance(m, (VocabExact, VocabWordLlama)):
+            got, scored = m.pick(case["q"], case["phrase"], cands, case["model"])
+        else:
+            got, scored = m.pick(case["q"], case["phrase"], cands)
         want = case["expect"]
         if want is None:
             kind = "abstained_ok" if got is None else "false_match"
