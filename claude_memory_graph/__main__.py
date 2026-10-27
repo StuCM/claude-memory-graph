@@ -187,6 +187,10 @@ def main() -> None:
     p.add_argument("filename", nargs="?", default="injections.jsonl")
     p.add_argument("-n", "--lines", type=int, default=20, help="show the last N entries")
     p.add_argument("-f", "--follow", action="store_true", help="keep watching for new entries")
+    p = sub.add_parser("compare", help="check your real questions against the graph and "
+                                       "against Claude Code's built-in memory (docs/COMPARE.md)")
+    p.add_argument("questions", type=Path, help="a questions .toml file")
+    p.add_argument("--out", type=Path, default=None, help="report path (default: next to it)")
     p = sub.add_parser("coverage", help="grounding-coverage experiment over real prompts")
     p.add_argument("--prompts", type=Path, default=None,
                    help="text file, one prompt per line")
@@ -290,6 +294,10 @@ def main() -> None:
         print(usage.report(store, days=args.days, show=args.show))
         return
 
+    if args.cmd == "compare":
+        from .compare import main as compare_main
+        compare_main(args.questions, args.out)
+        return
     if args.cmd == "coverage":
         from .gate import coverage
         prompts: list[str] = []

@@ -64,12 +64,22 @@ CASES = [
     ("celery worker keeps restarting, is that the memory leak fix?", "quartz", "Celery workers restart on memory cap"),
     ("migrations fail because the database is not ready", "quartz", "Docker compose healthcheck before migrations"),
     ("why does the stop hook nag me about the context log", "claude-memory-graph", "Stop block for context capture"),
+    # shares no words with the memory: matched by meaning (gate/semantic.py)
+    ("map still draws things we removed", "quartz", "Tile cache poisoning after reindex"),
     # nothing in memory fits these: the gate must stay silent
     ("thanks, that looks good", "quartz", None),
     ("run the linter again please", "claude-memory-graph", None),
     ("write a haiku about autumn", "quartz", None),
     ("add a dark mode toggle to the settings page", "quartz", None),
     ("bump the version number and update the changelog", "claude-memory-graph", None),
+    # techy, but nothing in memory is about them: the semantic channel must stay quiet too
+    ("write unit tests for the csv parser", "quartz", None),
+    ("the build is red, can you check CI", "claude-memory-graph", None),
+    ("explain how python decorators work", "quartz", None),
+    ("rename this variable to something clearer", "claude-memory-graph", None),
+    ("the login page is slow to load", "quartz", None),
+    ("add pagination to the search results", "quartz", None),
+    ("fix the typo in the readme", "claude-memory-graph", None),
 ]
 
 # Paraphrases sharing little vocabulary with the memory: the lexical gate's
@@ -79,8 +89,16 @@ KNOWN_GAPS = [
     ("why is the knowledge base saved to disk so eagerly", "claude-memory-graph",
      "Save after every mutating tool call"),
     ("the background job runner keeps bouncing", "quartz", "Celery workers restart on memory cap"),
-    ("map still draws things we removed", "quartz", "Tile cache poisoning after reindex"),
 ]
+
+# Without the embedding model (platforms with no wordllama wheel) the gate is
+# word-only, and meaning-matched cases are gaps again rather than failures.
+from claude_memory_graph.gate import semantic as _semantic  # noqa: E402
+
+if not _semantic.available():
+    _by_meaning = [c for c in CASES if c[0] == "map still draws things we removed"]
+    CASES = [c for c in CASES if c not in _by_meaning]
+    KNOWN_GAPS = KNOWN_GAPS + _by_meaning
 
 # Floors: what the gate achieves today. Raise them when it improves.
 MIN_HIT_RATE = 1.0         # share of answerable prompts whose memory surfaced

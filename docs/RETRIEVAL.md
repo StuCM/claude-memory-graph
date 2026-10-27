@@ -131,6 +131,20 @@ property: the two or three phrasings a future prompt would plausibly use. The se
 done once, by the model that's already there, and persisted — read-time matching stays dumb,
 fast, and deterministic. (This is a capture rule in service of retrieval — the tracks meet here.)
 
+**Matching by meaning, as a second channel (built, 0.17).** Aliases alone left a measured gap:
+the benchmark's paraphrases ("map still draws things we removed") share no words with their
+memory. The gate now has a second channel ([gate/semantic.py](../claude_memory_graph/gate/semantic.py)):
+static word embeddings (WordLlama, 256-d, weights shipped in the PyPI package, no torch or
+download), each memory embedded *field by field* (name, each property, each alias), scored by
+its best field. It is consulted only when the lexical gate stays silent, fires on one memory
+only when its best field clears `SEM_MIN` (0.40) **and** leads the runner-up by `SEM_GAP` (0.08),
+and never matches entities (Project, Person, Company, Technology): a prompt about search is
+close in meaning to the Elasticsearch node without needing it. Both channels are logged (`via`,
+`sem_top`) so the thresholds can be tuned from real silences. This doesn't replace write-time
+aliases. It is what makes them work: on the benchmark, the paraphrase that now matches lands on
+an alias written as a symptom ("map shows deleted features"); the two still missed have no
+such alias. Cost: about +100ms a prompt once the person's vocabulary is cached. Installed where a prebuilt wheel exists (macOS, Windows x64, Linux x86-64; Python 3.11–3.13); elsewhere the gate matches words only.
+
 **The analyzer nominates; the model disposes.** The final relevance judgement was never the
 analyzer's job — there *is* an LLM in the loop: the main model reading the injection. The
 analyzer over-fetches slightly within its precision threshold and token budget; the model, which
