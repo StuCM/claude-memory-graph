@@ -32,7 +32,7 @@ logs are written live, this join happens when you ask for it).
 
 import json
 
-from claude_hook_kit import state_home
+from claude_memory_graph.hookcore import state_home
 
 from .runtime import config
 

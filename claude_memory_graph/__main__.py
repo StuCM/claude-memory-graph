@@ -155,6 +155,11 @@ def main() -> None:
     p.add_argument("--days", type=float, default=None,
                    help="window in days (default: all time)")
     p.add_argument("--show", type=int, default=10, help="most-reached rows to list")
+    p = sub.add_parser("log", help="pretty-print a jsonl log from the state home "
+                                   "(default injections.jsonl)")
+    p.add_argument("filename", nargs="?", default="injections.jsonl")
+    p.add_argument("-n", "--lines", type=int, default=20, help="show the last N entries")
+    p.add_argument("-f", "--follow", action="store_true", help="keep watching for new entries")
     p = sub.add_parser("coverage", help="grounding-coverage experiment over real prompts")
     p.add_argument("--prompts", type=Path, default=None,
                    help="text file, one prompt per line")
@@ -174,6 +179,11 @@ def main() -> None:
     if args.cmd == "misses":
         from .gate import misses
         print(misses.report())
+        return
+
+    if args.cmd == "log":
+        from .gate.logview import print_log
+        print_log(args.filename, args.lines, args.follow)
         return
 
     if args.cmd == "asks":

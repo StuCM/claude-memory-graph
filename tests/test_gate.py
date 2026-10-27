@@ -4,8 +4,8 @@ import time
 
 import pytest
 
-from claude_hook_kit import HookContext, terms, terms_pos, state_home
-import claude_hook_kit.state as kit_state
+from claude_memory_graph.hookcore import HookContext, terms, terms_pos, state_home
+import claude_memory_graph.hookcore.state as kit_state
 from claude_memory_graph.gate import runtime
 from claude_memory_graph.gate.recall import RecallExtension, _bigrams, _score
 from claude_memory_graph.gate.nudge import ContextCounterExtension
@@ -17,7 +17,7 @@ def kit_home(tmp_path, monkeypatch):
     """Isolated hook-kit home (state, injections.jsonl, errors.log) and an
     empty session-log dir — otherwise the log-recall layer reads the real
     ~/.claude/context/ files and leaks them into every gate test."""
-    monkeypatch.setenv(kit_state.HOOK_KIT_HOME_ENV, str(tmp_path / "kit"))
+    monkeypatch.setenv(kit_state.STATE_HOME_ENV, str(tmp_path / "kit"))
     monkeypatch.setenv("CLAUDE_CONTEXT_DIR", str(tmp_path / "empty-context"))
     return tmp_path / "kit"
 
@@ -319,7 +319,7 @@ def test_non_memory_tools_ignored(kit_home):
 # ================= miss detector: the join =================
 
 from claude_memory_graph.gate import misses as misses_mod
-from claude_hook_kit import append_jsonl
+from claude_memory_graph.hookcore import append_jsonl
 
 
 def _seed_logs(entries_decisions, entries_recalls):

@@ -20,7 +20,7 @@ scan is noise next to the graph scan).
 from datetime import datetime, timezone
 from pathlib import Path
 
-from claude_hook_kit import terms_pos
+from claude_memory_graph.hookcore import terms_pos
 
 from ..context_entries import undistilled_files, parse_file
 

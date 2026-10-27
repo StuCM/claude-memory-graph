@@ -216,7 +216,7 @@ def auto_distill(store: MemoryStore) -> Report | None:
         report = distill(store, keep=True,
                          retire_after_days=config()["DISTILL_AFTER_DAYS"])
         if report.files:
-            from claude_hook_kit import append_jsonl
+            from claude_memory_graph.hookcore import append_jsonl
             append_jsonl("capture.jsonl", {
                 "kind": "distill", "auto": True, "files": len(report.files),
                 "stored": len(report.stored), "linked": report.linked,

@@ -7,7 +7,7 @@
 The engine lives in claude-hook-kit (this package's dependency): its
 dispatcher runs these extensions per hook event, owns core session state
 (prompt/significant counts, project), and namespaces each extension's own
-persisted state. Discovery is via the `claude_hook_kit` entry points in
+persisted state. Discovery is via the `claude_memory_graph.hookcore` entry points in
 pyproject.toml; manage with `claude-hooks enable/disable <name>` or the
 /hook-kit:install skill. See runtime.py's docstring for debugging notes.
 """

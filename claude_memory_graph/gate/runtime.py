@@ -4,7 +4,7 @@ The engine that used to live here (stdin → Context → checks → exit 0) is
 now claude-hook-kit's dispatcher — a standalone framework this package
 depends on. What remains is memory-graph's own tuning surface and paths;
 the checks themselves are HookExtension subclasses in recall.py / nudge.py,
-discovered via the `claude_hook_kit` entry points in pyproject.toml and
+discovered via the `claude_memory_graph.hookcore` entry points in pyproject.toml and
 managed with `claude-hooks enable/disable` (the /hook-kit:install skill).
 Both are enabled_by_default: installing memory-graph gives a working gate
 with zero setup, and an explicit enable/disable overrides that.

@@ -4,15 +4,15 @@ import json
 
 import pytest
 
-import claude_hook_kit.state as kit_state
-from claude_hook_kit import state_home
+import claude_memory_graph.hookcore.state as kit_state
+from claude_memory_graph.hookcore import state_home
 from claude_memory_graph.gate import usage
 from claude_memory_graph.store import MemoryStore
 
 
 @pytest.fixture(autouse=True)
 def kit_home(tmp_path, monkeypatch):
-    monkeypatch.setenv(kit_state.HOOK_KIT_HOME_ENV, str(tmp_path / "kit"))
+    monkeypatch.setenv(kit_state.STATE_HOME_ENV, str(tmp_path / "kit"))
     home = state_home()
     home.mkdir(parents=True, exist_ok=True)
     return home

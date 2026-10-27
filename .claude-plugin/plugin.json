@@ -1,7 +1,7 @@
 {
   "name": "memory-graph",
   "description": "Arches-inspired RDF knowledge-graph memory: MCP server + context-file protocol + distill skill",
-  "version": "0.13.2",
+  "version": "0.14.0",
   "author": {
     "name": "Stuart Marshall"
   },
@@ -11,9 +11,20 @@
     "pane": {
       "type": "string",
       "title": "Memory graph pane",
-      "description": "auto: the pane opens itself on the first graph tool call. manual: only /graph-panel opens it. off: no pane, and graph tool calls show in the transcript as normal.",
-      "options": ["auto", "manual", "off"],
+      "description": "auto: the pane opens itself on the first graph tool call. manual: only /graph-panel opens it. off: no pane, and graph tool calls show in the transcript as normal. Memory recall and capture run either way.",
+      "options": [
+        "auto",
+        "manual",
+        "off"
+      ],
       "default": "auto"
+    },
+    "review": {
+      "type": "boolean",
+      "title": "Periodic graph review",
+      "description": "Every few days, end a turn by asking for a graph health fix-up (over-long names, orphans, missing links).",
+      "default": false
     }
-  }
+  },
+  "types": "./types/index.d.ts"
 }

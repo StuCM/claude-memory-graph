@@ -63,7 +63,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from claude_hook_kit import HookContext, HookExtension, append_jsonl
+from claude_memory_graph.hookcore import HookContext, HookExtension, append_jsonl
 
 from .runtime import config
 

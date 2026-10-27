@@ -5,8 +5,8 @@ import time
 
 import pytest
 
-from claude_hook_kit import HookContext
-import claude_hook_kit.state as kit_state
+from claude_memory_graph.hookcore import HookContext
+import claude_memory_graph.hookcore.state as kit_state
 from claude_memory_graph.gate.recall import RecallExtension
 from claude_memory_graph.store import MemoryStore
 
@@ -28,7 +28,7 @@ summary: "s"
 
 @pytest.fixture(autouse=True)
 def kit_home(tmp_path, monkeypatch):
-    monkeypatch.setenv(kit_state.HOOK_KIT_HOME_ENV, str(tmp_path / "kit"))
+    monkeypatch.setenv(kit_state.STATE_HOME_ENV, str(tmp_path / "kit"))
     return tmp_path / "kit"
 
 

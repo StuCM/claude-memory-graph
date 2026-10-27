@@ -25,7 +25,7 @@ a full period. Key it to observed graph mutations if that proves too lossy.
 
 import time
 
-from claude_hook_kit import HookContext, HookExtension, append_jsonl
+from claude_memory_graph.hookcore import HookContext, HookExtension, append_jsonl
 
 from .nudge import _context_dir
 from .runtime import config, store_dir

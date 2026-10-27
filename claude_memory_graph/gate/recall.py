@@ -31,7 +31,7 @@ import os
 import re
 from pathlib import Path
 
-from claude_hook_kit import HookContext, HookExtension, append_jsonl, bigrams, terms_pos
+from claude_memory_graph.hookcore import HookContext, HookExtension, append_jsonl, bigrams, terms_pos
 
 from .runtime import config, store_dir
 
@@ -297,7 +297,7 @@ def gate_index(project: str, opener) -> tuple[list[dict], dict, set[str], dict[s
     the MemoryStore, called only on a miss. Fail open: any cache problem
     means a normal rebuild."""
     import pickle
-    from claude_hook_kit import state_home
+    from claude_memory_graph.hookcore import state_home
 
     path = state_home() / "gate-index.pickle"
     key = _index_key()

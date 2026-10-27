@@ -32,7 +32,7 @@ import json
 import re
 from pathlib import Path
 
-from claude_hook_kit import terms_pos
+from claude_memory_graph.hookcore import terms_pos
 
 from .. import ontology
 from .recall import _corpus
