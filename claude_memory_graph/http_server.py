@@ -11,9 +11,9 @@ is the one memory every machine and app shares (docs/REMOTE.md):
   ambient gate reads a replica of the graph it downloads from
   `/api/graph.nq`. Their context logs stay local and reach the graph
   through `/api/distill`.
-- **A browser** — the home page is a chat (chat.py): sign in with the
-  password and ask questions; Claude answers from the memory, read-only.
-  On a handover share, that is all a colleague needs.
+- **A browser**: the home page (chat.py) shows how to connect from your own
+  Claude, and links to Settings. With ANTHROPIC_API_KEY set it is a chat
+  instead, billed to that key.
 - **Chats in claude.ai and the phone and desktop apps** add it as a custom
   connector (tools only: chats have no hooks, so nothing is injected).
   Connectors can only do OAuth, so with `--public-url` set the server is
@@ -237,7 +237,8 @@ def build_app(store: MemoryStore, instructions: str, token: str = "",
         from .chat import ChatService, chat_routes
         title, scope = chat_identity(store)
         routes += chat_routes(chat if isinstance(chat, ChatService)
-                              else ChatService(store, title=title, scope=scope), auth)
+                              else ChatService(store, title=title, scope=scope), auth,
+                              public_url=public_url, read_only=read_only)
     routes.append(Mount("/mcp", app=guarded(manager.handle_request)))
 
     @contextlib.asynccontextmanager

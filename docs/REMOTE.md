@@ -6,12 +6,15 @@ the two ways to take it beyond that machine:
 - **Host your memory on a server.** Every Claude Code machine you log in to,
   claude.ai, and the phone and desktop apps all read from and write to the
   same memory. Your laptop no longer holds it.
-- **Hand over one project.** A colleague can ask questions of a scoped,
-  read-only copy while you're away, in a browser, with nothing to install.
+- **Hand over one project.** A colleague adds a scoped, read-only copy to
+  their own Claude and asks it questions while you're away.
 
-Either way, the server's home page is a **chat**: sign in with the password
-and ask questions as you would ask Claude. Claude answers from the memory
-only.
+Either way, the server's home page shows how to connect: the connector
+address and the steps for claude.ai, the apps and Claude Code. Everyone
+uses their own Claude plan, and the server needs no API key and costs
+nothing per question. A browser chat that runs on the server is available
+as an [opt-in extra](#optional-a-chat-on-the-server-billed-to-an-api-key),
+billed to an API key.
 
 ## Host your memory on a server
 
@@ -28,7 +31,6 @@ only.
 | Client | How it connects | What it gets |
 |---|---|---|
 | **Claude Code** on any machine with the plugin, including the desktop app's Code tab | the plugin's `server` and `server_token` settings | everything: the tools; ambient recall, from a local copy of the graph that refreshes at most once a minute; the context log and Stop-block capture, with the log distilled into the server |
-| **a browser**, on any device | `https://<host>/`, signed in with your server password | a chat that answers from the memory, read-only ([below](#chat-in-the-browser)) |
 | **ordinary chats** in claude.ai, the phone app and the desktop app (not its Code tab) | a custom connector, signed in with your server password | the tools, reads and writes. Chats have no hooks, so nothing is injected automatically: the model calls the memory tools when the conversation needs them |
 | any other MCP client | `https://<host>/mcp` with `Authorization: Bearer <token>` | the tools |
 
@@ -126,9 +128,16 @@ page for five minutes. Tokens are stored only as hashes in
 `data/state/oauth.json`. To sign apps out or change the password, use
 [Settings](#settings-sign-out-change-the-password-replace-the-token).
 
-### Chat in the browser
+### Optional: a chat on the server, billed to an API key
 
-Open `https://memory.example.com/` and sign in with the password. Ask what
+For people with no Claude account, the server can host its own chat.
+Without an API key, `https://memory.example.com/` is the connect page
+described above; with one, it becomes a chat (and the connect page moves
+to `/connect`). A Pro or Max plan can't pay for this chat: Anthropic only
+lets those plans be used through its own apps, so a chat your server runs
+must use an API key.
+
+Sign in with the password and ask what
 you'd ask Claude ("what did we decide about tile caching, and why?"). The
 answer streams in, with a note of each lookup it made ("searched for…",
 "recalled Decision…"). Behind it, Claude runs on your server with four
@@ -136,8 +145,8 @@ read-only tools: search, recall, SPARQL query and an overview. It is told
 to answer from the memory and to say when the memory doesn't hold the
 answer, not to fill the gap from general knowledge.
 
-- **It needs an Anthropic API key on the server**: set `ANTHROPIC_API_KEY`
-  in `.env`. Every answer is billed to that key. `MEMORY_GRAPH_CHAT_DAILY_LIMIT`
+- **It's turned on by setting `ANTHROPIC_API_KEY`** in `.env`. Every answer
+  is billed to that key. `MEMORY_GRAPH_CHAT_DAILY_LIMIT`
   (default 300 messages a day, across everyone) caps what a shared link can
   spend. The model is `claude-opus-5-5` at medium effort; set
   `MEMORY_GRAPH_CHAT_MODEL` and `MEMORY_GRAPH_CHAT_EFFORT` to change them.
@@ -146,11 +155,13 @@ answer, not to fill the gap from general knowledge.
 - Conversations are kept in the server's memory only, and a restart clears
   them. Sign-ins last a week. Wrong passwords count towards the same
   lockout as the connector sign-in.
-- `serve --no-chat` turns the page off.
+- `serve --no-chat` turns the browser pages off (connect page, chat and
+  settings).
 
 ### Settings: sign out, change the password, replace the token
 
-**Settings**, at the top of the chat page, has three controls:
+**Settings**, linked from the top of the home page, has three controls. It
+asks you to sign in with the password first:
 
 - **Sign everything out.** Every browser, and every app connected through
   claude.ai or the phone, has to sign in again. Claude Code machines use
@@ -226,11 +237,10 @@ claude-memory-graph serve --store ~/handover-quartz --read-only \
     --password "<something to give your colleague>"
 ```
 
-with `ANTHROPIC_API_KEY` set for the chat. With the container:
-`docker run -e MEMORY_GRAPH_READ_ONLY=1 -e MEMORY_GRAPH_TOKEN=<secret> -e
-MEMORY_GRAPH_PASSWORD=<for them> -e ANTHROPIC_API_KEY=<key> -v
-~/handover-quartz:/data/store …`, or the `deploy/` compose setup on its own
-domain with `MEMORY_GRAPH_READ_ONLY=1` added to `.env`.
+plus `--public-url https://<its address>` so their Claude can sign in, and
+HTTPS in front. The simplest way is the `deploy/` compose setup on its own
+domain, with `MEMORY_GRAPH_READ_ONLY=1` added to `.env` and the share's
+`graph.nq` in `data/store/`.
 
 `--read-only` offers four tools: `memory_search`, `memory_recall`,
 `memory_reflect` and `memory_query`. It refuses everything else, including
@@ -239,20 +249,15 @@ never auto-distills or saves, and it doesn't accept distill uploads.
 
 **4. Send your colleague the link and the password**
 
-They open `https://<host>/`, sign in, and ask: *"what's the state of the
-tile cache work?"*, *"what should I watch out for when deploying quartz?"*.
-The page is titled "quartz — handover memory", and Claude knows it is
-talking to someone picking the work up. Nothing to install, and they don't
-need Claude Code.
+`https://<host>/` is titled "quartz — handover memory". It shows them the
+connector address and the steps: add it as a custom connector in
+claude.ai (or `claude mcp add --transport http …` and `/mcp` in Claude
+Code), sign in with the password, and ask *"what's the state of the tile
+cache work?"* or *"what should I watch out for when deploying quartz?"*.
+It runs on their own Claude plan, and you pay nothing per question. They
+need a Claude account whose plan allows custom connectors.
 
-**Or connect from Claude Code**
-
-```sh
-claude mcp add --transport http stuart-memory https://<host>/mcp \
-    --header "Authorization: Bearer <token>"
-```
-
-if they'd rather query it from their own Claude Code. To revoke access,
+To revoke access,
 stop the server or change the password and token. To refresh what they see,
 export again. Serve it from somewhere that stays up,
 not your laptop: a work VM is simplest, and the hosting options above all
