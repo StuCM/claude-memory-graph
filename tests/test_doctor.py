@@ -5,15 +5,17 @@ import time
 
 import pytest
 
-import claude_hook_kit.state as kit_state
-from claude_hook_kit import state_home
+import claude_memory_graph.hookcore.state as kit_state
+from claude_memory_graph.hookcore import state_home
 from claude_memory_graph.gate.doctor import report
 from claude_memory_graph.store import MemoryStore
 
 
 @pytest.fixture(autouse=True)
 def env(tmp_path, monkeypatch):
-    monkeypatch.setenv(kit_state.HOOK_KIT_HOME_ENV, str(tmp_path / "kit"))
+    monkeypatch.setenv(kit_state.STATE_HOME_ENV, str(tmp_path / "kit"))
+    monkeypatch.setattr(kit_state.Path, "home", lambda: tmp_path / "home")
+    monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("MEMORY_GRAPH_PATH", str(tmp_path / "store"))
     monkeypatch.setenv("CLAUDE_CONTEXT_DIR", str(tmp_path / "ctx"))
     (tmp_path / "ctx").mkdir()
@@ -81,3 +83,12 @@ def test_env_mismatch_surfaced(env, monkeypatch):
     MemoryStore.open_or_create(env / "store").save()
     out = report()
     assert "MEMORY_GRAPH_PATH is set" in out  # doctor warns the shell env must match
+
+
+def test_leftover_settings_hooks_flagged(env):
+    settings = env / "home" / ".claude" / "settings.json"
+    settings.parent.mkdir(parents=True)
+    settings.write_text(json.dumps({"hooks": {"Stop": [{"hooks": [
+        {"type": "command", "command": "/x/claude-memory-graph/hooks/dispatch.sh Stop"}]}]}}))
+    out = report()
+    assert "still registers the old hook scripts" in out and str(settings) in out

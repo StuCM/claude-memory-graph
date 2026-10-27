@@ -1,30 +1,18 @@
 [project]
 name = "claude-memory-graph"
-version = "0.13.2"
+version = "0.14.0"
 description = "Arches-inspired knowledge graph MCP server for Claude Code long-term memory"
 requires-python = ">=3.11"
 dependencies = [
     "pyoxigraph>=0.4",
     "mcp>=2",
-    "claude-hook-kit",
 ]
 
 [project.scripts]
 claude-memory-graph = "claude_memory_graph.__main__:main"
 
-[project.entry-points."claude_hook_kit"]
-memory-recall = "claude_memory_graph.gate.recall:RecallExtension"
-context-counter = "claude_memory_graph.gate.nudge:ContextCounterExtension"
-graph-review = "claude_memory_graph.gate.review:ReviewExtension"
-
 [dependency-groups]
 dev = ["pytest>=8"]
-
-[tool.uv.workspace]
-members = ["hook-kit"]
-
-[tool.uv.sources]
-claude-hook-kit = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

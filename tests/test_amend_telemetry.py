@@ -5,7 +5,7 @@ the `asks` report joins the log into curation signals."""
 import json
 
 import pytest
-from claude_hook_kit import state_home
+from claude_memory_graph.hookcore import state_home
 
 from claude_memory_graph import planner
 from claude_memory_graph.store import MemoryStore

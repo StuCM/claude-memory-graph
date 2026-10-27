@@ -14,7 +14,7 @@ import time
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from claude_hook_kit import state_home
+from claude_memory_graph.hookcore import state_home
 
 from . import misses as misses_mod
 from .pulse import _graph_counts, _read_jsonl

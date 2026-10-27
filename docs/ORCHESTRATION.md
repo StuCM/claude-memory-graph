@@ -1,21 +1,21 @@
 # Orchestration — the reliability layer
 
-Status: **v0 implemented as [hook-kit](../hook-kit/)** — a standalone, zero-dependency package
-(`claude-hook-kit`, own plugin, memory-graph depends on it). It provides the `HookExtension`
-base class, the dispatcher CLI (`claude-hooks dispatch <Event>`, wired in via
-`~/.claude/settings.json` — see the README install notes on why not a plugin `hooks.json`),
-framework-maintained **core session state** (session id, cwd/project, prompt count, event
-counts, timestamps) plus per-extension namespaced state (session and global scopes), and
-enable/disable via `claude-hooks enable <name>` (surfaced as the `/hook-kit:install` skill).
-Extensions are discovered from any installed package via `claude_hook_kit` entry points and
-run out of the box when marked `enabled_by_default`; explicit enable/disable always wins.
-Memory-graph's prompt gate (`claude_memory_graph/gate/`) now consists of two such extensions:
-`memory-recall` (scored per-prompt ambient injection — IDF, phrase and coverage evidence,
-project-proximity prior — plus session-start auto-prime) and `context-counter`
-(significant-prompt cadence with write-detection reset, enforced by **blocking the Stop
-event** when the log is overdue; PreCompact/SessionEnd flush, distill suggestion). Gate tuning stays in `~/.claude/memory-graph/gate.json`; state, the
-injection log, and error logs live in the hook-kit home (`~/.claude/hook-kit`). Observability — every log field, the miss report, and how to act on each verdict — is
-documented in [TUNING.md](TUNING.md). The design below remains the reference for behaviour. The third subsystem: retrieval decides *what*,
+Status: **implemented as the plugin's mod** ([hooks/register.ts](../hooks/register.ts)).
+The mod hooks the client's events and owns all session state (`$.state`, cross-session
+values in `$.store`); for each event it makes one stateless call to Python
+(`claude_memory_graph.hookrun`), sending the state in and taking the updated state back.
+The Python side runs the extensions built on the `HookExtension` base class
+(`claude_memory_graph/hookcore/`): `memory-recall` (scored per-prompt ambient injection —
+IDF, phrase and coverage evidence, project-proximity prior — plus session-start
+auto-prime), `context-counter` (significant-prompt cadence with write-detection reset,
+enforced by **blocking the Stop event** when the log is overdue; PreCompact/SessionEnd
+flush, distill suggestion) and the opt-in `graph-review`. Context-write pre-approval and
+dig counting run in the mod itself, with no Python call. Gate tuning stays in
+`~/.claude/memory-graph/gate.json`; the injection log and error log live in
+`~/.claude/memory-graph/state`. Observability — every log field, the miss report, and how
+to act on each verdict — is documented in [TUNING.md](TUNING.md); live state is on the
+pane's State tab. (Until 0.14 this layer was the separate `hook-kit` package, registered by
+hand in `settings.json`.) The design below remains the reference for behaviour. The third subsystem: retrieval decides *what*,
 creation decides *what's worth keeping* — orchestration makes both happen **reliably**, by
 hooking into the client, counting prompts, and firing the right action at the right moment
 without depending on the model remembering to.
@@ -33,7 +33,7 @@ file, prompt counting — so that machinery is one subsystem, not two implementa
 |---|---|---|
 | `SessionStart` | session begins | prime: recall Project (cwd) + Person, inject results; init session state; inject the context-protocol (as today) |
 | `UserPromptSubmit` | every user prompt | increment prompt count; run the retrieval analyzer (inject memories) |
-| `PreToolUse` | before `Write`/`Edit`/`MultiEdit` | pre-approve writes whose resolved real path is inside `~/.claude/context/` (`permissionDecision: allow`), so the capture loop the Stop block enforces doesn't cost a permission prompt every few turns in manual mode. A standalone script (`hooks/allow-context-writes.sh`), not a hook-kit extension: it runs on every file edit, so it stays a JSON containment check with no dispatcher, no state, and no graph. `Bash` is out of scope — allowing a shell command because it names a path is a different trade |
+| `PreToolUse` | before `Write`/`Edit`/`MultiEdit` | pre-approve writes whose resolved real path is inside `~/.claude/context/` (`permissionDecision: allow`), so the capture loop the Stop block enforces doesn't cost a permission prompt every few turns in manual mode. Handled in the mod's `tool.check` hook, not in Python: it runs on every file edit, so it stays a real-path containment check with no subprocess, no state, and no graph. `Bash` is out of scope — allowing a shell command because it names a path is a different trade |
 | `PostToolUse` | after a tool call | silent bookkeeping: log explicit memory recalls (miss detector); count file-inspection calls per turn (dig detector — a turn past `DIG_THRESHOLD` was an investigation, and its Stop block asks for a trace entry) |
 | `Stop` | model finishes a turn | check context-log freshness; when overdue, **block the stop** (`{"decision": "block"}`) with a **self-contained** reason: the exact file path plus the entry format inline (the session-start protocol has usually decayed by now — never "per the protocol"). When no context file exists, the hook **stamps it** (frontmatter + header) before blocking, so the artifact exists even if the model never complies. Cadence is keyed to observed writes (mtime; the stamp's own mtime is excluded), so an ignored block fires again at every following stop until the log is written; `stop_hook_active` bounds it to one block per stop, so a block never chains within a turn |
 | `PreCompact` | context about to be summarised | **steer the summary** (via `hookSpecificOutput.additionalContext` — plain stdout is a no-op here, and no model turn exists before compaction): the summary must carry forward uncaptured points; the context file is the durable record. The Stop block is the real flush point |
@@ -48,7 +48,7 @@ hook surface (state, counting, analyzer, thresholds) is client-agnostic.
 
 ## Session state
 
-A small JSON file per session (`~/.claude/memory-graph/sessions/<session-id>.json`):
+Per-session values in the mod's `$.state` (originally designed as a JSON file per session):
 
 - `promptCount` — total prompts this session
 - `lastContextWrite` — mtime of the session's context file when last checked

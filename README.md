@@ -8,190 +8,81 @@ An [Arches](https://www.archesproject.org/)-inspired RDF knowledge-graph MCP ser
 
 ## Install
 
-Two pieces, installed separately:
-
-| Piece | Gives you | Installed via |
-|---|---|---|
-| **Plugins** | the MCP server, `/memory-graph:distill`, `/memory-graph:ingest`, `/hook-kit:install` | `claude plugin install` |
-| **Hooks** | session-start priming, ambient recall injection, context-log enforcement | `~/.claude/settings.json` |
-
-The hooks are deliberately **not** shipped in a plugin `hooks.json`. Plugin-scope hooks
-never fire in bridge sessions — which is what the Claude desktop app runs — so a
-plugin-only install silently loses every hook, and you get no ambient recall and no
-capture enforcement while everything still *looks* installed. Registering them in
-`settings.json` works on both surfaces. See [docs/HANDBOOK.md](docs/HANDBOOK.md) for
-how to verify they are live.
-
-### 1. Plugins — MCP server and skills
+Needs Claude Code **2.1.287 or later** (it loads plugin mods) and
+[uv](https://docs.astral.sh/uv/) on your PATH.
 
 ```sh
-claude plugin marketplace add <git-url-or-local-path>
+claude plugin marketplace add StuCM/claude-memory-graph
 claude plugin install memory-graph@claude-memory-graph --scope user
-claude plugin install hook-kit@claude-memory-graph --scope user
 ```
 
-`memory-graph` brings the MCP server (run via `uvx` from the bundled source — requires
-[uv](https://docs.astral.sh/uv/)) and the distill/ingest skills. [hook-kit](hook-kit/) is
-the standalone hook-extension framework the hooks below run on; installing it adds
-`/hook-kit:install` for enabling and disabling individual extensions. Both extensions
-(`memory-recall` for priming and per-prompt injection, `context-counter` for context-log
-enforcement — see [docs/ORCHESTRATION.md](docs/ORCHESTRATION.md)) are on by default, so
-there is nothing to enable for a standard setup.
+(The installer notes two settings "not yet set" — both have defaults; see
+[Settings](#settings-config).) Start a new session. That's the whole install: the plugin
+brings the MCP server, the
+`/memory-graph:distill` and `/memory-graph:ingest` skills, and a mod
+([hooks/register.ts](hooks/register.ts)) that runs memory for every session:
 
-Optional: set `MEMORY_GRAPH_PATH` to change the data directory (defaults to
-`~/.claude/memory-graph/store`).
+- **session start** — injects the context-log protocol and a short, ranked summary of
+  what memory knows about this project;
+- **every prompt** — injects relevant memories when the gate is confident, silence
+  otherwise;
+- **end of each turn** — blocks once when the context log has fallen behind, or after a
+  long investigation, so the knowledge gets written down;
+- **compaction** — tells the summariser to keep what isn't in the log yet;
+- writes to `~/.claude/context/` are pre-approved (real-path checked; `Bash` is never
+  covered), so the capture loop doesn't become a permission prompt every few turns.
 
-On Claude Code 2.1.287 or later the plugin also loads a mod
-([hooks/register.js](hooks/register.js)). It draws memory-graph tool calls as one dim
-line each in the transcript and opens a **Memory graph** pane (or run `/graph-panel`)
-with three tabs: each call's input and output, what the recall hook injected or held
-back this session, and per-tool counts. This only changes what you see: the output
-still reaches the model. `/memory-graph:distill` keeps the distill writes out of the
-main context by running them in the `memory-graph:distiller` subagent.
+The first prompt of the first session takes a few seconds while uv builds the plugin's
+environment. To check everything is live, run `claude-memory-graph doctor`, or open the
+pane (`/graph-panel`) and look at its **State** tab.
 
-To change how the pane behaves, set **Memory graph pane** in `/config` (stored as
-`pluginConfigs["memory-graph"].options.pane` in settings.json):
+**Upgrading from 0.13 or earlier:** the hooks used to be registered by hand in
+`~/.claude/settings.json` and the separate `hook-kit` plugin. Both are retired: delete the
+memory-graph entries (`dispatch.sh`, `session-start.sh`, `allow-context-writes.sh`) from
+the `"hooks"` block of your settings and uninstall `hook-kit`
+(`claude plugin uninstall hook-kit@claude-memory-graph`). `doctor` flags any leftovers.
+Your logs move from `~/.claude/hook-kit` to `~/.claude/memory-graph/state` by themselves.
 
-| Value | Behaviour |
-|---|---|
-| `auto` (default) | the pane opens itself on the first graph tool call |
-| `manual` | the pane opens only when you run `/graph-panel` |
-| `off` | no pane and no `/graph-panel`; graph tool calls show in the transcript as normal |
+### The pane
 
-### 2. Hooks — priming, recall injection, context capture
+`/graph-panel` opens a **Memory graph** pane beside the conversation:
 
-The hooks run out of a checkout, so clone the repo somewhere permanent — the plugin
-cache directory is versioned and not a stable path. Then merge this into
-`~/.claude/settings.json`, replacing `/path/to/claude-memory-graph` with your clone:
+- **Injected** — the full text of everything memory put in front of the model this
+  session (the start-up summary, per-prompt memories, end-of-turn asks), then each gate
+  decision with its scores, including the silent ones;
+- **State** — project, prompt counts, uncaptured turns, digs this turn, context size,
+  and the last error if the Python side failed;
+- **Activity** — each memory-graph tool call with its input and output.
 
-```json
-{
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"/path/to/claude-memory-graph/hooks/session-start.sh\""
-          },
-          {
-            "type": "command",
-            "command": "\"/path/to/claude-memory-graph/hooks/dispatch.sh\" SessionStart"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"/path/to/claude-memory-graph/hooks/dispatch.sh\" UserPromptSubmit"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Write|Edit|MultiEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"/path/to/claude-memory-graph/hooks/allow-context-writes.sh\""
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "mcp__.*memory_.*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"/path/to/claude-memory-graph/hooks/dispatch.sh\" PostToolUse"
-          }
-        ]
-      },
-      {
-        "matcher": "Grep|Glob|Read|Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"/path/to/claude-memory-graph/hooks/dispatch.sh\" PostToolUse"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"/path/to/claude-memory-graph/hooks/dispatch.sh\" Stop"
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"/path/to/claude-memory-graph/hooks/dispatch.sh\" PreCompact"
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"/path/to/claude-memory-graph/hooks/dispatch.sh\" SessionEnd"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+Memory-graph tool calls also draw as one dim line each in the transcript; their output
+still reaches the model.
 
-`PreToolUse` is what makes the capture loop usable in manual approval mode: writes whose
-target resolves inside `~/.claude/context/` are pre-approved, so the Stop block asking for
-a context entry doesn't turn into a permission prompt every few turns. Nothing else is
-touched — the check is on the resolved real path, and `Bash` is deliberately not covered.
-Drop this block if you would rather approve each write.
+### Settings (`/config`)
 
-Settings are re-read live, so the hooks take effect on your next prompt — no restart
-needed. To confirm they are actually firing:
+| Setting | Values | |
+|---|---|---|
+| **Memory graph pane** | `auto` (default) · `manual` · `off` | `auto` opens the pane on the first graph tool call; `manual` only via `/graph-panel`; `off` drops the pane and shows graph tool calls in the transcript as normal. Memory runs either way. |
+| **Periodic graph review** | off (default) · on | every few days, ends one turn asking for a graph tidy-up (over-long names, orphans, missing links) |
+
+Thresholds live in `~/.claude/memory-graph/gate.json` — see the tuning table in
+[docs/HANDBOOK.md](docs/HANDBOOK.md). Set `MEMORY_GRAPH_PATH` to move the store
+(default `~/.claude/memory-graph/store`).
+
+### Remote access and handovers
+
+`claude-memory-graph serve` runs the memory over HTTP for other machines and clients,
+and `claude-memory-graph share <project>` exports one project for a colleague to query
+read-only while you're away. See **[docs/REMOTE.md](docs/REMOTE.md)**.
+
+### MCP server only (no ambient memory)
 
 ```sh
-claude-memory-graph pulse          # sessions seen, prompts gated, injections
-```
-
-A session that shows `SessionStart` but no `UserPromptSubmit` means the hooks are
-registered in a plugin rather than in `settings.json`.
-
-### Shared server (across clients and machines)
-
-```sh
-claude-memory-graph serve --host 0.0.0.0 --port 8848 --token <secret>   # on the host
-claude mcp add --transport http memory-graph http://host:8848/mcp \
-    --header "Authorization: Bearer <secret>"                            # on each client
-```
-
-One process owns the store (no last-writer-wins between sessions). Non-localhost binds
-require the token. v1 scope: the MCP tools travel; ambient injection/capture hooks stay
-per-machine — see [docs/tasks/remote-server.md](docs/tasks/remote-server.md).
-
-### Manual install (server only)
-
-```sh
-uv tool install git+<repo-url>   # or from a checkout: uv tool install .
+uv tool install git+https://github.com/StuCM/claude-memory-graph
 claude mcp add --scope user memory-graph -- claude-memory-graph
 ```
 
-This registers just the MCP server — no context protocol or distill skill.
+For clients other than Claude Code: the tools work, but nothing injects or captures
+by itself.
 
 ## The workflow
 
@@ -234,4 +125,7 @@ retrieval works with you, and the command cadence.
 
 Each resource instance lives in its own named graph (`…/graph/resource/<uuid>`); cross-links live in a dedicated links graph; shared concepts in a concepts graph; the ontology (including LLM-added relations) in a schema graph. See `claude_memory_graph/base.ttl` for the base ontology.
 
-Multiple Claude Code sessions each spawn their own server process over the same NQuads file — last writer wins per mutation. This is fine for a personal memory store; if it ever outgrows that, the upgrade path is pyoxigraph's RocksDB-backed store behind a single shared daemon.
+Each Claude Code session runs its own stdio server; each reloads the file when another has saved since, and `serve` runs one shared process instead. The graph is persisted as NQuads after every write.
+
+The design docs are in [docs/](docs/index.md), also buildable as a site:
+`cd docs-site && npm ci && npm run dev`.

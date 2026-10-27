@@ -5,8 +5,8 @@ import time
 
 import pytest
 
-from claude_hook_kit import HookContext
-import claude_hook_kit.state as kit_state
+from claude_memory_graph.hookcore import HookContext
+import claude_memory_graph.hookcore.state as kit_state
 from claude_memory_graph.gate.review import ReviewExtension
 from claude_memory_graph.store import MemoryStore
 
@@ -16,7 +16,7 @@ def kit_home(tmp_path, monkeypatch):
     """Isolated hook-kit home AND context dir — the capture-shape detector
     reads the context log, so without this the real ~/.claude/context/ leaks
     into every assertion here."""
-    monkeypatch.setenv(kit_state.HOOK_KIT_HOME_ENV, str(tmp_path / "kit"))
+    monkeypatch.setenv(kit_state.STATE_HOME_ENV, str(tmp_path / "kit"))
     context = tmp_path / "context"
     context.mkdir()
     monkeypatch.setenv("CLAUDE_CONTEXT_DIR", str(context))

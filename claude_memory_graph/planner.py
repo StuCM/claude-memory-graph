@@ -20,7 +20,7 @@ task; reads here keep the open-edges-only default like every other read.
 import re
 from dataclasses import dataclass, field
 
-from claude_hook_kit import terms_pos
+from claude_memory_graph.hookcore import terms_pos
 
 from .gate.recall import _corpus, _idf, _score
 from .namespaces import GRAPH_CONCEPTS, GRAPH_LINKS
@@ -415,7 +415,7 @@ def _log(text: str, g: Grounding | None, outcome: str, rows: int = 0) -> None:
     planner's tuning dataset, mirroring the gate's injections.jsonl. The
     `asks` CLI report joins it into misgrounding suspects (verb forms that
     fire but never produce rows) and vocabulary gaps (uncovered terms)."""
-    from claude_hook_kit import append_jsonl
+    from claude_memory_graph.hookcore import append_jsonl
     entry: dict = {"q": text[:200], "outcome": outcome, "rows": rows}
     if g is not None:
         entry.update({
@@ -505,7 +505,7 @@ def asks_report() -> str:
     import json
     from collections import Counter
 
-    from claude_hook_kit import state_home
+    from claude_memory_graph.hookcore import state_home
 
     path = state_home() / "ask-decisions.jsonl"
     entries = []

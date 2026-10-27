@@ -18,7 +18,7 @@ import os
 import time
 from pathlib import Path
 
-from claude_hook_kit import state_home
+from claude_memory_graph.hookcore import state_home
 
 from .pulse import _read_jsonl, _graph_counts
 from .runtime import store_dir
@@ -27,6 +27,28 @@ from .runtime import store_dir
 def _ctx_dir() -> Path:
     env = os.environ.get("CLAUDE_CONTEXT_DIR")
     return Path(env) if env else Path.home() / ".claude" / "context"
+
+
+_LEGACY_HOOK_SCRIPTS = ("dispatch.sh", "session-start.sh", "allow-context-writes.sh",
+                        "claude-hooks", "claude_hook_kit")
+
+
+def _legacy_hook_settings() -> list[Path]:
+    """Settings files that still register the pre-0.14 hook scripts. The
+    plugin's mod does all of this now; a leftover entry points at a script
+    that no longer exists (an error on every event) or, from an older
+    checkout, runs the old hooks alongside the mod's."""
+    candidates = [Path.home() / ".claude" / name for name in ("settings.json", "settings.local.json")]
+    candidates += [Path.cwd() / ".claude" / name for name in ("settings.json", "settings.local.json")]
+    found = []
+    for path in candidates:
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        if any(script in text for script in _LEGACY_HOOK_SCRIPTS):
+            found.append(path)
+    return found
 
 
 def _version() -> str:
@@ -71,6 +93,7 @@ def report() -> str:
     line(f"  context     {ctx_p}"
          + ("" if ctx_p.exists() else "   ⚠ MISSING"))
     for name, val in (("MEMORY_GRAPH_PATH", os.environ.get("MEMORY_GRAPH_PATH")),
+                      ("MEMORY_GRAPH_STATE", os.environ.get("MEMORY_GRAPH_STATE")),
                       ("CLAUDE_HOOK_KIT_HOME", os.environ.get("CLAUDE_HOOK_KIT_HOME")),
                       ("CLAUDE_CONTEXT_DIR", os.environ.get("CLAUDE_CONTEXT_DIR"))):
         if val:
@@ -99,18 +122,28 @@ def report() -> str:
     line(f"  explicit recalls : {len(rec):>4}")
     line()
 
+    for path in _legacy_hook_settings():
+        findings.append(("FAIL",
+            f"{path} still registers the old hook scripts (dispatch.sh / "
+            "session-start.sh / allow-context-writes.sh). Since 0.14 the plugin's mod "
+            "does all of this itself; the old entries point at scripts that no longer "
+            "exist, or run the old hooks alongside the mod's.",
+            f"Delete the memory-graph entries from the \"hooks\" block of {path}, then "
+            "start a fresh session."))
+
     hooks_dead = not inj and not cap
     if hooks_dead:
         findings.append(("FAIL",
             "No hook activity has EVER been logged — the plugin's hooks are not firing.",
-            "Update the plugin (claude plugin update memory-graph) and start a FRESH "
-            "session; hooks load at session start. Check /hooks lists Stop + PostToolUse."))
+            "Update the plugin (claude plugin update memory-graph; needs Claude Code "
+            "2.1.287 or later, which loads plugin mods) and start a FRESH session. "
+            "The pane's State tab (/graph-panel) shows the last error if Python failed."))
     elif not blocks:
         findings.append(("WARN",
             "Prompts are logged but no Stop blocks ever fired — the capture/dig lane "
-            "isn't wired (older plugin), or the diary was never behind.",
-            "Confirm plugin >= 0.8 and that /hooks lists Stop and a PostToolUse "
-            "(Grep|Glob|Read|Bash) matcher."))
+            "isn't running (older plugin), or the context log was never behind.",
+            "Update the plugin to 0.14 or later; the Stop block and dig counting "
+            "are part of its mod."))
     elif digs and not writes:
         findings.append(("WARN",
             "Dig blocks fire but no context writes are observed — the model is being "

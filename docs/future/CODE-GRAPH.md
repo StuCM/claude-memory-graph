@@ -16,7 +16,7 @@ rebuildable structures outside it.
   content: the one authored exception is cost-gated — the **finding** of a genuine
   investigation (a path trace that took many greps to establish) earns a Pattern
   (`kind: trace`, anchors mandatory, the question as aliases) under
-  [tasks/code-memory-rules](tasks/code-memory-rules.md).
+  [tasks/code-memory-rules](../tasks/code-memory-rules.md).
 - **The semantic overlay** — *why* the code is the way it is — is not derivable and is exactly
   what the graph already holds: Decisions with rationale ("full dump + atomic rename because
   MCP stdio servers die ungracefully"), Patterns/gotchas ("FILTER on a VALUES var must be
@@ -24,10 +24,10 @@ rebuildable structures outside it.
   `_MUTATING` hook"). Small (dozens of nodes per project), durable across refactors, and the
   knowledge that leaves when a person does.
 - **Orientation** — the middle band live use surfaced: how and where things are stored,
-  located, and wired ("session state lives under `~/.claude/hook-kit/sessions/`, atomic
+  located, and wired ("session state lives in the mod's `$.state`, atomic
   tmp+rename"). Convention-level, multi-file to re-derive, churns only on deliberate
   restructuring — so it passes the rubric and belongs in the graph, under the keep test and
-  volume guard in [tasks/code-memory-rules](tasks/code-memory-rules.md).
+  volume guard in [tasks/code-memory-rules](../tasks/code-memory-rules.md).
 
 The scope discipline stays, refined: **memory answers *why* and holds the *map*; code tools
 answer symbol-level *where*.**

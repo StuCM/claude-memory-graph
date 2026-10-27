@@ -140,6 +140,17 @@ def main() -> None:
     p.add_argument("--port", type=int, default=8848)
     p.add_argument("--token", default=os.environ.get("MEMORY_GRAPH_TOKEN", ""),
                    help="bearer token clients must send (env: MEMORY_GRAPH_TOKEN)")
+    p.add_argument("--store", type=Path, default=None,
+                   help="serve this store folder instead of your own (e.g. a `share` export)")
+    p.add_argument("--read-only", action="store_true",
+                   help="offer only search/recall/reflect/query; never write or auto-distill")
+    p = sub.add_parser("share", help="export one project's memories as a separate store "
+                                     "for a read-only handover server (see docs/REMOTE.md)")
+    p.add_argument("project", help="the Project node's name")
+    p.add_argument("--out", type=Path, default=None, help="empty folder to write the store into")
+    p.add_argument("--depth", type=int, default=2, choices=[1, 2],
+                   help="hops out from the project (default 2)")
+    p.add_argument("--dry-run", action="store_true", help="list what would be shared; write nothing")
     p = sub.add_parser("gate", help="preview the injection decision for a prompt — "
                                     "the REAL gate math (both layers, thresholds, "
                                     "scores), zero side effects. memory_search is "
@@ -155,6 +166,11 @@ def main() -> None:
     p.add_argument("--days", type=float, default=None,
                    help="window in days (default: all time)")
     p.add_argument("--show", type=int, default=10, help="most-reached rows to list")
+    p = sub.add_parser("log", help="pretty-print a jsonl log from the state home "
+                                   "(default injections.jsonl)")
+    p.add_argument("filename", nargs="?", default="injections.jsonl")
+    p.add_argument("-n", "--lines", type=int, default=20, help="show the last N entries")
+    p.add_argument("-f", "--follow", action="store_true", help="keep watching for new entries")
     p = sub.add_parser("coverage", help="grounding-coverage experiment over real prompts")
     p.add_argument("--prompts", type=Path, default=None,
                    help="text file, one prompt per line")
@@ -174,6 +190,11 @@ def main() -> None:
     if args.cmd == "misses":
         from .gate import misses
         print(misses.report())
+        return
+
+    if args.cmd == "log":
+        from .gate.logview import print_log
+        print_log(args.filename, args.lines, args.follow)
         return
 
     if args.cmd == "asks":
@@ -206,8 +227,21 @@ def main() -> None:
         logging.basicConfig(level=logging.INFO,
                             format="%(asctime)s %(levelname)s %(message)s")
         from .http_server import serve
-        serve(_store_path(), INSTRUCTIONS, host=args.host, port=args.port,
-              token=args.token)
+        serve(args.store or _store_path(), INSTRUCTIONS, host=args.host, port=args.port,
+              token=args.token, read_only=args.read_only)
+        return
+
+    if args.cmd == "share":
+        from .share import share
+        if not args.dry_run and args.out is None:
+            parser.error("share needs --out FOLDER (or --dry-run to preview)")
+        result = share(MemoryStore.open_or_create(_store_path()), args.project,
+                       None if args.dry_run else args.out, depth=args.depth)
+        print(result.summary())
+        if result.out:
+            print(f"\nreview it:  MEMORY_GRAPH_PATH={result.out} claude-memory-graph reflect\n"
+                  f"serve it:   claude-memory-graph serve --store {result.out} --read-only "
+                  f"--host 0.0.0.0 --token <secret>")
         return
 
     if args.cmd == "gate":

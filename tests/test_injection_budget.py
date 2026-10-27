@@ -6,8 +6,8 @@ import subprocess
 
 import pytest
 
-import claude_hook_kit.state as kit_state
-from claude_hook_kit import HookContext
+import claude_memory_graph.hookcore.state as kit_state
+from claude_memory_graph.hookcore import HookContext
 from claude_memory_graph.gate import recall as gate_recall
 from claude_memory_graph.gate import runtime
 from claude_memory_graph.gate.preview import preview
@@ -18,7 +18,7 @@ from claude_memory_graph.tools import recall as recall_tool
 
 @pytest.fixture(autouse=True)
 def isolated(tmp_path, monkeypatch):
-    monkeypatch.setenv(kit_state.HOOK_KIT_HOME_ENV, str(tmp_path / "kit"))
+    monkeypatch.setenv(kit_state.STATE_HOME_ENV, str(tmp_path / "kit"))
     monkeypatch.setenv("CLAUDE_CONTEXT_DIR", str(tmp_path / "empty-context"))
     monkeypatch.setattr(runtime, "_config", dict(runtime._DEFAULTS))
 

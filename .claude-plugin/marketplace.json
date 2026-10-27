@@ -1,5 +1,6 @@
 {
   "name": "claude-memory-graph",
+  "description": "Persistent knowledge-graph memory for Claude Code: ambient recall, mechanical capture, and a session pane.",
   "owner": {
     "name": "Stuart Marshall"
   },
@@ -8,13 +9,7 @@
       "name": "memory-graph",
       "source": "./",
       "description": "RDF knowledge-graph long-term memory for Claude Code: MCP server, session context-file protocol, and /distill skill",
-      "version": "0.13.2"
-    },
-    {
-      "name": "hook-kit",
-      "source": "./hook-kit",
-      "description": "Standalone hook extension framework: session state, prompt counting, installable hook extensions (used by memory-graph; useful on its own)",
-      "version": "0.4.0"
+      "version": "0.14.0"
     }
   ]
 }

@@ -14,7 +14,7 @@ the write-time duplicate guard and distill's two-pass dedup converge on.
 Search finds doors; memory_recall explores rooms — output says so.
 """
 
-from claude_hook_kit import terms_pos
+from claude_memory_graph.hookcore import terms_pos
 
 from ..gate.recall import _bigrams, _corpus, _idf, _score
 from ..store import MemoryStore

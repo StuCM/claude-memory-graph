@@ -21,7 +21,7 @@ summary: "pyoxigraph decision"
 - [15:10] Pattern: hook-kit state layout
   description: per-session JSON under ~/.claude/hook-kit/sessions
   kind: storage
-  anchorPath: hook-kit/claude_hook_kit/state.py
+  anchorPath: hook-kit/claude_memory_graph.hookcore/state.py
   appliesTo: Project/claude-memory-graph
 
 Some narrative paragraph that is not an entry.
@@ -53,7 +53,7 @@ def test_narrative_entry_is_not_promotable():
 
 def test_property_value_with_slash_is_not_a_link():
     e = parse(SAMPLE)[2]
-    assert e.properties["anchorPath"] == "hook-kit/claude_hook_kit/state.py"
+    assert e.properties["anchorPath"] == "hook-kit/claude_memory_graph.hookcore/state.py"
     assert ("appliesTo", "Project", "claude-memory-graph") in e.links
     assert e.properties["kind"] == "storage"
 

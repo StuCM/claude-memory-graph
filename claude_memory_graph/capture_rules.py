@@ -1,6 +1,6 @@
 """Hard capture rules, enforced at the write path.
 
-The capture policy has two layers (see docs/CAPTURE.md): soft rules — what
+The capture policy has two layers (see docs/archive/CAPTURE.md): soft rules — what
 deserves a node, naming conventions — live in the context/distill/ingest
 protocols and are followed by the LLM; this module is the checkable subset
 the server refuses to violate regardless of who is writing.

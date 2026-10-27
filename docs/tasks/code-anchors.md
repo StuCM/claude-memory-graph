@@ -6,7 +6,7 @@ Status: **done — `_drift` in tools/recall.py: `(code changed since <commit>)` 
 
 Memories about code carry `anchorPath`/`anchorSymbol`/`anchorCommit` (distill writes
 them); recall appends `(code changed since)` when the anchored file has commits past
-`anchorCommit`. Design: [CODE-GRAPH.md](../CODE-GRAPH.md). The derived code graph itself
+`anchorCommit`. Design: [CODE-GRAPH.md](../future/CODE-GRAPH.md). The derived code graph itself
 is **future** — this task needs only git.
 
 ## Notes

@@ -2,7 +2,7 @@ import math
 import os
 import subprocess
 
-from claude_hook_kit import terms
+from claude_memory_graph.hookcore import terms
 
 from ..store import MemoryStore, LinkedResource
 

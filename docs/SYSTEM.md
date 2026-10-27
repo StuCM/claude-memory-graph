@@ -191,7 +191,7 @@ flowchart TB
 | Analyzer | **golden tests** (fixture graph + prompt table → expected inject/silence + nodes); **refusal suite** (prompts that must stay silent); determinism check (same input → same output) | design ready |
 | Query planner | golden **question → expected result rows** over a seeded graph (assert results, not SPARQL text); grounding unit tests; refusal tests for half-groundable questions | design ready |
 | Grounding coverage | run the grounder over real transcripts; % of question prompts fully grounded — the go/no-go metric for grammar size and the POS-tagger decision | first experiment |
-| Orchestration | hook integration tests: counted prompts, Stop block on stale mtime (repeat-until-write, never-chain), dig counting per turn, flush on PreCompact, fail-open on corrupt state | **passing** (tests/test_gate.py, hook-kit/tests) |
+| Orchestration | hook integration tests (Python runner + mod): counted prompts, Stop block on stale mtime (repeat-until-write, never-chain), dig counting per turn, flush on PreCompact, fail-open on corrupt state | **passing** (tests/test_gate.py, tests/test_hookrun.py, hooks/pane.test.ts) |
 | Live tuning | injection log + miss detector (explicit recall after silence = logged false negative) reviewed against real sessions | continuous |
 | External benchmark | LongMemEval, once retrieval is implemented — the objective test of "ontology + discipline beats embeddings + judge" | later |
 
@@ -202,11 +202,11 @@ rules catch its mistakes.
 
 ## Reading order
 
-[GLOSSARY.md](GLOSSARY.md) → this file → [ROADMAP.md](ROADMAP.md) (sequencing) → subsystem
+[GLOSSARY.md](GLOSSARY.md) → this file → [ROADMAP.md](future/ROADMAP.md) (sequencing) → subsystem
 depth: [RETRIEVAL.md](RETRIEVAL.md) + [QUERY-PLANNING.md](QUERY-PLANNING.md) ·
 [CONTEXT-CREATION.md](CONTEXT-CREATION.md) · [DISTILL-CREATION.md](DISTILL-CREATION.md) ·
-[ORCHESTRATION.md](ORCHESTRATION.md) + [TUNING.md](TUNING.md) (observability) → horizons: [SHARING.md](SHARING.md) →
-[FEDERATION.md](FEDERATION.md) · [CODE-GRAPH.md](CODE-GRAPH.md) → implementation detail of
+[ORCHESTRATION.md](ORCHESTRATION.md) + [TUNING.md](TUNING.md) (observability) → horizons: [SHARING.md](future/SHARING.md) →
+[FEDERATION.md](future/FEDERATION.md) · [CODE-GRAPH.md](future/CODE-GRAPH.md) → implementation detail of
 what exists today: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 **Operating it** (running, watching, debugging, tuning, day-to-day prompting):

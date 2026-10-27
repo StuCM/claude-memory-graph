@@ -1,6 +1,6 @@
 # Roadmap — the system in four subsystems
 
-> New here? Read [GLOSSARY.md](GLOSSARY.md) (terminology) and [SYSTEM.md](SYSTEM.md)
+> New here? Read [GLOSSARY.md](../GLOSSARY.md) (terminology) and [SYSTEM.md](../SYSTEM.md)
 > (diagrams, technologies, patterns, requirements, test strategy) first.
 
 The project is one loop — **capture → store → retrieve** — that we eventually want to run across
@@ -8,10 +8,10 @@ a network of stores. The loop breaks into four subsystems, worked on independent
 
 | Subsystem | Question | Doc |
 |---|---|---|
-| **1. Retrieval** | How do memories reach the context window, unasked? | [RETRIEVAL.md](RETRIEVAL.md) (ambient injector), [QUERY-PLANNING.md](QUERY-PLANNING.md) (dynamic SPARQL) |
-| **2a. Context creation** | How is in-session knowledge logged so nothing is lost? | [CONTEXT-CREATION.md](CONTEXT-CREATION.md) |
-| **2b. Distill creation** | How is knowledge promoted into the graph so retrieval can be dumb? | [DISTILL-CREATION.md](DISTILL-CREATION.md), [CAPTURE.md](CAPTURE.md) |
-| **3. Orchestration** | How do the loops fire reliably — hooks, prompt counting, nudges? | [ORCHESTRATION.md](ORCHESTRATION.md) |
+| **1. Retrieval** | How do memories reach the context window, unasked? | [RETRIEVAL.md](../RETRIEVAL.md) (ambient injector), [QUERY-PLANNING.md](../QUERY-PLANNING.md) (dynamic SPARQL) |
+| **2a. Context creation** | How is in-session knowledge logged so nothing is lost? | [CONTEXT-CREATION.md](../CONTEXT-CREATION.md) |
+| **2b. Distill creation** | How is knowledge promoted into the graph so retrieval can be dumb? | [DISTILL-CREATION.md](../DISTILL-CREATION.md), [CAPTURE.md](../archive/CAPTURE.md) |
+| **3. Orchestration** | How do the loops fire reliably — hooks, prompt counting, nudges? | [ORCHESTRATION.md](../ORCHESTRATION.md) |
 
 Beyond the loop sit the horizons: **sharing and federation** ([SHARING.md](SHARING.md) →
 [FEDERATION.md](FEDERATION.md)) — hosted per-person DBs, cross-model persistence, and a

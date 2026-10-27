@@ -61,7 +61,7 @@ hook features and never existed on other surfaces anyway.
   ambient injection works on machines that only have the plugin + a server URL.
   The context dir stays local (capture is inherently per-session).
 - **v3 — multi-user:** per-person stores, visibility tiers, the policy-gated `expand`
-  — that's [SHARING.md](../SHARING.md)/[FEDERATION.md](../FEDERATION.md), not this task.
+  — that's [SHARING.md](../future/SHARING.md)/[FEDERATION.md](../future/FEDERATION.md), not this task.
 
 ## Test
 

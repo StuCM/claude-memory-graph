@@ -2,16 +2,16 @@
 
 Status: **partially implemented; superseded as the entry point.** Creation has since been split
 into two independent subsystems with opposite objectives — completeness vs. quality:
-[CONTEXT-CREATION.md](CONTEXT-CREATION.md) (the session write-ahead log) and
-[DISTILL-CREATION.md](DISTILL-CREATION.md) (the consolidated write-for-retrieval ruleset,
+[CONTEXT-CREATION.md](../CONTEXT-CREATION.md) (the session write-ahead log) and
+[DISTILL-CREATION.md](../DISTILL-CREATION.md) (the consolidated write-for-retrieval ruleset,
 including the retrieval-serving enrichment rules — aliases, concept hubs, verb forms). Start
 there; this document remains for the original analysis and the enforcement-layer detail.
 
 ## Current state, and what's undefined
 
 Capture today has a *pipeline* but not a *policy*. The pipeline: context files during the session
-([hooks/context-protocol.md](../hooks/context-protocol.md)), batch extraction with hindsight via
-[/memory-graph:distill](../skills/distill/SKILL.md), direct writes for zero-churn facts. What it
+([hooks/context-protocol.md](../../hooks/context-protocol.md)), batch extraction with hindsight via
+[/memory-graph:distill](../../skills/distill/SKILL.md), direct writes for zero-churn facts. What it
 lacks:
 
 - **A rubric** for what deserves a node ("significant" and "quality over quantity" are vibes,
@@ -96,7 +96,7 @@ Sessions are not the only source of durable knowledge: issue-report repos, ADRs,
 and notes hold exactly the decisions/gotchas/constraints the graph exists for. The extraction
 discipline is source-agnostic — the rubric, naming conventions, and property shapes above apply
 unchanged — but documents differ from context files in two ways that change the mechanics
-(implemented as [/memory-graph:ingest](../skills/ingest/SKILL.md)):
+(implemented as [/memory-graph:ingest](../../skills/ingest/SKILL.md)):
 
 - **We don't own their lifecycle.** Context files get frontmatter flipped and are archived;
   foreign documents must never be modified. Ingestion state therefore lives in the graph: every
@@ -152,7 +152,7 @@ The rules above split into two layers with different guarantees:
 - **Soft (LLM-followed):** the rubric, "would future-you act differently", property shapes,
   write-path choices — these live in the context protocol, the distill/ingest skills, and tool
   descriptions. They make capture *good* but decay with context and vary by client.
-- **Hard (server-enforced, in [capture_rules.py](../claude_memory_graph/capture_rules.py)):**
+- **Hard (server-enforced, in [capture_rules.py](../../claude_memory_graph/capture_rules.py)):**
   the checkable subset the write path refuses to violate, regardless of who is writing —
   required properties per model (Decision→`rationale`, Pattern→`description`, creation-only so
   legacy nodes still accept updates), name lint (normalization, length cap, placeholder-name

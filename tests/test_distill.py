@@ -137,10 +137,10 @@ def test_auto_distill_promotes_without_archiving(store, tmp_path, monkeypatch):
     """The startup lane: promote-only, idempotent, self-healing. Files stay
     active (never marked/archived headlessly); a second run duplicates
     nothing; the run is logged for pulse/dashboard."""
-    import claude_hook_kit.state as kit_state
-    from claude_hook_kit import state_home
+    import claude_memory_graph.hookcore.state as kit_state
+    from claude_memory_graph.hookcore import state_home
     from claude_memory_graph.distill import auto_distill
-    monkeypatch.setenv(kit_state.HOOK_KIT_HOME_ENV, str(tmp_path / "kit"))
+    monkeypatch.setenv(kit_state.STATE_HOME_ENV, str(tmp_path / "kit"))
     ctx = tmp_path / "ctx"
     ctx.mkdir()
     path = ctx / "claude-memory-graph__2026-07-09_09-00.md"
