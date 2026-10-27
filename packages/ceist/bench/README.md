@@ -104,6 +104,25 @@ The HER models also show what the planner has to understand beyond phrase matchi
 - **People link through a generic actor plus a role,** so a phrase maps to a node *and* a concept value.
 - **"Church" or "mill" is a value in a 5,009-term monument-type thesaurus,** not a model.
 
+### Does training WordLlama on the vocabulary help? (`adapt.py`)
+
+We trained on the vocabulary itself, with 20% of each entry's phrasings held out. The objective puts each phrasing nearer its own entry than its same-model, same-kind siblings, which is exactly the planner's shortlist. JAX on CPU, minutes per run.
+
+| variant | size | held-out phrasings placed right | blind questions right / dangerous (thresholds 0.4, 0.6, 0.7) |
+| --- | --- | --- | --- |
+| WordLlama as is | — | 67.5% | 81/5, 81/3, 77/2 |
+| linear adapter, weak pull to identity | 118 KB | **75.4%** | 80/6, 79/3, 76/2 |
+| linear adapter, stronger pull | 118 KB | 72.5% | 81/5, 81/3, 77/2 |
+| token fine-tune | 692 KB | 69.6% | 81/5, 81/3, 77/2 |
+
+**It learns the vocabulary writer's style, not the users'.** Held-out phrasings improve by up to 8 points, but the blind questions don't move: the adapters are level or one worse at every threshold. Held-out phrasings come from the same author as the training data, while questions are worded differently, and real users' questions will differ more still.
+
+**What would help instead:**
+- More *kinds* of phrasing in the vocabulary: the step-9 loop with real misses.
+- A model that reads the whole question, for the idioms.
+
+An adapter is worth retrying once there are a few hundred real questions to train on and a separate set to test on. `adapt.py` and `her_compare.py` (`CEIST_ADAPTERS=a.npz,b.npz`) are ready for that.
+
 ## In the browser
 
 | matcher | size | browser runtime |

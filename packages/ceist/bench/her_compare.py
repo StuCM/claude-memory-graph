@@ -143,6 +143,34 @@ class VocabWordLlama(WordLlama):
         return self.choose(scored), scored
 
 
+class Adapted(VocabWordLlama):
+    """vocabulary + WordLlama with a trained domain adapter (adapt.py)."""
+
+    def __init__(self, path: str):
+        super().__init__()
+        import numpy as np
+        self.np = np
+        z = np.load(path)
+        self.kind = str(z["kind"])
+        self.name = f"vocabulary + WordLlama + {self.kind} adapter"
+        if self.kind == "linear":
+            self.A = z["A"].astype(np.float32)
+        else:
+            self.E = np.asarray(self.enc.weights, dtype=np.float32).copy()
+            self.E[z["tokens"]] += z["delta"].astype(np.float32)
+
+    def vec(self, text):
+        np = self.np
+        if self.kind == "linear":
+            v = self.enc.encode([text])[0] @ self.A
+        else:
+            ids = self.enc._ids(re.findall(r"\w+", text))
+            if not ids:
+                return np.zeros(self.E.shape[1], dtype=np.float32)
+            v = self.E[ids].mean(0)
+        return v / (np.linalg.norm(v) or 1)
+
+
 def judge(case, got) -> str:
     want = case["expect"]
     if want is None:
@@ -164,11 +192,13 @@ def main():
     models, vocab, cases = load()
     out = []
     matchers = []
-    for make in (NodeNames, VocabExact, VocabWordLlama):
+    makers = [NodeNames, VocabExact, VocabWordLlama]
+    makers += [lambda p=p: Adapted(p) for p in os.environ.get("CEIST_ADAPTERS", "").split(",") if p]
+    for make in makers:
         try:
             matchers.append(make())
         except Skip as why:
-            out.append(f"(skipped {make.__name__}: {why})")
+            out.append(f"(skipped: {why})")
     n_none = sum(c["expect"] is None for c in cases)
     n_match = len(cases) - n_none
     phrases = sum(len(e["phrases"]) for es in vocab.values() for e in es)
