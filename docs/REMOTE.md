@@ -123,9 +123,8 @@ Varnish for tiles"*. The model uses the memory tools.
 
 Sign-ins last until unused for 180 days. Five wrong passwords lock the
 page for five minutes. Tokens are stored only as hashes in
-`data/state/oauth.json`. To sign every app out, stop the server and
-delete that file. To lock out Claude Code machines, change
-`MEMORY_GRAPH_TOKEN`.
+`data/state/oauth.json`. To sign apps out or change the password, use
+[Settings](#settings-sign-out-change-the-password-replace-the-token).
 
 ### Chat in the browser
 
@@ -148,6 +147,30 @@ answer, not to fill the gap from general knowledge.
   them. Sign-ins last a week. Wrong passwords count towards the same
   lockout as the connector sign-in.
 - `serve --no-chat` turns the page off.
+
+### Settings: sign out, change the password, replace the token
+
+**Settings**, at the top of the chat page, has three controls:
+
+- **Sign everything out.** Every browser, and every app connected through
+  claude.ai or the phone, has to sign in again. Claude Code machines use
+  the token, so they stay connected.
+- **Change the password** used by the chat and when connecting apps. This
+  also signs everything out.
+- **Replace the token**, for when it may have leaked. The new token is shown
+  once, and the old one stops working straight away. Put the new one into
+  each Claude Code machine's plugin settings (*Memory server token*).
+
+Each control needs the **server token** typed in as well as a signed-in
+browser. A colleague who has only the chat password, as on a handover
+share, can ask questions but can't lock you out. If you set no separate
+password, the token doubles as the password, so replacing the token
+retires the old one as a password too.
+
+Changes made here are saved (hashed) in `data/state/oauth.json` and take
+precedence over `MEMORY_GRAPH_PASSWORD` and `MEMORY_GRAPH_TOKEN` in
+`.env`. If you're locked out, stop the server and delete that file. It
+goes back to the `.env` values, and every app signs in again.
 
 ### Security in one paragraph
 

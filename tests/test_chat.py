@@ -266,3 +266,67 @@ def test_real_sdk_round_trip(store, tmp_path, monkeypatch):
     assert [m["role"] for m in second["messages"]] == ["user", "assistant", "user"]
     assert second["messages"][1]["content"][0]["type"] == "tool_use"
     assert "varnish" in second["messages"][2]["content"][0]["content"].lower()
+
+
+# ------------------------------------------------------------------ settings
+
+def change(client, action, **body):
+    return client.post(f"/settings/{action}", json=body)
+
+
+def test_settings_need_a_signed_in_browser_and_the_token(store, tmp_path):
+    client, _ = app_with(store, tmp_path, ScriptedClaude())
+    assert client.get("/settings", follow_redirects=False).status_code == 303
+    assert change(client, "sign-out-all", token="tok").status_code == 401
+    signed_in(client)
+    assert '"view": "settings"' in client.get("/settings").text
+    # the chat password alone (a handover colleague) changes nothing
+    assert change(client, "password", token=PASSWORD, password="x" * 12).status_code == 403
+
+
+def test_sign_everything_out(store, tmp_path):
+    client, _ = app_with(store, tmp_path, ScriptedClaude(reply(text("hi"))))
+    auth = client.app.state.auth
+    auth.clients["c1"] = {"client_id": "c1"}
+    signed_in(client)
+    r = change(client, "sign-out-all", token="tok")
+    assert r.status_code == 200 and r.json()["signedOut"]
+    assert auth.clients == {}
+    assert client.post("/chat/send", json={"chat": "c", "text": "hi"}).status_code == 401
+
+
+def test_change_password(store, tmp_path):
+    client, _ = app_with(store, tmp_path, ScriptedClaude())
+    signed_in(client)
+    assert change(client, "password", token="tok", password="short").status_code == 400
+    assert change(client, "password", token="tok", password="new password 1").status_code == 200
+    assert client.post("/chat/send", json={"chat": "c", "text": "hi"}).status_code == 401
+    assert client.post("/chat/login", data={"password": PASSWORD},
+                       follow_redirects=False).status_code == 401
+    assert client.post("/chat/login", data={"password": "new password 1"},
+                       follow_redirects=False).status_code == 303
+    raw = (tmp_path / "oauth.json").read_text()
+    assert "new password 1" not in raw
+    from claude_memory_graph.auth import OwnerAuth
+    reborn = OwnerAuth(tmp_path / "oauth.json", "tok", PASSWORD, "http://localhost")
+    assert reborn.check_password("new password 1") and not reborn._password_ok(PASSWORD)
+
+
+def test_replace_the_token(store, tmp_path):
+    client, _ = app_with(store, tmp_path, ScriptedClaude())
+    signed_in(client)
+    new = change(client, "token", token="tok").json()["token"]
+    assert new not in (tmp_path / "oauth.json").read_text()
+    bearer = lambda t: {"Authorization": f"Bearer {t}"}
+    assert client.get("/api/graph.nq", headers=bearer("tok")).status_code == 401
+    assert client.get("/api/graph.nq", headers=bearer(new)).status_code == 200
+    assert change(client, "sign-out-all", token="tok").status_code == 403
+    assert change(client, "sign-out-all", token=new).status_code == 200
+
+
+def test_without_a_password_the_current_token_is_the_password(store, tmp_path):
+    from claude_memory_graph.auth import OwnerAuth
+    auth = OwnerAuth(tmp_path / "o.json", "old-token", "", "http://localhost")
+    assert auth.check_password("old-token")
+    new = auth.new_token()
+    assert auth.check_password(new) and not auth._password_ok("old-token")

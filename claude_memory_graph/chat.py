@@ -238,6 +238,9 @@ class Sessions:
     def drop(self, token: str | None) -> None:
         self.live.pop(token or "", None)
 
+    def clear(self) -> None:
+        self.live = {}
+
 
 COOKIE = "mg_chat"
 
@@ -260,7 +263,7 @@ def chat_routes(service: ChatService, auth):
 
     def render(view: str, error: str = "", status: int = 200):
         boot = json.dumps({"view": view, "title": service.title, "error": error,
-                           "configured": configured()})
+                           "configured": configured(), "manageable": auth.manageable})
         return HTMLResponse(page.replace("/*BOOT*/null", boot.replace("</", "<\\/")),
                             status_code=status, headers=headers)
 
@@ -308,7 +311,63 @@ def chat_routes(service: ChatService, auth):
                                  headers={"Cache-Control": "no-store",
                                           "X-Accel-Buffering": "no"})
 
+    # ------------------------------------------------------------ settings
+    auth.on_sign_out.append(sessions.clear)
+
+    async def settings_page(request: Request):
+        if not sessions.valid(request.cookies.get(COOKIE)):
+            return RedirectResponse("/", status_code=303)
+        return render("settings")
+
+    async def settings_action(request: Request):
+        """Each change needs the server token as well as a signed-in browser:
+        the password alone (all a handover colleague has) can't lock the
+        owner out."""
+        from .auth import MIN_PASSWORD
+        if not sessions.valid(request.cookies.get(COOKIE)):
+            return JSONResponse({"error": "Signed out."}, status_code=401)
+        if request.headers.get("content-type", "").split(";")[0] != "application/json":
+            return JSONResponse({"error": "expected JSON"}, status_code=415)
+        if not auth.manageable:
+            return JSONResponse({"error": "This server has no token, so its settings "
+                                          "can't be changed here."}, status_code=403)
+        try:
+            body = await request.json()
+            token = str(body.get("token", ""))
+        except (ValueError, AttributeError):
+            return JSONResponse({"error": "bad request"}, status_code=400)
+        if auth.locked():
+            return JSONResponse({"error": "Too many wrong attempts. Try again in a few "
+                                          "minutes."}, status_code=429)
+        if not auth.check_token(token):
+            await asyncio.sleep(1)
+            return JSONResponse({"error": "That isn't the server token."}, status_code=403)
+
+        action = request.path_params["action"]
+        if action == "sign-out-all":
+            count = auth.sign_out_all()
+            return JSONResponse({"ok": True, "signedOut": True, "message":
+                                 f"Signed out every browser and {count} connected app"
+                                 f"{'' if count == 1 else 's'}."})
+        if action == "password":
+            new = str(body.get("password", ""))
+            if len(new) < MIN_PASSWORD:
+                return JSONResponse({"error": f"Use at least {MIN_PASSWORD} characters."},
+                                    status_code=400)
+            auth.set_password(new)
+            return JSONResponse({"ok": True, "signedOut": True, "message":
+                                 "Password changed. Everything is signed out; sign in "
+                                 "with the new password."})
+        if action == "token":
+            return JSONResponse({"ok": True, "token": auth.new_token(), "message":
+                                 "New token below. It is shown once: put it in each "
+                                 "Claude Code machine's plugin settings now. The old "
+                                 "token has stopped working."})
+        return JSONResponse({"error": "unknown setting"}, status_code=404)
+
     return [Route("/", home, methods=["GET"]),
+            Route("/settings", settings_page, methods=["GET"]),
+            Route("/settings/{action}", settings_action, methods=["POST"]),
             Route("/chat/login", login, methods=["POST"]),
             Route("/chat/logout", logout, methods=["POST"]),
             Route("/chat/send", send, methods=["POST"])]
