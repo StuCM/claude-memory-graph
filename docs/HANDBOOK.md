@@ -309,6 +309,9 @@ prompt, no restart). Defaults in `gate/runtime.py`.
 | Session-log injections noisy (unvetted entries) | `LOG_ABS_MIN` (3.0) | raise above `ABS_MIN` |
 | Pressure escalation too early/late | `PRESSURE_TOKENS` (140000) | move |
 | Wrong-project memories outrank current project | `PROX_BOOST` (1.5) | raise |
+| Silent on a topic you've distilled heavily (log: high `top`, `rest` ≈ `top`) | `CLUSTER_FACTOR` (3.0) | lower — a tied group scoring ≥ this × `ABS_MIN` injects its head plus a "+N similar" pointer |
+| "+N similar" pointers on matches you'd call generic | `CLUSTER_FACTOR` | raise |
+| Session-start prime too long / too short | `PRIME_MAX_CHARS` (3000) | move — decisions/patterns/constraints rank first; the rest sit behind a "+N more" pointer |
 
 Rule of thumb from TUNING.md: false negatives label themselves (the miss detector);
 false positives need your eyes on `claude-hooks log`. The gate is biased toward silence,
