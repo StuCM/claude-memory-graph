@@ -276,9 +276,12 @@ def change(client, action, **body):
 
 def test_settings_need_a_signed_in_browser_and_the_token(store, tmp_path):
     client, _ = app_with(store, tmp_path, ScriptedClaude())
-    assert client.get("/settings", follow_redirects=False).status_code == 303
+    page = client.get("/settings")
+    assert '"view": "login"' in page.text and '"next": "/settings"' in page.text
     assert change(client, "sign-out-all", token="tok").status_code == 401
-    signed_in(client)
+    r = client.post("/chat/login", data={"password": PASSWORD, "next": "/settings"},
+                    follow_redirects=False)
+    assert r.headers["location"] == "/settings"
     assert '"view": "settings"' in client.get("/settings").text
     # the chat password alone (a handover colleague) changes nothing
     assert change(client, "password", token=PASSWORD, password="x" * 12).status_code == 403
@@ -330,3 +333,29 @@ def test_without_a_password_the_current_token_is_the_password(store, tmp_path):
     assert auth.check_password("old-token")
     new = auth.new_token()
     assert auth.check_password(new) and not auth._password_ok("old-token")
+
+
+# ------------------------------------------- no API key: use your own Claude
+
+def test_without_a_key_home_is_the_connect_page(store, tmp_path, monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY")
+    app = build_app(store, "x", token="tok", password=PASSWORD,
+                    public_url="https://memory.test", auth_path=tmp_path / "o.json")
+    client = TestClient(app, base_url="https://memory.test")
+    home = client.get("/").text
+    assert '"view": "connect"' in home
+    assert '"connector": "https://memory.test/mcp"' in home
+    # no sign-in needed to read how to connect, and nothing secret on it
+    assert "tok" not in home.split("const BOOT")[1].split(";")[0]
+
+
+def test_connect_page_without_a_public_address_says_so(store, tmp_path, monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY")
+    client, _ = app_with(store, tmp_path, ScriptedClaude())
+    assert '"connector": ""' in client.get("/connect").text
+
+
+def test_with_a_key_the_connect_page_is_still_there(store, tmp_path):
+    client, _ = app_with(store, tmp_path, ScriptedClaude())
+    assert '"view": "login"' in client.get("/").text
+    assert '"view": "connect"' in client.get("/connect").text

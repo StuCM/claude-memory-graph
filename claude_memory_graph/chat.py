@@ -1,6 +1,12 @@
-"""Chat with the memory, in a browser, on the server that holds it.
+"""The server's browser pages: connect, settings, and an optional chat.
 
-The server's home page becomes a chat: you (or a colleague, on a handover
+By default the home page is the CONNECT page: how to add this memory to
+your own Claude (a claude.ai custom connector, or Claude Code), so each
+person's own plan pays and the server needs no API key. With
+ANTHROPIC_API_KEY set, the home page becomes a chat instead, billed to that
+key (a Pro/Max plan can't be used for an app you host).
+
+The chat: you (or a colleague, on a handover
 share) sign in with the server password and ask questions; Claude answers
 from the graph using the read-only memory tools — search, recall, query,
 reflect — run in-process against the server's store. Nobody needs Claude
@@ -245,8 +251,11 @@ class Sessions:
 COOKIE = "mg_chat"
 
 
-def chat_routes(service: ChatService, auth):
-    """/ (the chat, or its sign-in), /chat/login, /chat/logout, /chat/send."""
+def chat_routes(service: ChatService, auth, public_url: str = "", read_only: bool = False):
+    """The browser pages. `/` is the chat when the server has an API key, and
+    otherwise the connect page: how to add this memory to your own Claude
+    (claude.ai, the apps, Claude Code), so each person's own plan pays and
+    the server needs no key. Also /connect, /settings, /chat/*."""
     from importlib import resources
 
     from starlette.requests import Request
@@ -261,24 +270,35 @@ def chat_routes(service: ChatService, auth):
                                           "script-src 'unsafe-inline'; connect-src 'self'; "
                                           "img-src data:; frame-ancestors 'none'"}
 
-    def render(view: str, error: str = "", status: int = 200):
+    connector = f"{public_url.rstrip('/')}/mcp" if public_url else ""
+
+    def render(view: str, error: str = "", status: int = 200, next_page: str = "/"):
         boot = json.dumps({"view": view, "title": service.title, "error": error,
-                           "configured": configured(), "manageable": auth.manageable})
+                           "configured": configured(), "manageable": auth.manageable,
+                           "connector": connector, "readOnly": read_only,
+                           "next": next_page})
         return HTMLResponse(page.replace("/*BOOT*/null", boot.replace("</", "<\\/")),
                             status_code=status, headers=headers)
 
     async def home(request: Request):
+        if not configured():
+            return render("connect")
         signed_in = sessions.valid(request.cookies.get(COOKIE))
         return render("chat" if signed_in else "login")
 
+    async def connect(request: Request):
+        return render("connect")
+
     async def login(request: Request):
         form = await request.form()
+        next_page = "/settings" if form.get("next") == "/settings" else "/"
         if auth.locked():
-            return render("login", "Too many wrong passwords. Try again in a few minutes.", 429)
+            return render("login", "Too many wrong passwords. Try again in a few minutes.",
+                          429, next_page)
         if not auth.check_password(str(form.get("password", ""))):
             await asyncio.sleep(1)
-            return render("login", "Wrong password.", 401)
-        response = RedirectResponse("/", status_code=303)
+            return render("login", "Wrong password.", 401, next_page)
+        response = RedirectResponse(next_page, status_code=303)
         response.set_cookie(COOKIE, sessions.create(), max_age=SESSION_TTL, httponly=True,
                             secure=request.url.scheme == "https", samesite="lax")
         return response
@@ -316,7 +336,7 @@ def chat_routes(service: ChatService, auth):
 
     async def settings_page(request: Request):
         if not sessions.valid(request.cookies.get(COOKIE)):
-            return RedirectResponse("/", status_code=303)
+            return render("login", next_page="/settings")
         return render("settings")
 
     async def settings_action(request: Request):
@@ -366,6 +386,7 @@ def chat_routes(service: ChatService, auth):
         return JSONResponse({"error": "unknown setting"}, status_code=404)
 
     return [Route("/", home, methods=["GET"]),
+            Route("/connect", connect, methods=["GET"]),
             Route("/settings", settings_page, methods=["GET"]),
             Route("/settings/{action}", settings_action, methods=["POST"]),
             Route("/chat/login", login, methods=["POST"]),

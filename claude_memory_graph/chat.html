@@ -64,6 +64,7 @@ a.ghost{text-decoration:none;display:inline-block}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:.75rem;padding:1rem}
 .card h2{font-size:1rem;margin:0 0 .3rem}
 .card p{margin:.2rem 0 .7rem}
+.card ol{margin:.2rem 0 .7rem;padding-left:1.3rem}.card li{margin:.25rem 0}
 .card input{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:.6rem;
   padding:.6rem;margin:.25rem 0}
 .act{background:var(--accent);color:var(--accent-ink);border:0;border-radius:.6rem;padding:.55rem .9rem;
@@ -111,6 +112,7 @@ function login(){
     <p class="note">Ask questions about what this memory holds. Sign in with the password you were given.</p>
     ${BOOT.error ? `<p class="err">${esc(BOOT.error)}</p>` : ''}
     <form method="post" action="/chat/login">
+      <input type="hidden" name="next" value="${esc(BOOT.next || '/')}">
       <input type="password" name="password" placeholder="Password" autocomplete="current-password" autofocus required>
       <button type="submit">Sign in</button>
     </form></div>`;
@@ -120,6 +122,7 @@ function chat(){
   document.title = BOOT.title;
   app.innerHTML = `<header><h1>${esc(BOOT.title)}</h1>
       <button class="ghost" id="new">New chat</button>
+      <a class="ghost" href="/connect">Use in Claude</a>
       <a class="ghost" href="/settings">Settings</a>
       <form method="post" action="/chat/logout"><button class="ghost">Sign out</button></form></header>
     <main id="log"></main>
@@ -184,6 +187,40 @@ function chat(){
   q.focus();
 }
 
+function connect(){
+  document.title = BOOT.title;
+  const url = BOOT.connector;
+  app.innerHTML = `<header><h1>${esc(BOOT.title)}</h1>
+      ${BOOT.configured ? '<a class="ghost" href="/">Chat here</a>' : ''}
+      <a class="ghost" href="/settings">Settings</a></header>
+    <div class="settings">
+    <div class="card"><h2>Use this memory in your own Claude</h2>
+      <p>Add it to Claude as a connector, then ask about it in any chat: on the web, the phone or the desktop app, or in Claude Code. It runs on your own Claude plan.</p>
+      ${BOOT.readOnly ? '<p class="note">This memory is read-only: Claude can search and read it, but not change it.</p>' : ''}
+      ${url ? `<p class="note">Connector address</p><div class="secret" id="url">${esc(url)}</div>
+        <button class="act" id="copy">Copy address</button> <span class="ok" id="copied"></span>`
+            : '<p class="err">Apps can’t connect yet: this server needs a public HTTPS address. The owner sets <code>MEMORY_GRAPH_PUBLIC_URL</code>.</p>'}
+    </div>
+    <div class="card"><h2>claude.ai, the phone and desktop apps</h2>
+      <ol>
+        <li>In <strong>claude.ai</strong>, open <strong>Settings → Connectors → Add custom connector</strong>.</li>
+        <li>Name it (“${esc(BOOT.title)}”) and paste the address above.</li>
+        <li>Press <strong>Connect</strong>. This server’s sign-in page opens: enter the password you were given and press <strong>Allow</strong>.</li>
+        <li>In a chat, switch it on from the tools menu, then ask, for example: “What does the memory say about…?”</li>
+      </ol>
+      <p class="note">Connectors added on claude.ai also appear in the phone and desktop apps signed in to the same account.</p></div>
+    <div class="card"><h2>Claude Code</h2>
+      <div class="secret">claude mcp add --transport http memory ${esc(url || 'https://<this server>/mcp')}</div>
+      <p class="note">Then run <code>/mcp</code> in Claude Code, choose this server and authenticate: the same sign-in page opens in your browser.</p></div>
+    </div>`;
+  const copy = document.getElementById('copy');
+  if (copy) copy.onclick = async () => {
+    try { await navigator.clipboard.writeText(url); document.getElementById('copied').textContent = 'Copied'; }
+    catch (e) { const r = document.createRange(); r.selectNodeContents(document.getElementById('url'));
+                getSelection().removeAllRanges(); getSelection().addRange(r); }
+  };
+}
+
 function settings(){
   document.title = BOOT.title + ' — settings';
   app.innerHTML = `<header><h1>Settings</h1><a class="ghost" href="/">Back to chat</a></header>
@@ -230,7 +267,7 @@ function settings(){
   });
 }
 
-({chat, login, settings}[BOOT.view] || login)();
+({chat, login, settings, connect}[BOOT.view] || login)();
 </script>
 </body>
 </html>
