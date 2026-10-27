@@ -168,7 +168,7 @@ def test_injection_always_offers_the_next_traversal_call(graph):
     out = recall_on("pyoxigraph rdflib quad store")
     assert out is not None
     assert "+" not in out.split("next:")[0].split("(")[-1]  # nothing withheld
-    assert "DOOR, not the answer" in out
+    assert "doors, not answers" in out
     assert 'next: memory_recall(model="Decision", ' in out
     assert 'name="Use pyoxigraph over rdflib", depth=2, focus=' in out
 

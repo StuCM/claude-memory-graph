@@ -39,6 +39,8 @@ _DEFAULTS = {
     "ABS_MIN": 3.0,     # recall: absolute score floor
     "MARGIN": 1.5,      # recall: group must beat the rest by this; members stay within it of top
     "TOP_N": 2,         # recall: max memories per injection
+    "CLUSTER_FACTOR": 3.0,  # recall: a group scoring >= this x ABS_MIN is a topic cluster, not noise
+    "PRIME_MAX_CHARS": 3000,  # auto-prime: size budget for each session-start section
     "PROX_BOOST": 1.5,  # recall: multiplier for current project's node + 1-hop neighbours
     "PHRASE_GAP": 2,    # recall: max original-token distance for a bigram (2 = one word between)
     "N_TURNS": 3,       # nudge: remind every N significant prompts

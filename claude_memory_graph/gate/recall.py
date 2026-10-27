@@ -47,7 +47,9 @@ def _bigrams(pos_terms: list[tuple[int, str]]) -> set[tuple[str, str]]:
 
 
 # Hook context past ~10k chars is cut off; a depth-2 prime was ~440KB.
+# Lines are additionally capped by PRIME_MAX_CHARS (runtime config).
 PRIME_LINKS = 20
+_DESC_CHARS = 200
 
 _SEGMENT_RE = re.compile(r"[.!?;\n]+")
 _SEGMENT_MIN_TERMS = 12  # prompts shorter than this score fine as one view
@@ -86,6 +88,7 @@ def _corpus(store, include_concepts: bool = False) -> list[dict]:
     as entry points; the gate's injection path does not use them."""
     import pyoxigraph as ox
     from ..namespaces import GRAPH_CONCEPTS, GRAPH_RESOURCE_BASE, MEM, RDF_TYPE
+    from ..tools.recall import _CONTENT_KEYS, _DISPLAY_SKIP
 
     def _collect(rows, gid_of) -> dict[str, dict]:
         by: dict[str, dict] = {}
@@ -107,8 +110,17 @@ def _corpus(store, include_concepts: bool = False) -> list[dict]:
             elif key in ("name", "label"):
                 d["name"] = r["o"].value
             else:
-                d["parts"].append(r["o"].value)
+                d["parts"].append((key, r["o"].value))
         return by
+
+    def _display(parts: list[tuple[str, str]]) -> str:
+        """What the model reads: content first, matching data (aliases,
+        status, anchors) left out — it scored the match, it isn't the memory."""
+        readable = [(k, v) for k, v in parts if k not in _DISPLAY_SKIP]
+        readable.sort(key=lambda kv: _CONTENT_KEYS.index(kv[0])
+                      if kv[0] in _CONTENT_KEYS else len(_CONTENT_KEYS))
+        text = " ".join(" ".join(v.split()) for _k, v in readable)
+        return text[:_DESC_CHARS] + ("…" if len(text) > _DESC_CHARS else "")
 
     rows = store.query(
         f'SELECT ?g ?s ?p ?o WHERE {{ GRAPH ?g {{ ?s ?p ?o }} '
@@ -129,7 +141,7 @@ def _corpus(store, include_concepts: bool = False) -> list[dict]:
     for gid, d in list(by.items()) + [(None, d) for d in concept_by.values()]:
         if d["dead"]:
             continue
-        body = " ".join(d["parts"])
+        body = " ".join(v for _k, v in d["parts"])
         name_pos = terms_pos(d["name"])
         all_pos = terms_pos(f"{d['name']} {body}")
         concept_bigrams = set()
@@ -142,7 +154,7 @@ def _corpus(store, include_concepts: bool = False) -> list[dict]:
             "iri": d["iri"],
             "name": d["name"],
             "model": d["model"],
-            "desc": body[:300],
+            "desc": _display(d["parts"]),
             "name_terms": {w for _, w in name_pos},
             "terms": {w for _, w in all_pos},
             "name_bigrams": _bigrams(name_pos),
@@ -227,24 +239,135 @@ def _score(q_terms: set[str], d: dict, idf: dict[str, float],
     return s * (0.5 + 0.5 * coverage)
 
 
-def _links(store, d: dict) -> str:
-    """Second, targeted query: the winner's direct links, so the injection
-    carries the neighbourhood (decision + what it affects), not a bare match.
-    Built from the scoring result — this is the dynamic part of the gate."""
+def decide(ranked: list[tuple[float, dict]], cfg: dict) -> tuple[list, float, int]:
+    """The inject-or-stay-silent decision, shared by the live gate and the
+    preview so they cannot disagree. Returns (group, rest, similar): an empty
+    group means silence; `similar` counts further band members left out.
+
+    Band = nodes >= ABS_MIN and within MARGIN of the top. The group is the
+    band's first TOP_N; normally it must beat the best node left behind by
+    MARGIN, which silences generic matches (one common word scoring a dozen
+    nodes alike). But a band wider than TOP_N is ALSO what a well-distilled
+    topic looks like: five arches gotchas all scoring 64 against a floor of
+    3 tied each other, so `rest` was one of them and the gate went silent on
+    the strongest possible match. A group that strong (>= CLUSTER_FACTOR x
+    ABS_MIN) is a topic cluster: inject its head and point at the rest."""
+    if not ranked:
+        return [], 0.0, 0
+    top = ranked[0][0]
+    band = [(s, d) for s, d in ranked if s >= cfg["ABS_MIN"] and s > top / cfg["MARGIN"]]
+    group = band[:cfg["TOP_N"]]
+    rest = ranked[len(group)][0] if len(ranked) > len(group) else 0.0
+    if not group:
+        return [], rest, 0
+    if top >= cfg["MARGIN"] * (rest or 0.0001):
+        return group, rest, 0
+    if top >= cfg["CLUSTER_FACTOR"] * cfg["ABS_MIN"]:
+        return group, rest, len(band) - len(group)
+    return [], rest, 0
+
+
+# ----------------------------------------------------------------
+# Per-prompt index cache
+# ----------------------------------------------------------------
+
+# Bump when the doc dict shape or scoring inputs change.
+_INDEX_VERSION = 1
+
+
+def _index_key() -> tuple | None:
+    nq = store_dir() / "graph.nq"
     try:
-        import pyoxigraph as ox
-        result = store.recall(ox.NamedNode(d["iri"]), d["gid"], depth=1)
-        parts = [
-            f"{lr.relation}→ {lr.model} '{lr.properties.get('name') or lr.properties.get('label', '')}'"
-            for lr in result.linked[:3]
-        ]
-        if not parts:
-            return ""
-        extra = len(result.linked) - len(parts)
-        tail = f" · +{extra} more" if extra > 0 else ""
-        return f" ({' · '.join(parts)}{tail})"
-    except Exception:
-        return ""
+        st = nq.stat()
+    except OSError:
+        return None
+    return (str(nq), st.st_mtime_ns, st.st_size, st.st_ino,
+            _INDEX_VERSION, config()["PHRASE_GAP"])
+
+
+def gate_index(project: str, opener) -> tuple[list[dict], dict, set[str], dict[str, str]]:
+    """(docs, idf, near, links) for this prompt, rebuilt only when graph.nq changed.
+
+    Every prompt is a fresh hook process, and building the corpus means
+    loading the whole store and tokenizing every node: ~40ms at 300 nodes,
+    ~450ms at 3,000 — on every keystroke-to-answer. The index depends only
+    on the store file, so it's pickled in the hook-kit home keyed by the
+    file's identity (path, mtime, size, inode) and rebuilt on change. The
+    project neighbourhood is cached per project alongside. `opener` returns
+    the MemoryStore, called only on a miss. Fail open: any cache problem
+    means a normal rebuild."""
+    import pickle
+    from claude_hook_kit import state_home
+
+    path = state_home() / "gate-index.pickle"
+    key = _index_key()
+    cached = None
+    if key is not None:
+        try:
+            with open(path, "rb") as f:
+                cached = pickle.load(f)
+            if cached.get("key") != key:
+                cached = None
+        except Exception:
+            cached = None
+
+    dirty = False
+    if cached is None:
+        store = opener()
+        docs = _corpus(store)
+        cached = {"key": key, "docs": docs, "idf": _idf(docs), "near": {},
+                  "links": _link_summaries(store, docs)}
+        dirty = True
+    near = cached["near"].get(project)
+    if near is None:
+        near = _project_neighbourhood(opener(), project)
+        cached["near"][project] = near
+        dirty = True
+    if dirty and key is not None:
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = path.with_name(path.name + ".tmp")
+            with open(tmp, "wb") as f:
+                pickle.dump(cached, f)
+            tmp.replace(path)
+        except Exception:
+            pass
+    return cached["docs"], cached["idf"], near, cached["links"]
+
+
+def _link_summaries(store, docs: list[dict]) -> dict[str, str]:
+    """Every node's neighbourhood suffix — ' (affects→ Project 'quartz' ·
+    +2 more)' — computed once per index build, so the injection carries the
+    neighbourhood (decision + what it affects), not a bare match.
+
+    Building these per winner meant opening the whole store on every firing
+    prompt (~2s at 3,000 nodes); one pass over the links graph here costs a
+    fraction of that and is cached with the index. Same filters as
+    store.recall at depth 1: open links only, live nodes only."""
+    from ..namespaces import GRAPH_CONCEPTS, GRAPH_LINKS
+    known = {d["iri"]: (d["model"], d["name"]) for d in docs}
+    for r in store.query(
+            f'SELECT ?c ?type ?label WHERE {{ GRAPH <{GRAPH_CONCEPTS}> '
+            f'{{ ?c rdf:type ?type ; mem:label ?label }} }}'):
+        known[r["c"].value] = (r["type"].value.rsplit("#", 1)[-1], r["label"].value)
+    neighbours: dict[str, list[tuple[str, str]]] = {}
+    for r in store.query(
+            f'SELECT ?s ?t ?rel WHERE {{ GRAPH <{GRAPH_LINKS}> {{\n'
+            f'    ?l mem:linkSource ?s ; mem:linkTarget ?t ; mem:linkRelation ?rel .\n'
+            f'    FILTER NOT EXISTS {{ ?l mem:linkValidUntil ?end }}\n'
+            f'    FILTER NOT EXISTS {{ ?l mem:linkInvalidatedAt ?inv }}\n'
+            f'}} }}'):
+        s, t, rel = r["s"].value, r["t"].value, r["rel"].value
+        for me, other in ((s, t), (t, s)):
+            if me in known and other in known:
+                neighbours.setdefault(me, []).append((rel, other))
+    out: dict[str, str] = {}
+    for me, links in neighbours.items():
+        links = list(dict.fromkeys(links))
+        parts = [f"{rel}→ {known[other][0]} '{known[other][1]}'" for rel, other in links[:3]]
+        extra = len(links) - len(parts)
+        out[me] = f" ({' · '.join(parts)}" + (f" · +{extra} more" if extra > 0 else "") + ")"
+    return out
 
 
 class RecallExtension(HookExtension):
@@ -260,15 +383,13 @@ class RecallExtension(HookExtension):
         from ..tools import recall as recall_tool
 
         store = MemoryStore.open_or_create(store_dir())
-        sections: list[str] = []
-
+        budget = config()["PRIME_MAX_CHARS"]
         project = ctx.project or Path(ctx.cwd or os.getcwd()).name
-        if store.find_resource("Project", project) is not None:
-            sections.append(recall_tool.handle(store, "Project", project, 1, limit=PRIME_LINKS))
-
         user = os.environ.get("MEMORY_GRAPH_USER")
-        if user and store.find_resource("Person", user) is not None:
-            sections.append(recall_tool.handle(store, "Person", user, 1, limit=PRIME_LINKS))
+        sections = [s for s in (
+            recall_tool.prime(store, "Project", project, PRIME_LINKS, budget),
+            recall_tool.prime(store, "Person", user, PRIME_LINKS, budget) if user else None,
+        ) if s]
 
         if not sections:
             return None  # nothing known -> silence, not noise
@@ -285,31 +406,28 @@ class RecallExtension(HookExtension):
         cfg = config()
         views = query_views(ctx.prompt)  # whole prompt + its sentences
         from ..store import MemoryStore
-        store = MemoryStore.open_or_create(store_dir())
-        docs = _corpus(store)
+        store = None
+
+        def opener():
+            nonlocal store
+            if store is None:
+                store = MemoryStore.open_or_create(store_dir())
+            return store
+
+        docs, idf, near, links = gate_index(ctx.project, opener)
         if not docs:
             # empty graph: the session log is still a retrieval source
             return self._log_recall(ctx, q, views, {}, budget=cfg["TOP_N"])
 
-        idf = _idf(docs)
-        near = _project_neighbourhood(store, ctx.project)
         boost = cfg["PROX_BOOST"]
         ranked = sorted(
             ((score_views(views, d, idf) * (boost if d["iri"] in near else 1.0), d)
              for d in docs),
             key=lambda x: x[0], reverse=True)
         top = ranked[0][0]
-        # Candidates: strong on their own (>= ABS_MIN) AND within the band of
-        # the top (> top/MARGIN) — so a proximity-boosted winner sheds
-        # lexical-only stragglers from other projects.
-        strong = [(s, d) for s, d in ranked[:cfg["TOP_N"]]
-                  if s >= cfg["ABS_MIN"] and s > top / cfg["MARGIN"]]
-        # Margin: the injected GROUP must stand out from what's left behind —
-        # not from each other. Two near-tied strong memories are both relevant;
-        # the noise case is the group barely beating the rest of the graph.
-        rest = ranked[len(strong)][0] if len(ranked) > len(strong) else 0.0
+        strong, rest, similar = decide(ranked, cfg)
         session = ctx.core.get("session_id", "")
-        if not strong or top < cfg["MARGIN"] * (rest or 0.0001):
+        if not strong:
             # top_node makes silent decisions joinable by the miss detector:
             # "what WOULD the gate have injected, and what did it score?"
             append_jsonl("injections.jsonl", {
@@ -323,22 +441,26 @@ class RecallExtension(HookExtension):
         lines, fresh = [], []
         for _unused, d in strong:
             if d["gid"] not in injected:
-                lines.append(f"- {d['name'] or d['gid']}: {d['desc']}{_links(store, d)}")
+                lines.append(f"- {d['name'] or d['gid']}: {d['desc']}{links.get(d['iri'], '')}")
                 lines.append(f'  next: memory_recall(model="{d["model"]}", '
                              f'name="{d["name"]}", depth=2, focus="<what you need>")')
                 fresh.append(d["gid"])
-        append_jsonl("injections.jsonl", {
-            "fired": bool(fresh), "top": round(top, 2), "rest": round(rest, 2),
-            "session": session, "project": ctx.project, "terms": sorted(q),
-            "nodes": [d["name"] for _, d in strong]})
+        entry = {"fired": bool(fresh), "top": round(top, 2), "rest": round(rest, 2),
+                 "session": session, "project": ctx.project, "terms": sorted(q),
+                 "nodes": [d["name"] for _, d in strong]}
+        if similar:
+            entry["cluster"] = similar
+        append_jsonl("injections.jsonl", entry)
         if not fresh:
             # graph already injected this session -> log layer still gets a look
             return self._log_recall(ctx, q, views, idf, budget=cfg["TOP_N"])
         ctx.state["injected"] = sorted(injected | set(fresh))
+        if similar:
+            topic = " ".join(sorted(q, key=lambda t: idf.get(t, 0.0), reverse=True)[:4])
+            lines.append(f'- +{similar} similar — memory_search("{topic}")')
         graph_section = (
-            "Memory entry points (auto-recalled, may be stale). Each is a DOOR, not "
-            "the answer — the arrows are its neighbours in the graph, and each one "
-            "opens further. Traverse before re-deriving any of this:\n"
+            "Memory entry points (auto-recalled, may be stale) — doors, not answers; "
+            "traverse before re-deriving:\n"
             + "\n".join(lines))
         log_section = self._log_recall(
             ctx, q, views, idf, budget=max(1, cfg["TOP_N"] - len(fresh)),
