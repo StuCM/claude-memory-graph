@@ -59,6 +59,20 @@ textarea:focus,input:focus{outline:2px solid var(--accent);outline-offset:-1px}
 .login button{width:100%;background:var(--accent);color:var(--accent-ink);border:0;border-radius:.6rem;
   padding:.7rem;cursor:pointer;font-weight:600}
 .note{color:var(--muted);font-size:.9rem}
+a.ghost{text-decoration:none;display:inline-block}
+.settings{padding:1rem;display:flex;flex-direction:column;gap:1rem;overflow-y:auto}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:.75rem;padding:1rem}
+.card h2{font-size:1rem;margin:0 0 .3rem}
+.card p{margin:.2rem 0 .7rem}
+.card input{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:.6rem;
+  padding:.6rem;margin:.25rem 0}
+.act{background:var(--accent);color:var(--accent-ink);border:0;border-radius:.6rem;padding:.55rem .9rem;
+  cursor:pointer;font-weight:600;margin-top:.4rem}
+.act.danger{background:var(--err);color:var(--surface)}
+.act:disabled{opacity:.5;cursor:default}
+.ok{color:var(--accent)}
+.secret{font-family:ui-monospace,monospace;background:var(--code);padding:.5rem;border-radius:.4rem;
+  overflow-wrap:anywhere;user-select:all;margin:.5rem 0}
 </style>
 </head>
 <body>
@@ -106,6 +120,7 @@ function chat(){
   document.title = BOOT.title;
   app.innerHTML = `<header><h1>${esc(BOOT.title)}</h1>
       <button class="ghost" id="new">New chat</button>
+      <a class="ghost" href="/settings">Settings</a>
       <form method="post" action="/chat/logout"><button class="ghost">Sign out</button></form></header>
     <main id="log"></main>
     <form class="ask" id="ask"><textarea id="q" rows="1" placeholder="Ask about the memory…" enterkeyhint="send"></textarea>
@@ -169,7 +184,53 @@ function chat(){
   q.focus();
 }
 
-(BOOT.view === 'chat' ? chat : login)();
+function settings(){
+  document.title = BOOT.title + ' — settings';
+  app.innerHTML = `<header><h1>Settings</h1><a class="ghost" href="/">Back to chat</a></header>
+    <div class="settings">
+    ${BOOT.manageable ? '' : '<p class="err">This server has no token, so its settings can’t be changed here.</p>'}
+    <div class="card"><h2>Server token</h2>
+      <p class="note">Every change below needs the server token (<code>MEMORY_GRAPH_TOKEN</code>, or the last one made here), so someone with only the chat password can’t change anything.</p>
+      <input type="password" id="tok" placeholder="Server token" autocomplete="off"></div>
+    <div class="card"><h2>Sign everything out</h2>
+      <p class="note">Every browser, and every app connected through claude.ai or the phone, has to sign in again. Claude Code machines use the token and stay connected.</p>
+      <button class="act danger" data-act="sign-out-all">Sign everything out</button><div class="out"></div></div>
+    <div class="card"><h2>Change the password</h2>
+      <p class="note">The password for this chat and for connecting apps. Changing it signs everything out.</p>
+      <input type="password" id="pw1" placeholder="New password (at least 8 characters)" autocomplete="new-password">
+      <input type="password" id="pw2" placeholder="New password again" autocomplete="new-password">
+      <button class="act" data-act="password">Change password</button><div class="out"></div></div>
+    <div class="card"><h2>Replace the token</h2>
+      <p class="note">For when the token may have leaked. The old one stops working at once; each Claude Code machine needs the new one in its plugin settings (<em>Memory server token</em>).</p>
+      <button class="act danger" data-act="token">Replace the token</button><div class="out"></div></div>
+    </div>`;
+  app.querySelectorAll('[data-act]').forEach(btn => btn.onclick = async () => {
+    const out = btn.nextElementSibling, act = btn.dataset.act;
+    const token = document.getElementById('tok').value;
+    const body = {token};
+    if (!token) { out.innerHTML = '<p class="err">Enter the server token first.</p>'; return; }
+    if (act === 'password') {
+      const a = document.getElementById('pw1').value, b = document.getElementById('pw2').value;
+      if (a !== b) { out.innerHTML = '<p class="err">The two passwords don’t match.</p>'; return; }
+      body.password = a;
+    }
+    const ask = {'sign-out-all': 'Sign every browser and app out?', 'token': 'Replace the token? Claude Code machines stop working until they get the new one.'}[act];
+    if (ask && !confirm(ask)) return;
+    btn.disabled = true; out.innerHTML = '';
+    try {
+      const res = await fetch('/settings/' + act, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401) { location.href = '/'; return; }
+      if (!res.ok) { out.innerHTML = `<p class="err">${esc(data.error || 'Error ' + res.status)}</p>`; return; }
+      out.innerHTML = `<p class="ok">${esc(data.message)}</p>` + (data.token ? `<div class="secret">${esc(data.token)}</div>` : '');
+      if (data.token) document.getElementById('tok').value = data.token;
+      if (data.signedOut) setTimeout(() => { location.href = '/'; }, 2500);
+    } catch (e) { out.innerHTML = '<p class="err">Connection lost.</p>'; }
+    finally { btn.disabled = false; }
+  });
+}
+
+({chat, login, settings}[BOOT.view] || login)();
 </script>
 </body>
 </html>
