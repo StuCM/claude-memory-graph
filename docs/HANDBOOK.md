@@ -121,7 +121,7 @@ properties — each reported with `file:line`.
   same code, and the form that also marks + archives clean files.
 - **From a terminal: `claude-memory-graph distill`** — only on PATH from a repo checkout
   (`uv run …`) or after `uv tool install`; **plugin installs don't put the CLI on PATH**.
-- Code: `claude_memory_graph/distill.py` · Skill for the residue: `skills/distill/SKILL.md`
+- Code: `claude_memory_graph/distill.py` · Agent for the residue: `agents/distiller.md` (spawned by `skills/distill/SKILL.md`)
 
 ### The graph + MCP server
 pyoxigraph store at `~/.claude/memory-graph/store/graph.nq` (human-readable NQuads — you
