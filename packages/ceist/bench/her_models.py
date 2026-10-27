@@ -2,7 +2,9 @@
 vocabulary build and the matchers use: each searchable node with its card,
 its path through the model's tree, its datatype and (for links) its targets.
 
-    python her_models.py <graphs/resource_models dir> <out.json> [<reference_data dir>]
+    python her_models.py <graphs/resource_models dir> <out dir> [<reference_data dir>]
+
+writes <out dir>/<Model name>.json, one per model.
 
 With reference_data (the package's SKOS concepts and collections, loaded by
 Alizarin), each concept node also lists its collection's labels when the
@@ -108,7 +110,10 @@ def main(src: str, dest: str, ref_dir: str | None = None):
     for d in docs:
         m = describe_graph(d, graph_names, rdm)
         models[m["name"]] = m
-    Path(dest).write_text(json.dumps(models, indent=1))
+    out = Path(dest)
+    out.mkdir(parents=True, exist_ok=True)
+    for name, m in models.items():
+        (out / f"{name}.json").write_text(json.dumps(m, indent=1))
     total = sum(len(m["nodes"]) for m in models.values())
     print(f"{len(models)} models, {total} searchable nodes → {dest}")
     for name, m in models.items():
