@@ -33,6 +33,7 @@ ABOUT_RE = re.compile(r"^\s*(?:what\s+(?:do|does|did)\s+(?:we|i|you)\s+(?:know|h
 WORD_RE = re.compile(r"[a-z0-9][a-z0-9'-]*")
 MAX_EDGES = 2
 MAX_VARS = 2
+MAX_ANCHORS = 2
 
 
 @dataclass
@@ -80,7 +81,8 @@ class Grounding:
     recent: bool = False
     contains: str | None = None
     subject: Node | None = None
-    anchor: Node | None = None
+    anchor: Node | None = None            # the first named record
+    anchors: list[Node] = field(default_factory=list)
     coverage: float = 0.0
     uncovered: list[str] = field(default_factory=list)
     refuse: str = ""          # out-of-grammar reason
@@ -180,6 +182,13 @@ def ground(vocab: Vocabulary, text: str) -> Grounding:
         g.notes.append(f"{why} → typed variable {node.var} : {t}")
         return node
 
+    # multi-word type names first ("insurance policies", "hazard footprint")
+    multi = [(w, t) for w, t in nouns.items() if " " in w]
+    for phrase, t, m in _phrase_spans(raw, multi, taken):
+        pos = consume_span(m.start(), m.end())
+        if t not in seen:
+            add_var(t, pos, f"'{phrase}'")
+
     for i, _s, _e, w in words:
         if i in consumed:
             continue
@@ -202,41 +211,49 @@ def ground(vocab: Vocabulary, text: str) -> Grounding:
     if g.wh in implied and implied[g.wh] not in seen:
         add_var(implied[g.wh], 0.0, f"'{g.wh}' implies")
 
-    # ── the anchor: leftover terms against the records — only a NAME-term
-    # hit may bind, never a guess
-    leftovers = [(i, w) for i, _s, _e, w in words if i not in consumed and parts_of(w)]
-    if leftovers:
+    # ── anchors: leftover terms against the records — only a NAME-term hit
+    # may bind, never a guess. Up to two ("designed by Ada on site Salts Mill").
+    expected = {t for e in g.edges if e.relation in relations
+                for t in relations[e.relation].domain | relations[e.relation].range}
+    for _ in range(MAX_ANCHORS):
+        leftovers = [(i, w) for i, _s, _e, w in words if i not in consumed and parts_of(w)]
+        if not leftovers:
+            break
         left = set().union(*(parts_of(w) for _i, w in leftovers))
         ranked = vocab.rank_entities(left)
-        if ranked:
-            score, top = ranked[0]
-            # a record NAMED exactly what was asked beats one that mentions it
-            exact = next((e for s, e in ranked[1:]
-                          if s > 0 and e.name_terms == left and top.name_terms != left), None)
-            if exact is not None:
-                g.notes.append(f"anchor exact name: {exact.type} '{exact.name}' "
-                               f"preferred over {top.type} '{top.name}'")
-                score, top = next(s for s, e in ranked if e is exact), exact
-            # role fit: the grounded relations say what TYPE the anchor should
-            # be; a near-tied candidate of that type beats a lexical tie
-            expected = {t for e in g.edges if e.relation in relations
-                        for t in relations[e.relation].domain | relations[e.relation].range}
-            if expected and top.type not in expected:
-                for s, e in ranked[1:]:
-                    if s >= 0.75 * score and e.type in expected and left & e.name_terms:
-                        g.notes.append(f"anchor role fit: {e.type} '{e.name}' "
-                                       f"preferred over {top.type} '{top.name}'")
-                        score, top = s, e
-                        break
-            if score > 0 and left & top.name_terms:
-                hit = left & top.terms
-                pos = min(i for i, w in leftovers if parts_of(w) & hit)
-                g.anchor = Node("anchor", top.type, float(pos), entity=top,
-                                match_terms=sorted(left & top.name_terms))
-                g.nodes.append(g.anchor)
-                consumed.update(i for i, w in leftovers if parts_of(w) <= hit)
-                g.notes.append(f"{'/'.join(g.anchor.match_terms)} → anchor "
-                               f"{top.type or 'Concept'} '{top.name}'")
+        if not ranked:
+            break
+        score, top = ranked[0]
+        # a record NAMED exactly what was asked beats one that mentions it
+        exact = next((e for s, e in ranked[1:]
+                      if s > 0 and e.name_terms == left and top.name_terms != left), None)
+        if exact is not None:
+            g.notes.append(f"anchor exact name: {exact.type} '{exact.name}' "
+                           f"preferred over {top.type} '{top.name}'")
+            score, top = next(s for s, e in ranked if e is exact), exact
+        # role fit: the grounded relations say what TYPE an anchor should be;
+        # a near-tied candidate of that type beats a lexical tie
+        if expected and top.type not in expected:
+            for s, e in ranked[1:]:
+                if s >= 0.75 * score and e.type in expected and left & e.name_terms:
+                    g.notes.append(f"anchor role fit: {e.type} '{e.name}' "
+                                   f"preferred over {top.type} '{top.name}'")
+                    score, top = s, e
+                    break
+        if not (score > 0 and left & top.name_terms):
+            break
+        hit = left & top.terms
+        pos = min(i for i, w in leftovers if parts_of(w) & hit)
+        node = Node("anchor", top.type, float(pos), entity=top,
+                    match_terms=sorted(left & top.name_terms))
+        g.anchors.append(node)
+        g.nodes.append(node)
+        consumed.update(i for i, w in leftovers if parts_of(w) <= hit)
+        g.notes.append(f"{'/'.join(node.match_terms)} → anchor "
+                       f"{top.type or 'Concept'} '{top.name}'")
+        if len(g.anchors) >= len(g.edges):
+            break                     # one anchor per relation at most
+    g.anchor = g.anchors[0] if g.anchors else None
 
     # ── one leftover word → a text filter; more stay uncovered
     remaining = [(i, w) for i, _s, _e, w in words if i not in consumed and parts_of(w)]
@@ -310,8 +327,18 @@ def _assign_edges(g: Grounding, relations: dict[str, Relation], seen: dict) -> N
         dom = set(rel.domain) if rel else set()
         rng = set(rel.range) if rel else set()
         parts = sorted(g.nodes, key=lambda n: n.pos)
-        left = next((n for n in reversed(parts) if n.pos < edge.pos), None)
-        right = next((n for n in parts if n.pos > edge.pos), None)
+        fits = (dom | rng)
+
+        def nearest(cands):
+            # the nearest neighbour whose type fits the relation, else the nearest
+            cands = list(cands)
+            return next((n for n in cands if not fits or n.type in fits),
+                        cands[0] if cands else None)
+
+        left = nearest(n for n in reversed(parts) if n.pos < edge.pos)
+        right = nearest(n for n in parts if n.pos > edge.pos)
+        if left is not None and right is not None and left is right:
+            right = None
 
         def fill(hints: set, present: Node | None) -> Node | None:
             cand = next((n for n in parts if n is not present and n.type in hints), None)

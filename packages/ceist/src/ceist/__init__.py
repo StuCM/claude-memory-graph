@@ -7,7 +7,8 @@
 
 The question is grounded against the data source's own vocabulary (its
 types, relations, controlled values and record names), so the same planner
-serves any graph that implements ceist.Vocabulary. See README.md.
+serves any graph that implements ceist.Vocabulary. Outputs: ceist.alizarin,
+ceist.rosmadair, ceist.arches_search. See packages/ceist/README.md.
 """
 
 from .ground import Grounding, ground, is_question

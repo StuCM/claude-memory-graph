@@ -115,6 +115,11 @@ def interpret(vocab: Vocabulary, text: str, coverage_min: float = COVERAGE_MIN) 
     plan.count, plan.recent, plan.wh = g.count, g.recent, g.wh
     _attach_values(g, plan)
     loose_anchor = not g.edges and g.anchor is not None and g.subject is not g.anchor
+    if len(g.anchors) > 1 and not all(_linked(g, a) for a in g.anchors):
+        out.plan = None
+        out.refused = ("named " + " and ".join(f"{a.type} '{a.name}'" for a in g.anchors)
+                       + ", but couldn't tell how each relates to what's asked")
+        return out
     if loose_anchor:
         plan.where.append(LinkTo(None, EntityRef(g.anchor.entity), "any"))
     if g.contains:
@@ -132,6 +137,10 @@ def interpret(vocab: Vocabulary, text: str, coverage_min: float = COVERAGE_MIN) 
                 if loose_anchor else f"(ignored '{g.contains}' — it matched nothing)")
         out.relaxations.append(Relaxation(without, note, drops=g.contains))
     return out
+
+
+def _linked(g: Grounding, node: Node) -> bool:
+    return any(node is e.source or node is e.target for e in g.edges)
 
 
 def _build(g: Grounding, node: Node, via: Edge | None) -> Plan:
