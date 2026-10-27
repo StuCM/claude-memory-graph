@@ -133,7 +133,7 @@ dev = [{ name = "pytest", specifier = ">=8" }]
 
 [[package]]
 name = "claude-memory-graph"
-version = "0.13.1"
+version = "0.13.2"
 source = { editable = "." }
 dependencies = [
     { name = "claude-hook-kit" },

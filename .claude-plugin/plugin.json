@@ -1,10 +1,19 @@
 {
   "name": "memory-graph",
   "description": "Arches-inspired RDF knowledge-graph memory: MCP server + context-file protocol + distill skill",
-  "version": "0.13.1",
+  "version": "0.13.2",
   "author": {
     "name": "Stuart Marshall"
   },
   "skills": "./skills/",
-  "mcpServers": "./mcp-servers.json"
+  "mcpServers": "./mcp-servers.json",
+  "userConfig": {
+    "pane": {
+      "type": "string",
+      "title": "Memory graph pane",
+      "description": "auto: the pane opens itself on the first graph tool call. manual: only /graph-panel opens it. off: no pane, and graph tool calls show in the transcript as normal.",
+      "options": ["auto", "manual", "off"],
+      "default": "auto"
+    }
+  }
 }
