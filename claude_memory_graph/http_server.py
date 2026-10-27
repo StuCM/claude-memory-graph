@@ -5,7 +5,8 @@ strictly SAFER than one stdio server per session: a single process means no
 last-writer-wins between concurrent sessions. Hosted somewhere always-on it
 is the one memory every machine and app shares (docs/REMOTE.md):
 
-- **Claude Code machines** point the plugin at it (`server` + `server_token`
+- **Claude Code machines** (terminal, IDE, or the desktop app's Code tab)
+  point the plugin at it (`server` + `server_token`
   in /config). Their local MCP server becomes a proxy to this one, and the
   ambient gate reads a replica of the graph it downloads from
   `/api/graph.nq`. Their context logs stay local and reach the graph
@@ -13,7 +14,8 @@ is the one memory every machine and app shares (docs/REMOTE.md):
 - **A browser** — the home page is a chat (chat.py): sign in with the
   password and ask questions; Claude answers from the memory, read-only.
   On a handover share, that is all a colleague needs.
-- **claude.ai, the phone and desktop apps** add it as a custom connector.
+- **Chats in claude.ai and the phone and desktop apps** add it as a custom
+  connector (tools only: chats have no hooks, so nothing is injected).
   Connectors can only do OAuth, so with `--public-url` set the server is
   also a single-owner OAuth authorization server (auth.py): a connector is
   let in only after the owner types the password on the server's /login

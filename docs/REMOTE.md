@@ -27,9 +27,9 @@ only.
 
 | Client | How it connects | What it gets |
 |---|---|---|
-| **Claude Code** on any machine with the plugin | the plugin's `server` and `server_token` settings | everything: the tools; ambient recall, from a local copy of the graph that refreshes at most once a minute; the context log and Stop-block capture, with the log distilled into the server |
+| **Claude Code** on any machine with the plugin, including the desktop app's Code tab | the plugin's `server` and `server_token` settings | everything: the tools; ambient recall, from a local copy of the graph that refreshes at most once a minute; the context log and Stop-block capture, with the log distilled into the server |
 | **a browser**, on any device | `https://<host>/`, signed in with your server password | a chat that answers from the memory, read-only ([below](#chat-in-the-browser)) |
-| **claude.ai, the phone app, the desktop app** | a custom connector, signed in with your server password | the tools, reads and writes. These apps have no hooks, so nothing is injected automatically: the model calls the memory tools when the conversation needs them |
+| **ordinary chats** in claude.ai, the phone app and the desktop app (not its Code tab) | a custom connector, signed in with your server password | the tools, reads and writes. Chats have no hooks, so nothing is injected automatically: the model calls the memory tools when the conversation needs them |
 | any other MCP client | `https://<host>/mcp` with `Authorization: Bearer <token>` | the tools |
 
 Context logs never leave the machine that wrote them, except as the upload
