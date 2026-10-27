@@ -173,3 +173,8 @@ def test_log_formats_known_and_unknown_keys():
 def test_log_missing_file_reports_cleanly(capsys):
     print_log("nope.jsonl", 5, False)
     assert "No log at" in capsys.readouterr().out
+
+
+def test_project_override(monkeypatch, tmp_path):
+    monkeypatch.setenv("MEMORY_GRAPH_PROJECT", "quartz")
+    assert project_of(str(tmp_path / "renamed-checkout")) == "quartz"

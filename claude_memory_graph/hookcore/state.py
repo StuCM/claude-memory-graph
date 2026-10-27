@@ -51,13 +51,14 @@ def project_of(cwd: str) -> str:
     """The session's project name — the identity everything keys on
     (priming, proximity, context-file grouping). Resolution order:
 
-    1. CLAUDE_HOOK_KIT_PROJECT — explicit override (monorepos, or a repo
-       cloned under a different directory name than its Project node);
+    1. MEMORY_GRAPH_PROJECT (or the legacy CLAUDE_HOOK_KIT_PROJECT) —
+       explicit override (monorepos, or a repo cloned under a different
+       directory name than its Project node);
     2. the git repo ROOT's basename — a session started in a subdirectory
        (~/dev/charcoal/frontend) still belongs to 'charcoal';
     3. the cwd basename — non-repo directories keep today's behaviour.
     """
-    override = os.environ.get("CLAUDE_HOOK_KIT_PROJECT")
+    override = os.environ.get("MEMORY_GRAPH_PROJECT") or os.environ.get("CLAUDE_HOOK_KIT_PROJECT")
     if override:
         return override
     path = Path(cwd)
