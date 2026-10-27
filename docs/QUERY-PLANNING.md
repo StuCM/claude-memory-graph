@@ -307,6 +307,8 @@ and cheap enough to run on every keystroke.
 | vocabulary | the `Vocabulary` protocol | `MemoryVocabulary`: relation lexicon, status values, the gate corpus for names |
 | grounding + plan | `ground`, `interpret` → a backend-neutral `Plan` plus relaxations | — |
 | explanation | `narrate(plan)` ("Find Decisions that affect Project 'quartz'.") | `--explain` shows it under "understood" |
+| dates + negation | `DateRange` and `Not`: "made before 2020", "don't affect quartz", "projects with no decisions" | `createdAt` (default) / `updatedAt`; `FILTER NOT EXISTS` |
+| read-back | each compiler turns its query back into a plan and checks it before it runs | — (the SPARQL is shown, not read back) |
 | output | Alizarin (in-process, over a data_dir), Rós Madair (Query IR), Arches Search (GroupPayload) | `compile_sparql` for Oxigraph |
 
 The Arches vocabulary (`ceist.arches.ArchesVocabulary`) reads resource models, SKOS thesauri
@@ -327,6 +329,6 @@ there, the vocabulary layer (SKOS labels, Getty AAT) does what aliases do here.
 2. **Planner v1** — `mem:verbForms` on relations (base.ttl + extension flow), alias-aware
    grounding shared with the ambient injector, domain/range-informed edge direction, POS tagging
    for leftover-word handling if v0's rules prove insufficient.
-3. **Planner v2** — aggregation (*how many*), negation (*which projects don't use…*),
+3. **Planner v2** — aggregation (*how many*, done), negation (*which projects don't use…*, done in ceist 0.2 with dates),
    comparative modifiers, and planner-composed queries offered to the LLM as a starting point in
    `memory_query` errors ("did you mean this query?").

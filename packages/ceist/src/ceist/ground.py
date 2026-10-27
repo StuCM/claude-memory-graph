@@ -2,9 +2,11 @@
 
 Pipeline: shape → relations (longest phrase first, on the raw text, so
 "works on" keeps its stopword) → controlled values ("listed", "active") →
-type nouns, modifiers and hints → implied types (who → Person) → one named
-anchor (only a name-term hit may bind; never a guess) → one leftover word as a
-text filter → coverage → wire the relations to their ends.
+dates ("before 1900", with the word that picks the field: "built") → type
+nouns, modifiers, negators and hints → implied types (who → Person) → up to
+two named anchors (only a name-term hit may bind; never a guess) → one
+leftover word as a text filter → coverage → wire the relations to their ends
+→ scope each negator ("not", "without", "non-") to the next thing named.
 
 The result says what was understood and how sure (coverage); plan.py turns
 it into a query plan, and refuses rather than guesses when it is thin.
@@ -13,8 +15,9 @@ it into a query plan, and refuses rather than guesses when it is thin.
 import re
 from dataclasses import dataclass, field
 
+from . import dates as _dates
 from .text import terms_pos
-from .vocabulary import Entity, Relation, Value, Vocabulary
+from .vocabulary import DateField, Entity, Relation, Value, Vocabulary
 
 WH = {"what", "which", "who", "whom", "whose", "why", "when", "how", "where"}
 AUX = {"is", "are", "was", "were", "do", "does", "did", "has", "have", "had",
@@ -31,6 +34,10 @@ FILLER = {"me", "all", "every", "please", "made", "make", "been", "exist", "exis
 ABOUT_RE = re.compile(r"^\s*(?:what\s+(?:do|does|did)\s+(?:we|i|you)\s+(?:know|have|remember)"
                       r"|tell\s+me|what(?:'s| is)\s+(?:known|there))\s+about\s+", re.I)
 WORD_RE = re.compile(r"[a-z0-9][a-z0-9'-]*")
+NEG = {"not", "no", "without", "never", "non", "isn't", "aren't", "wasn't", "weren't",
+       "don't", "doesn't", "didn't", "hasn't", "haven't", "hadn't", "lacking"}
+DATE_WORDS = {"date", "dated", "dates", "dating"}   # shape, once a date is grounded
+NEG_REACH = 4             # a negator scopes over the next thing named within this many words
 MAX_EDGES = 2
 MAX_VARS = 2
 MAX_ANCHORS = 2
@@ -62,6 +69,8 @@ class Edge:
     form: str = ""            # the phrase that grounded it
     source: Node | None = None
     target: Node | None = None
+    negated: bool = False
+    style: str = "verb"
 
 
 @dataclass
@@ -69,6 +78,17 @@ class ValueMatch:
     phrase: str
     pos: float
     candidates: list[Value]   # every field this phrase can be a value of
+    negated: bool = False
+
+
+@dataclass
+class DateGround:
+    phrase: str
+    pos: float
+    lo: str | None
+    hi: str | None
+    fields: list[DateField]   # the field the words picked, else every candidate
+    negated: bool = False
 
 
 @dataclass
@@ -78,8 +98,11 @@ class Grounding:
     nodes: list[Node] = field(default_factory=list)
     edges: list[Edge] = field(default_factory=list)
     values: list[ValueMatch] = field(default_factory=list)
+    dates: list[DateGround] = field(default_factory=list)
     recent: bool = False
     contains: str | None = None
+    contains_negated: bool = False
+    negation_unplaced: str = ""   # a negator with nothing after it to negate
     subject: Node | None = None
     anchor: Node | None = None            # the first named record
     anchors: list[Node] = field(default_factory=list)
@@ -112,9 +135,10 @@ def _phrase_spans(raw: str, phrases: list[tuple[str, object]], taken: list[tuple
         yield phrase, payload, m
 
 
-def ground(vocab: Vocabulary, text: str) -> Grounding:
+def ground(vocab: Vocabulary, text: str, today=None) -> Grounding:
     g = Grounding(text=text)
-    raw = text.lower()
+    # same length, so spans stay aligned: "non-listed" → "non listed"
+    raw = text.lower().replace("\u2019", "'").replace("non-", "non ")
     words = [(i, m.start(), m.end(), m.group())
              for i, m in enumerate(WORD_RE.finditer(raw))]
     terms = {w for _, w in terms_pos(text)}
@@ -158,7 +182,8 @@ def ground(vocab: Vocabulary, text: str) -> Grounding:
             taken.remove((m.start(), m.end()))
             continue
         matched.add(rel)
-        g.edges.append(Edge(rel, consume_span(m.start(), m.end()), form=form))
+        g.edges.append(Edge(rel, consume_span(m.start(), m.end()), form=form,
+                            style=relations[rel].style))
         g.notes.append(f"'{form}' → relation {rel}")
     g.edges.sort(key=lambda e: e.pos)
 
@@ -171,8 +196,29 @@ def ground(vocab: Vocabulary, text: str) -> Grounding:
         g.notes.append(f"'{phrase}' → value of "
                        + " / ".join(sorted({c.field for c in cands})))
 
-    # ── type nouns, modifiers, hints
+    # ── dates ("built before 1900"): only when the vocabulary has date fields
+    date_fields = list(getattr(vocab, "date_fields", lambda: [])())
+    if date_fields:
+        found = _dates.find(raw, taken, today)
+        if found:
+            picks = []
+            forms = [(f, df) for df in date_fields for f in df.forms]
+            for form, df, m in _phrase_spans(raw, forms, taken):
+                picks.append((consume_span(m.start(), m.end()), df, form))
+            for dm in found:
+                pos = consume_span(dm.start, dm.end)
+                # the field word nearest before the date, else after it
+                before = [x for x in picks if x[0] < pos]
+                pick = (max(before, key=lambda x: x[0]) if before
+                        else min(picks, key=lambda x: x[0]) if picks else None)
+                fields = [pick[1]] if pick else date_fields
+                g.dates.append(DateGround(dm.phrase, pos, dm.lo, dm.hi, fields))
+                g.notes.append(f"'{dm.phrase}' → date {_dates.label(dm.lo, dm.hi)}"
+                               + (f" ('{pick[2]}' → {pick[1].label})" if pick else ""))
+
+    # ── type nouns, modifiers, negators, hints
     nouns, hints = vocab.type_words(), vocab.hint_words()
+    negs: list[tuple[int, str]] = []
     seen: dict[str, Node] = {}
 
     def add_var(t: str, pos: float, why: str) -> Node:
@@ -196,6 +242,9 @@ def ground(vocab: Vocabulary, text: str) -> Grounding:
             if nouns[w] not in seen:
                 add_var(nouns[w], float(i), f"'{w}'")
             consumed.add(i)
+        elif w in NEG:
+            negs.append((i, w))
+            consumed.add(i)
         elif w in RECENT:
             g.recent = True
             consumed.add(i)
@@ -204,7 +253,7 @@ def ground(vocab: Vocabulary, text: str) -> Grounding:
             consumed.add(i)
             if hints[w] not in seen:
                 add_var(hints[w], float(i), f"'{w}' implies")
-        elif w in AUX or w in FILLER:
+        elif w in AUX or w in FILLER or (g.dates and w in DATE_WORDS):
             consumed.add(i)
 
     implied = vocab.implied_types()
@@ -257,8 +306,10 @@ def ground(vocab: Vocabulary, text: str) -> Grounding:
 
     # ── one leftover word → a text filter; more stay uncovered
     remaining = [(i, w) for i, _s, _e, w in words if i not in consumed and parts_of(w)]
+    contains_pos = None
     if len(remaining) == 1:
         i, w = remaining[0]
+        contains_pos = float(i)
         g.contains = sorted(parts_of(w))[0]
         consumed.add(i)
         g.notes.append(f"'{w}' → text filter")
@@ -291,7 +342,46 @@ def ground(vocab: Vocabulary, text: str) -> Grounding:
     if g.subject is None:
         explicit = sorted(g.vars(), key=lambda n: n.pos)
         g.subject = explicit[0] if explicit else None
+    _scope_negations(g, negs, contains_pos)
     return g
+
+
+def _scope_negations(g: Grounding, negs: list[tuple[int, str]], contains_pos) -> None:
+    """Each negator negates the next thing named after it: a relation, a
+    value, a date, the text word — or a type, meaning the relation that
+    joins it ("sites with no buildings"). Nothing within reach → unplaced,
+    and the planner refuses: a dropped "not" inverts the answer."""
+    items: list[tuple[float, str, object]] = []
+    items += [(e.pos, "edge", e) for e in g.edges]
+    items += [(v.pos, "value", v) for v in g.values]
+    items += [(d.pos, "date", d) for d in g.dates]
+    if contains_pos is not None:
+        items.append((contains_pos, "contains", None))
+    for n in g.vars():
+        if n is g.subject:
+            continue
+        joins = [e for e in g.edges if n is e.source or n is e.target]
+        # "sites with no buildings designed by X": the hop toward the subject
+        hops = [e for e in joins
+                if (e.target if e.source is n else e.source).kind == "var"]
+        pick = hops if len(hops) == 1 else joins if len(joins) == 1 else []
+        if pick:
+            items.append((n.pos, "edge", pick[0]))
+    for i, word in negs:
+        ahead = [it for it in items if i <= it[0] <= i + NEG_REACH]
+        if not ahead:
+            g.negation_unplaced = word
+            return
+        _pos, kind, what = min(ahead, key=lambda it: it[0])
+        if kind == "contains":
+            g.contains_negated = True
+            g.notes.append(f"'{word}' negates the text filter '{g.contains}'")
+            continue
+        what.negated = True
+        name = {"edge": lambda e: f"relation {e.relation}",
+                "value": lambda v: f"value '{v.phrase}'",
+                "date": lambda d: f"date '{d.phrase}'"}[kind](what)
+        g.notes.append(f"'{word}' negates {name}")
 
 
 def _imply_join(g: Grounding, relations: dict[str, Relation]) -> None:
@@ -315,7 +405,7 @@ def _imply_join(g: Grounding, relations: dict[str, Relation]) -> None:
         return
     rel, src, dst = candidates[0]
     g.edges.append(Edge(rel.name, (a.pos + b.pos) / 2, form=rel.forms[0] if rel.forms else "",
-                        source=src, target=dst))
+                        source=src, target=dst, style=rel.style))
     g.notes.append(f"{src.type} → {dst.type} joined by {rel.name} (the only relation between them)")
 
 

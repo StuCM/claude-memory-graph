@@ -176,3 +176,41 @@ def test_everyday_phrasings(store, question, expect, absent):
         assert e in out, out
     for a in absent:
         assert a not in out, out
+
+
+# ── negation and dates (ceist's Not / DateRange → FILTER NOT EXISTS / date filters) ──
+
+def test_negated_link(store):
+    out = planner.handle(store, "Which decisions don't affect quartz?")
+    assert "Use pyoxigraph over rdflib" in out
+    assert "Rebuild memory graph recall gate" in out
+    assert "Serve static via nginx image" not in out
+
+
+def test_negated_hop(store):
+    # projects no decision affects — a negated link to a sub-plan
+    store_resource.handle_resource(store, "Project", {"name": "lonely", "status": "active"})
+    out = planner.handle(store, "Which projects have no decisions?", explain=True)
+    assert "Find Projects that no Decision affects." in out
+    answer = out.split("── answer ──")[1]
+    assert "lonely" in answer and "quartz" not in answer and "memory graph" not in answer
+
+
+def test_negated_status(store):
+    out = planner.handle(store, "Which projects are not active?")
+    assert "memory graph" in out and "quartz" not in out
+
+
+def test_dates_on_creation(store):
+    from datetime import date
+    year = date.today().year
+    out = planner.handle(store, f"Which decisions were made in {year}?")
+    assert "Use pyoxigraph over rdflib" in out
+    out = planner.handle(store, "Which decisions were made before 2020?", explain=True)
+    assert "creation date is before 2020" in out
+    assert "Use pyoxigraph over rdflib" not in out.split("── ")[-1]
+
+
+def test_negation_is_never_dropped(store):
+    out = planner.handle(store, "Which decisions are not?", explain=True)
+    assert "couldn't tell what it negates" in out

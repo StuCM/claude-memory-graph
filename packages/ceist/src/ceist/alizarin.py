@@ -17,8 +17,10 @@ Rós Madair (`ceist.rosmadair`) instead.
 
 from collections import defaultdict
 
+from . import dates
 from .narrate import narrate
-from .plan import Contains, EntityRef, HasValue, LinkTo, Mention, Plan, interpret
+from .plan import (Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, Not, Plan,
+                   interpret)
 
 __all__ = ["Tiles", "ask", "evaluate"]
 
@@ -90,40 +92,60 @@ class Tiles:
         return " ".join(words).lower()
 
 
+def _date_keys(raw) -> list[int]:
+    out = []
+    for v in (raw if isinstance(raw, list) else [raw]):
+        s = v.get("value") if isinstance(v, dict) else v
+        if isinstance(s, str):
+            try:
+                out.append(dates.days(s))
+            except ValueError:
+                pass
+    return out
+
+
+def _filter(c, hits: set[str], tiles: Tiles) -> set[str]:
+    vocab = tiles.vocab
+    if isinstance(c, Not):
+        return hits - _filter(c.condition, hits, tiles)
+    if isinstance(c, LinkTo):
+        targets = ({c.target.entity.id} if isinstance(c.target, EntityRef)
+                   else evaluate(c.target, tiles))
+        if c.relation is None:
+            return {r for r in hits
+                    if any(targets & ids for ids in tiles.out.get(r, {}).values())
+                    or any(targets & ids for ids in tiles.into.get(r, {}).values())}
+        side = tiles.into if c.direction == "in" else tiles.out
+        return {r for r in hits if targets & side.get(r, {}).get(c.relation, set())}
+    if isinstance(c, HasValue):
+        if c.kind == "concept":
+            wanted = {c.value, *vocab.descendants(c.value)}
+            return {r for r in hits
+                    if any(vocab.concept_of(v) in wanted
+                           for raw in tiles.values.get(r, {}).get(c.field, [])
+                           for v in (raw if isinstance(raw, list) else [raw])
+                           if isinstance(v, str))}
+        return {r for r in hits
+                if c.value.lower() in " ".join(
+                    _strings(tiles.values.get(r, {}).get(c.field, []))).lower()}
+    if isinstance(c, DateRange):
+        lo = dates.days(c.lo) if c.lo else -dates.OPEN
+        hi = dates.days(c.hi) if c.hi else dates.OPEN
+        return {r for r in hits
+                if any(lo <= k <= hi for raw in tiles.values.get(r, {}).get(c.field, [])
+                       for k in _date_keys(raw))}
+    if isinstance(c, Mention):
+        return {r for r in hits if all(t in tiles.text(r) for t in c.terms)}
+    if isinstance(c, Contains):
+        return {r for r in hits if c.term.lower() in tiles.text(r)}
+    return hits
+
+
 def evaluate(plan: Plan, tiles: Tiles) -> set[str]:
     """The ids of the records a plan selects."""
-    vocab = tiles.vocab
     hits = tiles.of_type(plan.type)
     for c in plan.where:
-        if isinstance(c, LinkTo):
-            if isinstance(c.target, EntityRef):
-                targets = {c.target.entity.id}
-            else:
-                targets = evaluate(c.target, tiles)
-            if c.relation is None:
-                hits = {r for r in hits
-                        if any(targets & ids for ids in tiles.out.get(r, {}).values())
-                        or any(targets & ids for ids in tiles.into.get(r, {}).values())}
-            elif c.direction == "in":
-                hits = {r for r in hits if targets & tiles.into.get(r, {}).get(c.relation, set())}
-            else:
-                hits = {r for r in hits if targets & tiles.out.get(r, {}).get(c.relation, set())}
-        elif isinstance(c, HasValue):
-            if c.kind == "concept":
-                wanted = {c.value, *vocab.descendants(c.value)}
-                hits = {r for r in hits
-                        if any(vocab.concept_of(v) in wanted
-                               for raw in tiles.values.get(r, {}).get(c.field, [])
-                               for v in (raw if isinstance(raw, list) else [raw])
-                               if isinstance(v, str))}
-            else:
-                hits = {r for r in hits
-                        if c.value.lower() in " ".join(
-                            _strings(tiles.values.get(r, {}).get(c.field, []))).lower()}
-        elif isinstance(c, Mention):
-            hits = {r for r in hits if all(t in tiles.text(r) for t in c.terms)}
-        elif isinstance(c, Contains):
-            hits = {r for r in hits if c.term.lower() in tiles.text(r)}
+        hits = _filter(c, hits, tiles)
     return hits
 
 

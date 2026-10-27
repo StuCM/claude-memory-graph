@@ -8,6 +8,8 @@ The planner knows nothing about any particular graph. A Vocabulary tells it:
   ("works on", "affects", "site") and which types sit at each end;
 - the **controlled values** a field can take, with the phrases that name them
   ("listed" → Heritage status = Listed; "active" → status = active);
+- the **date fields** a type has, and the words that pick one ("built" →
+  construction date) — optional;
 - how to **find a named thing** ("quartz", "Leeds Dock") among the records.
 
 Implementations: the memory graph (its schema graph and gate index), and
@@ -24,6 +26,8 @@ class Relation:
     forms: tuple[str, ...]                      # phrases that express it, lowercase
     domain: frozenset[str] = frozenset()        # types at the source end
     range: frozenset[str] = frozenset()         # types at the target end
+    style: str = "verb"                         # how it reads: "verb" ("affects X") or
+                                                # "field" ("whose site is X")
 
 
 @dataclass(frozen=True)
@@ -36,6 +40,16 @@ class Value:
     label: str                                  # display label ("Listed")
     owners: frozenset[str] = frozenset()        # types that have the field; empty = any
     kind: str = "concept"                       # "concept" (has a hierarchy) | "literal"
+
+
+@dataclass(frozen=True)
+class DateField:
+    """A date a question can constrain ("built before 1900")."""
+    field: str                                  # what the backend calls it
+    label: str                                  # how it reads ("construction date")
+    forms: tuple[str, ...] = ()                 # words that pick it ("built", "constructed")
+    owners: frozenset[str] = frozenset()        # types that have it; empty = any
+    default: bool = False                       # the one meant when no word picks
 
 
 @dataclass
@@ -68,3 +82,6 @@ class Vocabulary(Protocol):
 
     def hint_words(self) -> dict[str, str]:
         """Verbs that imply a type without naming it ("chose" → "Decision")."""
+
+    # optional: def date_fields(self) -> list[DateField]
+    #   Without it, years and dates in a question are ordinary words.
