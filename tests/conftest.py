@@ -8,4 +8,7 @@ def _isolated_kit_home(tmp_path_factory, monkeypatch):
     (injections.jsonl, ask-decisions.jsonl) never pollutes the real one."""
     home = tmp_path_factory.mktemp("kit-home")
     monkeypatch.setenv(kit_state.STATE_HOME_ENV, str(home))
+    # code under test may point the store elsewhere in-process (remote mode's
+    # replica); this restores it after every test
+    monkeypatch.delenv("MEMORY_GRAPH_PATH", raising=False)
     return home

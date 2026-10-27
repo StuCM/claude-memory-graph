@@ -14,6 +14,7 @@ PRINTS the paths it inspected (so a mismatch is obvious at a glance), and
 ends with a single prioritised diagnosis. Read-only, fail-open.
 """
 
+import json
 import os
 import time
 from pathlib import Path
@@ -81,6 +82,41 @@ def report() -> str:
     line(f"claude-memory-graph doctor · v{_version()}")
     line()
 
+    shell_store = os.environ.get("MEMORY_GRAPH_PATH")
+
+    # -- remote mode: the graph lives on a server (docs/REMOTE.md) ----------
+    from .. import remote
+    replica = remote.replica_dir()
+    try:
+        replica_meta = json.loads((replica / "replica.json").read_text())
+    except (OSError, ValueError):
+        replica_meta = None
+    if remote.server_config():
+        base = remote.server_config()[0]
+        line(f"Memory server: {base}")
+        folder = remote.fetch_replica(force=True, timeout=10)
+        try:
+            meta = json.loads((replica / "replica.json").read_text())
+        except (OSError, ValueError):
+            meta = {}
+        if folder and not meta.get("error"):
+            line("  reachable, token accepted, replica refreshed")
+        else:
+            findings.append(("FAIL",
+                f"The memory server {base} did not answer: {meta.get('error', 'no reply')}.",
+                "Check the address and token (plugin settings `server` / `server_token`, or "
+                "MEMORY_GRAPH_SERVER / MEMORY_GRAPH_TOKEN here). HTTP 401 means a wrong token."))
+        line()
+    elif replica_meta is not None:
+        line(f"Memory server: this machine's sessions use one (replica fetched "
+             f"{_age([{'ts': replica_meta.get('fetched', 0)}])}"
+             f"{'; last error: ' + replica_meta['error'] if replica_meta.get('error') else ''}).")
+        line("  Set MEMORY_GRAPH_SERVER and MEMORY_GRAPH_TOKEN in this shell to check it live.")
+        line()
+    if (replica / "graph.nq").exists() and not shell_store:
+        # the graph below is the server's, as this machine last saw it
+        os.environ["MEMORY_GRAPH_PATH"] = str(replica)
+
     # -- paths (mismatch is the silent killer; show them) ------------------
     store_p = store_dir()
     home_p = state_home()
@@ -92,7 +128,7 @@ def report() -> str:
          + ("" if home_p.exists() else "   ⚠ MISSING"))
     line(f"  context     {ctx_p}"
          + ("" if ctx_p.exists() else "   ⚠ MISSING"))
-    for name, val in (("MEMORY_GRAPH_PATH", os.environ.get("MEMORY_GRAPH_PATH")),
+    for name, val in (("MEMORY_GRAPH_PATH", shell_store),
                       ("MEMORY_GRAPH_STATE", os.environ.get("MEMORY_GRAPH_STATE")),
                       ("CLAUDE_HOOK_KIT_HOME", os.environ.get("CLAUDE_HOOK_KIT_HOME")),
                       ("CLAUDE_CONTEXT_DIR", os.environ.get("CLAUDE_CONTEXT_DIR"))):

@@ -40,7 +40,7 @@ const injections = atom({ plugin: 'memory-graph', key: 'injections' } as const, 
 const decisions = atom({ plugin: 'memory-graph', key: 'decisions' } as const, [] as Decision[], { shape: 'decisions-1' })
 const lastError = atom({ plugin: 'memory-graph', key: 'lastError' } as const, '')
 
-type Options = { pane?: string; review?: boolean }
+type Options = { pane?: string; review?: boolean; server?: string; server_token?: string }
 type Tab = 'injected' | 'state' | 'activity'
 let tab: Tab = 'injected'
 
@@ -82,10 +82,14 @@ const now = () => new Date().toISOString().slice(11, 19)
 
 type Reply = { output: string; core?: JsonObject; state?: Session['ext']; global?: Session['ext']; errors?: string[] }
 
-async function python($: any, event: string, payload: JsonObject, enabled: string[]): Promise<string> {
+// What every Python call carries besides the event: which extensions run, and
+// the memory server when memory lives on one (docs/REMOTE.md).
+type RunConfig = { enabled: string[]; remote?: { url: string; token: string } }
+
+async function python($: any, event: string, payload: JsonObject, run: RunConfig): Promise<string> {
   const current = await read($, session)
   const global = ((await $.store.get('global')) ?? {}) as Session['ext']
-  const request = JSON.stringify({ event, payload, core: current.core, state: current.ext, global, enabled })
+  const request = JSON.stringify({ event, payload, core: current.core, state: current.ext, global, ...run })
   const root: string = $.plugin.root
   const venv = `${root}/.venv/bin/python`
   const viaUv = ['uv', 'run', '--quiet', '--project', root, 'python', '-m', 'claude_memory_graph.hookrun']
@@ -145,7 +149,11 @@ async function contextDir($: any): Promise<string> {
 export const register: Register = (on, options) => {
   const opts = (options ?? {}) as Options
   const paneMode = opts.pane ?? 'auto'
-  const enabled = ['memory-recall', 'context-counter', ...(opts.review ? ['graph-review'] : [])]
+  const server = String(opts.server ?? '').trim()
+  const run: RunConfig = {
+    enabled: ['memory-recall', 'context-counter', ...(opts.review ? ['graph-review'] : [])],
+    ...(server ? { remote: { url: server, token: String(opts.server_token ?? '') } } : {}),
+  }
 
   // --------------------------------------------------------- classic events
 
@@ -153,7 +161,7 @@ export const register: Register = (on, options) => {
     const result = await next(e)
     let protocol = ''
     try { protocol = await $.fs.read(`${$.plugin.root}/hooks/context-protocol.md`) } catch { /* fail open */ }
-    const primed = await python($, 'SessionStart', e as unknown as JsonObject, enabled)
+    const primed = await python($, 'SessionStart', e as unknown as JsonObject, run)
     await recordInjection($, 'session start', primed)
     const added = [protocol, primed].filter(Boolean)
     return added.length ? { ...result, additionalContext: [...(result.additionalContext ?? []), ...added] } : result
@@ -161,7 +169,7 @@ export const register: Register = (on, options) => {
 
   on('classic.UserPromptSubmit', async ($, e, next) => {
     const result = await next(e)
-    const recalled = await python($, 'UserPromptSubmit', e as unknown as JsonObject, enabled)
+    const recalled = await python($, 'UserPromptSubmit', e as unknown as JsonObject, run)
     await recordInjection($, 'prompt', recalled)
     return recalled ? { ...result, additionalContext: [...(result.additionalContext ?? []), recalled] } : result
   })
@@ -171,7 +179,7 @@ export const register: Register = (on, options) => {
     // A stop that already follows a block lets the turn end: one block per
     // stop, never chained — the Python side checks the same flag.
     if (e.stop_hook_active) return result
-    const reason = await python($, 'Stop', e as unknown as JsonObject, enabled)
+    const reason = await python($, 'Stop', e as unknown as JsonObject, run)
     await refreshDecisions($)
     if (!reason) return result
     await recordInjection($, 'stop block', reason)
@@ -180,7 +188,7 @@ export const register: Register = (on, options) => {
 
   on('classic.SessionEnd', async ($, e, next) => {
     const result = await next(e)
-    const note = await python($, 'SessionEnd', e as unknown as JsonObject, enabled)
+    const note = await python($, 'SessionEnd', e as unknown as JsonObject, run)
     if (note) $.ui.toast(note)
     return result
   })
@@ -190,7 +198,7 @@ export const register: Register = (on, options) => {
   // summariser is told.
   on('session.compact', async ($, e, next) => {
     if (e.trigger === 'precompute' || e.agentId) return next(e)
-    const steer = await python($, 'PreCompact', { session_id: await $.session.id(), cwd: await $.session.cwd() }, enabled)
+    const steer = await python($, 'PreCompact', { session_id: await $.session.id(), cwd: await $.session.cwd() }, run)
     if (!steer) return next(e)
     await recordInjection($, 'compaction', steer)
     return next({ ...e, instructions: e.instructions ? `${e.instructions}\n\n${steer}` : steer })
@@ -249,7 +257,7 @@ export const register: Register = (on, options) => {
       await python($, 'PostToolUse', {
         session_id: await $.session.id(), cwd: await $.session.cwd(),
         tool_name: e.tool, tool_input: input, tool_response: output,
-      }, enabled)
+      }, run)
     }
     return result
   })
@@ -341,6 +349,7 @@ export const register: Register = (on, options) => {
         line('Recall', { bold: true }),
         line(`memories injected  ${memo} distinct this session`),
         line(`settings           pane ${paneMode} · review ${opts.review ? 'on' : 'off'}`),
+        line(`memory             ${server ? `server ${server} (local replica for recall)` : 'this machine'}`),
         ...(err ? [blank(), line('Last error', { bold: true, color: 'red' }), line(err, { color: 'red' })] : []),
       ]
     } else {

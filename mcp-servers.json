@@ -2,7 +2,15 @@
   "mcpServers": {
     "memory-graph": {
       "command": "uvx",
-      "args": ["--from", "${CLAUDE_PLUGIN_ROOT}", "claude-memory-graph"]
+      "args": [
+        "--from",
+        "${CLAUDE_PLUGIN_ROOT}",
+        "claude-memory-graph"
+      ],
+      "env": {
+        "MEMORY_GRAPH_SERVER": "${user_config.server}",
+        "MEMORY_GRAPH_TOKEN": "${user_config.server_token}"
+      }
     }
   }
 }

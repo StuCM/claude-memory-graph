@@ -43,6 +43,12 @@ def _store_path() -> Path:
 
 
 async def _run() -> None:
+    from . import remote
+    if remote.server_config():
+        # memory lives on a server: forward to it (remote.py, docs/REMOTE.md)
+        await remote.run_proxy(SERVER_INFO["name"], SERVER_INFO["version"], INSTRUCTIONS)
+        return
+
     store_path = _store_path()
     log.info("Opening memory store at: %s", store_path)
     store = MemoryStore.open_or_create(store_path)
@@ -144,6 +150,13 @@ def main() -> None:
                    help="serve this store folder instead of your own (e.g. a `share` export)")
     p.add_argument("--read-only", action="store_true",
                    help="offer only search/recall/reflect/query; never write or auto-distill")
+    p.add_argument("--public-url", default=os.environ.get("MEMORY_GRAPH_PUBLIC_URL", ""),
+                   help="the HTTPS address this server is reached at (e.g. "
+                        "https://memory.example.com). Turns on OAuth so claude.ai, the phone "
+                        "and desktop apps can add it as a connector (env: MEMORY_GRAPH_PUBLIC_URL)")
+    p.add_argument("--password", default=os.environ.get("MEMORY_GRAPH_PASSWORD", ""),
+                   help="what you type on the server's sign-in page when connecting an app; "
+                        "defaults to the token (env: MEMORY_GRAPH_PASSWORD)")
     p = sub.add_parser("share", help="export one project's memories as a separate store "
                                      "for a read-only handover server (see docs/REMOTE.md)")
     p.add_argument("project", help="the Project node's name")
@@ -228,7 +241,8 @@ def main() -> None:
                             format="%(asctime)s %(levelname)s %(message)s")
         from .http_server import serve
         serve(args.store or _store_path(), INSTRUCTIONS, host=args.host, port=args.port,
-              token=args.token, read_only=args.read_only)
+              token=args.token, read_only=args.read_only,
+              public_url=args.public_url, password=args.password)
         return
 
     if args.cmd == "share":

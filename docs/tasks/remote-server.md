@@ -1,6 +1,8 @@
 # Task: remote server — one memory across clients and machines
 
-Status: **v1 done — `claude-memory-graph serve` (streamable HTTP, bearer auth)** ·
+Status: **v1, v1.5 and v2 done**: `serve` with bearer auth; single-owner OAuth for
+claude.ai and the phone; the plugin's server mode (proxy, replica, remote distill). The
+user guide is [docs/REMOTE.md](../REMOTE.md). ·
 Owner: Stuart · Created: 2026-07-09 · Size: M
 
 ## As built (v1)
@@ -49,14 +51,19 @@ hook features and never existed on other surfaces anyway.
 
 ## Phasing
 
-- **v1.5 — hosted for claude.ai (the phone case):** public HTTPS + OAuth 2.1 with
+- **v1.5 — hosted for claude.ai (the phone case): DONE, as route (b).** The MCP SDK's
+  auth scaffolding made native OAuth small for a single owner: `auth.py` (register,
+  authorize → the server's own /login page → code → token; hashed, persisted, rotating).
+  Original plan: public HTTPS + OAuth 2.1 with
   dynamic client registration. Two routes: (a) an OAuth-terminating proxy in front
   (Cloudflare Access, an MCP OAuth gateway) — zero code change here, the sane first
   move; (b) native OAuth via the MCP SDK's auth scaffolding — a substantial,
   security-sensitive build (client registry, token issuance, persistence). Do (a)
   first; promote to (b) only if the proxy chafes. Never run the no-auth option in
   public: this is your memory.
-- **v2 — remote gate:** teach the gate extensions to fetch their corpus from the
+- **v2 — remote gate: DONE, as a replica.** Rather than a `/corpus` endpoint, the hook
+  runner keeps a local copy of graph.nq (`/api/graph.nq`, ETag, ≤1 check a minute), so
+  the gate code is unchanged. Distill uploads logs to `/api/distill`. Original plan: teach the gate extensions to fetch their corpus from the
   server (a `/corpus` endpoint or an MCP resource) with a short-TTL local cache, so
   ambient injection works on machines that only have the plugin + a server URL.
   The context dir stays local (capture is inherently per-session).
