@@ -123,6 +123,26 @@ We trained on the vocabulary itself, with 20% of each entry's phrasings held out
 
 An adapter is worth retrying once there are a few hundred real questions to train on and a separate set to test on. `adapt.py` and `her_compare.py` (`CEIST_ADAPTERS=a.npz,b.npz`) are ready for that.
 
+### Aligning with the graph set, with no new model (`her_align.py`)
+
+Signals taken from files the HER package already has, each tested alone and then together. Results at threshold 0.6 (`results/her_align.md` has 0.4 and 0.7):
+
+| signal | right | dangerous | refused correctly | right within one click | what changed |
+| --- | --- | --- | --- | --- | --- |
+| baseline (vocabulary + WordLlama) | 81 | 3 | 17/18 | 94 | — |
+| + CIDOC-CRM labels (node property, enclosing event class) | 81 | 3 | 17/18 | 94 | fixed "fall under" (CRM *falls within*); lost "inscription" |
+| + thesaurus labels as phrasings | 80 | 2 | 18/18 | 95 | fixed "thrown on a wheel"; "copies" now refused; lost "borough of"; **"named" became wrong** |
+| + word roots (simplemma) | 82 | 3 | 16/18 | 95 | fixed "sailing from"; "sorties" became a false match |
+| + direction words (from ≠ to) | 81 | 2 | 17/18 | 95 | "sailing from" refused instead of answered wrongly: a pure safety gain |
+| all four | **82** | **2** | 17/18 | **96** | |
+
+- **The gains are real but small,** one or two questions each, which is near the noise for 120 questions.
+- **The direction rule is the only one with no downside.**
+- **The others trade a fix for a breakage.** They're worth keeping only if a larger, real question set confirms them.
+- **Static matching has plateaued** at about 82/102 right first time and 96/102 within one click. The remaining misses ("turned down", "put in by", "brought out") need real phrasings in the vocabulary (the loop), or a model that reads the whole question.
+
+**Not tested: data-presence priors** (prefer nodes that actually hold values). The HER package ships no records, so this needs a client's data.
+
 ## In the browser
 
 | matcher | size | browser runtime |

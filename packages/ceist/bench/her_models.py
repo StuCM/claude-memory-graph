@@ -51,6 +51,18 @@ def collection_labels(rdm, cid):
     return sorted({col.get_concept(i).get_label("en") or "" for i in ids} - {""})
 
 
+def crm_label(uri: str | None) -> str:
+    """'http://…/cidoc-crm/P14_carried_out_by' → 'carried out by';
+    'E12_Production' → 'production'. CRM identifiers name themselves."""
+    if not uri:
+        return ""
+    local = uri.rstrip("/").rsplit("/", 1)[-1].rsplit("#", 1)[-1]
+    words = local.split("_")
+    if words and words[0][:1] in "EP" and words[0][1:2].isdigit():
+        words = words[1:]
+    return " ".join(words).replace("-", " ").lower()
+
+
 def describe_graph(doc: dict, graph_names: dict, rdm=None) -> dict:
     g = doc["graph"][0] if "graph" in doc else doc
     alizarin.register_graph(json.dumps(g))
@@ -69,11 +81,13 @@ def describe_graph(doc: dict, graph_names: dict, rdm=None) -> dict:
 
     out = []
 
-    def walk(sub: dict, path: list[str]):
+    def walk(sub: dict, path: list[str], classes: list[str] = ()):
         for alias, info in sub.items():
             n = nodes.get(info.get("nodeid"))
             name = _text(n["name"]) if n else alias
             here = path + [name]
+            cls = crm_label(n.get("ontologyclass")) if n else ""
+            inside = list(classes) + ([cls] if cls and n and n["datatype"] == "semantic" else [])
             if n and n["datatype"] not in SKIP_TYPES and not alias.endswith("metatype"):
                 entry = {"alias": alias, "name": name, "datatype": n["datatype"],
                          "card": card(n.get("nodegroup_id")),
@@ -84,6 +98,9 @@ def describe_graph(doc: dict, graph_names: dict, rdm=None) -> dict:
                            for x in (n.get("config") or {}).get("graphs") or []]
                 if targets:
                     entry["targets"] = targets
+                crm = [x for x in [crm_label(n.get("parentproperty"))] + inside[-2:] if x]
+                if crm:
+                    entry["crm"] = list(dict.fromkeys(crm))
                 if n["datatype"] in ("concept", "concept-list"):
                     labels = collection_labels(rdm, (n.get("config") or {}).get("rdmCollection"))
                     if isinstance(labels, list):
@@ -91,7 +108,7 @@ def describe_graph(doc: dict, graph_names: dict, rdm=None) -> dict:
                     elif labels:
                         entry["values_count"] = labels
                 out.append(entry)
-            walk(info.get("children") or {}, here)
+            walk(info.get("children") or {}, here, inside)
 
     walk(tree, [])
     return {"name": _text(g["name"]), "graphid": g["graphid"],
