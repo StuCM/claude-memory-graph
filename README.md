@@ -16,7 +16,9 @@ claude plugin marketplace add StuCM/claude-memory-graph
 claude plugin install memory-graph@claude-memory-graph --scope user
 ```
 
-Start a new session. That's the whole install: the plugin brings the MCP server, the
+(The installer notes two settings "not yet set" — both have defaults; see
+[Settings](#settings-config).) Start a new session. That's the whole install: the plugin
+brings the MCP server, the
 `/memory-graph:distill` and `/memory-graph:ingest` skills, and a mod
 ([hooks/register.ts](hooks/register.ts)) that runs memory for every session:
 
