@@ -11,7 +11,8 @@ runs `python -m claude_memory_graph.hookrun` with:
      "core":    the session's core state as last returned,
      "state":   {extension name: its per-session dict},
      "global":  {extension name: its cross-session dict},
-     "enabled": [extension names; default: memory-recall, context-counter]}
+     "enabled": [extension names; default: memory-recall, context-counter],
+     "remote":  {"url", "token"} when memory lives on a server (optional)}
 
 and gets back {"output", "core", "state", "global", "errors"}. The mod
 stores what comes back and hands `output` to Claude Code (additionalContext,
@@ -27,6 +28,7 @@ a session.
 """
 
 import json
+import os
 import sys
 
 from .hookcore import EVENT_METHODS, HookContext, advance_core, log_error
@@ -41,6 +43,19 @@ def _extensions() -> dict:
     return {cls.name: cls for cls in (RecallExtension, ContextCounterExtension, ReviewExtension)}
 
 
+def _use_replica(remote: dict, force: bool, errors: list) -> None:
+    """Remote mode: the gate reads a local replica of the server's graph
+    (remote.py). This process handles one event, so setting the environment
+    here scopes it to this call."""
+    from . import remote as remote_mod
+    os.environ[remote_mod.SERVER_ENV] = str(remote["url"])
+    os.environ[remote_mod.TOKEN_ENV] = str(remote.get("token") or "")
+    folder = remote_mod.fetch_replica(force=force)
+    os.environ["MEMORY_GRAPH_PATH"] = str(folder or remote_mod.replica_dir())
+    if folder is None:
+        errors.append(f"memory server {remote['url']}: no replica yet (unreachable?)")
+
+
 def run(request: dict) -> dict:
     event = request.get("event", "")
     payload = request.get("payload") or {}
@@ -52,6 +67,9 @@ def run(request: dict) -> dict:
     outputs: list[str] = []
 
     method = EVENT_METHODS.get(event)
+    remote = request.get("remote") or {}
+    if remote.get("url"):
+        _use_replica(remote, force=event == "SessionStart", errors=errors)
     if event == "SessionStart":
         try:  # the context protocol writes here; the archive receives distilled files
             from .gate.nudge import _context_dir

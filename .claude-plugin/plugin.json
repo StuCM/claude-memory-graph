@@ -1,7 +1,7 @@
 {
   "name": "memory-graph",
   "description": "Arches-inspired RDF knowledge-graph memory: MCP server + context-file protocol + distill skill",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "author": {
     "name": "Stuart Marshall"
   },
@@ -24,6 +24,19 @@
       "title": "Periodic graph review",
       "description": "Every few days, end a turn by asking for a graph health fix-up (over-long names, orphans, missing links).",
       "default": false
+    },
+    "server": {
+      "type": "string",
+      "title": "Memory server",
+      "description": "Leave empty to keep memory on this machine. Set to your hosted memory server (e.g. https://memory.example.com) to share one memory across every machine and the Claude apps; see docs/REMOTE.md.",
+      "default": ""
+    },
+    "server_token": {
+      "type": "string",
+      "title": "Memory server token",
+      "sensitive": true,
+      "description": "The server's token (its MEMORY_GRAPH_TOKEN). Stored in secure storage.",
+      "default": ""
     }
   },
   "types": "./types/index.d.ts"

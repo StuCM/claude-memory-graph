@@ -16,7 +16,8 @@ claude plugin marketplace add StuCM/claude-memory-graph
 claude plugin install memory-graph@claude-memory-graph --scope user
 ```
 
-(The installer notes two settings "not yet set" — both have defaults; see
+(The installer notes four settings "not yet set": all have defaults, and the two
+server ones stay empty unless you host your memory; see
 [Settings](#settings-config).) Start a new session. That's the whole install: the plugin
 brings the MCP server, the
 `/memory-graph:distill` and `/memory-graph:ingest` skills, and a mod
@@ -63,16 +64,29 @@ still reaches the model.
 |---|---|---|
 | **Memory graph pane** | `auto` (default) · `manual` · `off` | `auto` opens the pane on the first graph tool call; `manual` only via `/graph-panel`; `off` drops the pane and shows graph tool calls in the transcript as normal. Memory runs either way. |
 | **Periodic graph review** | off (default) · on | every few days, ends one turn asking for a graph tidy-up (over-long names, orphans, missing links) |
+| **Memory server** | empty (default) · `https://…` | empty keeps memory on this machine; an address uses your hosted memory ([docs/REMOTE.md](docs/REMOTE.md)) |
+| **Memory server token** | secret | the server's `MEMORY_GRAPH_TOKEN`, kept in secure storage |
 
 Thresholds live in `~/.claude/memory-graph/gate.json` — see the tuning table in
 [docs/HANDBOOK.md](docs/HANDBOOK.md). Set `MEMORY_GRAPH_PATH` to move the store
 (default `~/.claude/memory-graph/store`).
 
-### Remote access and handovers
+### One memory everywhere (server mode)
 
-`claude-memory-graph serve` runs the memory over HTTP for other machines and clients,
-and `claude-memory-graph share <project>` exports one project for a colleague to query
-read-only while you're away. See **[docs/REMOTE.md](docs/REMOTE.md)**.
+Host the memory on a server and every Claude Code machine you log in to, plus claude.ai
+and the phone and desktop apps, reads from and writes to the same memory, with no
+laptop involved. `deploy/` has a Docker Compose setup with automatic HTTPS. Then point
+each machine at it:
+
+```sh
+claude plugin install memory-graph@claude-memory-graph --scope user \
+    --config server=https://memory.example.com --config server_token=<token>
+```
+
+and add `https://memory.example.com/mcp` as a custom connector in claude.ai; you sign in
+with your server password. `claude-memory-graph share <project>` exports one project for
+a colleague to query read-only while you're away. Both are covered in
+**[docs/REMOTE.md](docs/REMOTE.md)**.
 
 ### MCP server only (no ambient memory)
 
@@ -125,7 +139,7 @@ retrieval works with you, and the command cadence.
 
 Each resource instance lives in its own named graph (`…/graph/resource/<uuid>`); cross-links live in a dedicated links graph; shared concepts in a concepts graph; the ontology (including LLM-added relations) in a schema graph. See `claude_memory_graph/base.ttl` for the base ontology.
 
-Each Claude Code session runs its own stdio server; each reloads the file when another has saved since, and `serve` runs one shared process instead. The graph is persisted as NQuads after every write.
+Each Claude Code session runs its own stdio server; each reloads the file when another has saved since. `serve` runs one shared process instead, and in server mode each session's stdio server is a proxy to it. The graph is persisted as NQuads after every write.
 
 The design docs are in [docs/](docs/index.md), also buildable as a site:
 `cd docs-site && npm ci && npm run dev`.

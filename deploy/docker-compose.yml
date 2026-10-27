@@ -1,0 +1,29 @@
+# Your memory on a server, over HTTPS. On any machine with Docker and a domain
+# name pointing at it (docs/REMOTE.md walks through it):
+#
+#   cp .env.example .env      # fill it in
+#   mkdir -p data/store && cp ~/.claude/memory-graph/store/graph.nq data/store/   # bring your memory
+#   docker compose up -d
+#
+# Caddy fetches and renews the TLS certificate for $DOMAIN by itself; ports 80
+# and 443 must be reachable for that.
+services:
+  memory:
+    build: ..
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/data
+  caddy:
+    image: caddy:2.8
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy:/data
+volumes:
+  caddy: {}

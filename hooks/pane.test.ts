@@ -116,6 +116,20 @@ test('review is opt-in', { options: { review: true } }, async ($, on) => {
   expect(seen.python[0].enabled).toContain('graph-review')
 })
 
+test('memory stays local unless a server is set', async ($, on) => {
+  const seen = engine(on)
+  await $.classic.UserPromptSubmit({ prompt: 'hello there' })
+  expect(seen.python[0].remote).toBeUndefined()
+})
+
+test('a memory server reaches Python with its token', {
+  options: { server: 'https://memory.example.com', server_token: 's3cret' },
+}, async ($, on) => {
+  const seen = engine(on)
+  await $.classic.UserPromptSubmit({ prompt: 'hello there' })
+  expect(seen.python[0].remote).toEqual({ url: 'https://memory.example.com', token: 's3cret' })
+})
+
 test('a Python failure fails open', async ($, on) => {
   engine(on, () => 'crash')
   const result = await $.classic.UserPromptSubmit({ prompt: 'why pyoxigraph' })
