@@ -154,6 +154,9 @@ def main() -> None:
                    help="the HTTPS address this server is reached at (e.g. "
                         "https://memory.example.com). Turns on OAuth so claude.ai, the phone "
                         "and desktop apps can add it as a connector (env: MEMORY_GRAPH_PUBLIC_URL)")
+    p.add_argument("--no-chat", action="store_true",
+                   help="don't serve the browser chat at / (it needs ANTHROPIC_API_KEY "
+                        "to answer; see docs/REMOTE.md)")
     p.add_argument("--password", default=os.environ.get("MEMORY_GRAPH_PASSWORD", ""),
                    help="what you type on the server's sign-in page when connecting an app; "
                         "defaults to the token (env: MEMORY_GRAPH_PASSWORD)")
@@ -242,7 +245,8 @@ def main() -> None:
         from .http_server import serve
         serve(args.store or _store_path(), INSTRUCTIONS, host=args.host, port=args.port,
               token=args.token, read_only=args.read_only,
-              public_url=args.public_url, password=args.password)
+              public_url=args.public_url, password=args.password,
+              chat=not args.no_chat)
         return
 
     if args.cmd == "share":
@@ -255,7 +259,7 @@ def main() -> None:
         if result.out:
             print(f"\nreview it:  MEMORY_GRAPH_PATH={result.out} claude-memory-graph reflect\n"
                   f"serve it:   claude-memory-graph serve --store {result.out} --read-only "
-                  f"--host 0.0.0.0 --token <secret>")
+                  f"--host 0.0.0.0 --token <secret> --password <for your colleague>")
         return
 
     if args.cmd == "gate":

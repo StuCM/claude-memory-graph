@@ -160,5 +160,10 @@ def share(store: MemoryStore, project: str, out: Path | None = None,
         raise FileExistsError(f"{nq} already exists — choose an empty folder")
     with open(nq, "wb") as f:
         subset.dump(f, ox.RdfFormat.N_QUADS)
+    # tells a server's chat what this store is (chat.py)
+    import json
+    from datetime import date
+    (out / "share.json").write_text(json.dumps(
+        {"project": project, "created": date.today().isoformat(), "depth": depth}))
     result.out = out
     return result

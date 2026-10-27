@@ -10,6 +10,9 @@ is the one memory every machine and app shares (docs/REMOTE.md):
   ambient gate reads a replica of the graph it downloads from
   `/api/graph.nq`. Their context logs stay local and reach the graph
   through `/api/distill`.
+- **A browser** — the home page is a chat (chat.py): sign in with the
+  password and ask questions; Claude answers from the memory, read-only.
+  On a handover share, that is all a colleague needs.
 - **claude.ai, the phone and desktop apps** add it as a custom connector.
   Connectors can only do OAuth, so with `--public-url` set the server is
   also a single-owner OAuth authorization server (auth.py): a connector is
@@ -161,9 +164,24 @@ class _RequireAuth:
         await self.app(scope, receive, send)
 
 
+def chat_identity(store: MemoryStore) -> tuple[str, str]:
+    """(page title, scope sentence for the system prompt). A handover export
+    carries share.json naming its project; anything else is the whole memory."""
+    title = os.environ.get("MEMORY_GRAPH_CHAT_TITLE", "")
+    try:
+        meta = json.loads((Path(store._data_path).parent / "share.json").read_text())
+        project = str(meta["project"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return title or "Memory", ""
+    return (title or f"{project} — handover memory",
+            f"This copy holds only what relates to the project “{project}”, shared "
+            f"for a handover on {meta.get('created', 'an unknown date')}. The reader is "
+            "a colleague picking the work up; answer for them.")
+
+
 def build_app(store: MemoryStore, instructions: str, token: str = "",
               read_only: bool = False, public_url: str = "", password: str = "",
-              auth_path: Path | None = None):
+              auth_path: Path | None = None, chat=True):
     """The ASGI app, separate from serve() so tests can drive it in-process."""
     from mcp.server.auth.middleware.bearer_auth import BearerAuthBackend
     from mcp.server.auth.routes import (build_resource_metadata_url, create_auth_routes,
@@ -213,6 +231,11 @@ def build_app(store: MemoryStore, instructions: str, token: str = "",
         routes += login_routes(auth)
     routes += [Route(path, endpoint(handler), methods=methods)
                for path, handler, methods in api_routes(store, read_only)]
+    if chat:
+        from .chat import ChatService, chat_routes
+        title, scope = chat_identity(store)
+        routes += chat_routes(chat if isinstance(chat, ChatService)
+                              else ChatService(store, title=title, scope=scope), auth)
     routes.append(Mount("/mcp", app=guarded(manager.handle_request)))
 
     @contextlib.asynccontextmanager
@@ -232,7 +255,7 @@ def build_app(store: MemoryStore, instructions: str, token: str = "",
 
 def serve(store_path, instructions: str, host: str = "127.0.0.1",
           port: int = 8848, token: str = "", read_only: bool = False,
-          public_url: str = "", password: str = "") -> None:
+          public_url: str = "", password: str = "", chat: bool = True) -> None:
     import uvicorn
 
     loopback = host in ("127.0.0.1", "::1", "localhost")
@@ -255,7 +278,7 @@ def serve(store_path, instructions: str, host: str = "127.0.0.1",
     from .hookcore.state import state_home
     app = build_app(store, instructions, token=token, read_only=read_only,
                     public_url=public_url, password=password,
-                    auth_path=state_home() / "oauth.json")
+                    auth_path=state_home() / "oauth.json", chat=chat)
     log.warning("memory-graph serving %s at http://%s:%d/mcp (%s%s%s)",
                 store_path, host, port,
                 "token required" if token else "loopback, no token",
