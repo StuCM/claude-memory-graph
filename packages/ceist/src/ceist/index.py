@@ -10,6 +10,7 @@ from .vocabulary import Entity
 class NameIndex:
     def __init__(self, entities: list[Entity]):
         self.entities = entities
+        self.by_id = {e.id: e for e in entities}
         df: dict[str, int] = {}
         for e in entities:
             for t in e.terms:

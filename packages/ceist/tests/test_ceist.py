@@ -107,3 +107,122 @@ def test_about_goes_straight_to_the_record():
                                          ("box", {"box", "boxes"})])
 def test_plurals(word, forms):
     assert forms <= plurals(word)
+
+
+# ── dates and negation ─────────────────────────────────────────────────────
+
+from datetime import date  # noqa: E402
+
+from ceist import DateField, DateRange, Not  # noqa: E402
+from ceist import dates  # noqa: E402
+from ceist.readback import check  # noqa: E402
+
+TODAY = date(2026, 10, 27)
+
+
+class Dated(Toy):
+    def date_fields(self):
+        return [DateField("construction_date", "construction date", ("built", "constructed"),
+                          frozenset({"Building"}), default=True),
+                DateField("demolition_date", "demolition date", ("demolished",),
+                          frozenset({"Building"}))]
+
+
+class TwoDates(Toy):
+    def date_fields(self):
+        return [DateField("construction_date", "construction date", ("built",),
+                          frozenset({"Building"})),
+                DateField("demolition_date", "demolition date", ("demolished",),
+                          frozenset({"Building"}))]
+
+
+@pytest.mark.parametrize("phrase, lo, hi, label", [
+    ("in 1850", "1850-01-01", "1850-12-31", "in 1850"),
+    ("before 1900", None, "1899-12-31", "before 1900"),
+    ("after 1900", "1901-01-01", None, "after 1900"),
+    ("since 1900", "1900-01-01", None, "after 1899"),
+    ("between 1800 and 1850", "1800-01-01", "1850-12-31", "between 1800 and 1850"),
+    ("in the 1890s", "1890-01-01", "1899-12-31", "in the 1890s"),
+    ("in the 19th century", "1800-01-01", "1899-12-31", "in the 19th century"),
+    ("in the 1800s", "1800-01-01", "1899-12-31", "in the 19th century"),
+    ("in may 2020", "2020-05-01", "2020-05-31", "in May 2020"),
+    ("on 2020-05-01", "2020-05-01", "2020-05-01", "on 2020-05-01"),
+    ("last year", "2025-01-01", "2025-12-31", "in 2025"),
+    ("in the last 3 months", "2026-07-27", "2026-10-27", "between 2026-07-27 and 2026-10-27"),
+])
+def test_date_phrases(phrase, lo, hi, label):
+    (m,) = dates.find(phrase, [], TODAY)
+    assert (m.lo, m.hi) == (lo, hi)
+    assert dates.label(m.lo, m.hi) == label
+
+
+def test_days_is_alizarins_quantize():
+    # quantize_date: signed days since 1970-01-01, bare year = 1 January
+    assert dates.days("1970-01-01") == 0 and dates.days("1970-01-02") == 1
+    assert dates.days("1969-12-31") == -1 and dates.days("2020") == dates.days("2020-01-01")
+    assert dates.from_days(dates.days("1845-06-01")) == "1845-06-01"
+    assert dates.from_days(dates.OPEN) is None
+
+
+def test_date_picks_the_field_by_word_or_default():
+    m = interpret(Dated(), "which buildings were built before 1900?", today=TODAY)
+    assert m.plan.where == [DateRange("construction_date", None, "1899-12-31",
+                                      "construction date")]
+    m = interpret(Dated(), "which buildings were demolished in the 1960s?", today=TODAY)
+    assert m.plan.where[0].field == "demolition_date"
+    m = interpret(Dated(), "which buildings date from 1850?", today=TODAY)
+    assert m.plan.where[0].field == "construction_date"           # the default
+    assert narrate(m.plan) == "Find Buildings whose construction date is in 1850."
+
+
+def test_ambiguous_date_refuses():
+    m = interpret(TwoDates(), "which buildings date from 1850?", today=TODAY)
+    assert m.plan is None and "construction date or the demolition date" in m.refused
+
+
+def test_years_are_words_without_date_fields():
+    m = interpret(Toy(), "which buildings are on site Leeds Dock in 1850?")
+    assert not any(isinstance(c, DateRange) for c in (m.plan.where if m.plan else []))
+
+
+def test_negated_value_and_link():
+    m = interpret(Toy(), "which buildings are not listed?")
+    assert m.plan.where == [Not(HasValue("heritage_status", "c-listed", "Listed", "concept"))]
+    assert narrate(m.plan) == "Find Buildings whose heritage status is not Listed."
+    m = interpret(Toy(), "which non-listed buildings are on site Leeds Dock?")
+    assert Not(HasValue("heritage_status", "c-listed", "Listed", "concept")) in m.plan.where
+    m = interpret(Toy(), "which buildings were not designed by Ada Lovelace?")
+    (c,) = m.plan.where
+    assert isinstance(c, Not) and c.condition.relation == "architect"
+    assert narrate(m.plan) == "Find Buildings that do not designed by Person 'Ada Lovelace'."
+
+
+def test_negation_scopes_to_the_hop():
+    m = interpret(Toy(), "which sites have no buildings designed by Ada Lovelace?")
+    (c,) = m.plan.where
+    assert isinstance(c, Not) and c.condition.relation == "site"
+    assert c.condition.direction == "in"
+    inner = c.condition.target.where[0]
+    assert isinstance(inner, LinkTo) and inner.relation == "architect"   # not negated
+
+
+def test_negated_date():
+    m = interpret(Dated(), "which buildings were not built in the 19th century?", today=TODAY)
+    assert m.plan.where == [Not(DateRange("construction_date", "1800-01-01", "1899-12-31",
+                                          "construction date"))]
+
+
+def test_dangling_negation_refuses():
+    m = interpret(Toy(), "which buildings are not?")
+    assert m.plan is None and "couldn't tell what it negates" in m.refused
+
+
+def test_readback_check():
+    m = interpret(Toy(), "which listed buildings are not on site Leeds Dock?")
+    assert check(m.plan, m.plan).ok
+    flipped = Plan(m.plan.type, [c.condition if isinstance(c, Not) else c
+                                 for c in m.plan.where])
+    verdict = check(m.plan, flipped)
+    assert not verdict.ok and "✗" in "\n".join(verdict.lines())
+    # order doesn't matter
+    assert check(m.plan, Plan(m.plan.type, list(reversed(m.plan.where)))).ok

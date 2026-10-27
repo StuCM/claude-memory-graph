@@ -1,6 +1,6 @@
 [project]
 name = "ceist"
-version = "0.1.0"
+version = "0.2.0"
 description = "Plain-English questions over a graph, without an LLM: question -> backend-neutral plan -> SPARQL / Ros Madair / Arches Search"
 requires-python = ">=3.11"
 dependencies = []

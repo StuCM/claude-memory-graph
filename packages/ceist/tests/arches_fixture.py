@@ -1,6 +1,11 @@
 """A small Arches data_dir in the shared Alizarin / Rós Madair layout:
 Sites, Buildings (site → Site, architect → Person, heritage status from a
-SKOS thesaurus with a narrower concept), and People."""
+SKOS thesaurus with a narrower concept, construction date), and People.
+
+    Clock Tower      Listed     Leeds Dock  Ada Lovelace     1845
+    Grain Warehouse  Grade II   Leeds Dock  Isambard Brunel  1872
+    Boat Shed        Candidate  Salts Mill  Ada Lovelace     1903
+"""
 
 import json
 import uuid
@@ -92,6 +97,8 @@ def write(root: Path) -> dict:
                   {"graphs": [{"graphid": SITE}]}),
             _node(BUILDING, "architect", "Architect", "resource-instance",
                   {"graphs": [{"graphid": PERSON}]}),
+            _node(BUILDING, "construction_date", "Construction date", "date",
+                  {"dateFormat": "YYYY-MM-DD"}),
         ]),
     }
     (root / "graphs").mkdir(parents=True)
@@ -130,13 +137,14 @@ def write(root: Path) -> dict:
     buildings = [
         resource(BUILDING, "tower", "Clock Tower", {
             "name": text("Clock Tower"), "heritage_status": values["Listed"],
-            "site": link("dock"), "architect": link("ada")}),
+            "site": link("dock"), "architect": link("ada"), "construction_date": "1845-06-01"}),
         resource(BUILDING, "warehouse", "Grain Warehouse", {
             "name": text("Grain Warehouse"), "heritage_status": values["Grade II"],
-            "site": link("dock"), "architect": link("isambard")}),
+            "site": link("dock"), "architect": link("isambard"),
+            "construction_date": "1872-03-15"}),
         resource(BUILDING, "shed", "Boat Shed", {
             "name": text("Boat Shed"), "heritage_status": values["Candidate"],
-            "site": link("mill"), "architect": link("ada")}),
+            "site": link("mill"), "architect": link("ada"), "construction_date": "1903-09-30"}),
     ]
     for folder, items in (("site", sites), ("person", people), ("building", buildings)):
         (root / "resources" / folder).mkdir(parents=True)

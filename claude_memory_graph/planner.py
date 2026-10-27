@@ -14,8 +14,8 @@ The same planner answers over Arches data through ceist.arches (Rós Madair,
 Arches Search). See docs/QUERY-PLANNING.md.
 """
 
-from ceist import (Contains, Entity, EntityRef, HasValue, LinkTo, Mention, Plan, Relation,
-                   Value, interpret, narrate)
+from ceist import (Contains, DateField, DateRange, Entity, EntityRef, HasValue, LinkTo, Mention,
+                   Not, Plan, Relation, Value, interpret, narrate)
 from ceist import ground as _ceist_ground
 
 from .gate.recall import _corpus, _idf, _score
@@ -104,6 +104,13 @@ class MemoryVocabulary:
                            extra={"gid": d["gid"], "recallable": d["gid"] is not None}))
                 for s, d in ranked if s > 0]
 
+    def date_fields(self) -> list[DateField]:
+        # every memory carries both; "decisions in March" means when it was made
+        return [DateField("createdAt", "creation date",
+                          ("created", "added", "made", "recorded", "written"), default=True),
+                DateField("updatedAt", "last update",
+                          ("updated", "changed", "modified", "edited", "touched"))]
+
     def implied_types(self) -> dict[str, str]:
         return _IMPLIED
 
@@ -126,19 +133,45 @@ def compile_sparql(plan: Plan, limit: int | None = ROW_LIMIT) -> str:
     """One SELECT for the plan. Each (sub-)plan is a variable in its own GRAPH
     group; every link is an open CrossLink in the links graph. A filter that
     joins variables from two GRAPH groups sits at the top level (the scope
-    gotcha: inside a group it cannot see the other group's variables)."""
+    gotcha: inside a group it cannot see the other group's variables). A
+    negated condition is a FILTER NOT EXISTS around the same patterns."""
     salient = _salient(plan.type, plan.wh)
-    blocks: list[str] = []
-    links: list[str] = []
-    top: list[str] = []
-    counter = {"var": 0, "link": 0}
+    counter = {"var": 0, "link": 0, "n": 0}
 
     def blob() -> str:
         return "LCASE(CONCAT(?name" + "".join(
             f', " ", COALESCE(?p_{p}, "")' for p in salient) + "))"
 
-    def visit(p: Plan, var: str, is_subject: bool) -> None:
-        k = int(var[2:])
+    def fresh(stem: str) -> str:
+        counter["n"] += 1
+        return f"?{stem}{counter['n']}"
+
+    def open_link(src: str, dst: str, relation: str) -> list[str]:
+        j = counter["link"]
+        counter["link"] += 1
+        return [f'?l{j} a mem:CrossLink ; mem:linkSource {src} ; '
+                f'mem:linkTarget {dst} ; mem:linkRelation "{relation}" .',
+                f"FILTER NOT EXISTS {{ ?l{j} mem:linkValidUntil ?end{j} }}",
+                f"FILTER NOT EXISTS {{ ?l{j} mem:linkInvalidatedAt ?inv{j} }}"]
+
+    def value_patterns(c, var: str) -> list[str]:
+        """Patterns inside var's own GRAPH group."""
+        if isinstance(c, HasValue):
+            v = fresh("val")
+            return [f"{var} mem:{c.field} {v} .",
+                    f'FILTER(LCASE(STR({v})) = "{_lit(c.value.lower())}")']
+        v = fresh("d")
+        tests = ([f'SUBSTR(STR({v}), 1, 10) >= "{c.lo}"'] if c.lo else []) + \
+                ([f'SUBSTR(STR({v}), 1, 10) <= "{c.hi}"'] if c.hi else [])
+        return [f"{var} mem:{c.field} {v} ."] + [f"FILTER({' && '.join(tests)})"] * bool(tests)
+
+    def group(where: list[str]) -> str:
+        return "{ " + " ".join(where) + " }"
+
+    def visit(p: Plan, var: str, is_subject: bool, out: dict) -> None:
+        """Add p's patterns to out (blocks: GRAPH groups, links: CrossLink
+        patterns, top: filters across groups)."""
+        k = int(var.lstrip("?v"))
         inner = []
         name_prop = "label" if p.type in CONCEPT_TYPES else "name"
         if is_subject:
@@ -149,47 +182,53 @@ def compile_sparql(plan: Plan, limit: int | None = ROW_LIMIT) -> str:
         else:
             inner.append(f"{var} a mem:{p.type} .")
         for c in p.where:
-            if isinstance(c, HasValue):
-                inner.append(f"{var} mem:{c.field} ?val{k} .")
-                inner.append(f'FILTER(LCASE(STR(?val{k})) = "{_lit(c.value.lower())}")')
+            if isinstance(c, (HasValue, DateRange)):
+                inner.extend(value_patterns(c, var))
+            elif isinstance(c, Not) and isinstance(c.condition, (HasValue, DateRange)):
+                inner.append("FILTER NOT EXISTS " + group(value_patterns(c.condition, var)))
         inner.append(f"FILTER NOT EXISTS {{ {var} mem:invalidated ?dead{k} }}")
         graph = f"<{GRAPH_CONCEPTS}>" if p.type in CONCEPT_TYPES else f"?g{k}"
-        blocks.append("GRAPH " + graph + " {\n    " + "\n    ".join(inner) + "\n  }")
+        out["blocks"].append("GRAPH " + graph + " {\n    " + "\n    ".join(inner) + "\n  }")
 
         for c in p.where:
+            negated = isinstance(c, Not)
+            c = c.condition if negated else c
             if isinstance(c, LinkTo):
+                # a negated link: the same patterns, collected apart and wrapped
+                dest = {"blocks": [], "links": [], "top": []} if negated else out
                 if isinstance(c.target, EntityRef):
                     other = f"<{c.target.entity.id}>"
                 else:
                     counter["var"] += 1
                     other = f"?v{counter['var']}"
-                    visit(c.target, other, False)
+                    visit(c.target, other, False, dest)
                 if c.relation is None:
                     # linked by ANY relation, either direction
-                    links.extend([
-                        "?la a mem:CrossLink ; mem:linkSource ?las ; mem:linkTarget ?lat .",
-                        "FILTER NOT EXISTS { ?la mem:linkValidUntil ?enda }",
-                        "FILTER NOT EXISTS { ?la mem:linkInvalidatedAt ?inva }"])
-                    top.append(f"FILTER((?las = {var} && ?lat = {other}) || "
-                               f"(?las = {other} && ?lat = {var}))")
-                    continue
-                j = counter["link"]
-                counter["link"] += 1
-                src, dst = (var, other) if c.direction == "out" else (other, var)
-                links.extend([
-                    f'?l{j} a mem:CrossLink ; mem:linkSource {src} ; '
-                    f'mem:linkTarget {dst} ; mem:linkRelation "{c.relation}" .',
-                    f"FILTER NOT EXISTS {{ ?l{j} mem:linkValidUntil ?end{j} }}",
-                    f"FILTER NOT EXISTS {{ ?l{j} mem:linkInvalidatedAt ?inv{j} }}"])
+                    a = fresh("la")
+                    dest["links"].extend([
+                        f"{a} a mem:CrossLink ; mem:linkSource {a}s ; mem:linkTarget {a}t .",
+                        f"FILTER NOT EXISTS {{ {a} mem:linkValidUntil {a}e }}",
+                        f"FILTER NOT EXISTS {{ {a} mem:linkInvalidatedAt {a}i }}"])
+                    dest["top"].append(f"FILTER(({a}s = {var} && {a}t = {other}) || "
+                                       f"({a}s = {other} && {a}t = {var}))")
+                else:
+                    src, dst = (var, other) if c.direction == "out" else (other, var)
+                    dest["links"].extend(open_link(src, dst, c.relation))
+                if negated:
+                    parts = dest["blocks"] + [f"GRAPH <{GRAPH_LINKS}> " + group(dest["links"])]
+                    out["top"].append("FILTER NOT EXISTS " + group(parts + dest["top"]))
             elif isinstance(c, Mention) and is_subject:
-                top.extend(f'FILTER(CONTAINS({blob()}, "{_lit(t)}"))' for t in c.terms)
+                tests = " && ".join(f'CONTAINS({blob()}, "{_lit(t)}")' for t in c.terms)
+                out["top"].append(f"FILTER(!({tests}))" if negated else f"FILTER({tests})")
             elif isinstance(c, Contains) and is_subject:
-                top.append(f'FILTER(CONTAINS({blob()}, "{_lit(c.term)}"))')
+                test = f'CONTAINS({blob()}, "{_lit(c.term)}")'
+                out["top"].append(f"FILTER(!{test})" if negated else f"FILTER({test})")
 
-    visit(plan, "?v0", True)
-    where = list(blocks)
-    if links:
-        where.append(f"GRAPH <{GRAPH_LINKS}> {{\n    " + "\n    ".join(links) + "\n  }")
+    out = {"blocks": [], "links": [], "top": []}
+    visit(plan, "?v0", True, out)
+    where = list(out["blocks"])
+    if out["links"]:
+        where.append(f"GRAPH <{GRAPH_LINKS}> {{\n    " + "\n    ".join(out["links"]) + "\n  }")
     select = ["?name"] + [f"?p_{s}" for s in salient]
     if plan.recent:
         tail = f"\nORDER BY DESC(?upd)\nLIMIT {RECENT_LIMIT}"
@@ -198,7 +237,7 @@ def compile_sparql(plan: Plan, limit: int | None = ROW_LIMIT) -> str:
     else:
         tail = ""
     return (f"SELECT DISTINCT {' '.join(select)} WHERE {{\n  "
-            + "\n  ".join(where + top) + "\n}" + tail)
+            + "\n  ".join(where + out["top"]) + "\n}" + tail)
 
 
 def _run_rows(store: MemoryStore, sparql: str, plan: Plan) -> list[str]:

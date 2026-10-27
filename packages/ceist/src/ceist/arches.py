@@ -17,6 +17,9 @@ What a question can name, from that:
   the ids Rós Madair interned — the planner never re-derives them.
   Alternative labels are read from the SKOS itself (Alizarin keeps only
   preferred labels on concepts), matched to Alizarin's concepts by URI;
+- **dates**: each date node, by its name, and by the words `date_forms`
+  adds ("built" → construction date); a model's only date node is the one
+  meant when no word picks;
 - **records**: resource names, for anchors ("Leeds Dock").
 
 Alizarin (`pip install alizarin`) is needed only for SKOS; without it,
@@ -31,10 +34,11 @@ from pathlib import Path
 
 from .index import NameIndex
 from .text import plurals
-from .vocabulary import Entity, Relation, Value
+from .vocabulary import DateField, Entity, Relation, Value
 
 LINK_TYPES = {"resource-instance", "resource-instance-list"}
 CONCEPT_TYPES = {"concept", "concept-list"}
+DATE_TYPES = {"date"}
 _RDF = "{http://www.w3.org/1999/02/22-rdf-syntax-ns#}"
 _SKOS = "{http://www.w3.org/2004/02/skos/core#}"
 _XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
@@ -83,7 +87,8 @@ class ArchesVocabulary:
     def __init__(self, graphs: list[dict], rdm_cache=None, resources: list[dict] = (),
                  language: str = "en", extra_type_words: dict[str, str] | None = None,
                  alt_labels: dict[str, list[str]] | None = None,
-                 relation_forms: dict[str, list[str]] | None = None):
+                 relation_forms: dict[str, list[str]] | None = None,
+                 date_forms: dict[str, list[str]] | None = None):
         self.language = language
         self.alt_labels = alt_labels or {}       # concept URI → alternative labels
         self.models = {}
@@ -98,8 +103,11 @@ class ArchesVocabulary:
         self.extra_type_words = extra_type_words or {}
         # extra phrasings per node alias: {"architect": ["designed by"]}
         self.relation_forms = relation_forms or {}
+        # words that pick a date node: {"construction_date": ["built", "constructed"]}
+        self.date_forms = date_forms or {}
         self._narrower: dict[str, list[str]] = {}
         self._concept_of: dict[str, str] = {}    # label value id → concept id
+        self._labels: dict[str, str] = {}        # concept id → label
         self.resources = list(resources)
         self._index = NameIndex([self._entity(r) for r in resources if self._entity(r)])
         self.names = {e.id: e.name for e in self._index.entities}
@@ -157,7 +165,7 @@ class ArchesVocabulary:
                 forms = {str(n.get("name") or "").lower(), n["alias"].replace("_", " ").lower()}
                 forms |= {f.lower() for f in self.relation_forms.get(n["alias"], [])}
                 out.append(Relation(n["alias"], tuple(sorted(f for f in forms if f)),
-                                    frozenset({m.name}), targets))
+                                    frozenset({m.name}), targets, style="field"))
         return out
 
     def values(self) -> list[Value]:
@@ -186,11 +194,24 @@ class ArchesVocabulary:
                     native = getattr(c, "alt_labels", None) or {}
                     native = native.get(self.language, []) if isinstance(native, dict) else native
                     alts += [native] if isinstance(native, str) else list(native)
+                    self._labels[concept_id] = label
                     phrases = {label.lower()} | {str(a).lower() for a in alts}
                     for phrase in phrases:
                         if phrase:
                             out.append(Value(phrase, n["alias"], concept_id, label,
                                              frozenset({m.name}), "concept"))
+        return out
+
+    def date_fields(self) -> list[DateField]:
+        out = []
+        for m in self.models.values():
+            nodes = [n for n in m.nodes if n.get("datatype") in DATE_TYPES and n.get("alias")]
+            for n in nodes:
+                name = str(n.get("name") or n["alias"]).lower()
+                forms = {name, n["alias"].replace("_", " ").lower()}
+                forms |= {f.lower() for f in self.date_forms.get(n["alias"], [])}
+                out.append(DateField(n["alias"], name, tuple(sorted(forms, key=len, reverse=True)),
+                                     frozenset({m.name}), default=len(nodes) == 1))
         return out
 
     def descendants(self, concept_id: str) -> list[str]:
@@ -204,6 +225,29 @@ class ArchesVocabulary:
                 out.append(c)
                 todo += self._narrower.get(c, [])
         return out
+
+    # ── lookups for read-back (a compiled query → a plan again) ───────────
+    def entity(self, resource_id: str) -> Entity | None:
+        return self._index.by_id.get(resource_id)
+
+    def ids_of(self, type_name: str) -> set[str]:
+        """Every record of a type (from the business data)."""
+        return {e.id for e in self._index.entities if e.type == type_name}
+
+    def concept_label(self, concept_id: str) -> str:
+        if not self._labels:
+            self.values()
+        return self._labels.get(concept_id, concept_id)
+
+    def model_by_slug(self, slug: str) -> Model | None:
+        return next((m for m in self.models.values() if m.slug == slug), None)
+
+    def node(self, type_name: str, alias: str) -> dict | None:
+        return next((n for n in self.model(type_name).nodes if n.get("alias") == alias), None)
+
+    def date_label(self, type_name: str, alias: str) -> str:
+        n = self.node(type_name, alias) or {}
+        return str(n.get("name") or alias).lower()
 
     def concept_of(self, value_id: str) -> str | None:
         """The concept a tile's stored value id (a label's id, or the concept's own) names."""
