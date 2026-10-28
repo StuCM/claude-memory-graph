@@ -12,9 +12,11 @@
     direction = true                      # "from" never matches "to"
 
     [matching.vectors]
-    model = "wordllama-256"
-    min = 0.6
+    model = "wordllama-256"               # or "bge-small-en-v1.5" (ceist.onnx): reads a
+                                          #   phrase whole; right more often on HER
+    min = 0.6                             # default: the model's own (MODEL_THRESHOLDS)
     gap = 0.08
+    # model_dir = "models/bge-small"      # weights somewhere other than the cache
 
     [matching.fallback]
     chooser = "host"                      # host: offer "did you mean" to the caller
@@ -24,8 +26,9 @@
     clarify_min = 0.15                    # lower: more "did you mean"; also on unanswerable questions
 
 Every key is optional; the defaults are the ones the HER evaluation supports.
-A layer that can't run here (vectors without the wordllama package) is left
-out with a note, never silently replaced.
+A layer that can't run here (vectors without the wordllama package, or a
+transformer whose weights aren't fetched) is left out with a note, never
+silently replaced.
 """
 
 import tomllib
@@ -34,6 +37,8 @@ from pathlib import Path
 
 from .matching import Chain, Exact, Vectors
 
+WORDLLAMA = "wordllama-256"
+MODEL_THRESHOLDS = {WORDLLAMA: (0.6, 0.08)}     # transformers: ceist.onnx.MODELS
 CHOOSERS = {"host", "none"}
 PLANNED_CHOOSERS = {"local-llm", "api"}      # designed for; not built yet
 
@@ -44,9 +49,10 @@ class Config:
     layers: list[str] = field(default_factory=lambda: ["exact", "vectors"])
     roots: bool = False
     direction: bool = True
-    model: str = "wordllama-256"
-    low: float = 0.6
-    gap: float = 0.08
+    model: str = WORDLLAMA
+    model_dir: Path | None = None
+    low: float | None = None          # None: the model's own threshold
+    gap: float | None = None
     chooser: str = "host"
     clarify_top: int = 3
     clarify_min: float = 0.15
@@ -66,8 +72,12 @@ def load(path: str | Path | None = None, **overrides) -> Config:
         cfg.roots = bool(ex.get("roots", cfg.roots))
         cfg.direction = bool(ex.get("direction", cfg.direction))
         cfg.model = ve.get("model", cfg.model)
-        cfg.low = float(ve.get("min", cfg.low))
-        cfg.gap = float(ve.get("gap", cfg.gap))
+        if ve.get("model_dir"):
+            cfg.model_dir = (path.parent / ve["model_dir"]).resolve()
+        if "min" in ve:
+            cfg.low = float(ve["min"])
+        if "gap" in ve:
+            cfg.gap = float(ve["gap"])
         cfg.chooser = fb.get("chooser", cfg.chooser)
         cfg.clarify_top = int(fb.get("clarify_top", cfg.clarify_top))
         cfg.clarify_min = float(fb.get("clarify_min", cfg.clarify_min))
@@ -81,8 +91,14 @@ def load(path: str | Path | None = None, **overrides) -> Config:
                          f"use one of {', '.join(sorted(CHOOSERS))}")
     if cfg.chooser not in CHOOSERS:
         raise ValueError(f"unknown chooser '{cfg.chooser}'")
-    if cfg.model != "wordllama-256":
-        raise ValueError(f"unknown vectors model '{cfg.model}' (available: wordllama-256)")
+    from .onnx import MODELS
+    known = {WORDLLAMA: MODEL_THRESHOLDS[WORDLLAMA],
+             **{n: (m["min"], m["gap"]) for n, m in MODELS.items()}}
+    if cfg.model not in known:
+        raise ValueError(f"unknown vectors model '{cfg.model}' (available: {', '.join(known)})")
+    low, gap = known[cfg.model]
+    cfg.low = low if cfg.low is None else cfg.low
+    cfg.gap = gap if cfg.gap is None else cfg.gap
     return cfg
 
 
@@ -95,12 +111,27 @@ def chain(cfg: Config, cache_dir: str | Path | None = None, encoder=None) -> Cha
             layers.append(Exact(roots=cfg.roots, direction=cfg.direction))
         elif name == "vectors":
             if encoder is None:
-                from . import vectors
-                if not vectors.available():
-                    cfg.notes.append("vectors layer off: wordllama not installed "
-                                     "(pip install ceist[vectors])")
+                encoder = _encoder(cfg, cache_dir)
+                if encoder is None:
                     continue
-                encoder = vectors.encoder(cache_dir)
             layers.append(Vectors(encoder, cfg.low, cfg.gap, cfg.direction))
     top = cfg.clarify_top if cfg.chooser == "host" else 0
     return Chain(layers, clarify_top=top, clarify_min=cfg.clarify_min)
+
+
+def _encoder(cfg: Config, cache_dir):
+    """The vectors layer's encoder, or None with a note saying why not."""
+    if cfg.model == WORDLLAMA:
+        from . import vectors
+        if not vectors.available():
+            cfg.notes.append("vectors layer off: wordllama not installed "
+                             "(pip install ceist[vectors])")
+            return None
+        return vectors.encoder(cache_dir)
+    from . import onnx
+    why = onnx.missing(cfg.model, cache_dir, cfg.model_dir)
+    if why:
+        cfg.notes.append(f"vectors layer off: {cfg.model}: {why}")
+        return None
+    return onnx.encoder(cfg.model, cache_dir, cfg.model_dir)
+

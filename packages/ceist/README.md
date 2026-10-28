@@ -138,7 +138,9 @@ question → exact phrases (relations, values, dates, types, records)
   On the HER evaluation this narrowing is the biggest single gain.
 - **Layers** (`ceist.matching`):
   - `exact`: equal or covering phrasings, optionally on word roots, and never "from" against "to";
-  - `vectors`: WordLlama static vectors (`pip install ceist[vectors]`), with a minimum score and a gap to the runner-up.
+  - `vectors`: meaning-level matching against the vocabulary's phrasings, with a minimum score and a gap to the runner-up. The model is a choice:
+    - `wordllama-256` (default): static word vectors, a 16 MB lookup table (`pip install ceist[vectors]`).
+    - `bge-small-en-v1.5`: a small sentence transformer that reads the phrase as a whole, as 34 MB of int8 ONNX, the same file transformers.js runs in a browser (`pip install ceist[onnx]`, then `ceist vectors fetch bge-small-en-v1.5`). On HER, with thresholds tuned on half the questions, it gets 40/49 right with 1 dangerous on the half it never saw, against WordLlama's 36/49 with 3; on all 102 it gets 86 right, 2 dangerous, 96 within one click. Each new text costs a model run, so every vector is kept in the cache folder, and `ceist vectors embed <bundle>` embeds a vocabulary ahead of time (3,696 texts in about 3 s on CPU).
 
   The first layer to decide confidently wins, and every decision names its layer in the grounding notes.
 - **Fallback:** when no layer is sure, the closest items become suggestions. `chooser = "host"` hands them to the caller: a person in a UI, or Claude through `memory_ask`, which then asks again in the graph's own words. `chooser = "none"` refuses instead. `local-llm` and `api` are reserved for later.
@@ -154,7 +156,8 @@ layers = ["exact", "vectors"]
 roots = true
 direction = true
 [matching.vectors]
-min = 0.6
+model = "wordllama-256"   # or "bge-small-en-v1.5"
+min = 0.6                 # leave out to use the model's own thresholds
 gap = 0.08
 [matching.fallback]
 chooser = "host"
@@ -171,7 +174,11 @@ ceist vocab assemble descriptions/ vocab/ -o her.bundle.json --graphs <graphs di
 ceist vocab check her.bundle.json <graphs dir>                                      # stale since the graphs changed?
 ceist eval --bundle her.bundle.json --questions cases.json --config ceist.toml \
            --min-right 80 --max-dangerous 3                                         # the acceptance gate
+ceist vectors fetch bge-small-en-v1.5                                               # a transformer for the vectors layer
+ceist vectors embed her.bundle.json --config ceist-bge.toml                         # its phrasings, once
 ```
+
+To tune a model's thresholds without grading it on the same questions, use `ceist eval --half even` to tune and `--half odd` to report. `bench/her_tune.py` does the whole sweep.
 
 `ArchesVocabulary.from_data_dir(path, bundle="her.bundle.json")` uses a bundle's link and date phrasings directly.
 

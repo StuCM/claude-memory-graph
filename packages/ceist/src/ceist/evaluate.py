@@ -75,10 +75,15 @@ class Result:
     built: dict = field(default_factory=dict)
 
 
-def evaluate(bundle_path, questions_path, cfg: _config.Config | None = None, encoder=None) -> Result:
+def evaluate(bundle_path, questions_path, cfg: _config.Config | None = None, encoder=None,
+             half: str | None = None) -> Result:
+    """`half` ("even" or "odd") scores every other question only, so a
+    threshold can be tuned on one half and reported on the other."""
     cfg = cfg or _config.load(None)
     b = _bundle.load(bundle_path)
     cases = json.loads(Path(questions_path).read_text())["cases"]
+    if half:
+        cases = cases[0 if half == "even" else 1::2]
     chain = _config.chain(cfg, encoder=encoder)
     res = Result(cfg, dict.fromkeys(["right", "partial", "dangerous", "missed", "refused"], 0),
                  built=b.get("built", {}))

@@ -27,7 +27,7 @@ jobs:
           python-version: "3.12"
       # Alizarin reads the SKOS thesauri; the Rós Madair end-to-end tests skip
       # without its bindings and emitter (a long Rust build).
-      - run: uv venv && uv pip install "./packages/ceist[vectors,roots]" alizarin pytest
+      - run: uv venv && uv pip install "./packages/ceist[vectors,onnx,roots]" alizarin pytest
       - run: .venv/bin/python -m pytest -q packages/ceist/tests
       # The project flow end to end on the real Arches HER models: read them
       # through Alizarin, assemble the committed vocabulary into a bundle, and
@@ -39,6 +39,12 @@ jobs:
           .venv/bin/ceist vocab describe "$P/graphs/resource_models" "$RUNNER_TEMP/her-models" --reference "$P/reference_data"
           .venv/bin/ceist vocab assemble "$RUNNER_TEMP/her-models" packages/ceist/bench/her/vocab -o "$RUNNER_TEMP/her.bundle.json" --graphs "$P/graphs/resource_models"
           .venv/bin/ceist eval --bundle "$RUNNER_TEMP/her.bundle.json" --questions packages/ceist/bench/her/cases.json --config packages/ceist/bench/her/ceist.toml --min-right 80 --max-dangerous 3
+      # The same gate with bge-small in the vectors layer (weights from huggingface.co).
+      - name: HER acceptance gate, bge-small
+        run: |
+          .venv/bin/ceist vectors fetch bge-small-en-v1.5
+          .venv/bin/ceist vectors embed "$RUNNER_TEMP/her.bundle.json" --config packages/ceist/bench/her/ceist-bge.toml
+          .venv/bin/ceist eval --bundle "$RUNNER_TEMP/her.bundle.json" --questions packages/ceist/bench/her/cases.json --config packages/ceist/bench/her/ceist-bge.toml --min-right 84 --max-dangerous 3
 
   mod:
     name: Mod validate + tests

@@ -1,0 +1,17 @@
+# The HER project with bge-small in the vectors layer: right more often than
+# WordLlama at the same safety (bench/README.md). Needs `pip install
+# ceist[onnx]` and `ceist vectors fetch bge-small-en-v1.5`.
+[matching]
+layers = ["exact", "vectors"]
+
+[matching.exact]
+roots = true
+direction = true
+
+[matching.vectors]
+model = "bge-small-en-v1.5"   # thresholds: the model's own (tuned by bench/her_tune.py)
+
+[matching.fallback]
+chooser = "host"
+clarify_top = 3
+clarify_min = 0.15

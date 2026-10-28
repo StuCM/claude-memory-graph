@@ -184,7 +184,15 @@ These thresholds were tuned on the same questions they're scored on, so all thre
 - **The ranking ceiling barely moves.** The top guess is right 91–93/102 for every matcher. The gain comes from scores that separate right from wrong better, so a threshold can say yes more often. The misses at the top are still vocabulary gaps.
 - **No LLM tie-breaker.** Qwen raises "right" only by also raising "dangerous". The cross-encoder, as wired (logit thresholds 0 and 1), never cleared its bar; it would need its own calibration to say anything.
 
-**Next:** a `bge-small` vectors layer in `ceist.matching`, with the vocabulary embedded at build time, and its thresholds tuned on questions held out from the ones it's scored on.
+**Built:** `model = "bge-small-en-v1.5"` in the vectors layer (`ceist.onnx`). Its thresholds come from `her_tune.py`, which sweeps on the even half of the HER questions and reports on the odd half:
+
+| model | min | gap | held out (odd half) | all 102 | one click |
+| --- | --- | --- | --- | --- | --- |
+| wordllama-256 | 0.3 | 0.15 | 36/49 right, 3 dangerous | 80, 4 dangerous | 91 |
+| **bge-small-en-v1.5** | 0.3 | 0.10 | **40/49 right, 1 dangerous** | **86, 2 dangerous** | **96** |
+| all-minilm-l6-v2 | 0.3 | 0.10 | 43/49 right, 3 dangerous | 89, 4 dangerous | 96 |
+
+MiniLM gets more right but fails the 3-dangerous gate. CI runs the HER gate with `her/ceist-bge.toml` as well as the WordLlama one (at least 84 right, at most 3 dangerous).
 
 ## In the browser
 
