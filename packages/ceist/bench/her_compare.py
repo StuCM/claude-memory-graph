@@ -17,7 +17,8 @@ import re
 import time
 from pathlib import Path
 
-from compare import Skip, Threshold, WordLlama, describe as _describe, _norm
+from compare import (GgufChooser, OnnxBiEncoder, OnnxCrossEncoder, Skip, Threshold, WordLlama,
+                     describe as _describe, _norm)
 
 HER = Path(__file__).parent / "her"
 DATE = {"date", "edtf"}
@@ -171,6 +172,75 @@ class Adapted(VocabWordLlama):
         return v / (np.linalg.norm(v) or 1)
 
 
+class VocabOnnx(Threshold):
+    """vocabulary + a small transformer bi-encoder (ONNX, the int8 files
+    transformers.js loads): the same slot as WordLlama, a bigger model."""
+
+    def __init__(self, folder: str, label: str, pooling="mean", low=0.6, gap=0.04):
+        self.enc = OnnxBiEncoder(folder, label, pooling=pooling)
+        self.name, self.low, self.gap = f"vocabulary + {label}", low, gap
+        self.exact = VocabExact()
+        self._cache = {}
+
+    def cvec(self, text):
+        if text not in self._cache:
+            self._cache[text] = self.enc.embed(text)
+        return self._cache[text]
+
+    def pick(self, case, nodes, entries):
+        hit, _ = self.exact.pick(case, nodes, entries)
+        if hit:
+            return hit, None
+        by = {n["alias"]: n for n in nodes}
+        p = self.cvec(case["phrase"])
+        best = {}
+        for e in entries:
+            if not _entry_fits(e, by, case["slot"]):
+                continue
+            s = max(float(p @ self.cvec(ph)) for ph in e["phrases"])
+            k = _target(e)
+            best[k] = max(best.get(k, -1), s)
+        scored = [(s, k) for k, s in best.items()]
+        return self.choose(scored), scored
+
+
+def _target_text(k, nodes_by_alias, entries) -> str:
+    node, qual, end = k
+    n = nodes_by_alias.get(node, {})
+    text = n.get("label") or n.get("name") or node
+    if n.get("card") and n.get("card") != text:
+        text = f"{n['card']}: {text}"
+    if qual:
+        text += f" (role: {qual})"
+    phr = next((e["phrases"][:3] for e in entries if _target(e) == k), [])
+    return text + (f" — e.g. {', '.join(phr)}" if phr else "")
+
+
+class WithChooser(VocabWordLlama):
+    """vocabulary + WordLlama; when WordLlama isn't sure, a chooser picks
+    among its top 5 (or none) — the config's reserved local-llm slot."""
+
+    def __init__(self, chooser, label: str):
+        super().__init__()
+        self.chooser, self.name = chooser, f"vocabulary + WordLlama, unsure → {label}"
+        self.asked = 0
+
+    def pick(self, case, nodes, entries):
+        got, scored = super().pick(case, nodes, entries)
+        if got is not None or not scored:
+            return got, scored
+        top = [k for s, k in sorted(scored, key=lambda x: -x[0])[:5] if s >= 0.15]
+        if not top:
+            return None, scored
+        self.asked += 1
+        by = {n["alias"]: n for n in nodes}
+        cands = [{"alias": i, "name": _target_text(k, by, entries), "group": ""}
+                 for i, k in enumerate(top)]
+        q = case.get("q") or case["phrase"]
+        pick, _ = self.chooser.pick(q, case["phrase"], cands)
+        return (top[pick] if pick is not None else None), scored
+
+
 def judge(case, got) -> str:
     want = case["expect"]
     if want is None:
@@ -193,6 +263,15 @@ def main():
     out = []
     matchers = []
     makers = [NodeNames, VocabExact, VocabWordLlama]
+    if os.environ.get("CEIST_BENCH_MODELS"):
+        makers += [
+            lambda: VocabOnnx("minilm", "MiniLM-L6 (ONNX)"),
+            lambda: VocabOnnx("bge-small", "bge-small (ONNX)", pooling="cls"),
+            lambda: WithChooser(OnnxCrossEncoder(), "cross-encoder (MiniLM, ONNX)"),
+            *[lambda f=f, s=s: WithChooser(GgufChooser(f, f"Qwen3 {s}", s), f"Qwen3 {s} (GGUF)")
+              for f, s in [("qwen3-0.6b.gguf", "0.6B"), ("qwen3-1.7b.gguf", "1.7B"),
+                           ("qwen3-4b.gguf", "4B")]],
+        ]
     makers += [lambda p=p: Adapted(p) for p in os.environ.get("CEIST_ADAPTERS", "").split(",") if p]
     for make in makers:
         try:
@@ -208,24 +287,30 @@ def main():
              f"nodes; vocabulary: {sum(len(e) for e in vocab.values())} entries, {phrases} phrasings, "
              f"{vbytes // 1024} KB; {len(cases)} held-out questions ({n_match} where a node fits, "
              f"{n_none} where none does).", "",
-             "| matcher | right | partial (qualifier missing) | dangerous | missed | abstained correctly | ms/question |",
-             "| --- | --- | --- | --- | --- | --- | --- |"]
+             "| matcher | right | partial (qualifier missing) | dangerous | missed | abstained correctly | top guess right | ms/question |",
+             "| --- | --- | --- | --- | --- | --- | --- | --- |"]
     details = {}
     for m in matchers:
         tally = dict.fromkeys(["right", "partial", "wrong", "false_match", "missed", "abstained_ok"], 0)
-        rows, t0 = [], time.perf_counter()
+        rows, t0, top_right = [], time.perf_counter(), 0
         for c in cases:
             nodes = models[c["model"]]["nodes"]
             got, scored = m.pick(c, nodes, vocab.get(c["model"], []))
             r = judge(c, got)
             tally[r] += 1
+            if c["expect"] is not None:
+                best = max(scored or [], key=lambda x: x[0], default=None)
+                first = got if got is not None else (best[1] if best else None)
+                if isinstance(first, str):                    # node-name matchers
+                    first = (first, None, None)
+                top_right += judge(c, first) == "right" if first else 0
             rows.append({"model": c["model"], "q": c["q"], "phrase": c["phrase"], "expect": c["expect"],
                          "got": got, "result": r,
                          "top": [(round(s, 3), k) for s, k in sorted(scored or [], key=lambda x: -x[0])[:3]]})
         ms = (time.perf_counter() - t0) * 1000 / len(cases)
         lines.append(f"| {m.name} | {tally['right']}/{n_match} | {tally['partial']} | "
                      f"**{tally['wrong'] + tally['false_match']}** | {tally['missed']} | "
-                     f"{tally['abstained_ok']}/{n_none} | {ms:.1f} |")
+                     f"{tally['abstained_ok']}/{n_none} | {top_right}/{n_match} | {ms:.1f} |")
         details[m.name] = rows
     text = "\n".join(lines + [""] + out)
     print(text)
