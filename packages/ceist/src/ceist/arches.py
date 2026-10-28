@@ -40,7 +40,7 @@ from .vocabulary import DateField, Entity, Relation, Value
 
 LINK_TYPES = {"resource-instance", "resource-instance-list"}
 CONCEPT_TYPES = {"concept", "concept-list"}
-DATE_TYPES = {"date"}
+DATE_TYPES = {"date", "edtf"}     # HER keeps event dates (construction, loss) as EDTF
 _RDF = "{http://www.w3.org/1999/02/22-rdf-syntax-ns#}"
 _SKOS = "{http://www.w3.org/2004/02/skos/core#}"
 _XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
@@ -108,6 +108,9 @@ class ArchesVocabulary:
         self.relation_forms = relation_forms or {}
         # words that pick a date node: {"construction_date": ["built", "constructed"]}
         self.date_forms = date_forms or {}
+        # a bundle's phrasings, per (model, alias): HER reuses aliases such as
+        # start_date and actor across models, each with its own meaning
+        self._bundle_forms: dict[tuple[str, str], list[str]] = {}
         self._pending_qualified: list[tuple[str, dict]] = []
         self._qualified: list[Relation] | None = None
         self.skipped_qualified = 0
@@ -156,10 +159,10 @@ class ArchesVocabulary:
                     self._pending_qualified.append((name, e))
                     continue
                 kind = (m["nodes"].get(e["node"]) or {}).get("kind")
-                target = {"link": self.relation_forms, "date": self.date_forms}.get(kind)
-                if target is not None:
-                    target.setdefault(e["node"], [])
-                    target[e["node"]] = list(dict.fromkeys(target[e["node"]] + e["phrases"]))
+                if kind in ("link", "date"):
+                    key = (name, e["node"])
+                    self._bundle_forms[key] = list(dict.fromkeys(
+                        self._bundle_forms.get(key, []) + e["phrases"]))
 
     def _entity(self, r: dict) -> Entity | None:
         ri = r.get("resourceinstance") or {}
@@ -183,18 +186,26 @@ class ArchesVocabulary:
         return words
 
     def relations(self) -> list[Relation]:
-        out = []
+        # one Relation per alias: a backend names a link by its alias, and the
+        # planner keys relations by name, so the same alias on several models
+        # (HER's actor, on most of them) is one relation spanning them all
+        by_alias: dict[str, dict] = {}
         for m in self.models.values():
             for n in m.nodes:
                 if n.get("datatype") not in LINK_TYPES or not n.get("alias"):
                     continue
-                targets = frozenset(self.by_graph[g["graphid"]].name
-                                    for g in (n.get("config") or {}).get("graphs") or []
-                                    if g.get("graphid") in self.by_graph)
+                targets = {self.by_graph[g["graphid"]].name
+                           for g in (n.get("config") or {}).get("graphs") or []
+                           if g.get("graphid") in self.by_graph}
                 forms = {str(n.get("name") or "").lower(), n["alias"].replace("_", " ").lower()}
                 forms |= {f.lower() for f in self.relation_forms.get(n["alias"], [])}
-                out.append(Relation(n["alias"], tuple(sorted(f for f in forms if f)),
-                                    frozenset({m.name}), targets, style="field"))
+                forms |= {f.lower() for f in self._bundle_forms.get((m.name, n["alias"]), [])}
+                r = by_alias.setdefault(n["alias"], {"forms": set(), "domain": set(), "range": set()})
+                r["forms"] |= forms
+                r["domain"].add(m.name)
+                r["range"] |= targets
+        out = [Relation(alias, tuple(sorted(f for f in r["forms"] if f)), frozenset(r["domain"]),
+                        frozenset(r["range"]), style="field") for alias, r in by_alias.items()]
         return out + self._qualified_relations()
 
     def _qualified_relations(self) -> list[Relation]:
@@ -265,6 +276,7 @@ class ArchesVocabulary:
                 name = str(n.get("name") or n["alias"]).lower()
                 forms = {name, n["alias"].replace("_", " ").lower()}
                 forms |= {f.lower() for f in self.date_forms.get(n["alias"], [])}
+                forms |= {f.lower() for f in self._bundle_forms.get((m.name, n["alias"]), [])}
                 out.append(DateField(n["alias"], name, tuple(sorted(forms, key=len, reverse=True)),
                                      frozenset({m.name}), default=len(nodes) == 1))
         return out

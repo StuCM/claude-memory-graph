@@ -16,7 +16,7 @@ Every step below has been run end to end on the real Arches HER package (16 mode
 | 6 | **Adapt (optional)** (`adapt.py`) | step 2, or better, real questions | a 118 KB adapter or a token patch | automatic (JAX, CPU) | minutes; **on HER it didn't beat the baseline**, so ship it only if step 7 says so |
 | 7 | **Gate** | steps 5–6 | ship only if dangerous answers don't rise and right answers do, on step 3's questions | rule | — |
 | 8 | **Package** (the bundle and `ceist.toml`; `ceist vocab check` catches a stale bundle) | steps 2, 6, 7 | `vocab.json`, the WordLlama table (16 MB, or about 4 MB as int8), any adapter, thresholds, and the report | automatic | — |
-| 9 | **Loop** | query logs | phrases that missed or were refused go back to step 2 as "assign these"; a person approves; re-evaluate | LLM plus a person, monthly or per release | small |
+| 9 | **Loop** (`ceist vocab try` / `learn.record` → `ceist vocab learn` → review → `ceist vocab merge` → assemble → eval) | the learning log: phrases nothing placed, and "did you mean" picks | picks become confirmed phrasings; the rest an LLM assigns to a node or "none"; a person approves; re-evaluate on step 3's questions | the app logs; LLM plus a person, monthly or per release | small |
 
 ## Rules that keep it honest
 

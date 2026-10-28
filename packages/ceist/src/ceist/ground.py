@@ -128,6 +128,9 @@ class Grounding:
     about: bool = False       # "what do we know about X"
     notes: list[str] = field(default_factory=list)
     suggestions: list[tuple[str, list[str]]] = field(default_factory=list)   # (words, did-you-mean)
+    # phrases no layer placed, for the learning log (ceist.learn.from_grounding):
+    # {"phrase", "model", "slot", "options": [{"node", "qualifier", "end_node", "label"}]}
+    unplaced: list[dict] = field(default_factory=list)
 
     def vars(self) -> list[Node]:
         return [n for n in self.nodes if n.kind == "var"]
@@ -219,8 +222,25 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
     relations = {r.name: r for r in vocab.relations()}
     taken: list[tuple[int, int]] = []
     matched: set[str] = set()
+    # A phrasing that is just a type's name ("monuments", for a link called
+    # "associated monuments") is the type where the question names its
+    # subject — "which monuments …", "how many sites …" — not the relation:
+    # taking it would leave the question with no subject. Elsewhere ("on site
+    # Leeds Dock") it stays the relation.
+    type_names = set(vocab.type_words())
+
+    def just_a_type(form: str) -> bool:
+        words = form.split()
+        while words and words[0] in _LEAD_WORDS:
+            words = words[1:]
+        return " ".join(words) in type_names
+
     forms = [(f, r.name) for r in relations.values() for f in r.forms]
     for form, rel, m in ([] if g.about else _phrase_spans(raw, forms, taken)):
+        if just_a_type(form) and (form.split()[0] in _LEAD_WORDS
+                                  or _SUBJECT_LEAD.search(raw[:m.start()])):
+            taken.remove((m.start(), m.end()))
+            continue
         if rel in matched:
             taken.remove((m.start(), m.end()))
             continue
@@ -244,19 +264,27 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
         found = _dates.find(raw, taken, today)
         if found:
             picks = []
-            forms = [(f, df) for df in date_fields for f in df.forms]
-            for form, df, m in _phrase_spans(raw, forms, taken):
-                picks.append((consume_span(m.start(), m.end()), df, form))
+            # a word can pick a date field on several types ("built": a
+            # monument's construction, an aircraft's start date); keep them
+            # all, and the subject's type chooses (plan._attach_dates)
+            by_form: dict[str, list] = {}
+            for df in date_fields:
+                for f in df.forms:
+                    by_form.setdefault(f, []).append(df)
+            for form, dfs, m in _phrase_spans(raw, list(by_form.items()), taken):
+                picks.append((consume_span(m.start(), m.end()), dfs, form))
             for dm in found:
                 pos = consume_span(dm.start, dm.end)
                 # the field word nearest before the date, else after it
                 before = [x for x in picks if x[0] < pos]
                 pick = (max(before, key=lambda x: x[0]) if before
                         else min(picks, key=lambda x: x[0]) if picks else None)
-                fields = [pick[1]] if pick else date_fields
+                fields = list(pick[1]) if pick else date_fields
                 g.dates.append(DateGround(dm.phrase, pos, dm.lo, dm.hi, fields))
                 g.notes.append(f"'{dm.phrase}' → date {_dates.label(dm.lo, dm.hi)}"
-                               + (f" ('{pick[2]}' → {pick[1].label})" if pick else ""))
+                               + (f" ('{pick[2]}' → "
+                                  f"{' / '.join(sorted({d.label for d in pick[1]}))})"
+                                  if pick else ""))
 
     # ── type nouns, modifiers, negators, hints
     nouns, hints = vocab.type_words(), vocab.hint_words()
@@ -391,6 +419,14 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
     return g
 
 
+# question words and determiners a phrasing may lead with ("which monuments")
+_LEAD_WORDS = {"which", "what", "who", "whose", "the", "a", "an", "any", "all", "some",
+               "show", "list", "find", "me"}
+# the text before a phrase ends where a question names its subject
+_SUBJECT_LEAD = re.compile(r"(^|\b(which|what|how many|show me|list|find|any|all|are there))"
+                           r"(\s+(the|any|all|of the))?\s*$", re.I)
+
+
 def _match_leftovers(g: Grounding, matcher, words, consumed, parts_of, relations) -> None:
     """The second chance: leftover runs, matched by the configured chain
     against what the structure says they could be."""
@@ -415,8 +451,16 @@ def _match_leftovers(g: Grounding, matcher, words, consumed, parts_of, relations
             dm.fields = [res.match.item.payload]
             take(run)
             runs.remove(run)
-        elif res.options:
-            g.suggestions.append((phrase, [o.label for o in res.options]))
+        else:
+            if res.options:
+                g.suggestions.append((phrase, [o.label for o in res.options]))
+            owners = {o for f in dm.fields for o in f.owners}
+            g.unplaced.append({
+                "phrase": phrase, "slot": "date",
+                "model": next(iter(owners)) if len(owners) == 1 else
+                (g.subject.type if g.subject else ""),
+                "options": [{"node": o.payload.field, "qualifier": None, "end_node": None,
+                             "label": o.label} for o in res.options]})
     # two named things and no relation between them: the run between them
     nodes = sorted(g.nodes, key=lambda n: n.pos)
     if len(nodes) >= 2 and not g.edges:
@@ -436,8 +480,18 @@ def _match_leftovers(g: Grounding, matcher, words, consumed, parts_of, relations
                 rel = res.match.item.payload
                 g.edges.append(_edge(rel, float(run[0][0]), form=phrase))
                 take(run)
-            elif res.options:
-                g.suggestions.append((phrase, [o.label for o in res.options]))
+            else:
+                if res.options:
+                    g.suggestions.append((phrase, [o.label for o in res.options]))
+                domains = {d for r in fits for d in r.domain}
+                model = next(iter(domains)) if len(domains) == 1 else a.type
+                other = b.type if model == a.type else a.type
+                g.unplaced.append({
+                    "phrase": phrase, "slot": f"link:{other}", "model": model,
+                    "options": [{"node": o.payload.path or o.payload.name,
+                                 "qualifier": o.payload.qualifier[1] if o.payload.qualifier
+                                 else None, "end_node": None, "label": o.label}
+                                for o in res.options]})
 
 
 def _scope_negations(g: Grounding, negs: list[tuple[int, str]], contains_pos) -> None:

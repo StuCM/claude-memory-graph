@@ -182,6 +182,24 @@ To tune a model's thresholds without grading it on the same questions, use `ceis
 
 `ArchesVocabulary.from_data_dir(path, bundle="her.bundle.json")` uses a bundle's link and date phrasings directly.
 
+### Growing the vocabulary from use
+
+Nothing is trained: the vocabulary is phrasings per node, and use adds the ones real people say. Two kinds of data, kept apart:
+
+- **The learning log** grows the vocabulary. It records each phrase nothing placed, and each "did you mean" option a person picked. A pick is a phrasing already confirmed by a person. An app logs with `ceist.learn.from_grounding(log, question, meaning.grounding)` after `interpret`, and `ceist.learn.record(log, …, chosen=item)` when someone picks an option. Without an app, `ceist vocab try <data dir> questions.txt --log learn.jsonl` reads a file of real questions, prints how each was understood, and logs what it couldn't place.
+- **The acceptance questions** (`cases.json`: a question and the node it should hit) only measure it. `--exclude cases.json` drops any logged phrase that appears in them, so the measure never marks its own work.
+
+```
+ceist vocab learn learn.jsonl --bundle her.bundle.json -o proposals.json --exclude cases.json
+#   picks → "confirmed" (approve: true); the rest → "to_assign", with the instruction for an LLM
+#   to set each one's node, or "none"; a person reviews and sets approve: true
+ceist vocab merge proposals.json vocab/ --bundle her.bundle.json   # into the right entries
+ceist vocab assemble descriptions/ vocab/ -o her.bundle.json --graphs <graphs dir>
+ceist eval --bundle her.bundle.json --questions cases.json --config ceist.toml   # did it help?
+```
+
+A phrase picked as two different nodes is flagged as a conflict and waits for a person.
+
 ### Qualified links: a link and a value on the same entry
 
 Arches often records *who did what* as one entry (a tile) holding a generic actor link and a role. So "designed by Ada" means **one entry** whose actor is Ada **and** whose role is Architect. Ada as builder on one entry plus somebody else's architect entry on the same record doesn't count. A bundle entry with a `qualifier` becomes a qualified link in the plan, read back as "whose actor is Person 'Ada Lovelace' (actor role: Architect)":
