@@ -25,6 +25,7 @@ the gate is lexical-only, as before.
 """
 
 import logging
+import re
 
 # the encoder itself lives in ceist (packages/ceist/src/ceist/vectors.py),
 # shared with the question planner; the memory graph keeps its cache in the
@@ -72,11 +73,33 @@ def build_index(docs: list[dict]) -> dict | None:
     return {"vectors": vectors, "owner": np.asarray(owner, dtype=np.int32)}
 
 
+_SEGMENT_RE = re.compile(r"[.!?;\n]+")
+_SEGMENT_MIN_TERMS = 12   # the word gate's rule: shorter prompts score as one view
+
+
+def views(prompt: str) -> list[str]:
+    """The prompt, plus each sentence when it's a real chunk of text.
+
+    A text's vector is the AVERAGE of its words, so every unrelated sentence
+    in a long prompt pulls the vector away from the one that matters: "the map
+    still draws things we removed" scores 0.73 against its memory on its own
+    and 0.31 inside six sentences of other news — under SEM_MIN, so it was
+    missed. Scoring each sentence too, and keeping a field's best, recovers it
+    (0.60) without making unrelated long prompts fire. Same segmentation as
+    the word gate (recall.query_views)."""
+    from ceist.text import terms_pos
+    out = [prompt]
+    if len(terms_pos(prompt)) >= _SEGMENT_MIN_TERMS:
+        out += [s.strip() for s in _SEGMENT_RE.split(prompt) if len(terms_pos(s)) >= 2]
+    return out
+
+
 def rank(index: dict, prompt: str, n_docs: int) -> list[tuple[float, int]]:
-    """(best-field cosine, doc index) for every doc, best first."""
+    """(best-field cosine over the prompt's views, doc index) for every doc,
+    best first."""
     np = encoder().np
-    query = encoder().encode([prompt])[0]
-    sims = index["vectors"].astype(np.float32) @ query
+    queries = encoder().encode(views(prompt))                 # views x 256
+    sims = (index["vectors"].astype(np.float32) @ queries.T).max(axis=1)
     best = np.full(n_docs, -1.0, dtype=np.float32)
     np.maximum.at(best, index["owner"], sims)
     order = np.argsort(-best)

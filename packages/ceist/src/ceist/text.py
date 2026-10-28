@@ -8,6 +8,14 @@ STOP = {
     "when", "i", "you", "we", "do", "does", "make", "get", "set", "use",
     "about", "did", "was", "were", "they", "them", "our", "your", "just", "some",
     "thanks", "thank", "yes", "yep", "ok", "okay", "sure", "no", "nope", "please",
+    # kept in step with claude_memory_graph/hookcore/text.py
+    # function words of conversational prose: scored per sentence, a long
+    # prompt's "…before the standup" must not match a memory named "…before
+    # migrations" on that word alone
+    "before", "after", "also", "anything", "something", "everything", "nothing",
+    "else", "need", "needs", "let", "know", "want", "think", "maybe", "might",
+    "really", "will", "should", "have", "has", "had", "been", "there", "then",
+    "than", "from", "into", "any", "all", "one", "thing", "going",
 }
 _WORD = re.compile(r"[a-z0-9]+")
 
