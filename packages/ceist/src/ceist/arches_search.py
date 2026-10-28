@@ -22,7 +22,8 @@ Mapping:
     Not(clause)                      the clause with quantifier NONE
     Not(link to a sub-plan)          the child group's traversal_quantifier NONE
     LinkTo(…, qualifier)             a TILE-scoped group: the link clause and the value clause
-                                     must hold in one tile (only as the search's sole condition)
+                                     must hold in one tile — the whole search when it's the
+                                     only condition, otherwise a nested group (ARCHES-SEARCH.md)
 
 Arches Search walks relationships both ways, so — unlike Rós Madair — "sites
 that have buildings designed by Ada" compiles. What it can't say, the compiler
@@ -66,14 +67,15 @@ def _relationship(slug: str, alias: str, inverse: bool, negated: bool) -> dict:
 def _group(plan: Plan, vocab, relationship: dict | None, concept_operator: str | None) -> dict:
     slug = vocab.model(plan.type).slug
     clauses, groups = [], []
-    qualified = [c for c in plan.where
-                 if isinstance(c.condition if isinstance(c, Not) else c, LinkTo)
-                 and (c.condition if isinstance(c, Not) else c).qualifier is not None]
-    if qualified:
-        return _tile_group(plan, vocab, slug, relationship, concept_operator, qualified)
     for c in plan.where:
         negated = isinstance(c, Not)
         c = c.condition if negated else c
+        if isinstance(c, LinkTo) and c.qualifier is not None:
+            tile = _tile_group(c, negated, vocab, slug, concept_operator)
+            if len(plan.where) == 1 and relationship is None:
+                return tile              # the whole search is one entry: TILE at the top
+            groups.append(tile)          # alongside other conditions: a nested TILE group
+            continue
         if isinstance(c, LinkTo):
             if c.relation is None:
                 raise Unsupported(f"a link by any field to '{c.target.entity.name}': "
@@ -119,17 +121,13 @@ def _group(plan: Plan, vocab, relationship: dict | None, concept_operator: str |
             "groups": groups, "aggregations": [], "relationship": relationship}
 
 
-def _tile_group(plan, vocab, slug, relationship, concept_operator, qualified) -> dict:
+def _tile_group(c: LinkTo, negated: bool, vocab, slug: str, concept_operator) -> dict:
     """A link with a qualifier ("actor Ada with role Architect") must hold in
-    one tile: arches-search's TILE scope. That scope applies to a whole group,
-    and nested groups are evaluated per resource, so the qualified link must be
-    the group's only condition — anything else would silently broaden it."""
-    if len(plan.where) != 1 or relationship is not None:
-        raise Unsupported("a link with a role or other same-entry value alongside other "
-                          "conditions: Arches Search applies tile scope only to a whole "
-                          "search group")
-    c = qualified[0]
-    if isinstance(c, Not):
+    one tile: a TILE-scoped group holding the link clause and the value clause.
+    On its own it is the whole search; alongside other conditions it nests
+    under the resource group (see ARCHES-SEARCH.md on how the plugin evaluates
+    a nested TILE group)."""
+    if negated:
         raise Unsupported("a negated same-entry condition")
     if not isinstance(c.target, EntityRef) or c.direction != "out":
         raise Unsupported("a same-entry condition on a link to a set of records")
@@ -190,7 +188,11 @@ def _read_group(group: dict, vocab, concept_operator: str | None) -> Plan:
         sub = _read_group(child, vocab, concept_operator)
         rel = child.get("relationship")
         if rel is None:
-            where.append(f"an unlinked group on {sub.type}")
+            # a nested TILE group on the same model reads back as its qualified link
+            if child.get("scope") == "TILE" and sub.type == type_name and len(sub.where) == 1:
+                where += sub.where
+            else:
+                where.append(f"an unlinked group on {sub.type}")
             continue
         link = LinkTo(rel["path"]["node_alias"], sub, "in" if rel["is_inverse"] else "out",
                       style="field")

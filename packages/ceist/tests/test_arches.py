@@ -389,6 +389,16 @@ def test_qualified_link_to_arches_search_tile_scope(roles, data):
     payload, verdict = compile_checked(m.plan, roles, concept_operator="REFERENCES_ANY")
     assert verdict.ok and payload["scope"] == "TILE"
     assert [c["subject"]["node_alias"] for c in payload["clauses"]] == ["actor", "actor_role"]
+    # alongside another condition: a RESOURCE search with a nested TILE group
     both = interpret(roles, "which listed buildings were designed by Ada Lovelace?")
-    with pytest.raises(Unsupported, match="tile scope"):
-        to_payload(both.plan, roles, concept_operator="REFERENCES_ANY")
+    payload, verdict = compile_checked(both.plan, roles, concept_operator="REFERENCES_ANY")
+    _valid(payload)
+    assert verdict.ok and payload["scope"] == "RESOURCE"
+    assert [c["subject"]["node_alias"] for c in payload["clauses"]] == ["heritage_status"]
+    (tile,) = payload["groups"]
+    assert tile["scope"] == "TILE" and tile["relationship"] is None
+    assert [c["subject"]["node_alias"] for c in tile["clauses"]] == ["actor", "actor_role"]
+    # read-back notices if the nested group loses its tile scope
+    tile["scope"] = "RESOURCE"
+    from ceist.arches_search import read_back as as_rb
+    assert not check(both.plan, as_rb(payload, roles, "REFERENCES_ANY")).ok
