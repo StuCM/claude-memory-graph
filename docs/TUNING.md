@@ -83,10 +83,16 @@ memories and 150 ms at 2,000. About half of that is loading the store, which the
 never opens. The planner's record index is pickled (`planner-index.pickle`) and rebuilt only when
 `graph.nq` changes.
 
-### Known issue: per-prompt cost grows with the store
+### Known issue: per-prompt cost grows with the store (local graphs only)
 
-Every hook call is a fresh process that reads whole files, so the gate's cost grows roughly
-linearly with the number of memories. Measured warm, per prompt:
+This applies when the gate reads a graph on the machine itself: a local store, or a memory server
+with **Memory lookups** set to `local copy`. With a server and the default `server` lookups, the
+server runs the gate against its live store, keeps its indexes in memory, and rebuilds them in the
+background after a write (docs/REMOTE.md). A warm prompt with a question takes about 35 ms there at
+2,000 memories and 140 ms at 10,000, plus the round trip.
+
+On the machine itself, every hook call is a fresh process that reads whole files, so the cost grows
+roughly linearly with the number of memories. Measured warm, per prompt:
 
 | | 2,000 memories | 10,000 memories | runs on |
 |---|---|---|---|
@@ -95,15 +101,13 @@ linearly with the number of memories. Measured warm, per prompt:
 | planner record index (`planner-index.pickle`) | 23 ms | 330 ms | prompts with a question |
 | the SPARQL itself | 8 ms | 31 ms | prompts with a question |
 
-Under a few thousand memories it isn't noticeable. Past that, the prompt hook slows down.
+Under a few thousand memories it isn't noticeable. Past that, the prompt hook slows down: use a
+memory server, even one on the same machine, or the fix below.
 
 **A possible fix, not adopted:** keep a read-only on-disk Oxigraph copy and a SQLite word →
 record index beside `graph.nq`, rebuilt in the background when it changes (~0.7 s at 10,000).
 Opening the copy takes ~33 ms at any size, and only the records sharing a word with the prompt
-are read. This is deferred because it means more local state. In remote mode the gate already
-reads a local replica, and adding more derived copies works against keeping memory on the
-server. Revisit if prompts get slow. Another option then is to let the server answer the
-question, which would avoid any local copy.
+are read. It's deferred because it adds local state, and server lookups already cover the case.
 
 To re-measure, time `planner.answer` and `gate_index` on a store of the size in question.
 
