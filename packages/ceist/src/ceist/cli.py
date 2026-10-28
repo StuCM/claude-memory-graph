@@ -4,6 +4,9 @@
     ceist vocab prompt <descriptions dir> <Model> [<Model> …] [--vocab <vocab dir>]
     ceist vocab assemble <descriptions dir> <vocab dir> -o <bundle.json> [--graphs <graphs dir>]
     ceist vocab check <bundle.json> <graphs dir>
+    ceist vocab try <data dir> <questions.txt> --bundle <bundle.json> [--log learn.jsonl]   # how each reads
+    ceist vocab learn <learn.jsonl> --bundle <bundle.json> -o proposals.json [--exclude cases.json]
+    ceist vocab merge <proposals.json> <vocab dir> --bundle <bundle.json>   # the approved ones
     ceist eval --bundle <bundle.json> --questions <cases.json> [--config ceist.toml] [--report out.md]
                [--min-right N] [--max-dangerous N]      # the acceptance gate: exit 1 if missed
                [--half even|odd]                         # every other question: tune on one half
@@ -79,6 +82,64 @@ def _eval(a):
     return 0
 
 
+def _try(a):
+    """Real questions, unlabelled: how each was read, and every phrase that
+    couldn't be placed written to the learning log."""
+    from . import config, learn
+    from .arches import ArchesVocabulary
+    from .narrate import narrate
+    from .plan import interpret
+    cfg = config.load(a.config)
+    vocab = ArchesVocabulary.from_data_dir(a.data_dir, bundle=a.bundle or cfg.bundle)
+    chain = config.chain(cfg)
+    lines = [q.strip() for q in Path(a.questions).read_text().splitlines()
+             if q.strip() and not q.lstrip().startswith("#")]
+    read = unplaced = 0
+    for q in lines:
+        m = interpret(vocab, q, matcher=chain)
+        if m.plan is not None and not m.refused:
+            read += 1
+            print(f"✓ {q}\n    {narrate(m.plan)}")
+        else:
+            print(f"✗ {q}\n    ({m.refused or 'not understood'})")
+        for phrase, options in m.grounding.suggestions:
+            print(f"    did you mean, for '{phrase}': {', '.join(options)}")
+        if a.log:
+            unplaced += learn.from_grounding(a.log, q, m.grounding)
+    print(f"\n{read}/{len(lines)} read" + (f"; {unplaced} unplaced phrase(s) logged to {a.log}"
+                                            if a.log else ""))
+    for n in cfg.notes:
+        print(n)
+    return 0
+
+
+def _learn(a):
+    from . import bundle as _bundle
+    from . import learn
+    b = _bundle.load(a.bundle)
+    props = learn.proposals(a.log, b, exclude=a.exclude)
+    Path(a.out).write_text(json.dumps(props, indent=1, ensure_ascii=False) + "\n")
+    print(learn.summary(props))
+    if props["to_assign"]:
+        print("\n── for the LLM (or agent) that assigns the rest ──\n")
+        print(learn.prompt(a.out, a.bundle))
+    print(f"\nThen review {a.out}: set \"approve\": true on what you agree with, and run "
+          f"`ceist vocab merge {a.out} <vocab dir> --bundle {a.bundle}`.")
+    return 0
+
+
+def _merge(a):
+    from . import bundle as _bundle
+    from . import learn
+    done = learn.merge(a.proposals, a.vocab, _bundle.load(a.bundle))
+    print(f"{done['added']} phrasing(s) added ({done['new_entries']} new entries, "
+          f"{done['already']} already there) in {len(done['files'])} file(s)")
+    for e in done["errors"]:
+        print(f"  ! {e}", file=sys.stderr)
+    print("Next: `ceist vocab assemble`, then `ceist eval` on the held-out questions.")
+    return 1 if done["errors"] else 0
+
+
 def _fetch(a):
     from . import onnx
     if a.model not in onnx.MODELS:
@@ -143,6 +204,27 @@ def main(argv=None):
     p.add_argument("bundle")
     p.add_argument("graphs")
     p.set_defaults(fn=_check)
+
+    p = vocab.add_parser("try", help="real questions: how each reads; log what wasn't placed")
+    p.add_argument("data_dir", help="graphs/ (and resources/, vocabularies/) as Alizarin reads them")
+    p.add_argument("questions", help="one question per line")
+    p.add_argument("--bundle")
+    p.add_argument("--config")
+    p.add_argument("--log", help="append unplaced phrases to this learning log (JSONL)")
+    p.set_defaults(fn=_try)
+
+    p = vocab.add_parser("learn", help="a learning log → proposals to review")
+    p.add_argument("log")
+    p.add_argument("--bundle", required=True)
+    p.add_argument("-o", "--out", required=True)
+    p.add_argument("--exclude", help="held-out questions (cases.json): never learn from these")
+    p.set_defaults(fn=_learn)
+
+    p = vocab.add_parser("merge", help="add the approved proposals to the vocabulary files")
+    p.add_argument("proposals")
+    p.add_argument("vocab")
+    p.add_argument("--bundle", required=True)
+    p.set_defaults(fn=_merge)
 
     p = sub.add_parser("eval", help="score a bundle and config on acceptance questions")
     p.add_argument("--bundle")
