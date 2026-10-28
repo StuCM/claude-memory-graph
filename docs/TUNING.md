@@ -83,6 +83,30 @@ memories and 150 ms at 2,000. About half of that is loading the store, which the
 never opens. The planner's record index is pickled (`planner-index.pickle`) and rebuilt only when
 `graph.nq` changes.
 
+### Known issue: per-prompt cost grows with the store
+
+Every hook call is a fresh process that reads whole files, so the gate's cost grows roughly
+linearly with the number of memories. Measured warm, per prompt:
+
+| | 2,000 memories | 10,000 memories | runs on |
+|---|---|---|---|
+| recall index (`gate-index.pickle`, unpickled whole) | 20 ms | 300 ms | every prompt |
+| load the store (`graph.nq`, parsed whole) | 55 ms | 200 ms | prompts with a question |
+| planner record index (`planner-index.pickle`) | 23 ms | 330 ms | prompts with a question |
+| the SPARQL itself | 8 ms | 31 ms | prompts with a question |
+
+Under a few thousand memories it isn't noticeable. Past that, the prompt hook slows down.
+
+**A possible fix, not adopted:** keep a read-only on-disk Oxigraph copy and a SQLite word →
+record index beside `graph.nq`, rebuilt in the background when it changes (~0.7 s at 10,000).
+Opening the copy takes ~33 ms at any size, and only the records sharing a word with the prompt
+are read. This is deferred because it means more local state. In remote mode the gate already
+reads a local replica, and adding more derived copies works against keeping memory on the
+server. Revisit if prompts get slow. Another option then is to let the server answer the
+question, which would avoid any local copy.
+
+To re-measure, time `planner.answer` and `gate_index` on a store of the size in question.
+
 ## `explicit-recalls.jsonl` — the model reaching for memory itself
 
 ```json
