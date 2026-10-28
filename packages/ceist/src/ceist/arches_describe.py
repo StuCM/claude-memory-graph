@@ -1,10 +1,11 @@
 """Read Arches models through Alizarin into the node descriptions the
 vocabulary build and the matchers use: each searchable node with its card,
-its path through the model's tree, its datatype and (for links) its targets.
+its path through the model's tree, its datatype, its CIDOC-CRM context and
+(for links) its targets.
 
-    python her_models.py <graphs/resource_models dir> <out dir> [<reference_data dir>]
+    ceist vocab describe <graphs/resource_models dir> <out dir> [--reference <reference_data dir>]
 
-writes <out dir>/<Model name>.json, one per model.
+writes <out dir>/<Model name>.json, one per model. Needs alizarin.
 
 With reference_data (the package's SKOS concepts and collections, loaded by
 Alizarin), each concept node also lists its collection's labels when the
@@ -18,7 +19,6 @@ is, not something a question asks about.
 """
 
 import json
-import sys
 from pathlib import Path
 
 import alizarin
@@ -115,13 +115,13 @@ def describe_graph(doc: dict, graph_names: dict, rdm=None) -> dict:
             "description": _text(g.get("description")), "nodes": out}
 
 
-def main(src: str, dest: str, ref_dir: str | None = None):
+def describe(src: str | Path, dest: str | Path, ref_dir: str | Path | None = None) -> dict:
+    """Describe every model in `src` into `dest`/<Model>.json; returns {name: description}."""
     rdm = load_rdm(ref_dir) if ref_dir else None
-    files = sorted(Path(src).glob("*.json"))
-    docs = [json.loads(p.read_text()) for p in files]
+    docs = [json.loads(p.read_text()) for p in sorted(Path(src).glob("*.json"))]
     graph_names = {}
     for d in docs:
-        g = d["graph"][0]
+        g = d["graph"][0] if "graph" in d else d
         graph_names[g["graphid"]] = _text(g["name"])
     models = {}
     for d in docs:
@@ -131,11 +131,4 @@ def main(src: str, dest: str, ref_dir: str | None = None):
     out.mkdir(parents=True, exist_ok=True)
     for name, m in models.items():
         (out / f"{name}.json").write_text(json.dumps(m, indent=1))
-    total = sum(len(m["nodes"]) for m in models.values())
-    print(f"{len(models)} models, {total} searchable nodes → {dest}")
-    for name, m in models.items():
-        print(f"  {name:38s} {len(m['nodes'])}")
-
-
-if __name__ == "__main__":
-    main(*sys.argv[1:4])
+    return models

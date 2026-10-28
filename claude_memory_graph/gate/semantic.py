@@ -6,7 +6,8 @@ named "Tile cache poisoning after reindex"). This adds a second channel
 that compares meanings.
 
 The model is WordLlama (MIT): static token embeddings, 256 dimensions,
-averaged per text (texts are split into words first).
+averaged per text (texts are split into words first). The encoder is
+ceist.vectors, shared with the question planner.
 Unlike a transformer it needs no torch and no GPU, and
 a text encodes in under a millisecond. Its weights ship inside the PyPI
 package, so nothing is downloaded at runtime. They are converted once to a
@@ -23,138 +24,22 @@ Fail open: if the package or numpy is missing, available() is False and
 the gate is lexical-only, as before.
 """
 
-import json
 import logging
-import os
-import re
-from pathlib import Path
+
+# the encoder itself lives in ceist (packages/ceist/src/ceist/vectors.py),
+# shared with the question planner; the memory graph keeps its cache in the
+# state home
+from ceist.vectors import Encoder, available  # noqa: F401
 
 log = logging.getLogger(__name__)
 
-_WEIGHTS = "l2_supercat_256.safetensors"
-_TOKENIZER = "l2_supercat_tokenizer_config.json"
 _FIELD_CHARS = 300        # a long rationale is embedded by its opening
-
-_encoder = None
-
-
-def _package_dir() -> Path | None:
-    try:
-        import importlib.util
-        spec = importlib.util.find_spec("wordllama")
-    except (ImportError, ValueError):
-        return None
-    if spec is None or not spec.origin:
-        return None
-    root = Path(spec.origin).parent
-    if (root / "weights" / _WEIGHTS).exists() and (root / "tokenizers" / _TOKENIZER).exists():
-        return root
-    return None
-
-
-def available() -> bool:
-    try:
-        import numpy  # noqa: F401
-        import tokenizers  # noqa: F401
-    except ImportError:
-        return False
-    return _package_dir() is not None
-
-
-_WORD = re.compile(r"\w+")
-
-
-class Encoder:
-    """Texts are split into words, and each word's token ids are
-    looked up in a cache kept in the state home. The tokenizer (~150ms to
-    load) is only loaded for words the cache hasn't seen, so once a person's
-    vocabulary is cached a prompt never pays for it."""
-
-    def __init__(self):
-        import numpy as np
-
-        root = _package_dir()
-        if root is None:
-            raise RuntimeError("wordllama weights not installed")
-        self.np = np
-        self.root = root
-        self._tokenizer = None
-        self.weights = np.load(self._npy(root), mmap_mode="r")
-        self.cache_path = self._npy(root).with_name("word-ids.json")
-        try:
-            self.word_ids: dict[str, list[int]] = json.loads(self.cache_path.read_text())
-        except (OSError, ValueError):
-            self.word_ids = {}
-        self._new = False
-
-    def _ids(self, words: list[str]) -> list[int]:
-        missing = [w for w in dict.fromkeys(words) if w not in self.word_ids]
-        if missing:
-            if self._tokenizer is None:
-                from tokenizers import Tokenizer
-                self._tokenizer = Tokenizer.from_file(str(self.root / "tokenizers" / _TOKENIZER))
-            # a bare word gets the word-initial "▁" pieces it has inside a
-            # sentence; " word" would add a stray "▁" token to every word
-            for word, enc in zip(missing, self._tokenizer.encode_batch(
-                    missing, add_special_tokens=False)):
-                self.word_ids[word] = [i for i in enc.ids if i < self.weights.shape[0]]
-            self._new = True
-        return [i for w in words for i in self.word_ids[w]]
-
-    def save_cache(self) -> None:
-        if not self._new:
-            return
-        try:
-            tmp = self.cache_path.with_name(f"{self.cache_path.name}.{os.getpid()}.tmp")
-            tmp.write_text(json.dumps(self.word_ids, separators=(",", ":")))
-            tmp.replace(self.cache_path)
-            self._new = False
-        except OSError:
-            pass
-
-    @staticmethod
-    def _npy(root: Path) -> Path:
-        """The weights as float16 .npy, made once: memory-mapping it costs a
-        hook ~1ms where parsing the safetensors file costs ~300ms."""
-        import importlib.metadata
-        from claude_memory_graph.hookcore import state_home
-
-        version = importlib.metadata.version("wordllama")
-        path = state_home() / "embeddings" / f"wordllama-{version}-256.npy"
-        if not path.exists():
-            import numpy as np
-            from safetensors.numpy import load_file
-            tensors = load_file(str(root / "weights" / _WEIGHTS))
-            matrix = next(iter(tensors.values())).astype(np.float16)
-            path.parent.mkdir(parents=True, exist_ok=True)
-            tmp = path.with_name(path.name + ".tmp.npy")
-            np.save(tmp, matrix)
-            tmp.replace(path)
-        return path
-
-    def encode(self, texts: list[str]):
-        """Unit vectors, one row per text (float32)."""
-        np = self.np
-        out = np.zeros((len(texts), self.weights.shape[1]), dtype=np.float32)
-        split = [_WORD.findall(t or "") for t in texts]
-        self._ids([w for words in split for w in words])     # one tokenizer pass
-        for i, words in enumerate(split):
-            ids = self._ids(words)
-            if not ids:
-                continue
-            v = np.asarray(self.weights[ids], dtype=np.float32).mean(axis=0)
-            norm = float(np.linalg.norm(v))
-            if norm:
-                out[i] = v / norm
-        self.save_cache()
-        return out
 
 
 def encoder() -> Encoder:
-    global _encoder
-    if _encoder is None:
-        _encoder = Encoder()
-    return _encoder
+    from ceist.vectors import encoder as _shared
+    from claude_memory_graph.hookcore import state_home
+    return _shared(state_home() / "embeddings")
 
 
 def doc_fields(doc: dict) -> list[str]:
