@@ -304,18 +304,91 @@ def test_end_to_end_refuses_a_query_that_reads_back_wrong(vocab, snapshot, monke
 
 
 def test_vocabulary_bundle_phrasings(data):
-    """A bundle's link and date phrasings ground exactly; qualified ones are skipped."""
+    """A bundle's link and date phrasings ground exactly; a qualified entry
+    whose value isn't in its node's collection is counted, not guessed."""
     bundle = {"format": "ceist.vocab/1", "models": {"Building": {
         "nodes": {"construction_date": {"kind": "date"}, "architect": {"kind": "link"},
-                  "site": {"kind": "link"}},
+                  "actor": {"kind": "link"}},
         "entries": [
             {"phrases": ["put up", "erected"], "kind": "date", "node": "construction_date"},
             {"phrases": ["drawn up by"], "kind": "link", "node": "architect"},
-            {"phrases": ["sited by"], "kind": "link", "node": "site",
-             "qualifier": {"node": "heritage_status", "value": "Listed"}}]}}}
+            {"phrases": ["painted by"], "kind": "link", "node": "actor",
+             "qualifier": {"node": "actor_role", "value": "Painter"}}]}}}
     v = ArchesVocabulary.from_data_dir(data[0], bundle=bundle)
-    assert v.skipped_qualified == 1
     m = interpret(v, "which buildings were put up before 1900?")
     assert isinstance(m.plan.where[0], DateRange) and m.plan.where[0].field == "construction_date"
     m = interpret(v, "which buildings were drawn up by Ada Lovelace?")
     assert m.plan.where[0].relation == "architect"
+    v.relations()
+    assert v.skipped_qualified == 1                      # no "Painter" in the roles thesaurus
+
+
+# ── qualified links: a link and a value on the SAME entry (tile) ────────────
+
+ROLE_BUNDLE = {"format": "ceist.vocab/1", "models": {"Building": {
+    "nodes": {"actor": {"kind": "link", "targets": ["Person"]}},
+    "entries": [
+        {"phrases": ["designed by"], "kind": "link", "node": "actor",
+         "qualifier": {"node": "actor_role", "value": "Architect"}},
+        {"phrases": ["built by"], "kind": "link", "node": "actor",
+         "qualifier": {"node": "actor_role", "value": "Builder"}},
+        {"phrases": ["associated with"], "kind": "link", "node": "actor"}]}}}
+
+
+@pytest.fixture(scope="module")
+def roles(data):
+    return ArchesVocabulary.from_data_dir(data[0], bundle=ROLE_BUNDLE)
+
+
+def test_qualified_link_is_planned(roles, data):
+    m = interpret(roles, "which buildings were designed by Ada Lovelace?")
+    (c,) = m.plan.where
+    assert c.relation == "actor" and c.target.entity.id == data[1]["ids"]["ada"]
+    assert c.qualifier == HasValue("actor_role", data[1]["concepts"]["Architect"], "Architect")
+    assert narrate(m.plan) == ("Find Buildings whose actor is Person 'Ada Lovelace' "
+                               "(actor role: Architect).")
+
+
+@pytest.mark.parametrize("question, expect, absent", [
+    # Ada is the Grain Warehouse's BUILDER; its architect is Isambard — same entry or nothing
+    ("which buildings were designed by Ada Lovelace?", ["Clock Tower"], ["Grain Warehouse"]),
+    ("which buildings were built by Ada Lovelace?", ["Grain Warehouse"], ["Clock Tower"]),
+    ("which buildings were designed by Isambard Brunel?", ["Grain Warehouse"], ["Clock Tower"]),
+    ("which buildings are associated with Ada Lovelace?", ["Clock Tower", "Grain Warehouse"], []),
+])
+def test_qualified_link_on_the_same_entry(roles, question, expect, absent):
+    from ceist.alizarin import ask
+    out = ask(question, roles)
+    for e in expect:
+        assert e in out, out
+    for a in absent:
+        assert a not in out, out
+
+
+def test_qualified_link_to_rosmadair_on_tile(roles, data):
+    m = interpret(roles, "which buildings were designed by Ada Lovelace?")
+    q = to_query(m.plan, roles)
+    assert q["where"] == {"on_tile": [
+        {"has_link": {"path": "actor", "target": data[1]["ids"]["ada"]}},
+        {"concept": {"path": "actor_role", "op": "descendant_or_self_of",
+                     "value": data[1]["concepts"]["Architect"]}}]}
+    assert check(m.plan, read_back(compile_plan(m.plan, roles), roles)).ok
+    wrong = compile_plan(m.plan, roles)
+    wrong.query["where"] = {"all": wrong.query["where"]["on_tile"]}   # separate facts: broader
+    assert not check(m.plan, read_back(wrong, roles)).ok
+
+
+def test_qualified_link_on_a_real_snapshot(roles, snapshot):
+    from ceist.rosmadair import ask
+    out = ask("which buildings were designed by Ada Lovelace?", roles, str(snapshot))
+    assert "Clock Tower" in out and "Grain Warehouse" not in out, out
+
+
+def test_qualified_link_to_arches_search_tile_scope(roles, data):
+    m = interpret(roles, "which buildings were designed by Ada Lovelace?")
+    payload, verdict = compile_checked(m.plan, roles, concept_operator="REFERENCES_ANY")
+    assert verdict.ok and payload["scope"] == "TILE"
+    assert [c["subject"]["node_alias"] for c in payload["clauses"]] == ["actor", "actor_role"]
+    both = interpret(roles, "which listed buildings were designed by Ada Lovelace?")
+    with pytest.raises(Unsupported, match="tile scope"):
+        to_payload(both.plan, roles, concept_operator="REFERENCES_ANY")

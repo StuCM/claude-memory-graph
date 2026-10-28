@@ -11,6 +11,8 @@ Mapping (ros-madair-query's serde form; Rós Madair itself is unchanged):
     LinkTo(path, EntityRef, out)     {"has_link": {"path", "target"}}
     LinkTo(path, Plan, out)          {"on_link": {"path", "model", "where"}}  (multi-hop)
     LinkTo(None, EntityRef, any)     {"backlink": {"target"}}   (linked to it, any field)
+    LinkTo(…, qualifier=HasValue)    {"on_tile": [<the link>, {"concept": …}]}   (one tile holds both:
+                                     "designed by Ada" = actor Ada with role Architect)
     HasValue(concept)                {"concept": {"path", "op": "descendant_or_self_of", "value"}}
     DateRange(path, lo, hi)          {"range": {"path", "lo", "hi"}}   days since 1970, as
                                      Alizarin's quantize_date (the emitter's own encoding)
@@ -82,13 +84,20 @@ def _expr(plan: Plan, vocab) -> dict | None:
                     f"walking '{c.relation}' backwards ({plan.type} records that another "
                     f"record's {c.relation} points at): Rós Madair walks links forward; "
                     f"ask from the other side")
-            elif isinstance(c.target, EntityRef):
-                parts.append({"has_link": {"path": c.relation, "target": c.target.entity.id}})
             else:
-                inner = _expr(c.target, vocab) or {"all": []}
-                parts.append({"on_link": {"path": c.relation,
-                                          "model": vocab.model(c.target.type).graph_id,
-                                          "where": inner}})
+                if isinstance(c.target, EntityRef):
+                    link = {"has_link": {"path": c.relation, "target": c.target.entity.id}}
+                else:
+                    inner = _expr(c.target, vocab) or {"all": []}
+                    link = {"on_link": {"path": c.relation,
+                                        "model": vocab.model(c.target.type).graph_id,
+                                        "where": inner}}
+                if c.qualifier is not None:
+                    # the same tile carries the link and the qualifier value
+                    q = c.qualifier
+                    link = {"on_tile": [link, {"concept": {
+                        "path": q.field, "op": "descendant_or_self_of", "value": q.value}}]}
+                parts.append(link)
         elif isinstance(c, HasValue):
             if c.kind != "concept":
                 raise Unsupported(f"the literal value {c.label}")
@@ -165,6 +174,14 @@ def _conditions(expr: dict | None, type_name: str, vocab) -> list:
         if e is None:
             return [f"a backlink to unknown record {body['target']}"]
         return [LinkTo(None, EntityRef(e), "any")]
+    if kind == "on_tile":
+        parts = [c for e in body for c in _conditions(e, type_name, vocab)]
+        links = [c for c in parts if isinstance(c, LinkTo)]
+        quals = [c for c in parts if isinstance(c, HasValue)]
+        if len(links) == 1 and len(quals) == 1 and len(parts) == 2:
+            from dataclasses import replace
+            return [replace(links[0], qualifier=quals[0])]
+        return [f"on_tile {json.dumps(body)}"]       # read-back can't say it: a mismatch
     if kind == "concept":
         return [HasValue(body["path"], body["value"], vocab.concept_label(body["value"]))]
     if kind == "range":

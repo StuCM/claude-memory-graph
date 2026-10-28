@@ -173,7 +173,19 @@ ceist eval --bundle her.bundle.json --questions cases.json --config ceist.toml \
            --min-right 80 --max-dangerous 3                                         # the acceptance gate
 ```
 
-`ArchesVocabulary.from_data_dir(path, bundle="her.bundle.json")` uses a bundle's link and date phrasings directly. Entries that need a qualifier value ("designed by" → actor + role Architect) are counted in `skipped_qualified`; the plan can't express them yet.
+`ArchesVocabulary.from_data_dir(path, bundle="her.bundle.json")` uses a bundle's link and date phrasings directly.
+
+### Qualified links: a link and a value on the same entry
+
+Arches often records *who did what* as one entry (a tile) holding a generic actor link and a role. So "designed by Ada" means **one entry** whose actor is Ada **and** whose role is Architect. Ada as builder on one entry plus somebody else's architect entry on the same record doesn't count. A bundle entry with a `qualifier` becomes a qualified link in the plan, read back as "whose actor is Person 'Ada Lovelace' (actor role: Architect)":
+
+| output | compiles to |
+| --- | --- |
+| Alizarin (in-process) | checks the link and the value within each tile |
+| Rós Madair | `{"on_tile": [<the link>, {"concept": …}]}`, its native same-tile predicate, so no workaround is needed |
+| Arches Search | a `TILE`-scoped group, **only when the qualified link is the search's sole condition**. Tile scope applies to a whole group there, and nested groups are evaluated per resource, so mixing it with other conditions would silently broaden the search. The compiler refuses that case by name. |
+
+A qualifier value that isn't in its node's collection is counted in `skipped_qualified`, never guessed.
 
 CI runs this pipeline on the real Arches HER models: it clones arches-her, describes, assembles the committed vocabulary, and gates `ceist eval` on the blind questions (82/102 right, 3 dangerous, 91/102 right within one click). The flow for a new project is in [bench/ADAPTATION-FLOW.md](bench/ADAPTATION-FLOW.md).
 

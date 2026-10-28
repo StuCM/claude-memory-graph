@@ -78,6 +78,13 @@ class Edge:
     target: Node | None = None
     negated: bool = False
     style: str = "verb"
+    path: str = ""                                    # the backend's name for the link
+    qualifier: tuple[str, str, str] | None = None     # (field, value, label) on the same tile
+
+
+def _edge(rel: Relation, pos: float, **kw) -> Edge:
+    return Edge(rel.name, pos, style=rel.style, path=rel.path or rel.name,
+                qualifier=rel.qualifier, **kw)
 
 
 @dataclass
@@ -218,8 +225,7 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
             taken.remove((m.start(), m.end()))
             continue
         matched.add(rel)
-        g.edges.append(Edge(rel, consume_span(m.start(), m.end()), form=form,
-                            style=relations[rel].style))
+        g.edges.append(_edge(relations[rel], consume_span(m.start(), m.end()), form=form))
         g.notes.append(f"'{form}' → relation {rel}")
     g.edges.sort(key=lambda e: e.pos)
 
@@ -421,12 +427,14 @@ def _match_leftovers(g: Grounding, matcher, words, consumed, parts_of, relations
                 if (not r.domain or r.domain & types) and (not r.range or r.range & types)]
         for run in between[:1]:
             phrase = " ".join(w[3] for w in run)
-            items = [Item(r.name, tuple(r.forms), r.name, r) for r in fits]
+            items = [Item(r.name, tuple(r.forms),
+                          (r.path or r.name) + (f" ({r.qualifier[2]})" if r.qualifier else ""), r)
+                     for r in fits]
             res = matcher.resolve(phrase, items, g.text)
             g.notes += res.notes
             if res.match:
                 rel = res.match.item.payload
-                g.edges.append(Edge(rel.name, float(run[0][0]), form=phrase, style=rel.style))
+                g.edges.append(_edge(rel, float(run[0][0]), form=phrase))
                 take(run)
             elif res.options:
                 g.suggestions.append((phrase, [o.label for o in res.options]))
@@ -482,16 +490,18 @@ def _imply_join(g: Grounding, relations: dict[str, Relation]) -> None:
     if any((e.source is a and e.target is b) or (e.source is b and e.target is a)
            for e in g.edges):
         return
-    candidates = [(r, a, b) for r in relations.values() if a.type in r.domain and b.type in r.range]
-    candidates += [(r, b, a) for r in relations.values() if b.type in r.domain and a.type in r.range]
+    # a join never implies a role: qualified variants ("actor#Architect") don't count
+    plain = [r for r in relations.values() if not r.qualifier]
+    candidates = [(r, a, b) for r in plain if a.type in r.domain and b.type in r.range]
+    candidates += [(r, b, a) for r in plain if b.type in r.domain and a.type in r.range]
     if len(candidates) != 1:
         if candidates:
             g.notes.append(f"{a.type} and {b.type} could be joined by "
                            f"{', '.join(sorted(c[0].name for c in candidates))}; not guessing")
         return
     rel, src, dst = candidates[0]
-    g.edges.append(Edge(rel.name, (a.pos + b.pos) / 2, form=rel.forms[0] if rel.forms else "",
-                        source=src, target=dst, style=rel.style))
+    g.edges.append(_edge(rel, (a.pos + b.pos) / 2, form=rel.forms[0] if rel.forms else "",
+                         source=src, target=dst))
     g.notes.append(f"{src.type} → {dst.type} joined by {rel.name} (the only relation between them)")
 
 
