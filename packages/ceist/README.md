@@ -183,7 +183,7 @@ Arches often records *who did what* as one entry (a tile) holding a generic acto
 | --- | --- |
 | Alizarin (in-process) | checks the link and the value within each tile |
 | Rós Madair | `{"on_tile": [<the link>, {"concept": …}]}`, its native same-tile predicate, so no workaround is needed |
-| Arches Search | a `TILE`-scoped group, **only when the qualified link is the search's sole condition**. Tile scope applies to a whole group there, and nested groups are evaluated per resource, so mixing it with other conditions would silently broaden the search. The compiler refuses that case by name. |
+| Arches Search | a `TILE`-scoped group: the whole search when it's the only condition, otherwise a nested `TILE` group beside the other conditions. Reading the plugin's code suggests a nested `TILE` group may be evaluated per resource when the search has no relationship; that's written up to raise in [ARCHES-SEARCH.md](ARCHES-SEARCH.md). |
 
 A qualifier value that isn't in its node's collection is counted in `skipped_qualified`, never guessed.
 
