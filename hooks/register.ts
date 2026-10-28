@@ -41,7 +41,7 @@ const decisions = atom({ plugin: 'memory-graph', key: 'decisions' } as const, []
 const lastError = atom({ plugin: 'memory-graph', key: 'lastError' } as const, '')
 
 type Options = {
-  pane?: string; review?: boolean; server?: string; server_token?: string
+  pane?: string; review?: boolean; server?: string; server_token?: string; lookups?: string
   answer_questions?: boolean; answer_max_questions?: number; answer_max_rows?: number; answer_coverage?: number
 }
 type Tab = 'injected' | 'state' | 'activity'
@@ -87,7 +87,11 @@ type Reply = { output: string; core?: JsonObject; state?: Session['ext']; global
 
 // What every Python call carries besides the event: which extensions run, and
 // the memory server when memory lives on one (docs/REMOTE.md).
-type RunConfig = { enabled: string[]; remote?: { url: string; token: string }; gate?: Record<string, boolean | number> }
+type RunConfig = {
+  enabled: string[]
+  remote?: { url: string; token: string; lookups: 'server' | 'replica' }
+  gate?: Record<string, boolean | number>
+}
 
 async function python($: any, event: string, payload: JsonObject, run: RunConfig): Promise<string> {
   const current = await read($, session)
@@ -167,7 +171,11 @@ export const register: Register = (on, options) => {
   const server = String(opts.server ?? '').trim()
   const run: RunConfig = {
     enabled: ['memory-recall', 'context-counter', ...(opts.review ? ['graph-review'] : [])],
-    ...(server ? { remote: { url: server, token: String(opts.server_token ?? '') } } : {}),
+    ...(server ? { remote: {
+      url: server, token: String(opts.server_token ?? ''),
+      // 'server': the gate's graph reads run there and this device holds no copy
+      lookups: opts.lookups === 'local copy' ? 'replica' as const : 'server' as const,
+    } } : {}),
     gate: answerSettings(opts),
   }
 

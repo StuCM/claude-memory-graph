@@ -13,6 +13,7 @@ hook-kit was retired is renamed into place on first use, so the tuning logs
 All writes fail open: logging must never break a hook.
 """
 
+import contextlib
 import json
 import os
 import time
@@ -135,14 +136,34 @@ def advance_core(core: dict, event: str, payload: dict) -> dict:
 # Append-only logs in the state home — shared by the dispatcher and extensions
 # ---------------------------------------------------------------------------
 
+# While set, append_jsonl collects lines here instead of writing them: the
+# memory server runs a client's gate and hands its log lines back, so the
+# client's logs (the pane, the miss report) stay whole.
+_captured: list | None = None
+
+
+@contextlib.contextmanager
+def capture_jsonl():
+    """Collect [filename, entry] pairs that append_jsonl would have written."""
+    global _captured
+    saved, _captured = _captured, []
+    try:
+        yield _captured
+    finally:
+        _captured = saved
+
+
 def append_jsonl(filename: str, entry: dict) -> None:
     """Append one timestamped line to <state-home>/<filename> — e.g. the
     recall extension's injections.jsonl threshold-tuning dataset. Best-effort:
     logging must never break a hook."""
     try:
+        entry = {**entry, "ts": entry.get("ts") or int(time.time())}
+        if _captured is not None:
+            _captured.append([filename, entry])
+            return
         home = state_home()
         home.mkdir(parents=True, exist_ok=True)
-        entry = {**entry, "ts": int(time.time())}
         with open(home / filename, "a", encoding="utf-8") as f:
             f.write(json.dumps(entry) + "\n")
     except Exception:

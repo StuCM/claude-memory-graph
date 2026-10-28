@@ -20,15 +20,46 @@ Debugging
           | claude-hooks dispatch UserPromptSubmit
 """
 
+import contextlib
 import json
 import os
 from pathlib import Path
 
 
+# Set when the gate runs inside the memory server, on its live store.
+_live_store = None
+# Set (by hookrun) when the gate's lookups go to a memory server: this
+# machine holds no graph, so nothing here may open one.
+SERVER_LOOKUPS_ENV = "MEMORY_GRAPH_LOOKUPS"
+
+
 def store_dir() -> Path:
+    if _live_store is not None and getattr(_live_store, "_data_path", None):
+        return _live_store._data_path.parent
     # duplicated from __main__._store_path: importing __main__ would pull in mcp
     env = os.environ.get("MEMORY_GRAPH_PATH")
     return Path(env) if env else Path.home() / ".claude" / "memory-graph" / "store"
+
+
+def use_live_store(store) -> None:
+    """The memory server's own store: the gate reads it instead of opening
+    one from disk."""
+    global _live_store
+    _live_store = store
+
+
+def server_lookups() -> bool:
+    return os.environ.get(SERVER_LOOKUPS_ENV) == "server"
+
+
+def open_store():
+    """The store the gate reads: the server's live one, else the one on disk."""
+    if _live_store is not None:
+        return _live_store
+    if server_lookups():
+        raise RuntimeError("memory lookups go to the server: there is no local graph")
+    from ..store import MemoryStore
+    return MemoryStore.open_or_create(store_dir())
 
 
 # ================================================================
@@ -77,6 +108,20 @@ def config() -> dict:
             pass  # no file / bad JSON -> defaults
         _config = cfg
     return _config
+
+
+@contextlib.contextmanager
+def overridden(values: dict):
+    """override() for one request in a long-lived process (the memory
+    server): the settings apply inside the block, then the old ones return."""
+    global _config
+    saved = _config
+    _config = dict(config())
+    try:
+        override(values or {})
+        yield
+    finally:
+        _config = saved
 
 
 def override(values: dict) -> None:

@@ -30,7 +30,7 @@ billed to an API key.
 
 | Client | How it connects | What it gets |
 |---|---|---|
-| **Claude Code** on any machine with the plugin, including the desktop app's Code tab | the plugin's `server` and `server_token` settings | everything: the tools; ambient recall, from a local copy of the graph that refreshes at most once a minute; the context log and Stop-block capture, with the log distilled into the server |
+| **Claude Code** on any machine with the plugin, including the desktop app's Code tab | the plugin's `server` and `server_token` settings | everything: the tools; ambient recall and question answers, run on the server so the machine holds no copy of the graph (or, with **Memory lookups** set to `local copy`, read from a local copy that refreshes at most once a minute); the context log and Stop-block capture, with the log distilled into the server |
 | **ordinary chats** in claude.ai, the phone app and the desktop app (not its Code tab) | a custom connector, signed in with your server password | the tools, reads and writes. Chats have no hooks, so nothing is injected automatically: the model calls the memory tools when the conversation needs them |
 | any other MCP client | `https://<host>/mcp` with `Authorization: Bearer <token>` | the tools |
 
@@ -100,15 +100,31 @@ not `settings.json`). Then start a new session. To check:
 - or look at the pane's State tab, where `memory` should name the server.
 
 With the server set, the plugin's MCP server becomes a proxy to the remote
-one. The ambient gate reads a replica of the graph kept in
-`~/.claude/memory-graph/state/replica/`. Distill, whether it runs
+one, and the ambient gate's graph reads run on the server too. That covers
+recall, the session-start prime, question answers and the review's health
+report. For each prompt the plugin sends the prompt to `/api/hook`, and the
+server answers from its live store and sends back only the text to add, so
+nothing of the graph is downloaded. That suits phones and small devices, and
+it stays fast as the graph grows: the server keeps its indexes in memory and
+rebuilds them in the background after each write. At 10,000 memories a
+warm prompt takes about 140 ms on the server, plus the round trip. A prompt
+waits at most 4 seconds; after that the gate stays silent for that prompt.
+
+Set **Memory lookups** to `local copy` to download the graph instead, into
+`~/.claude/memory-graph/state/replica/` (refreshed at most once a minute),
+and look it up on the machine. It costs more per prompt as the graph grows,
+but recall keeps working briefly offline. A server older than this setting
+has no `/api/hook`: update it, or use `local copy` (`doctor` says which).
+
+Distill, whether it runs
 automatically at session start, through `/memory-graph:distill`, or through
 `memory_distill`, uploads this machine's undistilled logs, lets the server
 promote them, and then archives or trims the local files the same way a
 local distill would.
 
-If the server is unreachable, nothing breaks. Recall keeps injecting from
-the last replica, and tool calls say the server is unreachable. Nothing is
+If the server is unreachable, nothing breaks. With server lookups, recall
+stays silent until it is back; with a local copy, recall keeps injecting
+from the last copy. Tool calls say the server is unreachable. Nothing is
 written locally, because a second store is how memories get lost.
 
 ### 4. Connect claude.ai and the phone

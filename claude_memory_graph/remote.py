@@ -5,10 +5,13 @@ MEMORY_GRAPH_TOKEN (`server_token`) and three things change, nothing else:
 
 - the local MCP server becomes a **proxy**: every tool call goes to the
   server, so reads and writes from every machine land in one store;
-- the ambient gate reads a **replica** — the server's graph.nq, fetched
-  with an ETag at session start and at most once a minute after, kept in
-  the state home. A stale replica is still a fine replica: injection is a
-  best-effort read, and the gate fails open if the server is unreachable;
+- the ambient gate's graph reads (recall, auto-prime, question answers)
+  run **on the server** (/api/hook), which sends back only the text to
+  inject, so this machine never holds the graph. With lookups set to
+  "replica" the gate instead reads a local copy of the server's graph.nq,
+  fetched with an ETag at session start and at most once a minute after,
+  kept in the state home. Either way the gate fails open if the server is
+  unreachable;
 - **distill** uploads this machine's context logs to the server
   (/api/distill), which promotes them into the one store, and applies the
   outcome (archive / split / keep) to the local files. The logs never
@@ -106,6 +109,38 @@ def fetch_replica(force: bool = False, timeout: float = 2.0) -> Path | None:
     except OSError:
         pass
     return folder if nq.exists() else None
+
+
+# ------------------------------------------------------------------ lookups
+
+HOOK_TIMEOUT = 4.0      # a prompt waits at most this long for the server
+
+
+def run_hook(request: dict) -> dict:
+    """Ask the server to run one gate extension against its graph
+    (/api/hook): {"output", "state", "global", "logs"}. Raises on any
+    failure; the caller fails open."""
+    body = json.dumps(request).encode()
+    with _request("/api/hook", data=body, timeout=HOOK_TIMEOUT,
+                  headers={"Content-Type": "application/json"}) as resp:
+        return json.loads(resp.read())
+
+
+def ping() -> dict:
+    """{"ok", "lookups"} from the server; raises when it is unreachable or
+    refuses the token (HTTP 401). An older server without server-side
+    lookups answers 404."""
+    with _request("/api/ping", timeout=HOOK_TIMEOUT) as resp:
+        return json.loads(resp.read())
+
+
+def fetch_gaps():
+    """The server graph's health report (/api/gaps), as gaps.Gaps."""
+    from .gaps import Gaps
+    with _request("/api/gaps", timeout=HOOK_TIMEOUT) as resp:
+        data = json.loads(resp.read())
+    fields = Gaps.__dataclass_fields__
+    return Gaps(**{k: v for k, v in data.items() if k in fields})
 
 
 # ------------------------------------------------------------------ distill

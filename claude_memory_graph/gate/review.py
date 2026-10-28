@@ -28,7 +28,7 @@ import time
 from claude_memory_graph.hookcore import HookContext, HookExtension, append_jsonl
 
 from .nudge import _context_dir
-from .runtime import config, store_dir
+from .runtime import config
 
 
 class ReviewExtension(HookExtension):
@@ -57,9 +57,7 @@ class ReviewExtension(HookExtension):
         if ctx.stop_hook_active or ctx.state.get("reviewed") or not self._due(ctx):
             return None
         try:
-            from ..gaps import analyse
-            from ..store import MemoryStore
-            gaps = analyse(MemoryStore.open_or_create(store_dir()), limit=5)
+            gaps = _gaps()
         except Exception:
             return None  # fail open: a broken report never blocks a session
 
@@ -114,3 +112,15 @@ class ReviewExtension(HookExtension):
                 "Renaming goes through memory_rename ONLY. memory_store_resource "
                 "upserts BY NAME, so storing a shorter name creates a second, "
                 "linkless node and leaves the original in place.")
+
+
+def _gaps():
+    """The graph's mechanical health report: from the memory server when
+    lookups go there (this machine holds no graph), else from the local store."""
+    from .runtime import open_store, server_lookups
+    if server_lookups():
+        from ..remote import fetch_gaps
+        return fetch_gaps()
+    from ..gaps import analyse
+    return analyse(open_store(), limit=5)
+

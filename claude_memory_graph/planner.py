@@ -127,6 +127,7 @@ def _entity_docs(store: MemoryStore) -> tuple[list[dict], dict]:
     return docs, _idf(docs) if docs else {}
 
 
+_entity_memo: dict = {}
 _ENTITY_INDEX_VERSION = 1   # bump when the doc shape or _with_aliases changes
 
 
@@ -147,15 +148,19 @@ def entity_index(store: MemoryStore) -> tuple[list[dict], dict]:
     except (OSError, AttributeError, TypeError):
         return _entity_docs(store)
     key = (str(nq.resolve()), st.st_mtime_ns, st.st_size, st.st_ino, _ENTITY_INDEX_VERSION)
+    if _entity_memo.get("key") == key:          # a long-lived process: the server
+        return _entity_memo["docs"], _entity_memo["idf"]
     path = state_home() / "planner-index.pickle"
     try:
         with open(path, "rb") as f:
             cached = pickle.load(f)
         if cached.get("key") == key:
+            _entity_memo.update(cached)
             return cached["docs"], cached["idf"]
     except Exception:
         pass
     docs, idf = _entity_docs(store)
+    _entity_memo.update({"key": key, "docs": docs, "idf": idf})
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
