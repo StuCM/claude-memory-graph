@@ -14,6 +14,13 @@ _STOP = {
     "about", "did", "was", "were", "they", "them", "our", "your", "just", "some",
     # acknowledgement words: bare "thanks"/"yes"/"ok" must reduce to no terms
     "thanks", "thank", "yes", "yep", "ok", "okay", "sure", "no", "nope", "please",
+    # function words of conversational prose: scored per sentence, a long
+    # prompt's "…before the standup" must not match a memory named "…before
+    # migrations" on that word alone
+    "before", "after", "also", "anything", "something", "everything", "nothing",
+    "else", "need", "needs", "let", "know", "want", "think", "maybe", "might",
+    "really", "will", "should", "have", "has", "had", "been", "there", "then",
+    "than", "from", "into", "any", "all", "one", "thing", "going",
 }
 _WORD = re.compile(r"[a-z0-9]+")
 _REMINDER = re.compile(r"<system-reminder>.*?</system-reminder>", re.DOTALL)

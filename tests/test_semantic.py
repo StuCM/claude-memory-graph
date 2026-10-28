@@ -29,6 +29,28 @@ def test_a_paraphrase_fires_by_meaning_and_says_so(graph):
     assert entry["via"] == "semantic" and entry["sem_top"] >= runtime._DEFAULTS["SEM_MIN"]
 
 
+LONG = ("I've been looking at the release notes for next week and want to tidy up the "
+        "changelog first. Also we need to sort out who is reviewing the onboarding docs, "
+        "Sarah said she might have time on Thursday. Anyway, one thing that's bugging me is "
+        "that the map still draws things we removed. Let me know if you need anything else "
+        "from me before the standup.")
+
+
+@needs_model
+def test_a_paraphrase_inside_a_long_prompt_still_fires(graph):
+    # averaged over six sentences the paraphrase drowns; scored per sentence it doesn't
+    out = _inject(LONG, "quartz")
+    assert "Tile cache poisoning after reindex" in out
+    assert _last_decision()["via"] == "semantic"
+
+
+def test_long_prompts_are_scored_per_sentence_too():
+    vs = semantic.views(LONG)
+    assert vs[0] == LONG and len(vs) > 1
+    assert any("the map still draws things we removed" in v.lower() for v in vs[1:])
+    assert semantic.views(PARAPHRASE[0]) == [PARAPHRASE[0]]        # short: one view
+
+
 def test_a_word_match_stays_lexical(graph):
     _inject("restoring the arches graph creates duplicated tiles", "quartz")
     assert _last_decision()["via"] == "lexical"
