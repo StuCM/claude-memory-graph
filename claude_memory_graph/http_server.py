@@ -8,9 +8,10 @@ is the one memory every machine and app shares (docs/REMOTE.md):
 - **Claude Code machines** (terminal, IDE, or the desktop app's Code tab)
   point the plugin at it (`server` + `server_token`
   in /config). Their local MCP server becomes a proxy to this one, and the
-  ambient gate reads a replica of the graph it downloads from
-  `/api/graph.nq`. Their context logs stay local and reach the graph
-  through `/api/distill`.
+  ambient gate's graph reads run here (`/api/hook`, `/api/gaps`), so the
+  machine holds no copy of the graph; or, with lookups set to "local copy",
+  the gate reads a replica it downloads from `/api/graph.nq`. Their context
+  logs stay local and reach the graph through `/api/distill`.
 - **A browser**: the home page (chat.py) shows how to connect from your own
   Claude, and links to Settings. With ANTHROPIC_API_KEY set it is a chat
   instead, billed to that key.
@@ -38,9 +39,11 @@ import json
 import logging
 import os
 import tempfile
+import threading
 import time
 from pathlib import Path
 
+import anyio
 from mcp.server import Server
 
 from . import tools
@@ -140,7 +143,93 @@ def api_routes(store: MemoryStore, read_only: bool):
                  result["stored"], result["linked"], result["residue"])
         return JSONResponse(result)
 
-    return [("/api/graph.nq", graph, ["GET"]), ("/api/distill", distill, ["POST"])]
+    async def hook(request: Request):
+        try:
+            payload = json.loads(await request.body())
+            if not isinstance(payload, dict):
+                raise ValueError("expected an object")
+        except ValueError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=400)
+        try:
+            reply = await anyio.to_thread.run_sync(run_client_hook, store, payload)
+        except PermissionError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=403)
+        return JSONResponse(reply)
+
+    async def gaps(request: Request):
+        from dataclasses import asdict
+        from .gaps import analyse
+        def report():
+            with _gate_lock:
+                return asdict(analyse(store, limit=5))
+        return JSONResponse(await anyio.to_thread.run_sync(report))
+
+    async def ping(request: Request):
+        # behind the credential check, so a 200 also means the token is good;
+        # "lookups" tells a client this server can run its gate (/api/hook)
+        return JSONResponse({"ok": True, "lookups": True})
+
+    return [("/api/graph.nq", graph, ["GET"]), ("/api/distill", distill, ["POST"]),
+            ("/api/hook", hook, ["POST"]), ("/api/gaps", gaps, ["GET"]),
+            ("/api/ping", ping, ["GET"])]
+
+
+_gate_lock = threading.Lock()
+
+
+WARM_EVERY = 2.0   # seconds between checks for a changed graph
+
+
+def warm_gate(store: MemoryStore) -> bool:
+    """Rebuild the gate's indexes if the graph changed since they were built;
+    True if it rebuilt. Rebuilding costs seconds on a big graph (3.6s at
+    10,000 memories), so the server does it right after a write rather than
+    leaving it to the next prompt, which would wait on it or time out."""
+    from . import planner
+    from .gate import recall, runtime
+    with _gate_lock:
+        runtime.use_live_store(store)
+        try:
+            key = recall._index_key()
+            if key is None or recall._memo.get("key") == key:
+                return False
+            recall.gate_index("", lambda: store)
+            planner.entity_index(store)
+            return True
+        finally:
+            runtime.use_live_store(None)
+
+
+def _keep_gate_warm(store: MemoryStore, stop: threading.Event) -> None:
+    while not stop.wait(WARM_EVERY):
+        try:
+            warm_gate(store)
+        except Exception:  # noqa: BLE001 - a failed warm-up just means a cold prompt
+            log.exception("gate warm-up failed")
+
+
+def run_client_hook(store: MemoryStore, request: dict) -> dict:
+    """Run one of a client's graph-reading gate hooks here, on the live
+    store, so the client needs no copy of the graph (hookrun.SERVER_EVENTS).
+    The client's settings apply to this call only; its log lines are
+    returned rather than written, and the client writes them. One call at a
+    time: the gate's config and index memo are process-wide."""
+    from .gate import runtime
+    from .hookcore.state import capture_jsonl
+    from .hookrun import SERVER_EVENTS, run_extension
+    name, event = request.get("extension"), request.get("event")
+    if (name, event) not in SERVER_EVENTS:
+        raise PermissionError(f"not a server-side hook: {name} {event}")
+    state = dict(request.get("state") or {})
+    global_state = dict(request.get("global") or {})
+    with _gate_lock, capture_jsonl() as logs, runtime.overridden(request.get("gate") or {}):
+        runtime.use_live_store(store)
+        try:
+            output = run_extension(name, event, dict(request.get("payload") or {}),
+                                   dict(request.get("core") or {}), state, global_state)
+        finally:
+            runtime.use_live_store(None)
+    return {"output": output, "state": state, "global": global_state, "logs": logs}
 
 
 # ------------------------------------------------------------- auth
@@ -243,8 +332,12 @@ def build_app(store: MemoryStore, instructions: str, token: str = "",
 
     @contextlib.asynccontextmanager
     async def lifespan(app):
+        stop = threading.Event()
+        threading.Thread(target=_keep_gate_warm, args=(store, stop), daemon=True,
+                         name="gate-warm").start()
         async with manager.run():
             yield
+        stop.set()
         if not read_only:
             store.save()
         log.info("store saved; goodbye")

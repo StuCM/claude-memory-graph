@@ -71,6 +71,7 @@ still reaches the model.
 | **Answer strictness** | `0.8` (default), 0.5–1 | share of the question that must match the graph; lower answers more, and risks answering the wrong question |
 | **Memory server** | empty (default) · `https://…` | empty keeps memory on this machine; an address uses your hosted memory ([docs/REMOTE.md](docs/REMOTE.md)) |
 | **Memory server token** | secret | the server's `MEMORY_GRAPH_TOKEN`, kept in secure storage |
+| **Memory lookups with a server** | `server` (default) · `local copy` | `server`: recall and question answers run on the server, and this device never downloads the graph; `local copy`: download it and look it up here |
 
 Thresholds live in `~/.claude/memory-graph/gate.json` — see the tuning table in
 [docs/HANDBOOK.md](docs/HANDBOOK.md). Set `MEMORY_GRAPH_PATH` to move the store

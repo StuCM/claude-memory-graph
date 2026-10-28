@@ -12,7 +12,10 @@ runs `python -m claude_memory_graph.hookrun` with:
      "state":   {extension name: its per-session dict},
      "global":  {extension name: its cross-session dict},
      "enabled": [extension names; default: memory-recall, context-counter],
-     "remote":  {"url", "token"} when memory lives on a server (optional),
+     "remote":  {"url", "token", "lookups"} when memory lives on a server
+                (optional; lookups "server", the default, asks the server
+                to run the gate's graph reads; "replica" downloads the
+                graph and reads it here),
      "gate":    gate.json keys set in the plugin's settings menu (optional;
                 they win over gate.json for this call)}
 
@@ -58,6 +61,42 @@ def _use_replica(remote: dict, force: bool, errors: list) -> None:
         errors.append(f"memory server {remote['url']}: no replica yet (unreachable?)")
 
 
+# What the memory server runs for a client in server-lookup mode: the
+# extension events that read the graph. Everything else stays on the client.
+SERVER_EVENTS = {("memory-recall", "SessionStart"), ("memory-recall", "UserPromptSubmit")}
+
+
+def run_extension(name: str, event: str, payload: dict, core: dict, state: dict,
+                  global_state: dict) -> str:
+    """One extension's handler for one event; its state dicts are updated in place."""
+    cls = _extensions().get(name)
+    method = EVENT_METHODS.get(event)
+    if cls is None or method is None:
+        return ""
+    ctx = HookContext(event=event, payload=payload, core=core, state=state,
+                      global_state=global_state)
+    result = getattr(cls(), method)(ctx)
+    return str(result).rstrip() if result else ""
+
+
+def _on_server(name: str, event: str, payload: dict, core: dict, state: dict,
+               global_state: dict, gate: dict) -> str:
+    """run_extension, run by the memory server against its own graph
+    (/api/hook). Its log lines come back and are written here, so the
+    pane and the miss report see them."""
+    from . import remote as remote_mod
+    from .hookcore import append_jsonl
+    reply = remote_mod.run_hook({"extension": name, "event": event, "payload": payload,
+                                 "core": core, "state": state, "global": global_state,
+                                 "gate": gate})
+    state.clear(); state.update(reply.get("state") or {})
+    global_state.clear(); global_state.update(reply.get("global") or {})
+    for filename, entry in reply.get("logs") or []:
+        if filename in ("injections.jsonl", "capture.jsonl"):
+            append_jsonl(filename, entry)
+    return str(reply.get("output") or "")
+
+
 def run(request: dict) -> dict:
     event = request.get("event", "")
     payload = request.get("payload") or {}
@@ -70,10 +109,18 @@ def run(request: dict) -> dict:
 
     method = EVENT_METHODS.get(event)
     remote = request.get("remote") or {}
-    if request.get("gate"):
+    gate = request.get("gate") or {}
+    if gate:
         from .gate import runtime
-        runtime.override(request["gate"])
-    if remote.get("url"):
+        runtime.override(gate)
+    on_server = bool(remote.get("url")) and remote.get("lookups", "server") == "server"
+    if on_server:
+        from . import remote as remote_mod
+        from .gate.runtime import SERVER_LOOKUPS_ENV
+        os.environ[remote_mod.SERVER_ENV] = str(remote["url"])
+        os.environ[remote_mod.TOKEN_ENV] = str(remote.get("token") or "")
+        os.environ[SERVER_LOOKUPS_ENV] = "server"
+    elif remote.get("url"):
         _use_replica(remote, force=event == "SessionStart", errors=errors)
     if event == "SessionStart":
         try:  # the context protocol writes here; the archive receives distilled files
@@ -85,18 +132,15 @@ def run(request: dict) -> dict:
         advance_core(core, event, payload)
         available = _extensions()
         for name in enabled:
-            cls = available.get(name)
-            if cls is None:
+            if name not in available:
                 continue
             try:
-                ctx = HookContext(
-                    event=event, payload=payload, core=core,
-                    state=state.setdefault(name, {}),
-                    global_state=global_state.setdefault(name, {}),
-                )
-                result = getattr(cls(), method)(ctx)
+                args = (name, event, payload, core, state.setdefault(name, {}),
+                        global_state.setdefault(name, {}))
+                result = (_on_server(*args, gate) if on_server and (name, event) in SERVER_EVENTS
+                          else run_extension(*args))
                 if result:
-                    outputs.append(str(result).rstrip())
+                    outputs.append(result)
             except Exception as exc:  # one extension failing never silences the rest
                 log_error(f"extension '{name}' on {event}", exc)
                 errors.append(f"{name}: {type(exc).__name__}: {exc}")

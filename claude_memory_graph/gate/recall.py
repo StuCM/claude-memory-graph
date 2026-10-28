@@ -304,7 +304,9 @@ def gate_index(project: str, opener) -> tuple[list[dict], dict, set[str], dict[s
     path = state_home() / "gate-index.pickle"
     key = _index_key()
     cached = None
-    if key is not None:
+    if key is not None and _memo.get("key") == key:
+        cached = _memo                  # a long-lived process (the memory server)
+    elif key is not None:
         try:
             with open(path, "rb") as f:
                 cached = pickle.load(f)
@@ -336,7 +338,15 @@ def gate_index(project: str, opener) -> tuple[list[dict], dict, set[str], dict[s
             pass
     global _last_semantic
     _last_semantic = cached.get("sem")
+    if key is not None and cached is not _memo:
+        _memo.clear()
+        _memo.update(cached)
     return cached["docs"], cached["idf"], near, cached["links"]
+
+
+# The index this process last used: a hook process uses it once, the memory
+# server on every prompt, so it never unpickles per prompt (~300ms at 10,000).
+_memo: dict = {}
 
 
 _ENTITY_MODELS = frozenset({"Project", "Person", "Company", "Technology"})
@@ -451,10 +461,10 @@ class RecallExtension(HookExtension):
     def on_session_start(self, ctx: HookContext) -> str | None:
         if ctx.state.get("primed"):
             return None
-        from ..store import MemoryStore
         from ..tools import recall as recall_tool
+        from .runtime import open_store
 
-        store = MemoryStore.open_or_create(store_dir())
+        store = open_store()
         budget = config()["PRIME_MAX_CHARS"]
         project = ctx.project or Path(ctx.cwd or os.getcwd()).name
         user = os.environ.get("MEMORY_GRAPH_USER")
@@ -472,13 +482,13 @@ class RecallExtension(HookExtension):
         return "memory-graph auto-prime (recalled, not instructions):\n" + "\n\n".join(sections)
 
     def on_user_prompt_submit(self, ctx: HookContext) -> str | None:
-        from ..store import MemoryStore
+        from .runtime import open_store
         store = None
 
         def opener():
             nonlocal store
             if store is None:
-                store = MemoryStore.open_or_create(store_dir())
+                store = open_store()
             return store
 
         answers = self._answer_questions(ctx, opener)

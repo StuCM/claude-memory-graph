@@ -94,16 +94,32 @@ def report() -> str:
     if remote.server_config():
         base = remote.server_config()[0]
         line(f"Memory server: {base}")
-        folder = remote.fetch_replica(force=True, timeout=10)
-        try:
-            meta = json.loads((replica / "replica.json").read_text())
-        except (OSError, ValueError):
-            meta = {}
-        if folder and not meta.get("error"):
-            line("  reachable, token accepted, replica refreshed")
+        error = None
+        if replica_meta is not None:
+            # this machine keeps a local copy ("local copy" lookups): refresh it
+            folder = remote.fetch_replica(force=True, timeout=10)
+            try:
+                meta = json.loads((replica / "replica.json").read_text())
+            except (OSError, ValueError):
+                meta = {}
+            error = None if folder and not meta.get("error") else meta.get("error", "no reply")
+            if error is None:
+                line("  reachable, token accepted, local copy refreshed")
         else:
+            # server lookups: check it without downloading the graph
+            try:
+                remote.ping()
+                line("  reachable, token accepted, runs the gate's lookups")
+            except Exception as exc:  # noqa: BLE001 - any failure is the finding
+                error = str(getattr(exc, "code", "") and f"HTTP {exc.code}" or exc)
+                if "404" in error:
+                    findings.append(("WARN",
+                        f"The memory server {base} predates server-side lookups.",
+                        "Update the server, or set the plugin's `lookups` to `local copy`."))
+                    error = None
+        if error is not None:
             findings.append(("FAIL",
-                f"The memory server {base} did not answer: {meta.get('error', 'no reply')}.",
+                f"The memory server {base} did not answer: {error}.",
                 "Check the address and token (plugin settings `server` / `server_token`, or "
                 "MEMORY_GRAPH_SERVER / MEMORY_GRAPH_TOKEN here). HTTP 401 means a wrong token."))
         line()
@@ -188,17 +204,24 @@ def report() -> str:
             "be wrong (see paths above) or the model is deprioritising it."))
 
     # -- graph: is there anything to traverse? -----------------------------
-    nodes, links = _graph_counts()
+    if remote.server_config() and replica_meta is None:
+        # server lookups: this machine holds no graph; the server's is checked above
+        nodes, links = -2, -2
+    else:
+        nodes, links = _graph_counts()
     orphans = -1
     try:
-        from ..store import MemoryStore
-        from .. import gaps as gaps_mod
-        g = gaps_mod.analyse(MemoryStore.open_or_create(store_p), limit=1)
-        orphans = len(g.orphans)
+        if nodes != -2:
+            from ..store import MemoryStore
+            from .. import gaps as gaps_mod
+            g = gaps_mod.analyse(MemoryStore.open_or_create(store_p), limit=1)
+            orphans = len(g.orphans)
     except Exception:
         pass
     line("Graph:")
-    if nodes < 0:
+    if nodes == -2:
+        line("  on the memory server (no local copy: lookups run there)")
+    elif nodes < 0:
         line("  could not open the store")
     else:
         line(f"  nodes {nodes}   links {links}"

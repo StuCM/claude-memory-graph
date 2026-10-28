@@ -219,10 +219,80 @@ def test_hook_runner_reads_the_replica(server, remote_env, monkeypatch):
     from claude_memory_graph import hookrun
     monkeypatch.delenv("MEMORY_GRAPH_PATH", raising=False)
     reply = hookrun.run({"event": "SessionStart", "payload": {"cwd": "/w/quartz"},
-                         "enabled": [], "remote": {"url": server.base, "token": TOKEN}})
+                         "enabled": [], "remote": {"url": server.base, "token": TOKEN,
+                                                   "lookups": "replica"}})
     assert reply["errors"] == []
     assert os.environ["MEMORY_GRAPH_PATH"] == str(remote.replica_dir())
     assert (remote.replica_dir() / "graph.nq").exists()
+
+
+def _server_lookups(server, monkeypatch, tmp_path):
+    """A client in server-lookup mode: its own state home, no local graph."""
+    from claude_memory_graph.gate import runtime
+    from claude_memory_graph.hookcore import state
+    monkeypatch.setenv(state.STATE_HOME_ENV, str(tmp_path / "client-state"))
+    monkeypatch.setenv("MEMORY_GRAPH_PATH", str(tmp_path / "no-local-graph"))
+    monkeypatch.setenv(runtime.SERVER_LOOKUPS_ENV, "")   # hookrun sets it; restored after
+    monkeypatch.setattr(runtime, "_config", dict(runtime._DEFAULTS))
+    return {"url": server.base, "token": TOKEN}
+
+
+def test_server_lookups_answer_without_a_local_graph(server, remote_env, monkeypatch, tmp_path):
+    from claude_memory_graph import hookrun
+    store = server.store
+    _, decision = store.create_resource("Decision", {"name": "Use varnish for tiles",
+                                                     "rationale": "tile server too slow"})
+    quartz = next(iter(store.query(
+        'SELECT ?p WHERE { GRAPH ?g { ?p a mem:Project ; mem:name "quartz" } }')))["p"]
+    store.create_link(decision, quartz, "affects", {})
+    store.save()
+    remote_cfg = _server_lookups(server, monkeypatch, tmp_path)
+    request = {"event": "UserPromptSubmit", "enabled": ["memory-recall"], "remote": remote_cfg,
+               "payload": {"prompt": "Back on it. Which decisions affect quartz? Then deploy.",
+                           "cwd": "/w/quartz", "session_id": "s1"},
+               "core": {"project": "quartz", "session_id": "s1"}}
+    reply = hookrun.run(request)
+    assert reply["errors"] == []
+    assert "Memory answers" in reply["output"] and "Use varnish for tiles" in reply["output"]
+    assert not (tmp_path / "no-local-graph").exists()           # nothing opened locally
+    assert not remote.replica_dir().exists()                    # nothing downloaded
+    # the server's log lines landed in the CLIENT's log
+    log = (tmp_path / "client-state" / "injections.jsonl").read_text()
+    assert '"kind": "answer"' in log
+    # session state came back: the same question isn't answered twice
+    again = hookrun.run({**request, "state": reply["state"]})
+    assert "Memory answers" not in again["output"]
+    # the client's settings travel with the call, and don't stick on the server
+    from claude_memory_graph.gate import runtime
+    off = hookrun.run({**request, "gate": {"ANSWER_QUESTIONS": False}})
+    assert "Memory answers" not in off["output"]
+    # (client and server share this test process: undo the client's own override)
+    monkeypatch.setattr(runtime, "_config", dict(runtime._DEFAULTS))
+    assert "Memory answers" in hookrun.run(request)["output"]
+
+
+def test_server_lookups_fail_open(server, remote_env, monkeypatch, tmp_path):
+    from claude_memory_graph import hookrun
+    remote_cfg = {**_server_lookups(server, monkeypatch, tmp_path), "url": "http://127.0.0.1:9"}
+    reply = hookrun.run({"event": "UserPromptSubmit", "enabled": ["memory-recall"],
+                         "remote": remote_cfg, "payload": {"prompt": "which decisions affect quartz?"},
+                         "core": {"project": "quartz", "session_id": "s"}})
+    assert reply["output"] == "" and reply["errors"]
+
+
+def test_server_runs_only_graph_reading_hooks(server):
+    r = httpx.post(server.base + "/api/hook", headers=_bearer(),
+                   json={"extension": "context-counter", "event": "Stop"})
+    assert r.status_code == 403
+    assert httpx.post(server.base + "/api/hook", json={}).status_code == 401
+
+
+def test_review_reads_gaps_from_the_server(server, remote_env, monkeypatch, tmp_path):
+    from claude_memory_graph.gate import review
+    _server_lookups(server, monkeypatch, tmp_path)
+    monkeypatch.setenv("MEMORY_GRAPH_LOOKUPS", "server")
+    gaps = review._gaps()
+    assert ("Project", "quartz") in [tuple(o) for o in gaps.orphans]
 
 
 def test_proxy_reads_and_writes_the_server(server, remote_env):
@@ -261,3 +331,14 @@ def test_doctor_names_a_wrong_token(server, remote_env, monkeypatch):
     from claude_memory_graph.gate.doctor import report
     monkeypatch.setenv(remote.TOKEN_ENV, "wrong")
     assert "HTTP 401" in report()
+
+
+def test_server_rebuilds_the_gate_after_a_write(server, tmp_path, monkeypatch):
+    from claude_memory_graph.hookcore import state
+    from claude_memory_graph.http_server import warm_gate
+    monkeypatch.setenv(state.STATE_HOME_ENV, str(tmp_path / "server-state"))
+    warm_gate(server.store)
+    assert warm_gate(server.store) is False            # nothing changed: nothing to do
+    server.store.create_resource("Decision", {"name": "Warm the gate after writes"})
+    server.store.save()
+    assert warm_gate(server.store) is True             # rebuilt before any prompt asks

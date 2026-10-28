@@ -67,6 +67,16 @@
       "sensitive": true,
       "description": "The server's token (its MEMORY_GRAPH_TOKEN). Stored in secure storage.",
       "default": ""
+    },
+    "lookups": {
+      "type": "string",
+      "title": "Memory lookups with a server",
+      "description": "Only applies when a memory server is set. server: recall and question answers run on the server, which sends back just the text to add, so this device never downloads the graph (best for phones and small devices). local copy: download the graph (refreshed at most once a minute) and look it up on this device, which keeps working briefly offline.",
+      "options": [
+        "server",
+        "local copy"
+      ],
+      "default": "server"
     }
   },
   "types": "./types/index.d.ts"

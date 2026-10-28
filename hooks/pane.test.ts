@@ -127,7 +127,15 @@ test('a memory server reaches Python with its token', {
 }, async ($, on) => {
   const seen = engine(on)
   await $.classic.UserPromptSubmit({ prompt: 'hello there' })
-  expect(seen.python[0].remote).toEqual({ url: 'https://memory.example.com', token: 's3cret' })
+  expect(seen.python[0].remote).toEqual({ url: 'https://memory.example.com', token: 's3cret', lookups: 'server' })
+})
+
+test('a local copy of the server graph is opt-in', {
+  options: { server: 'https://memory.example.com', server_token: 's3cret', lookups: 'local copy' },
+}, async ($, on) => {
+  const seen = engine(on)
+  await $.classic.UserPromptSubmit({ prompt: 'hello there' })
+  expect(seen.python[0].remote.lookups).toBe('replica')
 })
 
 test('answer settings reach Python as gate keys', {
