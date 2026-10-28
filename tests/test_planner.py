@@ -222,3 +222,16 @@ def test_did_you_mean_for_an_unplaced_verb(store):
     out = planner.handle(store, "Which decisions influenced quartz?")
     assert "did you mean" in out and "'affects'" in out
     assert "Serve static via nginx image" in out
+
+
+def test_an_alias_identifies_a_record(store):
+    store_resource.handle_resource(store, "Project", {
+        "name": "quartz", "aliases": "the heritage platform, arches deployment"})
+    out = planner.handle(store, "Who works on the heritage platform?", explain=True)
+    assert "Find Persons that works on Project 'quartz'." in out
+    assert "Stuart Marshall" in out.split("── answer ──")[1]
+
+
+def test_did_you_mean_says_how_to_teach_the_phrasing(store):
+    out = planner.handle(store, "Which decisions influenced quartz?")
+    assert "memory_amend_relation add_verb_forms" in out

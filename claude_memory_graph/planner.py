@@ -94,7 +94,7 @@ class MemoryVocabulary:
 
     def rank_entities(self, terms: set[str]) -> list[tuple[float, Entity]]:
         if self._docs is None:
-            docs = _corpus(self.store, include_concepts=True)
+            docs = [_with_aliases(d) for d in _corpus(self.store, include_concepts=True)]
             self._docs = (docs, _idf(docs) if docs else {})
         docs, idf = self._docs
         ranked = sorted(((_score(terms, d, idf), d) for d in docs),
@@ -116,6 +116,19 @@ class MemoryVocabulary:
 
     def hint_words(self) -> dict[str, str]:
         return _HINTS
+
+
+def _with_aliases(doc: dict) -> dict:
+    """A memory's aliases name it as much as its name does: "who works on the
+    heritage platform?" must find the project aliased that way. Alias words
+    count as name terms, so they can identify the record a question is about
+    (the planner only lets a name pick a record, never a passing mention)."""
+    from ceist.text import terms
+    alias_terms = {w for key, value in doc.get("parts", ())
+                   if key == "aliases" for a in str(value).split(",") for w in terms(a)}
+    if not alias_terms:
+        return doc
+    return dict(doc, name_terms=set(doc["name_terms"]) | alias_terms)
 
 
 def ground(store: MemoryStore, text: str):
@@ -304,7 +317,9 @@ def matcher():
 
 def _did_you_mean(g) -> str:
     return "".join(f"(not sure what '{w}' means here — did you mean "
-                   f"{', '.join(repr(o) for o in opts)}? Ask again using one of those)\n"
+                   f"{', '.join(repr(o) for o in opts)}? Ask again using one of those; if "
+                   f"'{w}' should always mean one of them, add it as a phrasing with "
+                   f"memory_amend_relation add_verb_forms)\n"
                    for w, opts in g.suggestions)
 
 

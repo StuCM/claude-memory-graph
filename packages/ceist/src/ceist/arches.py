@@ -108,6 +108,9 @@ class ArchesVocabulary:
         self.relation_forms = relation_forms or {}
         # words that pick a date node: {"construction_date": ["built", "constructed"]}
         self.date_forms = date_forms or {}
+        self._pending_qualified: list[tuple[str, dict]] = []
+        self._qualified: list[Relation] | None = None
+        self.skipped_qualified = 0
         if bundle is not None:
             self._absorb(bundle)
         self._narrower: dict[str, list[str]] = {}
@@ -140,17 +143,17 @@ class ArchesVocabulary:
     def _absorb(self, bundle) -> None:
         """A vocabulary bundle's phrasings (ceist.bundle): unqualified link
         entries become relation phrasings, date entries date phrasings.
-        Entries that need a qualifier value ("designed by" → actor + role
-        Architect) aren't expressible as a relation yet and are skipped."""
+        Entries that carry a qualifier ("designed by" → actor + role
+        Architect) become qualified relations (relations()); one whose
+        value isn't in its node's collection is counted in skipped_qualified."""
         from . import bundle as _bundle
         b = bundle if isinstance(bundle, dict) else _bundle.load(bundle)
-        self.skipped_qualified = 0
         for name, m in b["models"].items():
             if name not in self.models:
                 continue
             for e in m["entries"]:
                 if e.get("qualifier"):
-                    self.skipped_qualified += 1
+                    self._pending_qualified.append((name, e))
                     continue
                 kind = (m["nodes"].get(e["node"]) or {}).get("kind")
                 target = {"link": self.relation_forms, "date": self.date_forms}.get(kind)
@@ -192,7 +195,33 @@ class ArchesVocabulary:
                 forms |= {f.lower() for f in self.relation_forms.get(n["alias"], [])}
                 out.append(Relation(n["alias"], tuple(sorted(f for f in forms if f)),
                                     frozenset({m.name}), targets, style="field"))
-        return out
+        return out + self._qualified_relations()
+
+    def _qualified_relations(self) -> list[Relation]:
+        """Bundle entries that need a value on the same entry as the link:
+        "designed by" → actor, with role type = Architect (its concept id)."""
+        if self._qualified is not None:
+            return self._qualified
+        self._qualified = []
+        if not self._pending_qualified:
+            return self._qualified
+        concepts = {(v.field, v.label.lower()): v.value for v in self.values()}
+        for model, e in self._pending_qualified:
+            m = self.models[model]
+            n = next((x for x in m.nodes if x.get("alias") == e["node"]), None)
+            q = e["qualifier"]
+            cid = concepts.get((q["node"], str(q["value"]).lower()))
+            if n is None or n.get("datatype") not in LINK_TYPES or cid is None:
+                self.skipped_qualified += 1
+                continue
+            targets = frozenset(self.by_graph[g["graphid"]].name
+                                for g in (n.get("config") or {}).get("graphs") or []
+                                if g.get("graphid") in self.by_graph)
+            self._qualified.append(Relation(
+                f"{e['node']}#{q['value']}", tuple(sorted({p.lower() for p in e["phrases"]})),
+                frozenset({model}), targets, style="field", path=e["node"],
+                qualifier=(q["node"], cid, q["value"])))
+        return self._qualified
 
     def values(self) -> list[Value]:
         if self.rdm is None:

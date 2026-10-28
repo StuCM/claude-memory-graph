@@ -37,6 +37,9 @@ def _field(name: str, label: str = "") -> str:
 
 def _link(c: LinkTo, forms: bool, canonical: bool, negated: bool) -> str:
     target = _target(c, forms, canonical)
+    if c.qualifier is not None:
+        # same entry: "whose actor is Person 'Ada Lovelace' (role type: Architect)"
+        target += f" ({_field(c.qualifier.field)}: {c.qualifier.label})"
     if c.relation is None:
         return f"{'not ' if negated else ''}linked to {target}"
     if c.style == "field":

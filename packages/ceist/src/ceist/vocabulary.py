@@ -28,6 +28,11 @@ class Relation:
     range: frozenset[str] = frozenset()         # types at the target end
     style: str = "verb"                         # how it reads: "verb" ("affects X") or
                                                 # "field" ("whose site is X")
+    path: str = ""                              # what a backend calls the link, when `name`
+                                                # is a variant of it ("actor#Architect")
+    qualifier: tuple[str, str, str] | None = None   # (field, value, label) that must hold
+                                                # on the same record entry (tile) as the link:
+                                                # designed by → actor with role Architect
 
 
 @dataclass(frozen=True)

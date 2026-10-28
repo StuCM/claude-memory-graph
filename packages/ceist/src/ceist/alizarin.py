@@ -54,6 +54,7 @@ class Tiles:
         self.values: dict[str, dict[str, list]] = {}       # resource → alias → raw values
         self.out: dict[str, dict[str, set]] = {}            # resource → alias → linked ids
         self.into: dict[str, dict[str, set]] = defaultdict(lambda: defaultdict(set))
+        self.entries: dict[str, list[dict[str, list]]] = {}  # resource → each tile's alias → values
         for r in vocab.resources:
             ri = r.get("resourceinstance") or {}
             rid = ri.get("resourceinstanceid")
@@ -62,12 +63,17 @@ class Tiles:
                 continue
             self.type_of[rid] = model.name
             vals, links = defaultdict(list), defaultdict(set)
+            entries = []
             for tile in r.get("tiles") or []:
+                entry = defaultdict(list)
                 for nid, v in (tile.get("data") or {}).items():
                     a = alias.get(nid)
                     if a is None or v is None:
                         continue
                     vals[a].append(v)
+                    entry[a].append(v)
+                entries.append(dict(entry))
+            self.entries[rid] = entries
             for a, vs in vals.items():
                 if a in self._link_aliases(model):
                     for v in vs:
@@ -108,6 +114,8 @@ def _filter(c, hits: set[str], tiles: Tiles) -> set[str]:
     vocab = tiles.vocab
     if isinstance(c, Not):
         return hits - _filter(c.condition, hits, tiles)
+    if isinstance(c, LinkTo) and c.qualifier is not None:
+        return _qualified_link(c, hits, tiles)
     if isinstance(c, LinkTo):
         targets = ({c.target.entity.id} if isinstance(c.target, EntityRef)
                    else evaluate(c.target, tiles))
@@ -139,6 +147,33 @@ def _filter(c, hits: set[str], tiles: Tiles) -> set[str]:
     if isinstance(c, Contains):
         return {r for r in hits if c.term.lower() in tiles.text(r)}
     return hits
+
+
+def _entry_holds(entry: dict, c: LinkTo, targets: set[str], vocab) -> bool:
+    """One tile carries both the link and the qualifier value."""
+    linked = {x for raw in entry.get(c.relation, []) for x in _links(raw)}
+    if not linked & targets:
+        return False
+    q = c.qualifier
+    wanted = {q.value, *vocab.descendants(q.value)}
+    return any(vocab.concept_of(v) in wanted
+               for raw in entry.get(q.field, [])
+               for v in (raw if isinstance(raw, list) else [raw]) if isinstance(v, str))
+
+
+def _qualified_link(c: LinkTo, hits: set[str], tiles: Tiles) -> set[str]:
+    """Linked AND qualified in the SAME entry: "designed by Ada" is a tile
+    whose actor is Ada and whose role is Architect — not Ada somewhere and an
+    architect somewhere else on the record."""
+    vocab = tiles.vocab
+    targets = ({c.target.entity.id} if isinstance(c.target, EntityRef)
+               else evaluate(c.target, tiles))
+    if c.direction == "in":                  # the entry lives on the other record
+        return {r for r in hits
+                if any(_entry_holds(e, c, {r}, vocab)
+                       for s in targets for e in tiles.entries.get(s, []))}
+    return {r for r in hits if any(_entry_holds(e, c, targets, vocab)
+                                   for e in tiles.entries.get(r, []))}
 
 
 def evaluate(plan: Plan, tiles: Tiles) -> set[str]:

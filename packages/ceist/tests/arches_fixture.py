@@ -2,8 +2,9 @@
 Sites, Buildings (site → Site, architect → Person, heritage status from a
 SKOS thesaurus with a narrower concept, construction date), and People.
 
-    Clock Tower      Listed     Leeds Dock  Ada Lovelace     1845
-    Grain Warehouse  Grade II   Leeds Dock  Isambard Brunel  1872
+    Clock Tower      Listed     Leeds Dock  Ada Lovelace     1845   actors: Ada (Architect)
+    Grain Warehouse  Grade II   Leeds Dock  Isambard Brunel  1872   actors: Ada (Builder),
+                                                                            Isambard (Architect)
     Boat Shed        Candidate  Salts Mill  Ada Lovelace     1903
 """
 
@@ -38,6 +39,24 @@ SKOS = """<?xml version="1.0" encoding="UTF-8"?>
 """
 
 
+ROLES = """<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:skos="http://www.w3.org/2004/02/skos/core#">
+  <skos:ConceptScheme rdf:about="https://example.org/vocab/Roles">
+    <skos:prefLabel xml:lang="en">Roles</skos:prefLabel>
+  </skos:ConceptScheme>
+  <skos:Concept rdf:about="https://example.org/vocab/Roles/architect">
+    <skos:inScheme rdf:resource="https://example.org/vocab/Roles"/>
+    <skos:prefLabel xml:lang="en">Architect</skos:prefLabel>
+  </skos:Concept>
+  <skos:Concept rdf:about="https://example.org/vocab/Roles/builder">
+    <skos:inScheme rdf:resource="https://example.org/vocab/Roles"/>
+    <skos:prefLabel xml:lang="en">Builder</skos:prefLabel>
+  </skos:Concept>
+</rdf:RDF>
+"""
+
+
 def _id(name: str) -> str:
     return str(uuid.uuid5(uuid.NAMESPACE_URL, f"https://example.org/fixture/{name}"))
 
@@ -50,24 +69,31 @@ def _node(graph, alias, name, datatype, config=None, root=False):
     return n
 
 
-def _graph(gid, name, children):
+def _graph(gid, name, children, nested=None):
+    """`nested`: {parent semantic node alias: [its child nodes]} — nodes that
+    share their parent's nodegroup (one tile holds them all)."""
     root = _node(gid, name.lower(), name, "semantic", root=True)
-    nodes = [root] + children
+    nested = nested or {}
+    inner = [n for kids in nested.values() for n in kids]
+    by_alias = {n["alias"]: n for n in children}
+    edges = [(root, n) for n in children] + [(by_alias[a], n) for a, kids in nested.items()
+                                             for n in kids]
     return {"graph": [{
-        "graphid": gid, "name": name, "root": root, "nodes": nodes,
-        "nodegroups": [{"nodegroupid": n["nodeid"], "cardinality": "1",
+        "graphid": gid, "name": name, "root": root, "nodes": [root] + children + inner,
+        "nodegroups": [{"nodegroupid": n["nodeid"],
+                        "cardinality": "n" if n["alias"] in nested else "1",
                         "parentnodegroup_id": None} for n in children],
-        "edges": [{"edgeid": _id(f"{gid}/edge/{n['alias']}"), "domainnode_id": root["nodeid"],
-                   "rangenode_id": n["nodeid"], "graph_id": gid} for n in children],
+        "edges": [{"edgeid": _id(f"{gid}/edge/{b['alias']}"), "domainnode_id": a["nodeid"],
+                   "rangenode_id": b["nodeid"], "graph_id": gid} for a, b in edges],
     }]}
 
 
-def collection_ids():
+def collection_ids(skos: str = SKOS):
     """(collection id, {label: concept id}, {label: prefLabel value id}) as Alizarin
     derives them from the SKOS — the same ids Rós Madair interns."""
     import alizarin
     cache = alizarin.RustRdmCache()
-    cid = cache.add_from_skos_xml(SKOS, "http://example.org/")[0]
+    cid = cache.add_from_skos_xml(skos, "http://example.org/")[0]
     simple = json.loads(cache.get_collection(cid).to_simplified_json())
     concepts, values = {}, {}
 
@@ -86,6 +112,14 @@ def collection_ids():
 
 def write(root: Path) -> dict:
     cid, concepts, values = collection_ids()
+    rid_, roles, role_values = collection_ids(ROLES)
+    concepts.update(roles)
+    # an "associated actor" entry: a link and a role in ONE nodegroup (one tile each)
+    assoc = _node(BUILDING, "associated_actor", "Associated actor", "semantic")
+    actor = dict(_node(BUILDING, "actor", "Actor", "resource-instance",
+                       {"graphs": [{"graphid": PERSON}]}), nodegroup_id=assoc["nodeid"])
+    actor_role = dict(_node(BUILDING, "actor_role", "Role", "concept",
+                            {"rdmCollection": rid_}), nodegroup_id=assoc["nodeid"])
     graphs = {
         SITE: _graph(SITE, "Site", [_node(SITE, "name", "Name", "string")]),
         PERSON: _graph(PERSON, "Person", [_node(PERSON, "name", "Name", "string")]),
@@ -99,25 +133,33 @@ def write(root: Path) -> dict:
                   {"graphs": [{"graphid": PERSON}]}),
             _node(BUILDING, "construction_date", "Construction date", "date",
                   {"dateFormat": "YYYY-MM-DD"}),
-        ]),
+            assoc,
+        ], nested={"associated_actor": [actor, actor_role]}),
     }
     (root / "graphs").mkdir(parents=True)
     for gid, doc in graphs.items():
         (root / "graphs" / f"{gid}.json").write_text(json.dumps(doc))
     (root / "vocabularies").mkdir()
     (root / "vocabularies" / "heritage.xml").write_text(SKOS)
+    (root / "vocabularies" / "roles.xml").write_text(ROLES)
 
     node = {g: {n["alias"]: n["nodeid"] for n in doc["graph"][0]["nodes"]}
             for g, doc in graphs.items()}
     ids = {}
 
-    def resource(gid, key, name, data):
+    def resource(gid, key, name, data, entries=()):
+        """`entries`: (group alias, {alias: value, …}) — one multi-node tile each."""
         rid = _id(f"resource/{key}")
         ids[key] = rid
         tiles = [{"tileid": _id(f"tile/{key}/{alias}"), "nodegroup_id": node[gid][alias],
                   "parenttile_id": None, "resourceinstance_id": rid, "sortorder": 0,
                   "provisionaledits": None, "data": {node[gid][alias]: value}}
                  for alias, value in data.items()]
+        tiles += [{"tileid": _id(f"tile/{key}/{group}/{i}"), "nodegroup_id": node[gid][group],
+                   "parenttile_id": None, "resourceinstance_id": rid, "sortorder": i,
+                   "provisionaledits": None,
+                   "data": {node[gid][a]: v for a, v in vals.items()}}
+                  for i, (group, vals) in enumerate(entries)]
         return {"resourceinstance": {"resourceinstanceid": rid, "graph_id": gid, "name": name,
                                      "legacyid": None,
                                      "descriptors": {"en": {"name": name, "description": "",
@@ -137,11 +179,18 @@ def write(root: Path) -> dict:
     buildings = [
         resource(BUILDING, "tower", "Clock Tower", {
             "name": text("Clock Tower"), "heritage_status": values["Listed"],
-            "site": link("dock"), "architect": link("ada"), "construction_date": "1845-06-01"}),
+            "site": link("dock"), "architect": link("ada"), "construction_date": "1845-06-01"},
+            entries=[("associated_actor", {"actor": link("ada"),
+                                           "actor_role": role_values["Architect"]})]),
+        # Ada built it and Isambard designed it: "designed by Ada" must NOT match
         resource(BUILDING, "warehouse", "Grain Warehouse", {
             "name": text("Grain Warehouse"), "heritage_status": values["Grade II"],
             "site": link("dock"), "architect": link("isambard"),
-            "construction_date": "1872-03-15"}),
+            "construction_date": "1872-03-15"},
+            entries=[("associated_actor", {"actor": link("ada"),
+                                           "actor_role": role_values["Builder"]}),
+                     ("associated_actor", {"actor": link("isambard"),
+                                           "actor_role": role_values["Architect"]})]),
         resource(BUILDING, "shed", "Boat Shed", {
             "name": text("Boat Shed"), "heritage_status": values["Candidate"],
             "site": link("mill"), "architect": link("ada"), "construction_date": "1903-09-30"}),

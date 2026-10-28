@@ -3,7 +3,9 @@
     Plan(type, where=[conditions], count, recent)
     conditions:
       LinkTo(relation, EntityRef | Plan, direction)   linked to a record, or to
-                                                      records matching a sub-plan
+                                                      records matching a sub-plan —
+                                                      optionally with a qualifier that holds
+                                                      on the same entry (role Architect)
       HasValue(field, value)                          a controlled value
       DateRange(field, lo, hi)                        a date in an inclusive range
       Mention(terms)                                  its text mentions these words
@@ -42,6 +44,8 @@ class LinkTo:
     direction: str = "out"            # "out": subject → target; "in": target → subject; "any"
     form: str = ""                    # the phrase that named it (for narration)
     style: str = "verb"               # "verb" (affects X) | "field" (whose site is X)
+    qualifier: "HasValue | None" = None   # must hold on the same record entry (tile) as
+                                          # the link: actor = Ada with role Architect
 
 
 @dataclass
@@ -178,7 +182,10 @@ def _build(g: Grounding, node: Node, via: Edge | None) -> Plan:
         other = edge.target if edge.source is node else edge.source
         direction = "out" if edge.source is node else "in"
         target = EntityRef(other.entity) if other.kind == "anchor" else _build(g, other, edge)
-        link = LinkTo(edge.relation, target, direction, form=edge.form, style=edge.style)
+        qual = (HasValue(edge.qualifier[0], edge.qualifier[1], edge.qualifier[2])
+                if edge.qualifier else None)
+        link = LinkTo(edge.path or edge.relation, target, direction, form=edge.form,
+                      style=edge.style, qualifier=qual)
         plan.where.append(Not(link) if edge.negated else link)
     return plan
 

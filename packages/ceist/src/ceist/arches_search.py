@@ -21,6 +21,8 @@ Mapping:
                                      LESS_THAN_OR_EQUALS [hi]   (ISO dates)
     Not(clause)                      the clause with quantifier NONE
     Not(link to a sub-plan)          the child group's traversal_quantifier NONE
+    LinkTo(…, qualifier)             a TILE-scoped group: the link clause and the value clause
+                                     must hold in one tile (only as the search's sole condition)
 
 Arches Search walks relationships both ways, so — unlike Rós Madair — "sites
 that have buildings designed by Ada" compiles. What it can't say, the compiler
@@ -64,6 +66,11 @@ def _relationship(slug: str, alias: str, inverse: bool, negated: bool) -> dict:
 def _group(plan: Plan, vocab, relationship: dict | None, concept_operator: str | None) -> dict:
     slug = vocab.model(plan.type).slug
     clauses, groups = [], []
+    qualified = [c for c in plan.where
+                 if isinstance(c.condition if isinstance(c, Not) else c, LinkTo)
+                 and (c.condition if isinstance(c, Not) else c).qualifier is not None]
+    if qualified:
+        return _tile_group(plan, vocab, slug, relationship, concept_operator, qualified)
     for c in plan.where:
         negated = isinstance(c, Not)
         c = c.condition if negated else c
@@ -110,6 +117,31 @@ def _group(plan: Plan, vocab, relationship: dict | None, concept_operator: str |
                               "term search for words")
     return {"graph_slug": slug, "scope": "RESOURCE", "logic": "AND", "clauses": clauses,
             "groups": groups, "aggregations": [], "relationship": relationship}
+
+
+def _tile_group(plan, vocab, slug, relationship, concept_operator, qualified) -> dict:
+    """A link with a qualifier ("actor Ada with role Architect") must hold in
+    one tile: arches-search's TILE scope. That scope applies to a whole group,
+    and nested groups are evaluated per resource, so the qualified link must be
+    the group's only condition — anything else would silently broaden it."""
+    if len(plan.where) != 1 or relationship is not None:
+        raise Unsupported("a link with a role or other same-entry value alongside other "
+                          "conditions: Arches Search applies tile scope only to a whole "
+                          "search group")
+    c = qualified[0]
+    if isinstance(c, Not):
+        raise Unsupported("a negated same-entry condition")
+    if not isinstance(c.target, EntityRef) or c.direction != "out":
+        raise Unsupported("a same-entry condition on a link to a set of records")
+    if not concept_operator:
+        raise Unsupported(f"the value {c.qualifier.label}: arches-search seeds no facets for "
+                          "concept nodes; pass concept_operator=")
+    e, q = c.target.entity, c.qualifier
+    ids = [q.value] + vocab.descendants(q.value)
+    return {"graph_slug": slug, "scope": "TILE", "logic": "AND",
+            "clauses": [_clause(slug, c.relation, "REFERENCES_ANY", [[e.id]], False, e.name),
+                        _clause(slug, q.field, concept_operator, [ids], False, q.label)],
+            "groups": [], "aggregations": [], "relationship": None}
 
 
 def to_payload(plan: Plan, vocab, concept_operator: str | None = None) -> dict:
@@ -165,6 +197,14 @@ def _read_group(group: dict, vocab, concept_operator: str | None) -> Plan:
         where.append(Not(link) if rel["traversal_quantifier"] == "NONE" else link)
     if group["logic"] != "AND":
         where.append(f"logic {group['logic']}")
+    if group.get("scope") == "TILE":
+        links = [c for c in where if isinstance(c, LinkTo)]
+        quals = [c for c in where if isinstance(c, HasValue)]
+        if len(links) == 1 and len(quals) == 1 and len(where) == 2:
+            from dataclasses import replace
+            where = [replace(links[0], qualifier=quals[0])]
+        else:
+            where.append("tile scope over more than one link and value")
     return Plan(type_name, where)
 
 
