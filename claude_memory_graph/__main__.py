@@ -98,6 +98,11 @@ def main() -> None:
     p.add_argument("model", nargs="?", default=None)
     p = sub.add_parser("query", help="run a SPARQL query")
     p.add_argument("sparql")
+    p = sub.add_parser("chain", help="follow the best edges out from the nodes "
+                                     "that best match free text")
+    p.add_argument("text", nargs="+")
+    p.add_argument("--depth", type=int, default=2)
+    p.add_argument("--limit", type=int, default=40, help="most nodes to show")
     p = sub.add_parser("ask", help="natural-language question → composed SPARQL "
                                    "(query planner v0)")
     p.add_argument("text")
@@ -322,6 +327,9 @@ def main() -> None:
         print(reflect.handle(store, args.model))
     elif args.cmd == "query":
         print(query.handle(store, args.sparql))
+    elif args.cmd == "chain":
+        from .chain import chain
+        print("\n".join(chain(store, " ".join(args.text), args.depth, args.limit)))
     elif args.cmd == "search":
         print(search.handle(store, args.text, args.model, args.limit))
     elif args.cmd == "ask":

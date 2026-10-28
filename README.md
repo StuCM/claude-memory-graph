@@ -130,7 +130,11 @@ by itself.
 claude-memory-graph recall Person Stuart --depth 2
 claude-memory-graph reflect
 claude-memory-graph query 'SELECT ?name WHERE { GRAPH ?g { ?n rdf:type mem:Project ; mem:name ?name } }'
+claude-memory-graph chain varnish tile cache --depth 2   # best-matching nodes, then each hop's best edges
 ```
+
+Recall and `chain` follow at most five edges onwards from each hop, the ones that match the focus
+best. A hop with five or fewer is followed whole, because a lone generic edge is often the only way on.
 
 Writes are deliberately MCP-only: a running server holds the graph in memory and saves after each mutation, so terminal writes would be overwritten by the next in-session save.
 

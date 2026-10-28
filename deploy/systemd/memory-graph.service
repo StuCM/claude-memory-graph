@@ -1,0 +1,17 @@
+# One memory-graph server on this machine, for every chat (a systemd user
+# service). Install the CLI (`uv tool install <checkout>`, or point ExecStart
+# at a checkout's .venv/bin/claude-memory-graph), then:
+#   cp deploy/systemd/memory-graph.service ~/.config/systemd/user/
+#   systemctl --user enable --now memory-graph
+#   loginctl enable-linger "$USER"     # keep it running while logged out
+# It listens on 127.0.0.1:8848 only. To serve beyond this machine, set a
+# token (Environment=MEMORY_GRAPH_TOKEN=...) and read docs/REMOTE.md.
+[Unit]
+Description=claude-memory-graph server (one graph for every chat)
+
+[Service]
+ExecStart=%h/.local/bin/claude-memory-graph serve --host 127.0.0.1 --port 8848
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
