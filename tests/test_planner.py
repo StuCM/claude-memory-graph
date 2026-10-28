@@ -214,3 +214,11 @@ def test_dates_on_creation(store):
 def test_negation_is_never_dropped(store):
     out = planner.handle(store, "Which decisions are not?", explain=True)
     assert "couldn't tell what it negates" in out
+
+
+def test_did_you_mean_for_an_unplaced_verb(store):
+    # "influenced" isn't a phrasing of any relation; the answer stays (loosely
+    # linked), and memory_ask names the relations it might mean
+    out = planner.handle(store, "Which decisions influenced quartz?")
+    assert "did you mean" in out and "'affects'" in out
+    assert "Serve static via nginx image" in out

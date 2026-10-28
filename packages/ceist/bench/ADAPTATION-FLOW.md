@@ -8,14 +8,14 @@ Every step below has been run end to end on the real Arches HER package (16 mode
 
 | # | Step | Input | Output | Who / what | Effort on HER |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **Read the models** (`her_models.py`) | graphs + reference_data (SKOS) | one description per model: node, card, tree path, UI label, link targets, small collections' labels | Alizarin; automatic | seconds |
-| 2 | **Build the vocabulary** | step 1 | `vocab/<Model>.json`: entries of phrasings mapped to a node (+ a qualifier value, + the end of a date range) | a strong LLM, one agent per ~4 models | ~4 min, 7,392 phrasings, 276 KB |
+| 1 | **Read the models** (`ceist vocab describe`) | graphs + reference_data (SKOS) | one description per model: node, card, tree path, UI label, link targets, small collections' labels | Alizarin; automatic | seconds |
+| 2 | **Build the vocabulary** (`ceist vocab prompt` → an LLM or agent → `ceist vocab assemble`) | step 1 | `vocab/<Model>.json`: entries of phrasings mapped to a node (+ a qualifier value, + the end of a date range) | a strong LLM, one agent per ~4 models | ~4 min, 7,392 phrasings, 276 KB |
 | 3 | **Write the acceptance questions** | step 1 only (never the vocabulary) | `cases.json`: questions with the expected node, including ones that should be refused | a separate LLM agent, **plus real questions from the client** | ~3 min for 120 |
 | 4 | **Review** | steps 2–3 | corrected expectations; a list of disputed cases | a domain expert (heritage officer), ~1 hour | — |
-| 5 | **Evaluate** (`her_compare.py`) | steps 2–4 | right / partial / dangerous / missed / refused, with a threshold sweep | automatic | seconds |
+| 5 | **Evaluate** (`ceist eval`, with `--min-right` / `--max-dangerous` as the gate) | steps 2–4 | right / partial / dangerous / missed / refused, with a threshold sweep | automatic | seconds |
 | 6 | **Adapt (optional)** (`adapt.py`) | step 2, or better, real questions | a 118 KB adapter or a token patch | automatic (JAX, CPU) | minutes; **on HER it didn't beat the baseline**, so ship it only if step 7 says so |
 | 7 | **Gate** | steps 5–6 | ship only if dangerous answers don't rise and right answers do, on step 3's questions | rule | — |
-| 8 | **Package** | steps 2, 6, 7 | `vocab.json`, the WordLlama table (16 MB, or about 4 MB as int8), any adapter, thresholds, and the report | automatic | — |
+| 8 | **Package** (the bundle and `ceist.toml`; `ceist vocab check` catches a stale bundle) | steps 2, 6, 7 | `vocab.json`, the WordLlama table (16 MB, or about 4 MB as int8), any adapter, thresholds, and the report | automatic | — |
 | 9 | **Loop** | query logs | phrases that missed or were refused go back to step 2 as "assign these"; a person approves; re-evaluate | LLM plus a person, monthly or per release | small |
 
 ## Rules that keep it honest

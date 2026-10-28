@@ -70,11 +70,11 @@ The ONNX and Qwen matchers still run once their weights are reachable. They now 
 ```
 git clone https://github.com/archesproject/arches-her
 P=arches-her/arches_her/pkg
-python her_models.py "$P/graphs/resource_models" her/models "$P/reference_data"   # needs alizarin
+ceist vocab describe "$P/graphs/resource_models" her/models --reference "$P/reference_data"   # needs alizarin
 uv run python her_compare.py
 ```
 
-(`her_models.py` writes one file per model. The extracted descriptions aren't committed: arches-her is AGPL, so regenerate them from a clone.)
+(`ceist vocab describe` writes one file per model. The extracted descriptions aren't committed: arches-her is AGPL, so regenerate them from a clone.)
 
 - **What was read, through Alizarin:**
   - 16 resource models, 4,571 nodes, 2,327 of them searchable (structural and `*_metatype` nodes dropped);

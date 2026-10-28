@@ -1,0 +1,18 @@
+# The HER project's matching configuration — what `ceist eval` measures and
+# what would ship. Settings from the HER evaluation (bench/README.md).
+[matching]
+layers = ["exact", "vectors"]
+
+[matching.exact]
+roots = true          # built / build / building
+direction = true      # "sailing from" never matches "sailing to"
+
+[matching.vectors]
+model = "wordllama-256"
+min = 0.6
+gap = 0.08
+
+[matching.fallback]
+chooser = "host"      # offer "did you mean"
+clarify_top = 3
+clarify_min = 0.15

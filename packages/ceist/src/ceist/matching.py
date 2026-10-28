@@ -85,11 +85,13 @@ def _light_root(w: str) -> str:
 
 
 def _rooter():
+    """Word roots: simplemma's lemma (built → build) when installed, then a
+    light suffix rule (building → build, which simplemma reads as a noun)."""
     try:
         import simplemma
-        return lambda w: simplemma.lemmatize(w, lang="en")
-    except ImportError:                      # fail open to a light suffix rule
+    except ImportError:                      # the light rule alone
         return _light_root
+    return lambda w: _light_root(simplemma.lemmatize(w, lang="en"))
 
 
 class Exact:

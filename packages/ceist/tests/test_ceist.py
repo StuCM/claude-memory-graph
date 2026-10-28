@@ -226,3 +226,41 @@ def test_readback_check():
     assert not verdict.ok and "✗" in "\n".join(verdict.lines())
     # order doesn't matter
     assert check(m.plan, Plan(m.plan.type, list(reversed(m.plan.where)))).ok
+
+
+# ── leftover words, matched by the configured chain ─────────────────────────
+
+from ceist.matching import Chain, Exact, Vectors  # noqa: E402
+from fakes import FakeEncoder  # noqa: E402
+
+FakeEncoder.SAME.update({"drawn": "designed", "sketched": "designed"})
+
+
+def chain():
+    return Chain([Exact(), Vectors(FakeEncoder(), low=0.6)], clarify_top=3, clarify_min=0.0)
+
+
+@pytest.mark.skipif(not FakeEncoder.ready(), reason="needs numpy")
+def test_leftover_relation_by_meaning():
+    q = "which buildings were drawn by Ada Lovelace?"
+    without = interpret(Toy(), q)
+    assert not any(isinstance(c, LinkTo) and c.relation == "architect"
+                   for c in without.plan.where)                  # a loose link, before
+    m = interpret(Toy(), q, matcher=chain())
+    (c,) = m.plan.where
+    assert c.relation == "architect" and c.target.entity.id == "p-1"
+    assert any("(vectors" in n for n in m.grounding.notes)
+
+
+@pytest.mark.skipif(not FakeEncoder.ready(), reason="needs numpy")
+def test_leftover_date_field_by_meaning():
+    assert interpret(TwoDates(), "which buildings were erected in 1850?", today=TODAY).plan is None
+    m = interpret(TwoDates(), "which buildings were erected in 1850?", today=TODAY, matcher=chain())
+    assert m.plan.where[0].field == "construction_date"
+
+
+@pytest.mark.skipif(not FakeEncoder.ready(), reason="needs numpy")
+def test_unsure_suggests_instead_of_guessing():
+    m = interpret(TwoDates(), "which buildings were painted in 1850?", today=TODAY, matcher=chain())
+    assert m.plan is None and "did you mean" in m.refused
+    assert m.grounding.suggestions[0][0] == "painted"

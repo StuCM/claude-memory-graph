@@ -122,6 +122,61 @@ to_payload(interpret(vocab, "which sites have buildings designed by Ada Lovelace
 
 Implement `ceist.Vocabulary`: `type_words`, `relations`, `values`, `rank_entities`, `implied_types` and `hint_words`, plus `date_fields` if questions should be able to filter on dates. `ceist.index.NameIndex` handles record-name ranking. Then compile the plan however your store is queried. The memory graph's `MemoryVocabulary` and `compile_sparql` are a worked example.
 
+## Matching: layers, a vocabulary bundle and a config per project
+
+Exact phrase lookup finds what the vocabulary already names. Words it leaves over get a second chance from a **chain of matching layers**, configured per project. Questions are still answered with no model at query time.
+
+```
+question → exact phrases (relations, values, dates, types, records)
+         → leftover words → shortlist by structure → matcher chain → match | "did you mean" | refuse
+         → plan → compile → read-back → run
+```
+
+- **Shortlist:** the planner's structure narrows what leftover words can mean:
+  - a run of words between two named things can only be a relation that joins their types;
+  - a run just before a date can only be one of the date fields it could be.
+  On the HER evaluation this narrowing is the biggest single gain.
+- **Layers** (`ceist.matching`):
+  - `exact`: equal or covering phrasings, optionally on word roots, and never "from" against "to";
+  - `vectors`: WordLlama static vectors (`pip install ceist[vectors]`), with a minimum score and a gap to the runner-up.
+
+  The first layer to decide confidently wins, and every decision names its layer in the grounding notes.
+- **Fallback:** when no layer is sure, the closest items become suggestions. `chooser = "host"` hands them to the caller: a person in a UI, or Claude through `memory_ask`, which then asks again in the graph's own words. `chooser = "none"` refuses instead. `local-llm` and `api` are reserved for later.
+
+```toml
+# ceist.toml
+[vocabulary]
+bundle = "vocab/her.bundle.json"
+
+[matching]
+layers = ["exact", "vectors"]
+[matching.exact]
+roots = true
+direction = true
+[matching.vectors]
+min = 0.6
+gap = 0.08
+[matching.fallback]
+chooser = "host"
+clarify_top = 3
+clarify_min = 0.15
+```
+
+### Building a project's vocabulary, and measuring it
+
+```
+ceist vocab describe <graphs dir> descriptions/ --reference <reference_data dir>   # read the models (Alizarin)
+ceist vocab prompt descriptions/ Monument Person …                                  # the instruction for an LLM (or agent)
+ceist vocab assemble descriptions/ vocab/ -o her.bundle.json --graphs <graphs dir> # validate and bundle
+ceist vocab check her.bundle.json <graphs dir>                                      # stale since the graphs changed?
+ceist eval --bundle her.bundle.json --questions cases.json --config ceist.toml \
+           --min-right 80 --max-dangerous 3                                         # the acceptance gate
+```
+
+`ArchesVocabulary.from_data_dir(path, bundle="her.bundle.json")` uses a bundle's link and date phrasings directly. Entries that need a qualifier value ("designed by" → actor + role Architect) are counted in `skipped_qualified`; the plan can't express them yet.
+
+CI runs this pipeline on the real Arches HER models: it clones arches-her, describes, assembles the committed vocabulary, and gates `ceist eval` on the blind questions (82/102 right, 3 dangerous, 91/102 right within one click). The flow for a new project is in [bench/ADAPTATION-FLOW.md](bench/ADAPTATION-FLOW.md).
+
 ## The grammar, honestly
 
 The grammar covers questions with one subject type and up to two hops. Each question can have up to two named records, any number of controlled values and dates, and "not" in front of any of them. It can ask to count, or for the most recent. It does not handle numeric ranges, "or", or comparisons between records ("older than the Clock Tower"). Questions using those are refused or relaxed, and never half-answered without a note.

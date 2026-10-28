@@ -301,3 +301,21 @@ def test_end_to_end_refuses_a_query_that_reads_back_wrong(vocab, snapshot, monke
     monkeypatch.setattr(rm, "_expr", buggy)
     out = rm.ask("which buildings are not listed?", vocab, str(snapshot), explain=True)
     assert "✗ differs" in out and "(not run" in out and "Clock Tower" not in out.split("(not run")[1]
+
+
+def test_vocabulary_bundle_phrasings(data):
+    """A bundle's link and date phrasings ground exactly; qualified ones are skipped."""
+    bundle = {"format": "ceist.vocab/1", "models": {"Building": {
+        "nodes": {"construction_date": {"kind": "date"}, "architect": {"kind": "link"},
+                  "site": {"kind": "link"}},
+        "entries": [
+            {"phrases": ["put up", "erected"], "kind": "date", "node": "construction_date"},
+            {"phrases": ["drawn up by"], "kind": "link", "node": "architect"},
+            {"phrases": ["sited by"], "kind": "link", "node": "site",
+             "qualifier": {"node": "heritage_status", "value": "Listed"}}]}}}
+    v = ArchesVocabulary.from_data_dir(data[0], bundle=bundle)
+    assert v.skipped_qualified == 1
+    m = interpret(v, "which buildings were put up before 1900?")
+    assert isinstance(m.plan.where[0], DateRange) and m.plan.where[0].field == "construction_date"
+    m = interpret(v, "which buildings were drawn up by Ada Lovelace?")
+    assert m.plan.where[0].relation == "architect"

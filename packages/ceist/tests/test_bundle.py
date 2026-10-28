@@ -2,10 +2,12 @@
 
 import json
 
+import pytest
+
 from ceist import bundle, config
 from ceist.cli import main
 from ceist.evaluate import evaluate, items_for
-from test_matching import FakeEncoder
+from fakes import FakeEncoder
 
 DESC = {"name": "Building", "graphid": "g-b", "nodes": [
     {"alias": "built_start", "name": "Construction Start", "datatype": "edtf"},
@@ -71,6 +73,7 @@ def test_assemble_and_stale(tmp_path):
     assert items_for(m, "link:Site") == []
 
 
+@pytest.mark.skipif(not FakeEncoder.ready(), reason="needs numpy")
 def test_eval_scores_with_the_shipped_config(tmp_path):
     p = project(tmp_path)
     b, _, _ = bundle.assemble(p / "desc", p / "vocab")

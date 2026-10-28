@@ -17,6 +17,8 @@ What a question can name, from that:
   the ids Rós Madair interned — the planner never re-derives them.
   Alternative labels are read from the SKOS itself (Alizarin keeps only
   preferred labels on concepts), matched to Alizarin's concepts by URI;
+- **a vocabulary bundle** (`bundle=`, built by `ceist vocab assemble`):
+  its link and date phrasings join the forms below;
 - **dates**: each date node, by its name, and by the words `date_forms`
   adds ("built" → construction date); a model's only date node is the one
   meant when no word picks;
@@ -88,7 +90,8 @@ class ArchesVocabulary:
                  language: str = "en", extra_type_words: dict[str, str] | None = None,
                  alt_labels: dict[str, list[str]] | None = None,
                  relation_forms: dict[str, list[str]] | None = None,
-                 date_forms: dict[str, list[str]] | None = None):
+                 date_forms: dict[str, list[str]] | None = None,
+                 bundle: str | Path | dict | None = None):
         self.language = language
         self.alt_labels = alt_labels or {}       # concept URI → alternative labels
         self.models = {}
@@ -105,6 +108,8 @@ class ArchesVocabulary:
         self.relation_forms = relation_forms or {}
         # words that pick a date node: {"construction_date": ["built", "constructed"]}
         self.date_forms = date_forms or {}
+        if bundle is not None:
+            self._absorb(bundle)
         self._narrower: dict[str, list[str]] = {}
         self._concept_of: dict[str, str] = {}    # label value id → concept id
         self._labels: dict[str, str] = {}        # concept id → label
@@ -131,6 +136,27 @@ class ArchesVocabulary:
                 rdm.add_from_skos_xml(xml, "http://example.org/")
                 alts.update(alt_labels(xml, language))
         return cls(graphs, rdm, resources, language, alt_labels=alts, **kw)
+
+    def _absorb(self, bundle) -> None:
+        """A vocabulary bundle's phrasings (ceist.bundle): unqualified link
+        entries become relation phrasings, date entries date phrasings.
+        Entries that need a qualifier value ("designed by" → actor + role
+        Architect) aren't expressible as a relation yet and are skipped."""
+        from . import bundle as _bundle
+        b = bundle if isinstance(bundle, dict) else _bundle.load(bundle)
+        self.skipped_qualified = 0
+        for name, m in b["models"].items():
+            if name not in self.models:
+                continue
+            for e in m["entries"]:
+                if e.get("qualifier"):
+                    self.skipped_qualified += 1
+                    continue
+                kind = (m["nodes"].get(e["node"]) or {}).get("kind")
+                target = {"link": self.relation_forms, "date": self.date_forms}.get(kind)
+                if target is not None:
+                    target.setdefault(e["node"], [])
+                    target[e["node"]] = list(dict.fromkeys(target[e["node"]] + e["phrases"]))
 
     def _entity(self, r: dict) -> Entity | None:
         ri = r.get("resourceinstance") or {}

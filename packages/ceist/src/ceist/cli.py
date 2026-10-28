@@ -5,6 +5,7 @@
     ceist vocab assemble <descriptions dir> <vocab dir> -o <bundle.json> [--graphs <graphs dir>]
     ceist vocab check <bundle.json> <graphs dir>
     ceist eval --bundle <bundle.json> --questions <cases.json> [--config ceist.toml] [--report out.md]
+               [--min-right N] [--max-dangerous N]      # the acceptance gate: exit 1 if missed
 """
 
 import argparse
@@ -64,6 +65,14 @@ def _eval(a):
     print(text)
     if a.report:
         Path(a.report).write_text(text)
+    failed = []
+    if a.min_right is not None and result.counts["right"] < a.min_right:
+        failed.append(f"right {result.counts['right']} < {a.min_right}")
+    if a.max_dangerous is not None and result.counts["dangerous"] > a.max_dangerous:
+        failed.append(f"dangerous {result.counts['dangerous']} > {a.max_dangerous}")
+    if failed:
+        print("gate failed: " + "; ".join(failed), file=sys.stderr)
+        return 1
     return 0
 
 
@@ -103,6 +112,8 @@ def main(argv=None):
     p.add_argument("--questions", required=True)
     p.add_argument("--config")
     p.add_argument("--report")
+    p.add_argument("--min-right", type=int)
+    p.add_argument("--max-dangerous", type=int)
     p.set_defaults(fn=_eval)
 
     a = ap.parse_args(argv)
