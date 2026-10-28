@@ -1,0 +1,1850 @@
+{
+ "model": "Maritime Vessel",
+ "entries": [
+  {
+   "phrases": [
+    "built",
+    "constructed",
+    "when was it built",
+    "date built",
+    "year built",
+    "build date",
+    "construction date",
+    "launched",
+    "when was it launched",
+    "completed",
+    "laid down",
+    "shipbuilding date",
+    "when was it made",
+    "construction phase"
+   ],
+   "kind": "date",
+   "node": "construction_phase_start_date",
+   "end_node": "construction_phase_end_date"
+  },
+  {
+   "phrases": [
+    "altered",
+    "modified",
+    "refitted",
+    "refit",
+    "rebuilt",
+    "alteration",
+    "when was it altered"
+   ],
+   "kind": "date",
+   "node": "construction_phase_start_date",
+   "end_node": "construction_phase_end_date",
+   "qualifier": {
+    "node": "construction_phase_type",
+    "value": "Alteration"
+   }
+  },
+  {
+   "phrases": [
+    "converted",
+    "conversion",
+    "when was it converted",
+    "converted to"
+   ],
+   "kind": "date",
+   "node": "construction_phase_start_date",
+   "end_node": "construction_phase_end_date",
+   "qualifier": {
+    "node": "construction_phase_type",
+    "value": "Conversion"
+   }
+  },
+  {
+   "phrases": [
+    "repaired",
+    "repairs",
+    "when was it repaired",
+    "overhauled",
+    "mended"
+   ],
+   "kind": "date",
+   "node": "construction_phase_start_date",
+   "end_node": "construction_phase_end_date",
+   "qualifier": {
+    "node": "construction_phase_type",
+    "value": "Repairs"
+   }
+  },
+  {
+   "phrases": [
+    "destroyed",
+    "scrapped",
+    "dismantled",
+    "destruction",
+    "when was it destroyed",
+    "broken up for scrap"
+   ],
+   "kind": "date",
+   "node": "construction_phase_start_date",
+   "end_node": "construction_phase_end_date",
+   "qualifier": {
+    "node": "construction_phase_type",
+    "value": "Destruction"
+   }
+  },
+  {
+   "phrases": [
+    "phase type",
+    "construction phase type",
+    "type of phase"
+   ],
+   "kind": "property",
+   "node": "construction_phase_type"
+  },
+  {
+   "phrases": [
+    "in use",
+    "in service",
+    "used",
+    "operated",
+    "service life",
+    "in commission",
+    "active service",
+    "when was it in service",
+    "period of use dates",
+    "working life",
+    "decommissioned"
+   ],
+   "kind": "date",
+   "node": "use_phase_start_date",
+   "end_node": "use_phase_end_date"
+  },
+  {
+   "phrases": [
+    "sank",
+    "sunk",
+    "wrecked",
+    "lost",
+    "went down",
+    "date of loss",
+    "when did it sink",
+    "when was it lost",
+    "when was it wrecked",
+    "shipwrecked",
+    "year of loss",
+    "date wrecked",
+    "date of sinking"
+   ],
+   "kind": "date",
+   "node": "date_of_loss_start",
+   "end_node": "date_of_loss_end"
+  },
+  {
+   "phrases": [
+    "sailed",
+    "departed",
+    "set sail",
+    "voyage date",
+    "when did it sail",
+    "voyage",
+    "left port",
+    "date of departure",
+    "put to sea"
+   ],
+   "kind": "date",
+   "node": "date_of_departure",
+   "end_node": "date_of_arrival"
+  },
+  {
+   "phrases": [
+    "arrived",
+    "arrival date",
+    "date of arrival",
+    "reached port",
+    "docked",
+    "when did it arrive",
+    "came into port"
+   ],
+   "kind": "date",
+   "node": "date_of_arrival"
+  },
+  {
+   "phrases": [
+    "expected arrival",
+    "due to arrive",
+    "expected date of arrival",
+    "eta"
+   ],
+   "kind": "date",
+   "node": "expected_date_of_arrival"
+  },
+  {
+   "phrases": [
+    "owned from",
+    "period of ownership",
+    "ownership dates",
+    "bought",
+    "purchased",
+    "acquired",
+    "sold",
+    "changed hands",
+    "when was it owned"
+   ],
+   "kind": "date",
+   "node": "ownership_start_date",
+   "end_node": "ownership_end_date"
+  },
+  {
+   "phrases": [
+    "association dates",
+    "associated from",
+    "involvement dates",
+    "when was the person involved"
+   ],
+   "kind": "date",
+   "node": "associated_actor_start_date",
+   "end_node": "associated_actor_end_date"
+  },
+  {
+   "phrases": [
+    "designated",
+    "date designated",
+    "designation date",
+    "when was it protected",
+    "protected since",
+    "date of designation",
+    "when was it designated",
+    "protected in"
+   ],
+   "kind": "date",
+   "node": "designation_start_date",
+   "end_node": "designation_end_date"
+  },
+  {
+   "phrases": [
+    "designation amended",
+    "amendment date",
+    "designation amendment",
+    "when was the designation amended"
+   ],
+   "kind": "date",
+   "node": "designation_amendment_date"
+  },
+  {
+   "phrases": [
+    "scientifically dated",
+    "scientific date",
+    "radiocarbon date",
+    "dendro date",
+    "dendrochronological date",
+    "carbon dated",
+    "c14 date",
+    "scientific dating result"
+   ],
+   "kind": "date",
+   "node": "scientific_date_start_date",
+   "end_node": "scientific_date_end_date"
+  },
+  {
+   "phrases": [
+    "date determined",
+    "when was it dated",
+    "when was the sample dated",
+    "date of analysis"
+   ],
+   "kind": "date",
+   "node": "when_determined_start_date",
+   "end_node": "when_determined_end_date"
+  },
+  {
+   "phrases": [
+    "built by",
+    "builder",
+    "shipbuilder",
+    "shipyard",
+    "who built it",
+    "constructed by",
+    "shipwright",
+    "yard",
+    "building yard"
+   ],
+   "kind": "link",
+   "node": "builder"
+  },
+  {
+   "phrases": [
+    "owned by",
+    "owner",
+    "who owned it",
+    "shipowner",
+    "proprietor",
+    "owners",
+    "owning company",
+    "belonged to"
+   ],
+   "kind": "link",
+   "node": "owner"
+  },
+  {
+   "phrases": [
+    "crew",
+    "crew member",
+    "crew members",
+    "sailors",
+    "who sailed on it",
+    "served on",
+    "seamen",
+    "on board",
+    "mariners",
+    "crewed by"
+   ],
+   "kind": "link",
+   "node": "crew_member"
+  },
+  {
+   "phrases": [
+    "crew role",
+    "rank",
+    "position on board",
+    "crew position",
+    "job on board"
+   ],
+   "kind": "property",
+   "node": "crew_role"
+  },
+  {
+   "phrases": [
+    "period",
+    "era",
+    "age",
+    "what period",
+    "cultural period",
+    "historical period",
+    "built in which period",
+    "archaeological period",
+    "from what period"
+   ],
+   "kind": "link",
+   "node": "cultural_period"
+  },
+  {
+   "phrases": [
+    "period of use",
+    "period in use",
+    "used in which period",
+    "period of service"
+   ],
+   "kind": "link",
+   "node": "use_phase_period"
+  },
+  {
+   "phrases": [
+    "activities",
+    "related activities",
+    "investigations",
+    "surveys carried out",
+    "fieldwork",
+    "events",
+    "archaeological work",
+    "dives on the wreck"
+   ],
+   "kind": "link",
+   "node": "associated_activities"
+  },
+  {
+   "phrases": [
+    "consultations",
+    "planning consultations",
+    "planning applications",
+    "casework",
+    "development consultations"
+   ],
+   "kind": "link",
+   "node": "associated_consultations"
+  },
+  {
+   "phrases": [
+    "related monuments",
+    "associated sites",
+    "related wrecks",
+    "associated artefacts",
+    "linked heritage assets",
+    "related vessels",
+    "associated monuments"
+   ],
+   "kind": "link",
+   "node": "monument_area_or_artefact"
+  },
+  {
+   "phrases": [
+    "archive held by",
+    "archive holder",
+    "who holds the archive",
+    "where is the archive",
+    "archive repository"
+   ],
+   "kind": "link",
+   "node": "archive_holder"
+  },
+  {
+   "phrases": [
+    "archive title",
+    "archive object",
+    "archive item"
+   ],
+   "kind": "property",
+   "node": "archive_object_title"
+  },
+  {
+   "phrases": [
+    "archive reference",
+    "archive object reference",
+    "archive number"
+   ],
+   "kind": "property",
+   "node": "archive_object_reference"
+  },
+  {
+   "phrases": [
+    "digital files",
+    "documents",
+    "attachments",
+    "files",
+    "pdf"
+   ],
+   "kind": "link",
+   "node": "digital_file_s_"
+  },
+  {
+   "phrases": [
+    "name",
+    "called",
+    "vessel name",
+    "ship name",
+    "what was it called",
+    "named",
+    "name of the ship",
+    "name of the vessel",
+    "boat name",
+    "what is it called"
+   ],
+   "kind": "property",
+   "node": "name"
+  },
+  {
+   "phrases": [
+    "current name",
+    "former name",
+    "previous name",
+    "renamed"
+   ],
+   "kind": "property",
+   "node": "name_currency"
+  },
+  {
+   "phrases": [
+    "description",
+    "describe",
+    "about",
+    "summary",
+    "history",
+    "overview",
+    "tell me about",
+    "details",
+    "what is it",
+    "account"
+   ],
+   "kind": "property",
+   "node": "description"
+  },
+  {
+   "phrases": [
+    "vessel type",
+    "type of ship",
+    "kind of boat",
+    "what type of vessel",
+    "ship type",
+    "class of vessel",
+    "type of vessel",
+    "what kind of ship",
+    "boat type",
+    "kind of vessel",
+    "what sort of ship"
+   ],
+   "kind": "property",
+   "node": "maritime_vessel_type"
+  },
+  {
+   "phrases": [
+    "craft type",
+    "function",
+    "used as",
+    "what was it used for",
+    "role of vessel",
+    "purpose",
+    "functional type",
+    "what did it do"
+   ],
+   "kind": "property",
+   "node": "functional_craft_type"
+  },
+  {
+   "phrases": [
+    "rigging",
+    "rig",
+    "rigged",
+    "sail plan",
+    "type of rigging",
+    "rigged as",
+    "how was it rigged"
+   ],
+   "kind": "property",
+   "node": "type_of_rigging"
+  },
+  {
+   "phrases": [
+    "propulsion",
+    "powered by",
+    "engine",
+    "how was it propelled",
+    "motive power",
+    "propulsion type",
+    "engine type",
+    "steam powered",
+    "sail powered",
+    "power source"
+   ],
+   "kind": "property",
+   "node": "propulsion_type"
+  },
+  {
+   "phrases": [
+    "construction technique",
+    "clinker built",
+    "hull construction",
+    "build technique",
+    "shipbuilding technique",
+    "carvel",
+    "how was the hull built"
+   ],
+   "kind": "property",
+   "node": "construction_technique"
+  },
+  {
+   "phrases": [
+    "construction method",
+    "production method",
+    "riveted",
+    "welded",
+    "fastening",
+    "how was it made",
+    "method of construction"
+   ],
+   "kind": "property",
+   "node": "construction_method"
+  },
+  {
+   "phrases": [
+    "material",
+    "made of",
+    "what is it made of",
+    "hull material",
+    "built of",
+    "construction material",
+    "main material",
+    "wooden",
+    "iron",
+    "steel",
+    "what material"
+   ],
+   "kind": "property",
+   "node": "main_construction_material"
+  },
+  {
+   "phrases": [
+    "covering",
+    "sheathing",
+    "hull covering",
+    "sheathed",
+    "copper sheathed",
+    "covering material"
+   ],
+   "kind": "property",
+   "node": "covering_material"
+  },
+  {
+   "phrases": [
+    "fixtures",
+    "fittings",
+    "fixtures and fittings",
+    "equipment on board",
+    "fitted with",
+    "features on board"
+   ],
+   "kind": "property",
+   "node": "fixtures_and_fittings_type"
+  },
+  {
+   "phrases": [
+    "guns",
+    "ordnance",
+    "armament",
+    "weapons",
+    "cannon",
+    "armed with",
+    "how many guns",
+    "artillery"
+   ],
+   "kind": "property",
+   "node": "ordnance_type"
+  },
+  {
+   "phrases": [
+    "evidence",
+    "evidence type",
+    "what survives",
+    "surviving remains",
+    "remains",
+    "condition",
+    "state of remains",
+    "survival",
+    "how much survives",
+    "state of preservation"
+   ],
+   "kind": "property",
+   "node": "construction_phase_evidence_type"
+  },
+  {
+   "phrases": [
+    "evidence of use",
+    "use phase evidence"
+   ],
+   "kind": "property",
+   "node": "use_phase_evidence_type"
+  },
+  {
+   "phrases": [
+    "confidence",
+    "certainty",
+    "how certain",
+    "confidence of interpretation",
+    "how sure",
+    "interpretation confidence"
+   ],
+   "kind": "property",
+   "node": "phase_certainty"
+  },
+  {
+   "phrases": [
+    "phase description",
+    "construction history",
+    "build history",
+    "construction details"
+   ],
+   "kind": "property",
+   "node": "phase_description"
+  },
+  {
+   "phrases": [
+    "use description",
+    "service history",
+    "history of use",
+    "career",
+    "operational history"
+   ],
+   "kind": "property",
+   "node": "use_phase_description"
+  },
+  {
+   "phrases": [
+    "dimensions",
+    "size",
+    "how big",
+    "measurements",
+    "measured",
+    "dimension",
+    "how large"
+   ],
+   "kind": "property",
+   "node": "dimension_value"
+  },
+  {
+   "phrases": [
+    "how long",
+    "length",
+    "long",
+    "length overall",
+    "overall length"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Length"
+   }
+  },
+  {
+   "phrases": [
+    "how wide",
+    "beam",
+    "breadth",
+    "width",
+    "wide"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Breadth"
+   }
+  },
+  {
+   "phrases": [
+    "depth",
+    "how deep",
+    "depth of hold",
+    "deep"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Depth"
+   }
+  },
+  {
+   "phrases": [
+    "how tall",
+    "height",
+    "how high",
+    "tall",
+    "high"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Height"
+   }
+  },
+  {
+   "phrases": [
+    "tonnage",
+    "tons",
+    "how many tons",
+    "burthen",
+    "tonnes",
+    "gross tonnage",
+    "registered tonnage"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Tonnage"
+   }
+  },
+  {
+   "phrases": [
+    "weight",
+    "how heavy",
+    "heavy",
+    "weigh"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Weight"
+   }
+  },
+  {
+   "phrases": [
+    "volume",
+    "capacity",
+    "cubic capacity"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Volume"
+   }
+  },
+  {
+   "phrases": [
+    "draught",
+    "draft",
+    "how much water does it draw"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type_qualifier",
+    "value": "Draught"
+   }
+  },
+  {
+   "phrases": [
+    "displacement",
+    "displaced"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type_qualifier",
+    "value": "Displacement"
+   }
+  },
+  {
+   "phrases": [
+    "designation",
+    "protection",
+    "protection status",
+    "designated as",
+    "protected wreck",
+    "legal protection",
+    "statutory protection",
+    "heritage protection",
+    "is it protected",
+    "scheduled monument",
+    "listed"
+   ],
+   "kind": "property",
+   "node": "designation_or_protection_type"
+  },
+  {
+   "phrases": [
+    "grade",
+    "listing grade",
+    "what grade",
+    "listed grade",
+    "grade ii"
+   ],
+   "kind": "property",
+   "node": "grade"
+  },
+  {
+   "phrases": [
+    "designation name",
+    "list entry name",
+    "protected as"
+   ],
+   "kind": "property",
+   "node": "designation_name"
+  },
+  {
+   "phrases": [
+    "at risk",
+    "heritage at risk",
+    "risk status",
+    "in danger",
+    "threatened",
+    "on the at risk register"
+   ],
+   "kind": "property",
+   "node": "risk_status"
+  },
+  {
+   "phrases": [
+    "local list criteria",
+    "why locally listed",
+    "local heritage criteria"
+   ],
+   "kind": "property",
+   "node": "local_heritage_list_criteria_type"
+  },
+  {
+   "phrases": [
+    "list entry link",
+    "designation link",
+    "designation url"
+   ],
+   "kind": "property",
+   "node": "reference_url"
+  },
+  {
+   "phrases": [
+    "nationality",
+    "flag",
+    "what country",
+    "which country",
+    "national flag",
+    "country of origin",
+    "flagged",
+    "whose ship"
+   ],
+   "kind": "property",
+   "node": "craft_nationality"
+  },
+  {
+   "phrases": [
+    "port of registry",
+    "registered at",
+    "home port",
+    "port of registration",
+    "place of registration",
+    "registered in"
+   ],
+   "kind": "property",
+   "node": "place_of_registration"
+  },
+  {
+   "phrases": [
+    "cargo",
+    "carrying",
+    "what was it carrying",
+    "freight",
+    "load",
+    "goods carried",
+    "cargo type",
+    "laden with"
+   ],
+   "kind": "property",
+   "node": "cargo_type"
+  },
+  {
+   "phrases": [
+    "how did it sink",
+    "how was it lost",
+    "cause of loss",
+    "manner of loss",
+    "cause of sinking",
+    "how was it wrecked",
+    "torpedoed",
+    "scuttled",
+    "ran aground",
+    "why did it sink",
+    "what sank it"
+   ],
+   "kind": "property",
+   "node": "manner_of_loss"
+  },
+  {
+   "phrases": [
+    "departed from",
+    "sailed from",
+    "port of departure",
+    "origin port",
+    "leaving from",
+    "where did it sail from",
+    "from which port"
+   ],
+   "kind": "property",
+   "node": "place_of_departure_name"
+  },
+  {
+   "phrases": [
+    "bound for",
+    "destination",
+    "heading to",
+    "sailing to",
+    "en route to",
+    "where was it going",
+    "port of destination",
+    "going to"
+   ],
+   "kind": "property",
+   "node": "place_of_destination_name"
+  },
+  {
+   "phrases": [
+    "voyage description",
+    "account of voyage",
+    "voyage details",
+    "story of the voyage",
+    "last voyage"
+   ],
+   "kind": "property",
+   "node": "voyage_description"
+  },
+  {
+   "phrases": [
+    "voyage type",
+    "type of voyage",
+    "purpose of voyage",
+    "maiden voyage",
+    "kind of voyage"
+   ],
+   "kind": "property",
+   "node": "voyage_type"
+  },
+  {
+   "phrases": [
+    "dating method",
+    "how was it dated",
+    "dendrochronology",
+    "radiocarbon",
+    "method of dating",
+    "scientific dating method"
+   ],
+   "kind": "property",
+   "node": "dating_method"
+  },
+  {
+   "phrases": [
+    "lab reference",
+    "laboratory code",
+    "sample number",
+    "laboratory reference"
+   ],
+   "kind": "property",
+   "node": "laboratory_reference"
+  },
+  {
+   "phrases": [
+    "standard deviation",
+    "error margin",
+    "plus or minus",
+    "uncertainty"
+   ],
+   "kind": "property",
+   "node": "standard_deviation_value"
+  },
+  {
+   "phrases": [
+    "scientific date note",
+    "dating notes"
+   ],
+   "kind": "property",
+   "node": "note"
+  },
+  {
+   "phrases": [
+    "associated with",
+    "involved",
+    "people involved",
+    "organisations involved",
+    "who was involved",
+    "associated people",
+    "associated organisations",
+    "connected with",
+    "linked people"
+   ],
+   "kind": "link",
+   "node": "actor"
+  },
+  {
+   "phrases": [
+    "captain",
+    "captained by",
+    "commanded by",
+    "skipper",
+    "commander",
+    "who captained it"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Captain"
+   }
+  },
+  {
+   "phrases": [
+    "master mariner",
+    "master of the ship",
+    "ship's master"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Master Mariner"
+   }
+  },
+  {
+   "phrases": [
+    "designed by",
+    "designer",
+    "who designed it"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Designer"
+   }
+  },
+  {
+   "phrases": [
+    "architect",
+    "naval architect"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Architect"
+   }
+  },
+  {
+   "phrases": [
+    "engineer",
+    "engineered by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Engineer"
+   }
+  },
+  {
+   "phrases": [
+    "manufactured by",
+    "manufacturer",
+    "made by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Manufacturer"
+   }
+  },
+  {
+   "phrases": [
+    "salvaged by",
+    "salvor",
+    "salvager",
+    "salvage company"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Salvager"
+   }
+  },
+  {
+   "phrases": [
+    "dived by",
+    "diver",
+    "divers",
+    "dived on by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Diver"
+   }
+  },
+  {
+   "phrases": [
+    "found by",
+    "discovered by",
+    "finder",
+    "who found it",
+    "who discovered it"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Finder"
+   }
+  },
+  {
+   "phrases": [
+    "surveyed by",
+    "surveyor"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Surveyor"
+   }
+  },
+  {
+   "phrases": [
+    "recorded by",
+    "recorder"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Recorder"
+   }
+  },
+  {
+   "phrases": [
+    "excavated by",
+    "excavator"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Excavator"
+   }
+  },
+  {
+   "phrases": [
+    "researched by",
+    "researcher"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Researcher"
+   }
+  },
+  {
+   "phrases": [
+    "photographed by",
+    "photographer"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Photographer"
+   }
+  },
+  {
+   "phrases": [
+    "famous person",
+    "historic figure",
+    "person of historic interest",
+    "notable person"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Person of Historic Interest"
+   }
+  },
+  {
+   "phrases": [
+    "funded by",
+    "financed by",
+    "funder",
+    "financier"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Funding Body/Financier"
+   }
+  },
+  {
+   "phrases": [
+    "role",
+    "role type",
+    "what role",
+    "in what capacity"
+   ],
+   "kind": "property",
+   "node": "role_type"
+  },
+  {
+   "phrases": [
+    "sources",
+    "bibliography",
+    "references",
+    "published in",
+    "literature",
+    "publications",
+    "books",
+    "cited in",
+    "reading list"
+   ],
+   "kind": "link",
+   "node": "bibliographic_source_citation"
+  },
+  {
+   "phrases": [
+    "page number",
+    "pages",
+    "which page"
+   ],
+   "kind": "property",
+   "node": "page_s_"
+  },
+  {
+   "phrases": [
+    "source comment",
+    "citation comment"
+   ],
+   "kind": "property",
+   "node": "comment"
+  },
+  {
+   "phrases": [
+    "images",
+    "photos",
+    "pictures",
+    "photographs",
+    "pics",
+    "photo"
+   ],
+   "kind": "property",
+   "node": "images"
+  },
+  {
+   "phrases": [
+    "caption",
+    "image caption",
+    "photo caption"
+   ],
+   "kind": "property",
+   "node": "caption_note"
+  },
+  {
+   "phrases": [
+    "copyright holder",
+    "image copyright owner",
+    "who owns the copyright",
+    "photo credit"
+   ],
+   "kind": "link",
+   "node": "copyright_holder"
+  },
+  {
+   "phrases": [
+    "copyright",
+    "licence",
+    "rights",
+    "copyright status",
+    "crown copyright",
+    "creative commons"
+   ],
+   "kind": "property",
+   "node": "copyright_type"
+  },
+  {
+   "phrases": [
+    "copyright note"
+   ],
+   "kind": "property",
+   "node": "copyright_note_text"
+  },
+  {
+   "phrases": [
+    "cross reference",
+    "external reference",
+    "other reference numbers",
+    "external id",
+    "external record number",
+    "see also reference"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference"
+  },
+  {
+   "phrases": [
+    "reference source",
+    "cross reference source",
+    "source of external reference",
+    "which database"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_source"
+  },
+  {
+   "phrases": [
+    "cross reference note",
+    "external reference note"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_description"
+  },
+  {
+   "phrases": [
+    "url",
+    "web link",
+    "website",
+    "link"
+   ],
+   "kind": "property",
+   "node": "url"
+  },
+  {
+   "phrases": [
+    "reference number",
+    "record number",
+    "her number",
+    "primary reference",
+    "id number",
+    "prn",
+    "sites and monuments record number"
+   ],
+   "kind": "property",
+   "node": "primary_reference_number"
+  },
+  {
+   "phrases": [
+    "legacy id",
+    "old reference",
+    "previous reference number",
+    "former id",
+    "legacy reference"
+   ],
+   "kind": "property",
+   "node": "legacy_id"
+  },
+  {
+   "phrases": [
+    "uuid",
+    "resource id",
+    "system id"
+   ],
+   "kind": "property",
+   "node": "resourceid"
+  },
+  {
+   "phrases": [
+    "address",
+    "full address",
+    "street address",
+    "postal address",
+    "what is the address"
+   ],
+   "kind": "property",
+   "node": "full_address"
+  },
+  {
+   "phrases": [
+    "town",
+    "city",
+    "which town",
+    "which city",
+    "town or city"
+   ],
+   "kind": "property",
+   "node": "town_or_city_value"
+  },
+  {
+   "phrases": [
+    "county",
+    "which county"
+   ],
+   "kind": "property",
+   "node": "county_value"
+  },
+  {
+   "phrases": [
+    "postcode",
+    "post code",
+    "postal code",
+    "zip code"
+   ],
+   "kind": "property",
+   "node": "postcode_value"
+  },
+  {
+   "phrases": [
+    "street",
+    "road",
+    "which street",
+    "street name"
+   ],
+   "kind": "property",
+   "node": "street_value"
+  },
+  {
+   "phrases": [
+    "locality",
+    "village",
+    "neighbourhood",
+    "hamlet"
+   ],
+   "kind": "property",
+   "node": "locality_value"
+  },
+  {
+   "phrases": [
+    "building name",
+    "name of building"
+   ],
+   "kind": "property",
+   "node": "building_name_value"
+  },
+  {
+   "phrases": [
+    "building number",
+    "house number",
+    "street number"
+   ],
+   "kind": "property",
+   "node": "building_number_value"
+  },
+  {
+   "phrases": [
+    "sub-street",
+    "sub street"
+   ],
+   "kind": "property",
+   "node": "sub_street_value"
+  },
+  {
+   "phrases": [
+    "address status",
+    "primary address",
+    "former address"
+   ],
+   "kind": "property",
+   "node": "address_status"
+  },
+  {
+   "phrases": [
+    "location",
+    "where is it",
+    "coordinates",
+    "map",
+    "position",
+    "on the map",
+    "geographic location",
+    "whereabouts on map",
+    "lat long",
+    "latitude and longitude",
+    "spatial extent"
+   ],
+   "kind": "property",
+   "node": "geospatial_coordinates"
+  },
+  {
+   "phrases": [
+    "borough",
+    "local authority",
+    "administrative area",
+    "district",
+    "parish",
+    "council area",
+    "which borough",
+    "which council"
+   ],
+   "kind": "property",
+   "node": "area_name"
+  },
+  {
+   "phrases": [
+    "area type",
+    "type of administrative area"
+   ],
+   "kind": "property",
+   "node": "area_type"
+  },
+  {
+   "phrases": [
+    "location description",
+    "describe the location",
+    "directions",
+    "how to find it",
+    "where exactly",
+    "situated"
+   ],
+   "kind": "property",
+   "node": "location_description"
+  },
+  {
+   "phrases": [
+    "grid reference",
+    "ngr",
+    "national grid reference",
+    "os grid reference",
+    "grid ref",
+    "os reference"
+   ],
+   "kind": "property",
+   "node": "national_grid_reference"
+  },
+  {
+   "phrases": [
+    "named location",
+    "place name",
+    "named place",
+    "nearby place"
+   ],
+   "kind": "link",
+   "node": "named_location"
+  },
+  {
+   "phrases": [
+    "area status",
+    "land status",
+    "crown estate",
+    "area of outstanding natural beauty",
+    "common land"
+   ],
+   "kind": "property",
+   "node": "area_status"
+  },
+  {
+   "phrases": [
+    "area status date",
+    "area status from",
+    "in the area since"
+   ],
+   "kind": "date",
+   "node": "area_status_start_date",
+   "end_node": "area_status_end_date"
+  },
+  {
+   "phrases": [
+    "geology",
+    "bedrock",
+    "underlying geology",
+    "solid geology",
+    "rock type"
+   ],
+   "kind": "property",
+   "node": "geology"
+  },
+  {
+   "phrases": [
+    "subsoil",
+    "sub soil",
+    "soil type",
+    "drift geology"
+   ],
+   "kind": "property",
+   "node": "sub_soil"
+  },
+  {
+   "phrases": [
+    "land use",
+    "land use classification",
+    "current land use",
+    "land cover"
+   ],
+   "kind": "property",
+   "node": "land_use_classification"
+  },
+  {
+   "phrases": [
+    "land use assessed",
+    "land use assessment date"
+   ],
+   "kind": "date",
+   "node": "land_use_assessment_start_date",
+   "end_node": "land_use_assessment_end_date"
+  },
+  {
+   "phrases": [
+    "land use notes",
+    "land use note"
+   ],
+   "kind": "property",
+   "node": "land_use_notes_value"
+  },
+  {
+   "phrases": [
+    "shine form",
+    "form of feature",
+    "above or below ground"
+   ],
+   "kind": "property",
+   "node": "shine_form"
+  },
+  {
+   "phrases": [
+    "shine significance",
+    "shine"
+   ],
+   "kind": "property",
+   "node": "shine_significance"
+  },
+  {
+   "phrases": [
+    "land ownership",
+    "ownership of land",
+    "who owns the land"
+   ],
+   "kind": "property",
+   "node": "ownership"
+  },
+  {
+   "phrases": [
+    "area reference"
+   ],
+   "kind": "property",
+   "node": "area_reference_value"
+  },
+  {
+   "phrases": [
+    "base map",
+    "current base map"
+   ],
+   "kind": "property",
+   "node": "current_base_map_name"
+  },
+  {
+   "phrases": [
+    "coordinate system",
+    "projection",
+    "osgb36",
+    "wgs84"
+   ],
+   "kind": "property",
+   "node": "coordinate_system_value"
+  },
+  {
+   "phrases": [
+    "spatial record compiled",
+    "date of compilation",
+    "map record compiled",
+    "when was the geometry compiled"
+   ],
+   "kind": "date",
+   "node": "compilation_start_date",
+   "end_node": "compilation_end_date"
+  },
+  {
+   "phrases": [
+    "spatial record authorized",
+    "date of authorization",
+    "map record authorised",
+    "when was the location authorised"
+   ],
+   "kind": "date",
+   "node": "date_of_authorization",
+   "end_node": "authorization_end_date"
+  },
+  {
+   "phrases": [
+    "spatial record updated",
+    "geometry updated",
+    "map record last updated",
+    "location last updated"
+   ],
+   "kind": "date",
+   "node": "update_start_date",
+   "end_node": "update_end_date"
+  },
+  {
+   "phrases": [
+    "authorization status",
+    "spatial authorization",
+    "authorised location"
+   ],
+   "kind": "property",
+   "node": "authorization_type"
+  },
+  {
+   "phrases": [
+    "feature shape",
+    "geometry type",
+    "shape of feature",
+    "point or area"
+   ],
+   "kind": "property",
+   "node": "feature_shape"
+  },
+  {
+   "phrases": [
+    "spatial accuracy",
+    "how accurate is the location",
+    "location accuracy",
+    "positional accuracy"
+   ],
+   "kind": "property",
+   "node": "spatial_accuracy_qualifier"
+  },
+  {
+   "phrases": [
+    "capture scale",
+    "map scale",
+    "digitised at scale"
+   ],
+   "kind": "property",
+   "node": "capture_scale"
+  },
+  {
+   "phrases": [
+    "spatial metadata",
+    "spatial notes",
+    "geometry notes"
+   ],
+   "kind": "property",
+   "node": "spatial_metadata_notes"
+  },
+  {
+   "phrases": [
+    "spatial record compiled by",
+    "map compiled by",
+    "geometry compiler"
+   ],
+   "kind": "property",
+   "node": "compiler_name"
+  },
+  {
+   "phrases": [
+    "spatial record authorised by",
+    "location authorised by"
+   ],
+   "kind": "property",
+   "node": "authorizer_name"
+  },
+  {
+   "phrases": [
+    "record created",
+    "date record created",
+    "when was the record created",
+    "record creation date",
+    "added to the record",
+    "first recorded on the database"
+   ],
+   "kind": "date",
+   "node": "creation_date",
+   "end_node": "creation_end_date"
+  },
+  {
+   "phrases": [
+    "last updated",
+    "record updated",
+    "last modified",
+    "date of last update",
+    "when was the record updated",
+    "record last edited"
+   ],
+   "kind": "date",
+   "node": "date_of_last_update",
+   "end_node": "update_end_date_n1"
+  },
+  {
+   "phrases": [
+    "record created by",
+    "record creator",
+    "who created the record",
+    "who entered the record"
+   ],
+   "kind": "property",
+   "node": "creator_name"
+  },
+  {
+   "phrases": [
+    "audit note",
+    "record notes",
+    "audit notes",
+    "record keeping note"
+   ],
+   "kind": "property",
+   "node": "audit_note"
+  },
+  {
+   "phrases": [
+    "validation",
+    "validation status",
+    "record checked",
+    "checked ok",
+    "needs work",
+    "possible duplicate"
+   ],
+   "kind": "property",
+   "node": "validation"
+  },
+  {
+   "phrases": [
+    "updated by",
+    "who last updated the record",
+    "record updater"
+   ],
+   "kind": "property",
+   "node": "updater_name_n1"
+  }
+ ]
+}

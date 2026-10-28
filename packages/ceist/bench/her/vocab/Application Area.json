@@ -1,0 +1,613 @@
+{
+ "model": "Application Area",
+ "entries": [
+  {
+   "phrases": [
+    "name",
+    "called",
+    "site name",
+    "application area name",
+    "title",
+    "what is it called",
+    "area name",
+    "known as",
+    "name of the site"
+   ],
+   "kind": "property",
+   "node": "application_area_name"
+  },
+  {
+   "phrases": [
+    "description",
+    "about",
+    "summary",
+    "details",
+    "describe",
+    "tell me about",
+    "information",
+    "what is it"
+   ],
+   "kind": "property",
+   "node": "description"
+  },
+  {
+   "phrases": [
+    "location",
+    "where is it",
+    "location description",
+    "situated",
+    "whereabouts",
+    "where",
+    "where is it located",
+    "where is the site"
+   ],
+   "kind": "property",
+   "node": "location_description"
+  },
+  {
+   "phrases": [
+    "map",
+    "boundary",
+    "red line",
+    "red line boundary",
+    "extent",
+    "geometry",
+    "coordinates",
+    "footprint",
+    "outline",
+    "on the map",
+    "show on map",
+    "site boundary",
+    "polygon"
+   ],
+   "kind": "property",
+   "node": "geospatial_coordinates"
+  },
+  {
+   "phrases": [
+    "designation",
+    "protection",
+    "protected",
+    "is it protected",
+    "protection status",
+    "designation type",
+    "heritage designation",
+    "conservation area",
+    "archaeological priority area",
+    "statutory protection",
+    "listed",
+    "scheduled"
+   ],
+   "kind": "property",
+   "node": "designation_or_protection_type"
+  },
+  {
+   "phrases": [
+    "designation name",
+    "name of designation",
+    "protection name",
+    "list entry name"
+   ],
+   "kind": "property",
+   "node": "designation_name"
+  },
+  {
+   "phrases": [
+    "grade",
+    "listing grade",
+    "what grade",
+    "grade listed",
+    "which grade"
+   ],
+   "kind": "property",
+   "node": "grade"
+  },
+  {
+   "phrases": [
+    "at risk",
+    "risk",
+    "risk status",
+    "heritage at risk",
+    "is it at risk",
+    "under threat"
+   ],
+   "kind": "property",
+   "node": "risk_status"
+  },
+  {
+   "phrases": [
+    "designation link",
+    "list entry link",
+    "designation url"
+   ],
+   "kind": "property",
+   "node": "reference_url"
+  },
+  {
+   "phrases": [
+    "designation document",
+    "designation file",
+    "protection document"
+   ],
+   "kind": "link",
+   "node": "digital_file_s__n1"
+  },
+  {
+   "phrases": [
+    "planning reference",
+    "application number",
+    "planning application number",
+    "reference",
+    "case reference",
+    "planning ref",
+    "council reference",
+    "application reference"
+   ],
+   "kind": "property",
+   "node": "reference_number"
+  },
+  {
+   "phrases": [
+    "consultations",
+    "planning consultations",
+    "consultation",
+    "planning applications",
+    "planning cases",
+    "applications",
+    "associated consultations",
+    "which consultations",
+    "related consultations"
+   ],
+   "kind": "link",
+   "node": "associated_consultations"
+  },
+  {
+   "phrases": [
+    "related application areas",
+    "adjacent application areas",
+    "other application areas",
+    "neighbouring sites",
+    "associated application areas",
+    "overlapping application areas",
+    "linked application areas"
+   ],
+   "kind": "link",
+   "node": "associated_application_area"
+  },
+  {
+   "phrases": [
+    "monuments",
+    "heritage assets",
+    "affected monuments",
+    "archaeological sites",
+    "related monuments",
+    "monuments within",
+    "associated monuments",
+    "artefacts",
+    "related sites",
+    "historic sites",
+    "heritage assets affected",
+    "wrecks"
+   ],
+   "kind": "link",
+   "node": "associated_monuments_areas_and_artefacts"
+  },
+  {
+   "phrases": [
+    "activities",
+    "fieldwork",
+    "excavations",
+    "investigations",
+    "surveys",
+    "associated activities",
+    "archaeological work",
+    "related activities",
+    "events"
+   ],
+   "kind": "link",
+   "node": "associated_activities"
+  },
+  {
+   "phrases": [
+    "files",
+    "documents",
+    "attachments",
+    "digital files",
+    "associated files",
+    "reports",
+    "plans",
+    "drawings"
+   ],
+   "kind": "link",
+   "node": "digital_file_s_"
+  },
+  {
+   "phrases": [
+    "address",
+    "full address",
+    "what is the address",
+    "street address",
+    "site address"
+   ],
+   "kind": "property",
+   "node": "full_address"
+  },
+  {
+   "phrases": [
+    "postcode",
+    "post code",
+    "zip code",
+    "what postcode",
+    "which postcode"
+   ],
+   "kind": "property",
+   "node": "postcode_value"
+  },
+  {
+   "phrases": [
+    "street",
+    "road",
+    "street name",
+    "which street",
+    "what road",
+    "on which road"
+   ],
+   "kind": "property",
+   "node": "street_value"
+  },
+  {
+   "phrases": [
+    "town",
+    "city",
+    "which town",
+    "which city",
+    "town or city",
+    "what town"
+   ],
+   "kind": "property",
+   "node": "town_or_city_value"
+  },
+  {
+   "phrases": [
+    "county",
+    "which county",
+    "what county"
+   ],
+   "kind": "property",
+   "node": "county_value"
+  },
+  {
+   "phrases": [
+    "locality",
+    "village",
+    "neighbourhood",
+    "hamlet",
+    "suburb"
+   ],
+   "kind": "property",
+   "node": "locality_value"
+  },
+  {
+   "phrases": [
+    "building name",
+    "name of the building",
+    "what is the building called"
+   ],
+   "kind": "property",
+   "node": "building_name_value"
+  },
+  {
+   "phrases": [
+    "building number",
+    "house number",
+    "street number"
+   ],
+   "kind": "property",
+   "node": "building_number_value"
+  },
+  {
+   "phrases": [
+    "borough",
+    "district",
+    "parish",
+    "administrative area",
+    "local authority area",
+    "council area",
+    "which borough",
+    "what borough",
+    "which district"
+   ],
+   "kind": "property",
+   "node": "area_name"
+  },
+  {
+   "phrases": [
+    "area type",
+    "type of administrative area",
+    "kind of area"
+   ],
+   "kind": "property",
+   "node": "area_type"
+  },
+  {
+   "phrases": [
+    "record created",
+    "date record created",
+    "when was the record created",
+    "added to the record",
+    "date added",
+    "entered into the database",
+    "record creation date"
+   ],
+   "kind": "date",
+   "node": "creation_date",
+   "end_node": "creation_end_date"
+  },
+  {
+   "phrases": [
+    "last updated",
+    "record updated",
+    "date of last update",
+    "when was the record updated",
+    "last modified",
+    "last edited",
+    "record last changed"
+   ],
+   "kind": "date",
+   "node": "date_of_last_update",
+   "end_node": "update_end_date_n1"
+  },
+  {
+   "phrases": [
+    "record created by",
+    "who created the record",
+    "record creator",
+    "who entered the record"
+   ],
+   "kind": "property",
+   "node": "creator_name"
+  },
+  {
+   "phrases": [
+    "last updated by",
+    "who updated the record",
+    "record updated by",
+    "record editor"
+   ],
+   "kind": "property",
+   "node": "updater_name_n1"
+  },
+  {
+   "phrases": [
+    "validation",
+    "validation status",
+    "record checked",
+    "has the record been checked",
+    "quality check",
+    "needs work"
+   ],
+   "kind": "property",
+   "node": "validation"
+  },
+  {
+   "phrases": [
+    "audit note",
+    "audit notes",
+    "record notes",
+    "editorial notes"
+   ],
+   "kind": "property",
+   "node": "audit_note"
+  },
+  {
+   "phrases": [
+    "spatial record authorised",
+    "spatial record authorized",
+    "date of authorisation",
+    "mapping authorised",
+    "geometry authorised"
+   ],
+   "kind": "date",
+   "node": "date_of_authorization",
+   "end_node": "authorization_end_date"
+  },
+  {
+   "phrases": [
+    "spatial record compiled",
+    "date of compilation",
+    "mapping compiled",
+    "geometry compiled",
+    "when was it mapped"
+   ],
+   "kind": "date",
+   "node": "compilation_start_date",
+   "end_node": "compilation_end_date"
+  },
+  {
+   "phrases": [
+    "spatial record updated",
+    "geometry updated",
+    "map updated",
+    "mapping updated",
+    "when was the map updated"
+   ],
+   "kind": "date",
+   "node": "update_start_date",
+   "end_node": "update_end_date"
+  },
+  {
+   "phrases": [
+    "authorisation status",
+    "authorization status",
+    "is the mapping authorised"
+   ],
+   "kind": "property",
+   "node": "authorization_type"
+  },
+  {
+   "phrases": [
+    "spatial record authorised by",
+    "mapping authorised by",
+    "who authorised the mapping"
+   ],
+   "kind": "property",
+   "node": "authorizer_name"
+  },
+  {
+   "phrases": [
+    "spatial record compiled by",
+    "mapped by",
+    "who mapped it",
+    "who digitised it"
+   ],
+   "kind": "property",
+   "node": "compiler_name"
+  },
+  {
+   "phrases": [
+    "spatial record updated by",
+    "map updated by",
+    "who updated the map"
+   ],
+   "kind": "property",
+   "node": "updater_name"
+  },
+  {
+   "phrases": [
+    "capture scale",
+    "map scale",
+    "scale of capture",
+    "digitised at what scale"
+   ],
+   "kind": "property",
+   "node": "capture_scale"
+  },
+  {
+   "phrases": [
+    "coordinate system",
+    "projection",
+    "spatial reference system",
+    "crs"
+   ],
+   "kind": "property",
+   "node": "coordinate_system_value"
+  },
+  {
+   "phrases": [
+    "feature shape",
+    "geometry type",
+    "point or polygon",
+    "shape of the feature"
+   ],
+   "kind": "property",
+   "node": "feature_shape"
+  },
+  {
+   "phrases": [
+    "spatial accuracy",
+    "how accurate is the location",
+    "positional accuracy",
+    "location accuracy",
+    "precision of the mapping"
+   ],
+   "kind": "property",
+   "node": "spatial_accuracy_qualifier"
+  },
+  {
+   "phrases": [
+    "spatial metadata",
+    "spatial notes",
+    "mapping notes",
+    "geometry notes"
+   ],
+   "kind": "property",
+   "node": "spatial_metadata_notes"
+  },
+  {
+   "phrases": [
+    "base map",
+    "current base map",
+    "which base map",
+    "basemap"
+   ],
+   "kind": "property",
+   "node": "current_base_map_name"
+  },
+  {
+   "phrases": [
+    "reference number",
+    "record number",
+    "her number",
+    "her reference",
+    "record id",
+    "id number",
+    "primary reference",
+    "application area number"
+   ],
+   "kind": "property",
+   "node": "primary_reference_number"
+  },
+  {
+   "phrases": [
+    "legacy id",
+    "legacy reference",
+    "old reference",
+    "former id",
+    "previous reference number",
+    "old record number"
+   ],
+   "kind": "property",
+   "node": "legacy_id"
+  },
+  {
+   "phrases": [
+    "uuid",
+    "resource id",
+    "system id",
+    "unique identifier"
+   ],
+   "kind": "property",
+   "node": "resourceid"
+  },
+  {
+   "phrases": [
+    "cross reference",
+    "external reference",
+    "other reference numbers",
+    "cross references",
+    "references in other databases"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference"
+  },
+  {
+   "phrases": [
+    "cross reference source",
+    "which database",
+    "source of the cross reference"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_source"
+  },
+  {
+   "phrases": [
+    "cross reference note",
+    "cross reference notes",
+    "note on cross reference"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_description"
+  },
+  {
+   "phrases": [
+    "website",
+    "web link",
+    "url",
+    "online link",
+    "more information online"
+   ],
+   "kind": "property",
+   "node": "url"
+  }
+ ]
+}

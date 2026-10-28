@@ -69,7 +69,8 @@ def test_entities_are_never_matched_by_meaning(graph):
 
 @needs_model
 def test_word_ids_are_cached_for_the_next_process(graph, monkeypatch):
-    monkeypatch.setattr(semantic, "_encoder", None)   # a fresh process, this state home
+    from ceist import vectors
+    monkeypatch.setattr(vectors, "_shared", {})       # a fresh process, this state home
     _inject(*PARAPHRASE)
     cache = next((state_home() / "embeddings").glob("word-ids.json"))
     words = json.loads(cache.read_text())

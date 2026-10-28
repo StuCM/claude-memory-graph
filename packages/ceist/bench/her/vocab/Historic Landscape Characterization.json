@@ -1,0 +1,694 @@
+{
+ "model": "Historic Landscape Characterization",
+ "entries": [
+  {
+   "phrases": [
+    "name",
+    "called",
+    "what is it called",
+    "hlc area name",
+    "hlc name",
+    "character area name",
+    "named",
+    "title",
+    "known as"
+   ],
+   "kind": "property",
+   "node": "name"
+  },
+  {
+   "phrases": [
+    "description",
+    "summary",
+    "about",
+    "character description",
+    "what is it like",
+    "overview",
+    "details",
+    "describe",
+    "tell me about",
+    "history",
+    "character",
+    "information"
+   ],
+   "kind": "property",
+   "node": "description"
+  },
+  {
+   "phrases": [
+    "date",
+    "when",
+    "dated",
+    "phase date",
+    "date range",
+    "originated",
+    "origin",
+    "laid out",
+    "developed",
+    "established",
+    "formed",
+    "came into being",
+    "how old",
+    "age",
+    "dates from",
+    "when did it develop",
+    "when was it laid out",
+    "dating",
+    "when was it established"
+   ],
+   "kind": "date",
+   "node": "hlc_phase_start_date",
+   "end_node": "hlc_phase_end_date"
+  },
+  {
+   "phrases": [
+    "display date",
+    "date text",
+    "approximate date"
+   ],
+   "kind": "property",
+   "node": "hlc_phase_display_date"
+  },
+  {
+   "phrases": [
+    "broad type",
+    "broad character",
+    "broad class",
+    "broad category",
+    "general category",
+    "category",
+    "broad classification",
+    "general type",
+    "broad character type",
+    "high level type"
+   ],
+   "kind": "property",
+   "node": "broad_type"
+  },
+  {
+   "phrases": [
+    "hlc type",
+    "character type",
+    "landscape type",
+    "type",
+    "what type",
+    "land use type",
+    "what kind of landscape",
+    "classification",
+    "historic land use",
+    "landscape character",
+    "townscape type",
+    "kind of area",
+    "what kind of area",
+    "character type classification",
+    "land use"
+   ],
+   "kind": "property",
+   "node": "hlc_type"
+  },
+  {
+   "phrases": [
+    "period",
+    "historic period",
+    "era",
+    "which period",
+    "what period",
+    "time period",
+    "of what period",
+    "cultural period",
+    "archaeological period"
+   ],
+   "kind": "link",
+   "node": "period"
+  },
+  {
+   "phrases": [
+    "confidence of interpretation",
+    "how certain is the interpretation",
+    "interpretation certainty",
+    "certainty",
+    "how sure",
+    "confidence in classification",
+    "confidence"
+   ],
+   "kind": "property",
+   "node": "confidence_of_interpretation"
+  },
+  {
+   "phrases": [
+    "dating confidence",
+    "confidence of dating",
+    "how sure is the date",
+    "how certain is the date",
+    "date certainty",
+    "reliability of date"
+   ],
+   "kind": "property",
+   "node": "confidence_of_dating"
+  },
+  {
+   "phrases": [
+    "historic map",
+    "historic maps",
+    "old map",
+    "map source",
+    "which map",
+    "based on map",
+    "map evidence",
+    "ordnance survey map",
+    "tithe map",
+    "early map",
+    "first edition os",
+    "cartographic source",
+    "source map"
+   ],
+   "kind": "link",
+   "node": "historic_map"
+  },
+  {
+   "phrases": [
+    "phase description",
+    "phase notes",
+    "phase summary",
+    "description of phase"
+   ],
+   "kind": "property",
+   "node": "hlc_phase_description"
+  },
+  {
+   "phrases": [
+    "average height",
+    "how tall",
+    "height",
+    "number of storeys",
+    "storeys",
+    "stories",
+    "how many floors",
+    "building height",
+    "how high",
+    "floors",
+    "tall buildings",
+    "storey height",
+    "high-rise",
+    "low-rise"
+   ],
+   "kind": "property",
+   "node": "average_height"
+  },
+  {
+   "phrases": [
+    "gardens",
+    "rear gardens",
+    "back gardens",
+    "garden size",
+    "do houses have gardens",
+    "communal gardens",
+    "size of gardens",
+    "back garden",
+    "garden"
+   ],
+   "kind": "property",
+   "node": "rear_gardens"
+  },
+  {
+   "phrases": [
+    "street frontage",
+    "frontage",
+    "set back",
+    "setback",
+    "building line",
+    "distance from the street",
+    "set back from road",
+    "front gardens"
+   ],
+   "kind": "property",
+   "node": "street_frontage"
+  },
+  {
+   "phrases": [
+    "street pattern",
+    "street layout",
+    "road layout",
+    "layout",
+    "grid pattern",
+    "street plan",
+    "morphology",
+    "urban form",
+    "plan form",
+    "road pattern",
+    "cul-de-sac",
+    "grid-iron",
+    "street network",
+    "town plan"
+   ],
+   "kind": "property",
+   "node": "street_pattern"
+  },
+  {
+   "phrases": [
+    "monuments",
+    "sites",
+    "related monuments",
+    "heritage assets",
+    "what monuments",
+    "buildings",
+    "artefacts",
+    "associated monuments",
+    "associated sites",
+    "listed buildings within",
+    "what is in it",
+    "features within",
+    "contains"
+   ],
+   "kind": "link",
+   "node": "monument_area_or_artefact"
+  },
+  {
+   "phrases": [
+    "association type",
+    "relationship type",
+    "how are they related"
+   ],
+   "kind": "property",
+   "node": "association_type"
+  },
+  {
+   "phrases": [
+    "grid reference",
+    "ngr",
+    "os grid reference",
+    "national grid reference",
+    "grid ref",
+    "easting",
+    "northing",
+    "eastings and northings"
+   ],
+   "kind": "property",
+   "node": "national_grid_reference"
+  },
+  {
+   "phrases": [
+    "borough",
+    "london borough",
+    "district",
+    "parish",
+    "local authority",
+    "council area",
+    "administrative area",
+    "which borough",
+    "which council",
+    "county council area",
+    "local planning authority",
+    "area name"
+   ],
+   "kind": "property",
+   "node": "area_name"
+  },
+  {
+   "phrases": [
+    "area type",
+    "type of administrative area",
+    "administrative unit"
+   ],
+   "kind": "property",
+   "node": "area_type"
+  },
+  {
+   "phrases": [
+    "coordinates",
+    "geometry",
+    "on the map",
+    "map",
+    "lat long",
+    "latitude",
+    "longitude",
+    "footprint",
+    "boundary",
+    "extent",
+    "polygon",
+    "geolocation",
+    "map location",
+    "spatial extent",
+    "location",
+    "where",
+    "where is it",
+    "area covered",
+    "size"
+   ],
+   "kind": "property",
+   "node": "geospatial_coordinates"
+  },
+  {
+   "phrases": [
+    "feature shape",
+    "shape on the map",
+    "point or polygon",
+    "geometry type"
+   ],
+   "kind": "property",
+   "node": "feature_shape"
+  },
+  {
+   "phrases": [
+    "spatial accuracy",
+    "location accuracy",
+    "positional accuracy",
+    "how accurate is the location",
+    "mapping accuracy"
+   ],
+   "kind": "property",
+   "node": "spatial_accuracy_qualifier"
+  },
+  {
+   "phrases": [
+    "capture scale",
+    "map scale",
+    "digitised at scale",
+    "digitizing scale"
+   ],
+   "kind": "property",
+   "node": "capture_scale"
+  },
+  {
+   "phrases": [
+    "coordinate system",
+    "projection",
+    "crs",
+    "spatial reference system",
+    "osgb36",
+    "wgs84"
+   ],
+   "kind": "property",
+   "node": "coordinate_system_value"
+  },
+  {
+   "phrases": [
+    "base map",
+    "current base map",
+    "base mapping"
+   ],
+   "kind": "property",
+   "node": "current_base_map_name"
+  },
+  {
+   "phrases": [
+    "spatial notes",
+    "mapping notes",
+    "geometry notes",
+    "spatial metadata"
+   ],
+   "kind": "property",
+   "node": "spatial_metadata_notes"
+  },
+  {
+   "phrases": [
+    "spatial record authorised",
+    "spatial record authorized",
+    "date of authorisation",
+    "date of authorization",
+    "when was the mapping authorised"
+   ],
+   "kind": "date",
+   "node": "date_of_authorization",
+   "end_node": "authorization_end_date"
+  },
+  {
+   "phrases": [
+    "authorisation status",
+    "authorization status",
+    "mapping approved"
+   ],
+   "kind": "property",
+   "node": "authorization_type"
+  },
+  {
+   "phrases": [
+    "authorised by",
+    "authorized by",
+    "authoriser",
+    "authorizer"
+   ],
+   "kind": "property",
+   "node": "authorizer_name"
+  },
+  {
+   "phrases": [
+    "spatial record compiled",
+    "date of compilation",
+    "when was the mapping compiled",
+    "compilation date"
+   ],
+   "kind": "date",
+   "node": "compilation_start_date",
+   "end_node": "compilation_end_date"
+  },
+  {
+   "phrases": [
+    "compiled by",
+    "compiler",
+    "spatial record compiler",
+    "mapped by"
+   ],
+   "kind": "property",
+   "node": "compiler_name"
+  },
+  {
+   "phrases": [
+    "spatial record updated",
+    "geometry updated",
+    "mapping updated",
+    "map last updated"
+   ],
+   "kind": "date",
+   "node": "update_start_date",
+   "end_node": "update_end_date"
+  },
+  {
+   "phrases": [
+    "geometry updated by",
+    "mapping updated by",
+    "spatial record updated by"
+   ],
+   "kind": "property",
+   "node": "updater_name"
+  },
+  {
+   "phrases": [
+    "sources",
+    "source",
+    "references",
+    "bibliography",
+    "publications",
+    "cited in",
+    "books",
+    "literature",
+    "further reading",
+    "written about in",
+    "documentary sources",
+    "published in"
+   ],
+   "kind": "link",
+   "node": "bibliographic_source_citation"
+  },
+  {
+   "phrases": [
+    "page",
+    "pages",
+    "page number",
+    "page numbers"
+   ],
+   "kind": "property",
+   "node": "page_s_"
+  },
+  {
+   "phrases": [
+    "figure",
+    "figures",
+    "figs",
+    "fig number"
+   ],
+   "kind": "property",
+   "node": "figs_"
+  },
+  {
+   "phrases": [
+    "plate",
+    "plates",
+    "plate number"
+   ],
+   "kind": "property",
+   "node": "plate_s_"
+  },
+  {
+   "phrases": [
+    "source comment",
+    "citation note",
+    "citation comment"
+   ],
+   "kind": "property",
+   "node": "comment"
+  },
+  {
+   "phrases": [
+    "source number",
+    "citation number",
+    "source reference number"
+   ],
+   "kind": "property",
+   "node": "source_number_value"
+  },
+  {
+   "phrases": [
+    "cross reference",
+    "cross-reference",
+    "external reference",
+    "other reference number",
+    "other record number",
+    "external id",
+    "list entry number"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference"
+  },
+  {
+   "phrases": [
+    "cross reference source",
+    "reference source",
+    "which database",
+    "external database"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_source"
+  },
+  {
+   "phrases": [
+    "cross reference note",
+    "cross reference notes",
+    "external reference note"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_description"
+  },
+  {
+   "phrases": [
+    "website",
+    "web link",
+    "web page",
+    "url",
+    "online link",
+    "link"
+   ],
+   "kind": "property",
+   "node": "url"
+  },
+  {
+   "phrases": [
+    "reference number",
+    "record number",
+    "her number",
+    "her reference",
+    "smr number",
+    "primary reference",
+    "primary reference number",
+    "id number",
+    "record id"
+   ],
+   "kind": "property",
+   "node": "primary_reference_number"
+  },
+  {
+   "phrases": [
+    "legacy id",
+    "old reference",
+    "previous id",
+    "former reference number",
+    "old record number",
+    "old smr number"
+   ],
+   "kind": "property",
+   "node": "legacy_id"
+  },
+  {
+   "phrases": [
+    "uuid",
+    "resource id",
+    "resourceid",
+    "system id"
+   ],
+   "kind": "property",
+   "node": "resourceid"
+  },
+  {
+   "phrases": [
+    "record created",
+    "date record created",
+    "record creation date",
+    "when was the record created",
+    "added to the record",
+    "added to the database",
+    "entered into the her"
+   ],
+   "kind": "date",
+   "node": "creation_date",
+   "end_node": "creation_end_date"
+  },
+  {
+   "phrases": [
+    "last updated",
+    "record updated",
+    "last modified",
+    "last edited",
+    "date of last update",
+    "when was the record updated",
+    "most recent update",
+    "recently updated"
+   ],
+   "kind": "date",
+   "node": "date_of_last_update",
+   "end_node": "update_end_date_n1"
+  },
+  {
+   "phrases": [
+    "record created by",
+    "who created the record",
+    "record author",
+    "entered by"
+   ],
+   "kind": "property",
+   "node": "creator_name"
+  },
+  {
+   "phrases": [
+    "last updated by",
+    "who updated the record",
+    "record edited by",
+    "updated by"
+   ],
+   "kind": "property",
+   "node": "updater_name_n1"
+  },
+  {
+   "phrases": [
+    "audit note",
+    "audit notes",
+    "record notes",
+    "editorial note"
+   ],
+   "kind": "property",
+   "node": "audit_note"
+  },
+  {
+   "phrases": [
+    "validation",
+    "validation status",
+    "record checked",
+    "quality check",
+    "needs work",
+    "record status",
+    "checked ok"
+   ],
+   "kind": "property",
+   "node": "validation"
+  }
+ ]
+}

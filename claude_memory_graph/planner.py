@@ -277,12 +277,39 @@ def _log(text: str, g, outcome: str, rows: int = 0) -> None:
             "coverage": round(g.coverage, 2),
             "uncovered": g.uncovered,
             "contains": g.contains,
+            "suggestions": [{"words": w, "options": o} for w, o in g.suggestions],
         })
     append_jsonl("ask-decisions.jsonl", entry)
 
 
+_matcher = None
+
+
+def matcher():
+    """The matching chain for leftover words (ceist.matching): exact, then
+    meaning (the gate's WordLlama encoder, when installed). Unsure → "did you
+    mean", which memory_ask hands back to its caller — Claude chooses."""
+    global _matcher
+    if _matcher is None:
+        from ceist import config
+        from .gate import semantic
+        from .gate.runtime import config as gate_config
+        cfg = config.load(None)
+        enc = semantic.encoder() if gate_config()["SEMANTIC"] and semantic.available() else None
+        if enc is None:
+            cfg.layers = ["exact"]
+        _matcher = config.chain(cfg, encoder=enc)
+    return _matcher
+
+
+def _did_you_mean(g) -> str:
+    return "".join(f"(not sure what '{w}' means here — did you mean "
+                   f"{', '.join(repr(o) for o in opts)}? Ask again using one of those)\n"
+                   for w, opts in g.suggestions)
+
+
 def handle(store: MemoryStore, text: str, explain: bool = False) -> str:
-    meaning = interpret(MemoryVocabulary(store), text, COVERAGE_MIN)
+    meaning = interpret(MemoryVocabulary(store), text, COVERAGE_MIN, matcher=matcher())
     if meaning.statement:
         _log(text, None, "statement")
         return ("Statement-shaped — the ambient gate handles working prose. "
@@ -296,6 +323,7 @@ def handle(store: MemoryStore, text: str, explain: bool = False) -> str:
                   + f"\n  coverage: {g.coverage:.0%}"
                   + (f"\n  refused: {g.refuse}" if g.refuse else "") + "\n")
 
+    prefix += _did_you_mean(g)
     if meaning.refused:
         outcome = ("refused" if g.refuse else
                    "low-coverage" if g.coverage < COVERAGE_MIN else "no-subject")

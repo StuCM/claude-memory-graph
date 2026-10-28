@@ -106,11 +106,11 @@ class Interpretation:
 
 
 def interpret(vocab: Vocabulary, text: str, coverage_min: float = COVERAGE_MIN,
-              today=None) -> Interpretation:
+              today=None, matcher=None) -> Interpretation:
     if not is_question(text):
         return Interpretation(Grounding(text=text), statement=True,
                               refused="statement-shaped, not a question")
-    g = ground(vocab, text, today)
+    g = ground(vocab, text, today, matcher)
     out = Interpretation(g)
     if g.refuse:
         out.refused = f"out of grammar ({g.refuse})"
@@ -137,7 +137,8 @@ def interpret(vocab: Vocabulary, text: str, coverage_min: float = COVERAGE_MIN,
     _attach_values(g, plan)
     why = _attach_dates(g, plan)
     if why:
-        out.refused = why
+        out.refused = why + "".join(f"; did you mean {' or '.join(opts)} for '{w}'?"
+                                    for w, opts in g.suggestions)
         return out
     loose_anchor = not g.edges and g.anchor is not None and g.subject is not g.anchor
     if len(g.anchors) > 1 and not all(_linked(g, a) for a in g.anchors):

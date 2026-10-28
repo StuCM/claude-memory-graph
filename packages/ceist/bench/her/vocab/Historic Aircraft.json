@@ -1,0 +1,1910 @@
+{
+ "model": "Historic Aircraft",
+ "entries": [
+  {
+   "phrases": [
+    "built",
+    "constructed",
+    "manufactured",
+    "produced",
+    "assembled",
+    "when was it built",
+    "when was it made",
+    "year built",
+    "build date",
+    "date of manufacture",
+    "construction date",
+    "when manufactured",
+    "rolled off the production line",
+    "made in"
+   ],
+   "kind": "date",
+   "node": "start_date",
+   "end_node": "end_date"
+  },
+  {
+   "phrases": [
+    "altered",
+    "modified",
+    "modification",
+    "when was it modified",
+    "date altered",
+    "upgraded",
+    "refitted"
+   ],
+   "kind": "date",
+   "node": "start_date",
+   "end_node": "end_date",
+   "qualifier": {
+    "node": "construction_phase_type",
+    "value": "Alteration"
+   }
+  },
+  {
+   "phrases": [
+    "converted",
+    "conversion",
+    "when was it converted",
+    "date converted",
+    "adapted"
+   ],
+   "kind": "date",
+   "node": "start_date",
+   "end_node": "end_date",
+   "qualifier": {
+    "node": "construction_phase_type",
+    "value": "Conversion"
+   }
+  },
+  {
+   "phrases": [
+    "repaired",
+    "repairs",
+    "when was it repaired",
+    "date repaired",
+    "patched up",
+    "refurbished"
+   ],
+   "kind": "date",
+   "node": "start_date",
+   "end_node": "end_date",
+   "qualifier": {
+    "node": "construction_phase_type",
+    "value": "Repairs"
+   }
+  },
+  {
+   "phrases": [
+    "scrapped",
+    "broken up for scrap",
+    "dismantled",
+    "written off",
+    "struck off charge",
+    "when was it scrapped",
+    "date destroyed"
+   ],
+   "kind": "date",
+   "node": "start_date",
+   "end_node": "end_date",
+   "qualifier": {
+    "node": "construction_phase_type",
+    "value": "Destruction"
+   }
+  },
+  {
+   "phrases": [
+    "display date",
+    "approximate date",
+    "date as written",
+    "circa date"
+   ],
+   "kind": "property",
+   "node": "display_date"
+  },
+  {
+   "phrases": [
+    "phase type",
+    "construction phase",
+    "type of phase",
+    "construction history"
+   ],
+   "kind": "property",
+   "node": "construction_phase_type"
+  },
+  {
+   "phrases": [
+    "manufacturer",
+    "made by",
+    "built by",
+    "maker",
+    "who made it",
+    "who built it",
+    "who manufactured it",
+    "aircraft manufacturer",
+    "which company built it",
+    "constructor",
+    "builder"
+   ],
+   "kind": "property",
+   "node": "manufacturer"
+  },
+  {
+   "phrases": [
+    "place of manufacture",
+    "where was it built",
+    "where was it made",
+    "factory",
+    "built where",
+    "manufactured where",
+    "which factory",
+    "production site"
+   ],
+   "kind": "property",
+   "node": "place_of_manufacture"
+  },
+  {
+   "phrases": [
+    "material",
+    "materials",
+    "made of",
+    "what is it made of",
+    "construction material",
+    "built from",
+    "what material",
+    "airframe material",
+    "fabric or metal"
+   ],
+   "kind": "property",
+   "node": "main_construction_material"
+  },
+  {
+   "phrases": [
+    "construction technique",
+    "how was it built",
+    "building technique",
+    "manufacturing technique",
+    "technique"
+   ],
+   "kind": "property",
+   "node": "construction_technique"
+  },
+  {
+   "phrases": [
+    "construction method",
+    "production method",
+    "method of construction",
+    "riveted or welded",
+    "how was it assembled"
+   ],
+   "kind": "property",
+   "node": "construction_method"
+  },
+  {
+   "phrases": [
+    "period",
+    "era",
+    "what period",
+    "which period",
+    "historic period",
+    "date period",
+    "what era",
+    "from which era"
+   ],
+   "kind": "link",
+   "node": "period"
+  },
+  {
+   "phrases": [
+    "aircraft type",
+    "type",
+    "type of aircraft",
+    "what kind of aircraft",
+    "what type of plane",
+    "kind of plane",
+    "aircraft model",
+    "model",
+    "what aircraft",
+    "plane type",
+    "make and model"
+   ],
+   "kind": "property",
+   "node": "aircraft_type"
+  },
+  {
+   "phrases": [
+    "aircraft form",
+    "form",
+    "configuration",
+    "monoplane or biplane",
+    "airframe type",
+    "shape of aircraft",
+    "wing configuration"
+   ],
+   "kind": "property",
+   "node": "aircraft_form"
+  },
+  {
+   "phrases": [
+    "function",
+    "aircraft function",
+    "purpose",
+    "used for",
+    "what was it used for",
+    "role of the aircraft",
+    "military role",
+    "what did it do",
+    "use"
+   ],
+   "kind": "property",
+   "node": "aircraft_function"
+  },
+  {
+   "phrases": [
+    "mark",
+    "aircraft mark",
+    "mk",
+    "mark number",
+    "which mark",
+    "variant",
+    "sub-type",
+    "version"
+   ],
+   "kind": "property",
+   "node": "aircraft_mark"
+  },
+  {
+   "phrases": [
+    "certainty",
+    "how certain",
+    "confidence",
+    "is it certain",
+    "identification certainty",
+    "probable or possible"
+   ],
+   "kind": "property",
+   "node": "phase_certainty"
+  },
+  {
+   "phrases": [
+    "phase description",
+    "construction notes",
+    "classification notes",
+    "construction phase description"
+   ],
+   "kind": "property",
+   "node": "phase_description"
+  },
+  {
+   "phrases": [
+    "evidence",
+    "evidence type",
+    "what survives",
+    "remains",
+    "surviving remains",
+    "what evidence",
+    "type of evidence"
+   ],
+   "kind": "property",
+   "node": "phase_evidence_type"
+  },
+  {
+   "phrases": [
+    "dimensions",
+    "size",
+    "measurements",
+    "how big",
+    "dimension",
+    "measurement",
+    "how large"
+   ],
+   "kind": "property",
+   "node": "dimension_value"
+  },
+  {
+   "phrases": [
+    "length",
+    "how long",
+    "long",
+    "overall length",
+    "fuselage length"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Length"
+   }
+  },
+  {
+   "phrases": [
+    "wingspan",
+    "wing span",
+    "span",
+    "how wide are the wings",
+    "width of wings"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Wingspan"
+   }
+  },
+  {
+   "phrases": [
+    "height",
+    "how tall",
+    "how high",
+    "tall",
+    "high"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Height"
+   }
+  },
+  {
+   "phrases": [
+    "weight",
+    "how heavy",
+    "weighs",
+    "heavy",
+    "mass",
+    "how much does it weigh"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Weight"
+   }
+  },
+  {
+   "phrases": [
+    "breadth",
+    "width",
+    "how wide",
+    "wide",
+    "beam"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Breadth"
+   }
+  },
+  {
+   "phrases": [
+    "depth",
+    "how deep",
+    "deep"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Depth"
+   }
+  },
+  {
+   "phrases": [
+    "tonnage",
+    "tons",
+    "tonnes"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Tonnage"
+   }
+  },
+  {
+   "phrases": [
+    "volume",
+    "capacity",
+    "cubic"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Volume"
+   }
+  },
+  {
+   "phrases": [
+    "unit",
+    "units",
+    "unit of measurement",
+    "in metres or feet"
+   ],
+   "kind": "property",
+   "node": "dimension_measurement_unit"
+  },
+  {
+   "phrases": [
+    "associated with",
+    "involved",
+    "people",
+    "organisations",
+    "organizations",
+    "who was involved",
+    "connected to",
+    "associated people",
+    "associated person",
+    "linked person",
+    "related people",
+    "who is connected"
+   ],
+   "kind": "link",
+   "node": "actor"
+  },
+  {
+   "phrases": [
+    "owned by",
+    "owner",
+    "who owned it",
+    "owners",
+    "belonged to",
+    "operated by",
+    "operator"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Owner"
+   }
+  },
+  {
+   "phrases": [
+    "designed by",
+    "designer",
+    "who designed it",
+    "design by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Designer"
+   }
+  },
+  {
+   "phrases": [
+    "engineer",
+    "engineered by",
+    "engineers"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Engineer"
+   }
+  },
+  {
+   "phrases": [
+    "found by",
+    "discovered by",
+    "finder",
+    "who found it",
+    "who discovered it",
+    "discoverer"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Finder"
+   }
+  },
+  {
+   "phrases": [
+    "excavated by",
+    "excavator",
+    "dug up by",
+    "who excavated it",
+    "who dug it up"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Excavator"
+   }
+  },
+  {
+   "phrases": [
+    "salvaged by",
+    "salvager",
+    "recovered by",
+    "who recovered it",
+    "who salvaged it"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Salvager"
+   }
+  },
+  {
+   "phrases": [
+    "dived by",
+    "diver",
+    "divers",
+    "who dived on it"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Diver"
+   }
+  },
+  {
+   "phrases": [
+    "photographed by",
+    "photographer",
+    "who photographed it"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Photographer"
+   }
+  },
+  {
+   "phrases": [
+    "surveyed by",
+    "surveyor",
+    "who surveyed it"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Surveyor"
+   }
+  },
+  {
+   "phrases": [
+    "recorded by",
+    "recorder",
+    "who recorded it"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Recorder"
+   }
+  },
+  {
+   "phrases": [
+    "researched by",
+    "researcher",
+    "who researched it"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Researcher"
+   }
+  },
+  {
+   "phrases": [
+    "donated by",
+    "donor",
+    "who donated it",
+    "gifted by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Donor"
+   }
+  },
+  {
+   "phrases": [
+    "famous person",
+    "person of historic interest",
+    "notable person",
+    "historic figure",
+    "famous people"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Person of Historic Interest"
+   }
+  },
+  {
+   "phrases": [
+    "funded by",
+    "funder",
+    "financed by",
+    "paid for by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Funding Body/Financier"
+   }
+  },
+  {
+   "phrases": [
+    "sponsored by",
+    "sponsor",
+    "sponsors"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Sponsor"
+   }
+  },
+  {
+   "phrases": [
+    "curator",
+    "curated by",
+    "who curated it"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Curator"
+   }
+  },
+  {
+   "phrases": [
+    "role",
+    "what role",
+    "their role",
+    "role in",
+    "in what capacity"
+   ],
+   "kind": "property",
+   "node": "role_type"
+  },
+  {
+   "phrases": [
+    "association dates",
+    "when were they associated",
+    "date of association",
+    "association period",
+    "associated from"
+   ],
+   "kind": "date",
+   "node": "associated_actor_start_date",
+   "end_node": "associated_actor_end_date"
+  },
+  {
+   "phrases": [
+    "crew",
+    "crew member",
+    "crew members",
+    "who flew it",
+    "pilot",
+    "pilots",
+    "aircrew",
+    "who was on board",
+    "airmen",
+    "flown by",
+    "who was flying",
+    "navigator",
+    "gunner",
+    "crewed by"
+   ],
+   "kind": "link",
+   "node": "crew_member"
+  },
+  {
+   "phrases": [
+    "captain",
+    "captained by",
+    "commanded by",
+    "commander",
+    "skipper",
+    "aircraft captain"
+   ],
+   "kind": "link",
+   "node": "crew_member",
+   "qualifier": {
+    "node": "crew_role",
+    "value": "Captain"
+   }
+  },
+  {
+   "phrases": [
+    "crew role",
+    "crew position",
+    "role on board",
+    "position in crew"
+   ],
+   "kind": "property",
+   "node": "crew_role"
+  },
+  {
+   "phrases": [
+    "flight",
+    "flew",
+    "took off",
+    "departed",
+    "departure date",
+    "date of flight",
+    "when did it fly",
+    "last flight",
+    "final flight",
+    "flight date",
+    "mission date",
+    "sortie date"
+   ],
+   "kind": "date",
+   "node": "date_of_departure",
+   "end_node": "date_of_loss"
+  },
+  {
+   "phrases": [
+    "lost",
+    "crashed",
+    "shot down",
+    "went down",
+    "date of loss",
+    "when was it lost",
+    "when did it crash",
+    "crash date",
+    "came down",
+    "ditched",
+    "loss date",
+    "date crashed"
+   ],
+   "kind": "date",
+   "node": "date_of_loss"
+  },
+  {
+   "phrases": [
+    "expected to arrive",
+    "due to arrive",
+    "expected arrival",
+    "expected date of arrival",
+    "estimated arrival",
+    "eta"
+   ],
+   "kind": "date",
+   "node": "expected_date_start",
+   "end_node": "expected_date_end"
+  },
+  {
+   "phrases": [
+    "flight type",
+    "type of flight",
+    "mission",
+    "mission type",
+    "kind of flight",
+    "sortie",
+    "what mission",
+    "purpose of flight"
+   ],
+   "kind": "property",
+   "node": "flight_type"
+  },
+  {
+   "phrases": [
+    "manner of loss",
+    "how was it lost",
+    "cause of loss",
+    "why did it crash",
+    "how did it crash",
+    "what happened to it",
+    "fate",
+    "cause of crash",
+    "how did it come down",
+    "reason for loss",
+    "how was it destroyed"
+   ],
+   "kind": "property",
+   "node": "manner_of_loss"
+  },
+  {
+   "phrases": [
+    "cargo",
+    "payload",
+    "carrying",
+    "what was it carrying",
+    "bomb load",
+    "load",
+    "freight",
+    "cargo type"
+   ],
+   "kind": "property",
+   "node": "cargo_type"
+  },
+  {
+   "phrases": [
+    "crash site",
+    "where did it crash",
+    "wreck site",
+    "where it came down",
+    "crash location",
+    "site of crash",
+    "wreckage site",
+    "where is the wreck",
+    "crash place"
+   ],
+   "kind": "link",
+   "node": "crash_site"
+  },
+  {
+   "phrases": [
+    "crash site type",
+    "type of crash site",
+    "what kind of crash site",
+    "kind of site where it crashed"
+   ],
+   "kind": "property",
+   "node": "crash_site_type"
+  },
+  {
+   "phrases": [
+    "flight description",
+    "flight details",
+    "mission details",
+    "account of the flight",
+    "story of the flight",
+    "what happened on the flight",
+    "loss account"
+   ],
+   "kind": "property",
+   "node": "flight_description"
+  },
+  {
+   "phrases": [
+    "place of departure",
+    "departed from",
+    "took off from",
+    "where did it take off",
+    "where did it fly from",
+    "origin",
+    "base",
+    "airfield",
+    "home base",
+    "flew from",
+    "starting point"
+   ],
+   "kind": "property",
+   "node": "place_of_departure_name"
+  },
+  {
+   "phrases": [
+    "destination",
+    "heading to",
+    "flying to",
+    "where was it going",
+    "bound for",
+    "target",
+    "where was it flying",
+    "intended destination",
+    "flew to"
+   ],
+   "kind": "property",
+   "node": "place_of_destination_name"
+  },
+  {
+   "phrases": [
+    "nationality",
+    "which country",
+    "country of origin",
+    "whose aircraft",
+    "air force",
+    "what nationality",
+    "national origin",
+    "british or german",
+    "which side"
+   ],
+   "kind": "property",
+   "node": "aircraft_nationality"
+  },
+  {
+   "phrases": [
+    "status",
+    "casualty",
+    "known site",
+    "casualty or known site",
+    "is the site known",
+    "site status"
+   ],
+   "kind": "property",
+   "node": "status"
+  },
+  {
+   "phrases": [
+    "designation",
+    "protection",
+    "protected",
+    "is it protected",
+    "legal protection",
+    "protection status",
+    "designation type",
+    "heritage designation",
+    "statutory protection",
+    "protected wreck",
+    "protected place",
+    "scheduled"
+   ],
+   "kind": "property",
+   "node": "designation_or_protection_type"
+  },
+  {
+   "phrases": [
+    "designated",
+    "date designated",
+    "when designated",
+    "when was it protected",
+    "designation date",
+    "date of protection",
+    "protected since",
+    "first protected"
+   ],
+   "kind": "date",
+   "node": "designation_start_date",
+   "end_node": "designation_end_date"
+  },
+  {
+   "phrases": [
+    "designation amended",
+    "amendment date",
+    "date amended",
+    "protection amended"
+   ],
+   "kind": "date",
+   "node": "designation_amendment_date"
+  },
+  {
+   "phrases": [
+    "designation name",
+    "list entry name",
+    "protection name",
+    "name of designation"
+   ],
+   "kind": "property",
+   "node": "designation_name"
+  },
+  {
+   "phrases": [
+    "grade",
+    "listing grade",
+    "what grade",
+    "grade listed",
+    "which grade",
+    "listed grade"
+   ],
+   "kind": "property",
+   "node": "grade"
+  },
+  {
+   "phrases": [
+    "at risk",
+    "risk",
+    "risk status",
+    "heritage at risk",
+    "is it at risk",
+    "under threat",
+    "endangered"
+   ],
+   "kind": "property",
+   "node": "risk_status"
+  },
+  {
+   "phrases": [
+    "local list criteria",
+    "local listing criteria",
+    "reasons for local listing",
+    "criteria",
+    "why locally listed"
+   ],
+   "kind": "property",
+   "node": "local_heritage_list_criteria_type"
+  },
+  {
+   "phrases": [
+    "list entry link",
+    "designation link",
+    "designation url",
+    "official list link"
+   ],
+   "kind": "property",
+   "node": "reference_url"
+  },
+  {
+   "phrases": [
+    "designation document",
+    "listing document",
+    "protection document",
+    "designation file"
+   ],
+   "kind": "link",
+   "node": "digital_file_s_"
+  },
+  {
+   "phrases": [
+    "name",
+    "called",
+    "what is it called",
+    "aircraft name",
+    "title",
+    "what was it called",
+    "known as",
+    "serial",
+    "registration",
+    "identifier"
+   ],
+   "kind": "property",
+   "node": "name"
+  },
+  {
+   "phrases": [
+    "description",
+    "describe",
+    "about",
+    "summary",
+    "details",
+    "history",
+    "tell me about",
+    "information",
+    "background",
+    "story"
+   ],
+   "kind": "property",
+   "node": "description"
+  },
+  {
+   "phrases": [
+    "activities",
+    "related activities",
+    "investigations",
+    "fieldwork",
+    "excavations",
+    "surveys",
+    "associated activities",
+    "archaeological work",
+    "recovery operation"
+   ],
+   "kind": "link",
+   "node": "associated_activities"
+  },
+  {
+   "phrases": [
+    "consultations",
+    "planning consultations",
+    "planning cases",
+    "associated consultations",
+    "planning applications"
+   ],
+   "kind": "link",
+   "node": "associated_consultations"
+  },
+  {
+   "phrases": [
+    "related monuments",
+    "associated sites",
+    "linked monuments",
+    "related artefacts",
+    "associated areas",
+    "associated monuments",
+    "related sites",
+    "related wrecks",
+    "related aircraft",
+    "linked records"
+   ],
+   "kind": "link",
+   "node": "associated_monument_area_or_artefact"
+  },
+  {
+   "phrases": [
+    "archive held by",
+    "who holds the archive",
+    "archive holder",
+    "where are the records kept",
+    "archive location",
+    "held by"
+   ],
+   "kind": "link",
+   "node": "archive_holder"
+  },
+  {
+   "phrases": [
+    "archive title",
+    "archive object",
+    "archive item",
+    "archive items",
+    "archive material"
+   ],
+   "kind": "property",
+   "node": "archive_object_title"
+  },
+  {
+   "phrases": [
+    "archive reference",
+    "archive number",
+    "archive object reference"
+   ],
+   "kind": "property",
+   "node": "archive_object_reference"
+  },
+  {
+   "phrases": [
+    "sources",
+    "bibliography",
+    "references",
+    "published in",
+    "cited in",
+    "literature",
+    "publications",
+    "books",
+    "source",
+    "further reading"
+   ],
+   "kind": "link",
+   "node": "bibliographic_source_citation"
+  },
+  {
+   "phrases": [
+    "page",
+    "pages",
+    "page number",
+    "which page"
+   ],
+   "kind": "property",
+   "node": "page_s_"
+  },
+  {
+   "phrases": [
+    "figure",
+    "figures",
+    "fig",
+    "figure number"
+   ],
+   "kind": "property",
+   "node": "figs_"
+  },
+  {
+   "phrases": [
+    "plate",
+    "plates",
+    "plate number"
+   ],
+   "kind": "property",
+   "node": "plate_s_"
+  },
+  {
+   "phrases": [
+    "source comment",
+    "citation note",
+    "source notes"
+   ],
+   "kind": "property",
+   "node": "comment"
+  },
+  {
+   "phrases": [
+    "source number",
+    "citation number",
+    "source reference number"
+   ],
+   "kind": "property",
+   "node": "source_number_value"
+  },
+  {
+   "phrases": [
+    "digital files",
+    "documents",
+    "attachments",
+    "files",
+    "associated files",
+    "digital objects",
+    "reports"
+   ],
+   "kind": "link",
+   "node": "digital_file_s__n1"
+  },
+  {
+   "phrases": [
+    "images",
+    "pictures",
+    "photos",
+    "photographs",
+    "image",
+    "picture",
+    "photo",
+    "show me"
+   ],
+   "kind": "property",
+   "node": "images"
+  },
+  {
+   "phrases": [
+    "caption",
+    "image caption",
+    "photo caption",
+    "picture caption"
+   ],
+   "kind": "property",
+   "node": "caption_note"
+  },
+  {
+   "phrases": [
+    "copyright holder",
+    "image copyright holder",
+    "who owns the copyright",
+    "photo credit",
+    "image credit",
+    "rights holder"
+   ],
+   "kind": "link",
+   "node": "copyright_holder"
+  },
+  {
+   "phrases": [
+    "copyright",
+    "licence",
+    "license",
+    "copyright status",
+    "image rights",
+    "can i use the image",
+    "usage rights"
+   ],
+   "kind": "property",
+   "node": "copyright_type"
+  },
+  {
+   "phrases": [
+    "copyright note",
+    "copyright statement",
+    "rights statement"
+   ],
+   "kind": "property",
+   "node": "copyright_note_text"
+  },
+  {
+   "phrases": [
+    "location",
+    "where is it",
+    "location description",
+    "situated",
+    "whereabouts",
+    "where",
+    "where is it located",
+    "position",
+    "where can i find it"
+   ],
+   "kind": "property",
+   "node": "location_description"
+  },
+  {
+   "phrases": [
+    "grid reference",
+    "ngr",
+    "os grid reference",
+    "national grid reference",
+    "grid ref",
+    "os reference"
+   ],
+   "kind": "property",
+   "node": "national_grid_reference"
+  },
+  {
+   "phrases": [
+    "map",
+    "coordinates",
+    "geometry",
+    "on the map",
+    "footprint",
+    "mapped extent",
+    "spatial location",
+    "show on map",
+    "latitude",
+    "longitude"
+   ],
+   "kind": "property",
+   "node": "geospatial_coordinates"
+  },
+  {
+   "phrases": [
+    "named location",
+    "named place",
+    "place name",
+    "which place",
+    "place"
+   ],
+   "kind": "link",
+   "node": "named_location"
+  },
+  {
+   "phrases": [
+    "geology",
+    "bedrock",
+    "underlying geology",
+    "solid geology",
+    "rock type",
+    "drift geology"
+   ],
+   "kind": "property",
+   "node": "geology"
+  },
+  {
+   "phrases": [
+    "subsoil",
+    "sub soil",
+    "soil",
+    "soil type",
+    "ground type"
+   ],
+   "kind": "property",
+   "node": "sub_soil"
+  },
+  {
+   "phrases": [
+    "land use",
+    "land use classification",
+    "current land use",
+    "landscape type",
+    "what is the land used for"
+   ],
+   "kind": "property",
+   "node": "land_use_classification"
+  },
+  {
+   "phrases": [
+    "land use assessed",
+    "land use assessment date",
+    "date of land use assessment"
+   ],
+   "kind": "date",
+   "node": "land_use_assessment_start_date",
+   "end_node": "land_use_assessment_end_date"
+  },
+  {
+   "phrases": [
+    "land use notes",
+    "land use note",
+    "notes on land use"
+   ],
+   "kind": "property",
+   "node": "land_use_notes_value"
+  },
+  {
+   "phrases": [
+    "area status",
+    "status of the area",
+    "area designation status"
+   ],
+   "kind": "property",
+   "node": "area_status"
+  },
+  {
+   "phrases": [
+    "area status date",
+    "area status since",
+    "when was the area status assigned"
+   ],
+   "kind": "date",
+   "node": "area_status_start_date",
+   "end_node": "area_status_end_date"
+  },
+  {
+   "phrases": [
+    "area reference",
+    "area assignment reference",
+    "area reference note"
+   ],
+   "kind": "property",
+   "node": "area_reference_value"
+  },
+  {
+   "phrases": [
+    "ownership",
+    "land ownership",
+    "ownership status",
+    "public or private ownership"
+   ],
+   "kind": "property",
+   "node": "ownership"
+  },
+  {
+   "phrases": [
+    "shine form",
+    "shine feature form",
+    "form of shine feature"
+   ],
+   "kind": "property",
+   "node": "shine_form"
+  },
+  {
+   "phrases": [
+    "shine significance",
+    "shine",
+    "shine candidate significance"
+   ],
+   "kind": "property",
+   "node": "shine_significance"
+  },
+  {
+   "phrases": [
+    "scientifically dated",
+    "scientific date",
+    "radiocarbon date",
+    "scientific dating",
+    "absolute date",
+    "dated scientifically"
+   ],
+   "kind": "date",
+   "node": "scientific_date_start_date",
+   "end_node": "scientific_date_end_date"
+  },
+  {
+   "phrases": [
+    "date determined",
+    "when was the date determined",
+    "when was it analysed",
+    "analysis date",
+    "when was the sample dated"
+   ],
+   "kind": "date",
+   "node": "when_determined_start_date",
+   "end_node": "when_determined_end_date"
+  },
+  {
+   "phrases": [
+    "dating method",
+    "how was it dated",
+    "scientific dating method",
+    "radiocarbon",
+    "dendrochronology",
+    "method of dating"
+   ],
+   "kind": "property",
+   "node": "dating_method"
+  },
+  {
+   "phrases": [
+    "lab reference",
+    "laboratory reference",
+    "laboratory code",
+    "lab number",
+    "lab code"
+   ],
+   "kind": "property",
+   "node": "laboratory_reference"
+  },
+  {
+   "phrases": [
+    "standard deviation",
+    "error margin",
+    "plus or minus",
+    "uncertainty of date"
+   ],
+   "kind": "property",
+   "node": "standard_deviation_value"
+  },
+  {
+   "phrases": [
+    "dating notes",
+    "scientific date notes",
+    "dating note"
+   ],
+   "kind": "property",
+   "node": "note"
+  },
+  {
+   "phrases": [
+    "standard deviation note",
+    "standard deviation notes",
+    "notes on standard deviation"
+   ],
+   "kind": "property",
+   "node": "standard_deviation_note"
+  },
+  {
+   "phrases": [
+    "address",
+    "full address",
+    "what is the address",
+    "street address",
+    "aircraft address"
+   ],
+   "kind": "property",
+   "node": "full_address"
+  },
+  {
+   "phrases": [
+    "postcode",
+    "post code",
+    "zip code",
+    "what postcode",
+    "which postcode"
+   ],
+   "kind": "property",
+   "node": "postcode_value"
+  },
+  {
+   "phrases": [
+    "street",
+    "road",
+    "street name",
+    "which street",
+    "what road",
+    "on which road"
+   ],
+   "kind": "property",
+   "node": "street_value"
+  },
+  {
+   "phrases": [
+    "town",
+    "city",
+    "which town",
+    "which city",
+    "town or city",
+    "what town"
+   ],
+   "kind": "property",
+   "node": "town_or_city_value"
+  },
+  {
+   "phrases": [
+    "county",
+    "which county",
+    "what county"
+   ],
+   "kind": "property",
+   "node": "county_value"
+  },
+  {
+   "phrases": [
+    "locality",
+    "village",
+    "neighbourhood",
+    "hamlet",
+    "suburb"
+   ],
+   "kind": "property",
+   "node": "locality_value"
+  },
+  {
+   "phrases": [
+    "building name",
+    "name of the building",
+    "what is the building called"
+   ],
+   "kind": "property",
+   "node": "building_name_value"
+  },
+  {
+   "phrases": [
+    "building number",
+    "house number",
+    "street number"
+   ],
+   "kind": "property",
+   "node": "building_number_value"
+  },
+  {
+   "phrases": [
+    "borough",
+    "district",
+    "parish",
+    "administrative area",
+    "local authority area",
+    "council area",
+    "which borough",
+    "what borough",
+    "which district"
+   ],
+   "kind": "property",
+   "node": "area_name"
+  },
+  {
+   "phrases": [
+    "area type",
+    "type of administrative area",
+    "kind of area"
+   ],
+   "kind": "property",
+   "node": "area_type"
+  },
+  {
+   "phrases": [
+    "record created",
+    "date record created",
+    "when was the record created",
+    "added to the record",
+    "date added",
+    "entered into the database",
+    "record creation date"
+   ],
+   "kind": "date",
+   "node": "creation_date",
+   "end_node": "creation_end_date"
+  },
+  {
+   "phrases": [
+    "last updated",
+    "record updated",
+    "date of last update",
+    "when was the record updated",
+    "last modified",
+    "last edited",
+    "record last changed"
+   ],
+   "kind": "date",
+   "node": "date_of_last_update",
+   "end_node": "update_end_date_n1"
+  },
+  {
+   "phrases": [
+    "record created by",
+    "who created the record",
+    "record creator",
+    "who entered the record"
+   ],
+   "kind": "property",
+   "node": "creator_name"
+  },
+  {
+   "phrases": [
+    "last updated by",
+    "who updated the record",
+    "record updated by",
+    "record editor"
+   ],
+   "kind": "property",
+   "node": "updater_name_n1"
+  },
+  {
+   "phrases": [
+    "validation",
+    "validation status",
+    "record checked",
+    "has the record been checked",
+    "quality check",
+    "needs work"
+   ],
+   "kind": "property",
+   "node": "validation"
+  },
+  {
+   "phrases": [
+    "audit note",
+    "audit notes",
+    "record notes",
+    "editorial notes"
+   ],
+   "kind": "property",
+   "node": "audit_note"
+  },
+  {
+   "phrases": [
+    "spatial record authorised",
+    "spatial record authorized",
+    "date of authorisation",
+    "mapping authorised",
+    "geometry authorised"
+   ],
+   "kind": "date",
+   "node": "date_of_authorization",
+   "end_node": "authorization_end_date"
+  },
+  {
+   "phrases": [
+    "spatial record compiled",
+    "date of compilation",
+    "mapping compiled",
+    "geometry compiled",
+    "when was it mapped"
+   ],
+   "kind": "date",
+   "node": "compilation_start_date",
+   "end_node": "compilation_end_date"
+  },
+  {
+   "phrases": [
+    "spatial record updated",
+    "geometry updated",
+    "map updated",
+    "mapping updated",
+    "when was the map updated"
+   ],
+   "kind": "date",
+   "node": "update_start_date",
+   "end_node": "update_end_date"
+  },
+  {
+   "phrases": [
+    "authorisation status",
+    "authorization status",
+    "is the mapping authorised"
+   ],
+   "kind": "property",
+   "node": "authorization_type"
+  },
+  {
+   "phrases": [
+    "spatial record authorised by",
+    "mapping authorised by",
+    "who authorised the mapping"
+   ],
+   "kind": "property",
+   "node": "authorizer_name"
+  },
+  {
+   "phrases": [
+    "spatial record compiled by",
+    "mapped by",
+    "who mapped it",
+    "who digitised it"
+   ],
+   "kind": "property",
+   "node": "compiler_name"
+  },
+  {
+   "phrases": [
+    "spatial record updated by",
+    "map updated by",
+    "who updated the map"
+   ],
+   "kind": "property",
+   "node": "updater_name"
+  },
+  {
+   "phrases": [
+    "capture scale",
+    "map scale",
+    "scale of capture",
+    "digitised at what scale"
+   ],
+   "kind": "property",
+   "node": "capture_scale"
+  },
+  {
+   "phrases": [
+    "coordinate system",
+    "projection",
+    "spatial reference system",
+    "crs"
+   ],
+   "kind": "property",
+   "node": "coordinate_system_value"
+  },
+  {
+   "phrases": [
+    "feature shape",
+    "geometry type",
+    "point or polygon",
+    "shape of the feature"
+   ],
+   "kind": "property",
+   "node": "feature_shape"
+  },
+  {
+   "phrases": [
+    "spatial accuracy",
+    "how accurate is the location",
+    "positional accuracy",
+    "location accuracy",
+    "precision of the mapping"
+   ],
+   "kind": "property",
+   "node": "spatial_accuracy_qualifier"
+  },
+  {
+   "phrases": [
+    "spatial metadata",
+    "spatial notes",
+    "mapping notes",
+    "geometry notes"
+   ],
+   "kind": "property",
+   "node": "spatial_metadata_notes"
+  },
+  {
+   "phrases": [
+    "base map",
+    "current base map",
+    "which base map",
+    "basemap"
+   ],
+   "kind": "property",
+   "node": "current_base_map_name"
+  },
+  {
+   "phrases": [
+    "reference number",
+    "record number",
+    "her number",
+    "her reference",
+    "record id",
+    "id number",
+    "primary reference",
+    "aircraft number",
+    "monument number"
+   ],
+   "kind": "property",
+   "node": "primary_reference_number"
+  },
+  {
+   "phrases": [
+    "legacy id",
+    "legacy reference",
+    "old reference",
+    "former id",
+    "previous reference number",
+    "old record number"
+   ],
+   "kind": "property",
+   "node": "legacy_id"
+  },
+  {
+   "phrases": [
+    "uuid",
+    "resource id",
+    "system id",
+    "unique identifier"
+   ],
+   "kind": "property",
+   "node": "resourceid"
+  },
+  {
+   "phrases": [
+    "cross reference",
+    "external reference",
+    "other reference numbers",
+    "cross references",
+    "references in other databases"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference"
+  },
+  {
+   "phrases": [
+    "cross reference source",
+    "which database",
+    "source of the cross reference"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_source"
+  },
+  {
+   "phrases": [
+    "cross reference note",
+    "cross reference notes",
+    "note on cross reference"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_description"
+  },
+  {
+   "phrases": [
+    "website",
+    "web link",
+    "url",
+    "online link",
+    "more information online"
+   ],
+   "kind": "property",
+   "node": "url"
+  }
+ ]
+}

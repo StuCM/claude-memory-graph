@@ -8,6 +8,13 @@ two named anchors (only a name-term hit may bind; never a guess) → one
 leftover word as a text filter → coverage → wire the relations to their ends
 → scope each negator ("not", "without", "non-") to the next thing named.
 
+With a matcher (ceist.matching.Chain), words the exact pass left over get a
+second chance before they become a text filter: a run of leftover words
+between two named things is matched against the relations that can join
+them, and one before a date against the date fields it could be. A
+confident match grounds like an exact one (the note says which layer
+decided); otherwise the closest items become suggestions ("did you mean …").
+
 The result says what was understood and how sure (coverage); plan.py turns
 it into a query plan, and refuses rather than guesses when it is thin.
 """
@@ -113,6 +120,7 @@ class Grounding:
     loose: str = ""           # relation phrases dropped to list a type
     about: bool = False       # "what do we know about X"
     notes: list[str] = field(default_factory=list)
+    suggestions: list[tuple[str, list[str]]] = field(default_factory=list)   # (words, did-you-mean)
 
     def vars(self) -> list[Node]:
         return [n for n in self.nodes if n.kind == "var"]
@@ -135,7 +143,35 @@ def _phrase_spans(raw: str, phrases: list[tuple[str, object]], taken: list[tuple
         yield phrase, payload, m
 
 
-def ground(vocab: Vocabulary, text: str, today=None) -> Grounding:
+PREPS = {"by", "on", "in", "at", "to", "from", "with", "for", "of", "into", "under", "up",
+         "down", "out", "off", "over", "about"}
+
+
+def _leftover_runs(words, consumed, parts_of):
+    """Maximal runs of unconsumed words, trimmed to start at a meaningful word
+    and end at one or at a preposition ("put up", "designed by")."""
+    runs, cur = [], []
+    for w in words:
+        if w[0] in consumed:
+            if cur:
+                runs.append(cur)
+            cur = []
+        else:
+            cur.append(w)
+    if cur:
+        runs.append(cur)
+    out = []
+    for r in runs:
+        while r and not parts_of(r[0][3]):
+            r = r[1:]
+        while r and not parts_of(r[-1][3]) and r[-1][3] not in PREPS:
+            r = r[:-1]
+        if r:
+            out.append(r)
+    return out
+
+
+def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
     g = Grounding(text=text)
     # same length, so spans stay aligned: "non-listed" → "non listed"
     raw = text.lower().replace("\u2019", "'").replace("non-", "non ")
@@ -304,6 +340,9 @@ def ground(vocab: Vocabulary, text: str, today=None) -> Grounding:
             break                     # one anchor per relation at most
     g.anchor = g.anchors[0] if g.anchors else None
 
+    if matcher is not None and not g.about:
+        _match_leftovers(g, matcher, words, consumed, parts_of, relations)
+
     # ── one leftover word → a text filter; more stay uncovered
     remaining = [(i, w) for i, _s, _e, w in words if i not in consumed and parts_of(w)]
     contains_pos = None
@@ -344,6 +383,53 @@ def ground(vocab: Vocabulary, text: str, today=None) -> Grounding:
         g.subject = explicit[0] if explicit else None
     _scope_negations(g, negs, contains_pos)
     return g
+
+
+def _match_leftovers(g: Grounding, matcher, words, consumed, parts_of, relations) -> None:
+    """The second chance: leftover runs, matched by the configured chain
+    against what the structure says they could be."""
+    from .matching import Item
+
+    def take(run):
+        consumed.update(w[0] for w in run)
+
+    runs = _leftover_runs(words, consumed, parts_of)
+    # a date with several possible fields: the run just before it picks one
+    for dm in g.dates:
+        if len(dm.fields) < 2:
+            continue
+        run = next((r for r in reversed(runs) if r[-1][0] < dm.pos and dm.pos - r[-1][0] <= 3), None)
+        if run is None:
+            continue
+        phrase = " ".join(w[3] for w in run)
+        items = [Item(f.field, tuple(f.forms) or (f.label,), f.label, f) for f in dm.fields]
+        res = matcher.resolve(phrase, items, g.text)
+        g.notes += res.notes
+        if res.match:
+            dm.fields = [res.match.item.payload]
+            take(run)
+            runs.remove(run)
+        elif res.options:
+            g.suggestions.append((phrase, [o.label for o in res.options]))
+    # two named things and no relation between them: the run between them
+    nodes = sorted(g.nodes, key=lambda n: n.pos)
+    if len(nodes) >= 2 and not g.edges:
+        a, b = nodes[0], nodes[-1]
+        between = [r for r in runs if a.pos < r[0][0] < b.pos or a.pos < r[-1][0] < b.pos]
+        types = {a.type, b.type}
+        fits = [r for r in relations.values()
+                if (not r.domain or r.domain & types) and (not r.range or r.range & types)]
+        for run in between[:1]:
+            phrase = " ".join(w[3] for w in run)
+            items = [Item(r.name, tuple(r.forms), r.name, r) for r in fits]
+            res = matcher.resolve(phrase, items, g.text)
+            g.notes += res.notes
+            if res.match:
+                rel = res.match.item.payload
+                g.edges.append(Edge(rel.name, float(run[0][0]), form=phrase, style=rel.style))
+                take(run)
+            elif res.options:
+                g.suggestions.append((phrase, [o.label for o in res.options]))
 
 
 def _scope_negations(g: Grounding, negs: list[tuple[int, str]], contains_pos) -> None:

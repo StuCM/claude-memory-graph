@@ -18,7 +18,7 @@ jobs:
       - run: uv run pytest -q
 
   ceist:
-    name: ceist with Arches outputs (Alizarin, Arches Search)
+    name: ceist (Arches outputs, matching layers, HER acceptance gate)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,8 +27,18 @@ jobs:
           python-version: "3.12"
       # Alizarin reads the SKOS thesauri; the Rós Madair end-to-end tests skip
       # without its bindings and emitter (a long Rust build).
-      - run: uv venv && uv pip install ./packages/ceist alizarin pytest
+      - run: uv venv && uv pip install "./packages/ceist[vectors,roots]" alizarin pytest
       - run: .venv/bin/python -m pytest -q packages/ceist/tests
+      # The project flow end to end on the real Arches HER models: read them
+      # through Alizarin, assemble the committed vocabulary into a bundle, and
+      # gate on the blind acceptance questions with the shipping config.
+      - run: git clone --depth 1 https://github.com/archesproject/arches-her "$RUNNER_TEMP/arches-her"
+      - name: HER acceptance gate
+        run: |
+          P="$RUNNER_TEMP/arches-her/arches_her/pkg"
+          .venv/bin/ceist vocab describe "$P/graphs/resource_models" "$RUNNER_TEMP/her-models" --reference "$P/reference_data"
+          .venv/bin/ceist vocab assemble "$RUNNER_TEMP/her-models" packages/ceist/bench/her/vocab -o "$RUNNER_TEMP/her.bundle.json" --graphs "$P/graphs/resource_models"
+          .venv/bin/ceist eval --bundle "$RUNNER_TEMP/her.bundle.json" --questions packages/ceist/bench/her/cases.json --config packages/ceist/bench/her/ceist.toml --min-right 80 --max-dangerous 3
 
   mod:
     name: Mod validate + tests

@@ -1,0 +1,413 @@
+{
+ "model": "Bibliographic Source",
+ "entries": [
+  {
+   "phrases": [
+    "published",
+    "publication date",
+    "when was it published",
+    "year of publication",
+    "date published",
+    "publication year",
+    "came out",
+    "issued",
+    "printed",
+    "published in",
+    "date of publication",
+    "when did it come out",
+    "first published",
+    "year published"
+   ],
+   "kind": "date",
+   "node": "date_of_publication"
+  },
+  {
+   "phrases": [
+    "record created",
+    "date record created",
+    "when was the record created",
+    "record creation date",
+    "added to the database"
+   ],
+   "kind": "date",
+   "node": "creation_date",
+   "end_node": "creation_end_date"
+  },
+  {
+   "phrases": [
+    "last updated",
+    "record updated",
+    "last modified",
+    "last edited",
+    "date of last update",
+    "when was the record updated"
+   ],
+   "kind": "date",
+   "node": "date_of_last_update",
+   "end_node": "update_end_date"
+  },
+  {
+   "phrases": [
+    "journal",
+    "series",
+    "serial",
+    "periodical",
+    "part of series",
+    "magazine",
+    "which journal",
+    "published in journal",
+    "journal title",
+    "in the series"
+   ],
+   "kind": "link",
+   "node": "journal_or_serial"
+  },
+  {
+   "phrases": [
+    "copyright holder",
+    "copyright owner",
+    "who owns the copyright",
+    "rights holder"
+   ],
+   "kind": "link",
+   "node": "copyright_holder"
+  },
+  {
+   "phrases": [
+    "digital copy",
+    "digital file",
+    "pdf",
+    "scan",
+    "online copy",
+    "attachments",
+    "files"
+   ],
+   "kind": "link",
+   "node": "digital_file_s_"
+  },
+  {
+   "phrases": [
+    "author",
+    "written by",
+    "who wrote it",
+    "authored by",
+    "writer",
+    "authors",
+    "who is the author",
+    "by author"
+   ],
+   "kind": "property",
+   "node": "author_name"
+  },
+  {
+   "phrases": [
+    "editor",
+    "edited by",
+    "who edited it",
+    "editors"
+   ],
+   "kind": "property",
+   "node": "editor_name"
+  },
+  {
+   "phrases": [
+    "contributor",
+    "contributed by",
+    "contributors",
+    "who contributed"
+   ],
+   "kind": "property",
+   "node": "contributor_name"
+  },
+  {
+   "phrases": [
+    "contribution type",
+    "role of contributor",
+    "contributor role",
+    "type of contribution"
+   ],
+   "kind": "property",
+   "node": "contribution_type"
+  },
+  {
+   "phrases": [
+    "authorship type",
+    "author role",
+    "type of authorship"
+   ],
+   "kind": "property",
+   "node": "authorship_type"
+  },
+  {
+   "phrases": [
+    "statement of responsibility",
+    "responsibility",
+    "credits",
+    "responsible for"
+   ],
+   "kind": "property",
+   "node": "statement_of_responsibility"
+  },
+  {
+   "phrases": [
+    "title",
+    "name",
+    "called",
+    "book title",
+    "title of the publication",
+    "what is it called",
+    "article title",
+    "report title"
+   ],
+   "kind": "property",
+   "node": "bibliographic_source_name"
+  },
+  {
+   "phrases": [
+    "volume",
+    "volume number",
+    "vol",
+    "which volume"
+   ],
+   "kind": "property",
+   "node": "volume_number"
+  },
+  {
+   "phrases": [
+    "part",
+    "issue",
+    "volume part",
+    "issue number",
+    "part number"
+   ],
+   "kind": "property",
+   "node": "volume_part"
+  },
+  {
+   "phrases": [
+    "type",
+    "source type",
+    "type of publication",
+    "document type",
+    "what kind of source",
+    "publication type",
+    "kind of source",
+    "what type",
+    "format",
+    "category"
+   ],
+   "kind": "property",
+   "node": "bibliographic_source_type"
+  },
+  {
+   "phrases": [
+    "publisher",
+    "published by",
+    "who published it",
+    "publishing house",
+    "press"
+   ],
+   "kind": "property",
+   "node": "publisher"
+  },
+  {
+   "phrases": [
+    "place of publication",
+    "where was it published",
+    "where published",
+    "publication place",
+    "city of publication"
+   ],
+   "kind": "property",
+   "node": "publication_placename_value"
+  },
+  {
+   "phrases": [
+    "language",
+    "written in",
+    "what language",
+    "in which language",
+    "language of publication"
+   ],
+   "kind": "property",
+   "node": "language"
+  },
+  {
+   "phrases": [
+    "number of pages",
+    "how many pages",
+    "page count",
+    "length in pages",
+    "how long is it"
+   ],
+   "kind": "property",
+   "node": "number_of_pages"
+  },
+  {
+   "phrases": [
+    "page reference",
+    "page numbers",
+    "on page",
+    "pages cited",
+    "page"
+   ],
+   "kind": "property",
+   "node": "page_s_"
+  },
+  {
+   "phrases": [
+    "description",
+    "abstract",
+    "summary",
+    "about",
+    "what is it about",
+    "synopsis",
+    "contents",
+    "overview",
+    "details",
+    "subject"
+   ],
+   "kind": "property",
+   "node": "description"
+  },
+  {
+   "phrases": [
+    "copyright",
+    "licence",
+    "license",
+    "rights",
+    "copyright status",
+    "reuse rights"
+   ],
+   "kind": "property",
+   "node": "copyright_type"
+  },
+  {
+   "phrases": [
+    "copyright note",
+    "copyright notes",
+    "credit line"
+   ],
+   "kind": "property",
+   "node": "copyright_note_text"
+  },
+  {
+   "phrases": [
+    "record creator",
+    "who created the record",
+    "record created by"
+   ],
+   "kind": "property",
+   "node": "creator_name"
+  },
+  {
+   "phrases": [
+    "updated by",
+    "who updated the record",
+    "last edited by",
+    "record updater"
+   ],
+   "kind": "property",
+   "node": "updater_name"
+  },
+  {
+   "phrases": [
+    "cross reference note",
+    "cross reference notes",
+    "external reference note"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_description"
+  },
+  {
+   "phrases": [
+    "reference number",
+    "record number",
+    "her number",
+    "smr number",
+    "id number",
+    "primary reference",
+    "record id",
+    "her reference"
+   ],
+   "kind": "property",
+   "node": "primary_reference_number"
+  },
+  {
+   "phrases": [
+    "legacy id",
+    "old reference",
+    "previous id",
+    "former reference number",
+    "legacy reference"
+   ],
+   "kind": "property",
+   "node": "legacy_id"
+  },
+  {
+   "phrases": [
+    "uuid",
+    "resource id",
+    "system id",
+    "unique identifier"
+   ],
+   "kind": "property",
+   "node": "resourceid"
+  },
+  {
+   "phrases": [
+    "validation",
+    "validation status",
+    "record checked",
+    "quality check",
+    "needs work",
+    "possible duplicate"
+   ],
+   "kind": "property",
+   "node": "validation"
+  },
+  {
+   "phrases": [
+    "audit note",
+    "record notes",
+    "audit notes",
+    "administrative notes"
+   ],
+   "kind": "property",
+   "node": "audit_note"
+  },
+  {
+   "phrases": [
+    "cross reference",
+    "external reference",
+    "other reference",
+    "external id",
+    "related reference number"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference"
+  },
+  {
+   "phrases": [
+    "cross reference source",
+    "reference source",
+    "source of reference",
+    "which database"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_source"
+  },
+  {
+   "phrases": [
+    "url",
+    "website",
+    "web link",
+    "web address",
+    "online link",
+    "link to website"
+   ],
+   "kind": "property",
+   "node": "url"
+  }
+ ]
+}

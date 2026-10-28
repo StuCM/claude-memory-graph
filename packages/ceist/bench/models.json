@@ -1,0 +1,42 @@
+{
+  "_about": "Candidate nodes for the matcher comparison. 'heritage_asset' and 'person' are hand-written in the shape of a typical Arches HER model (event groups holding a date and an actor); 'building' and 'organisation' are the real nodes of Rós Madair's example/aonach_mor models. 'group' is the card/nodegroup a node sits in — the context Alizarin would supply.",
+  "heritage_asset": [
+    {"alias": "construction_date", "name": "Construction Date", "group": "Construction Phase", "datatype": "date"},
+    {"alias": "constructed_by", "name": "Constructed By", "group": "Construction Phase", "datatype": "resource-instance", "target": "Person"},
+    {"alias": "architect", "name": "Architect", "group": "Design", "datatype": "resource-instance", "target": "Person"},
+    {"alias": "demolition_date", "name": "Demolition Date", "group": "Demolition", "datatype": "date"},
+    {"alias": "designation_date", "name": "Designation Date", "group": "Designation", "datatype": "date"},
+    {"alias": "designation_type", "name": "Designation Type", "group": "Designation", "datatype": "concept"},
+    {"alias": "survey_date", "name": "Survey Date", "group": "Survey", "datatype": "date"},
+    {"alias": "surveyor", "name": "Surveyor", "group": "Survey", "datatype": "resource-instance", "target": "Person"},
+    {"alias": "owner", "name": "Owner", "group": "Ownership", "datatype": "resource-instance", "target": "Person"},
+    {"alias": "ownership_start_date", "name": "Ownership Start Date", "group": "Ownership", "datatype": "date"},
+    {"alias": "site", "name": "Site", "group": "Location", "datatype": "resource-instance", "target": "Site"},
+    {"alias": "condition", "name": "Condition", "group": "Condition Assessment", "datatype": "concept"},
+    {"alias": "condition_assessment_date", "name": "Assessment Date", "group": "Condition Assessment", "datatype": "date"},
+    {"alias": "use", "name": "Function", "group": "Use", "datatype": "concept"}
+  ],
+  "person": [
+    {"alias": "birth_date", "name": "Date of Birth", "group": "Birth", "datatype": "date"},
+    {"alias": "death_date", "name": "Date of Death", "group": "Death", "datatype": "date"},
+    {"alias": "member_of", "name": "Member Of", "group": "Membership", "datatype": "resource-instance", "target": "Organisation"},
+    {"alias": "nationality", "name": "Nationality", "group": "Nationality", "datatype": "concept"}
+  ],
+  "building": [
+    {"alias": "site", "name": "Site", "group": "Building", "datatype": "resource-instance", "target": "Site"},
+    {"alias": "heritage_status", "name": "Heritage status", "group": "Building", "datatype": "concept"},
+    {"alias": "gem_taxonomy", "name": "GEM taxonomy", "group": "Building", "datatype": "concept"},
+    {"alias": "service_roles", "name": "Service roles", "group": "Building", "datatype": "concept-list"},
+    {"alias": "cluster_type", "name": "Cluster type", "group": "Building", "datatype": "concept"},
+    {"alias": "height_m", "name": "Height (m)", "group": "Building", "datatype": "number"},
+    {"alias": "capacity", "name": "Occupant capacity", "group": "Building", "datatype": "number"},
+    {"alias": "insured_value", "name": "Insured value", "group": "Building", "datatype": "number"}
+  ],
+  "organisation": [
+    {"alias": "registered_site", "name": "Registered site", "group": "Organisation", "datatype": "resource-instance", "target": "Site"},
+    {"alias": "occupies", "name": "Occupies", "group": "Organisation", "datatype": "resource-instance-list", "target": "Building"},
+    {"alias": "sector", "name": "Sector", "group": "Organisation", "datatype": "concept"},
+    {"alias": "size_band", "name": "Size band", "group": "Organisation", "datatype": "concept"},
+    {"alias": "service_roles", "name": "Service roles", "group": "Organisation", "datatype": "concept-list"}
+  ]
+}

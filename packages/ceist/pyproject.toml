@@ -5,6 +5,18 @@ description = "Plain-English questions over a graph, without an LLM: question ->
 requires-python = ">=3.11"
 dependencies = []
 
+[project.optional-dependencies]
+# static word vectors for the "vectors" matching layer (ceist.vectors)
+vectors = [
+    "numpy",
+    "wordllama>=0.4,<0.5; python_version < '3.14' and (sys_platform == 'darwin' or (sys_platform == 'win32' and platform_machine == 'AMD64') or (sys_platform == 'linux' and platform_machine == 'x86_64'))",
+]
+# word roots for the "exact" layer's roots option (a light suffix rule otherwise)
+roots = ["simplemma"]
+
+[project.scripts]
+ceist = "ceist.cli:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
