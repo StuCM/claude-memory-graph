@@ -54,6 +54,35 @@ Field by field, and *why each is there*:
 - **`session`**, **`project`**, **`ts`** — the join keys. Misses are detected per-session
   within a time window; `project` also tells you whether the proximity prior was in play.
 
+### Answered questions (`"kind": "answer"`)
+
+When a prompt contains a question, even one buried in a long prompt, the gate runs it through
+the query planner and injects the rows as **Memory answers**, so the model gets the answer as
+memory without calling `memory_ask`. It only does this when the planner understood *all* of
+the question. That means no word left unmatched, no "did you mean", no loose "linked somehow",
+no loosened retry, and at least one row. Anything less stays a pointer. Each question is
+answered once per session.
+
+```json
+{"kind": "answer", "fired": true, "q": "which decisions affect claude-memory-graph?",
+ "understood": "Find Decisions that affect Project 'claude-memory-graph'.", "rows": 3}
+```
+
+| `/config` setting | `gate.json` key | Default | What it does |
+|---|---|---|---|
+| Answer questions from memory | `ANSWER_QUESTIONS` | `true` | turn auto-answering off |
+| Questions answered per prompt | `ANSWER_MAX_QUESTIONS` | `2` | questions tried per prompt |
+| Rows per answer | `ANSWER_MAX_ROWS` | `8` | rows injected per answer (the rest: "+N more — memory_ask for all") |
+| Answer strictness | `ANSWER_COVERAGE` | `0.8` | how much of the question must ground |
+
+The `/config` settings win over `gate.json`. The gate.json keys are for running the gate
+without the plugin.
+
+Cost: a prompt with no question pays nothing. A prompt with a question adds about 95 ms at 500
+memories and 150 ms at 2,000. About half of that is loading the store, which the gate otherwise
+never opens. The planner's record index is pickled (`planner-index.pickle`) and rebuilt only when
+`graph.nq` changes.
+
 ## `explicit-recalls.jsonl` — the model reaching for memory itself
 
 ```json

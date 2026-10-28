@@ -25,6 +25,36 @@
       "description": "Every few days, end a turn by asking for a graph health fix-up (over-long names, orphans, missing links).",
       "default": false
     },
+    "answer_questions": {
+      "type": "boolean",
+      "title": "Answer questions from memory",
+      "description": "When a prompt contains a question the memory graph fully understands (even one buried in a long prompt), run it and add the answer to the context as memory. Half-understood questions only get the usual pointers.",
+      "default": true
+    },
+    "answer_max_questions": {
+      "type": "number",
+      "title": "Questions answered per prompt",
+      "description": "How many questions in one prompt are tried.",
+      "default": 2,
+      "min": 1,
+      "max": 5
+    },
+    "answer_max_rows": {
+      "type": "number",
+      "title": "Rows per answer",
+      "description": "Rows added per answer; the rest are counted, with a pointer to memory_ask.",
+      "default": 8,
+      "min": 1,
+      "max": 50
+    },
+    "answer_coverage": {
+      "type": "number",
+      "title": "Answer strictness",
+      "description": "Share of the question that must match the graph before it is answered (0.5 to 1). Lower answers more questions, and risks answering the wrong one.",
+      "default": 0.8,
+      "min": 0.5,
+      "max": 1
+    },
     "server": {
       "type": "string",
       "title": "Memory server",

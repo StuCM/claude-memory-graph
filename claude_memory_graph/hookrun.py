@@ -12,7 +12,9 @@ runs `python -m claude_memory_graph.hookrun` with:
      "state":   {extension name: its per-session dict},
      "global":  {extension name: its cross-session dict},
      "enabled": [extension names; default: memory-recall, context-counter],
-     "remote":  {"url", "token"} when memory lives on a server (optional)}
+     "remote":  {"url", "token"} when memory lives on a server (optional),
+     "gate":    gate.json keys set in the plugin's settings menu (optional;
+                they win over gate.json for this call)}
 
 and gets back {"output", "core", "state", "global", "errors"}. The mod
 stores what comes back and hands `output` to Claude Code (additionalContext,
@@ -68,6 +70,9 @@ def run(request: dict) -> dict:
 
     method = EVENT_METHODS.get(event)
     remote = request.get("remote") or {}
+    if request.get("gate"):
+        from .gate import runtime
+        runtime.override(request["gate"])
     if remote.get("url"):
         _use_replica(remote, force=event == "SessionStart", errors=errors)
     if event == "SessionStart":

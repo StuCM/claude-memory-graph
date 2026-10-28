@@ -40,7 +40,10 @@ const injections = atom({ plugin: 'memory-graph', key: 'injections' } as const, 
 const decisions = atom({ plugin: 'memory-graph', key: 'decisions' } as const, [] as Decision[], { shape: 'decisions-1' })
 const lastError = atom({ plugin: 'memory-graph', key: 'lastError' } as const, '')
 
-type Options = { pane?: string; review?: boolean; server?: string; server_token?: string }
+type Options = {
+  pane?: string; review?: boolean; server?: string; server_token?: string
+  answer_questions?: boolean; answer_max_questions?: number; answer_max_rows?: number; answer_coverage?: number
+}
 type Tab = 'injected' | 'state' | 'activity'
 let tab: Tab = 'injected'
 
@@ -84,7 +87,7 @@ type Reply = { output: string; core?: JsonObject; state?: Session['ext']; global
 
 // What every Python call carries besides the event: which extensions run, and
 // the memory server when memory lives on one (docs/REMOTE.md).
-type RunConfig = { enabled: string[]; remote?: { url: string; token: string } }
+type RunConfig = { enabled: string[]; remote?: { url: string; token: string }; gate?: Record<string, boolean | number> }
 
 async function python($: any, event: string, payload: JsonObject, run: RunConfig): Promise<string> {
   const current = await read($, session)
@@ -146,6 +149,18 @@ async function contextDir($: any): Promise<string> {
   return (await $.env.get('CLAUDE_CONTEXT_DIR')) ?? `${await $.env.get('HOME')}/.claude/context`
 }
 
+// The settings-menu answer options, as gate.json keys; Python overlays them
+// on gate.json. A field left unset keeps whatever gate.json says.
+function answerSettings(opts: Options): Record<string, boolean | number> {
+  const out: Record<string, boolean | number> = {}
+  if (typeof opts.answer_questions === 'boolean') out.ANSWER_QUESTIONS = opts.answer_questions
+  const num = (key: string, v: unknown) => { if (typeof v === 'number' && Number.isFinite(v)) out[key] = v }
+  num('ANSWER_MAX_QUESTIONS', opts.answer_max_questions)
+  num('ANSWER_MAX_ROWS', opts.answer_max_rows)
+  num('ANSWER_COVERAGE', opts.answer_coverage)
+  return out
+}
+
 export const register: Register = (on, options) => {
   const opts = (options ?? {}) as Options
   const paneMode = opts.pane ?? 'auto'
@@ -153,6 +168,7 @@ export const register: Register = (on, options) => {
   const run: RunConfig = {
     enabled: ['memory-recall', 'context-counter', ...(opts.review ? ['graph-review'] : [])],
     ...(server ? { remote: { url: server, token: String(opts.server_token ?? '') } } : {}),
+    gate: answerSettings(opts),
   }
 
   // --------------------------------------------------------- classic events
@@ -321,6 +337,9 @@ export const register: Register = (on, options) => {
         line(`Gate decisions: ${fired} fired of ${rows.length}`, { bold: true }),
         ...rows.slice().reverse().slice(0, 15).map(r => {
           if (r.kind === 'prime') return line(`prime  ${r.project ?? ''}`, { dimColor: true })
+          if (r.kind === 'answer') return line(r.fired
+            ? `answered ${r.rows ?? 0} rows  ${r.understood ?? r.q ?? ''}`
+            : `unanswered  ${r.q ?? ''}`, { dimColor: !r.fired })
           const layer = r.kind === 'log' ? 'session log' : 'graph'
           const nodes = r.nodes?.length ? r.nodes.join(', ') : (r.top_node ?? '')
           const cluster = r.cluster ? ` +${r.cluster} similar` : ''
@@ -348,7 +367,7 @@ export const register: Register = (on, options) => {
         blank(),
         line('Recall', { bold: true }),
         line(`memories injected  ${memo} distinct this session`),
-        line(`settings           pane ${paneMode} · review ${opts.review ? 'on' : 'off'}`),
+        line(`settings           pane ${paneMode} · review ${opts.review ? 'on' : 'off'} · answers ${opts.answer_questions === false ? 'off' : 'on'}`),
         line(`memory             ${server ? `server ${server} (local replica for recall)` : 'this machine'}`),
         ...(err ? [blank(), line('Last error', { bold: true, color: 'red' }), line(err, { color: 'red' })] : []),
       ]

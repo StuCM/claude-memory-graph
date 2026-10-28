@@ -40,6 +40,9 @@ export type Decision = {
   top_node?: string
   cluster?: number
   project?: string
+  q?: string
+  understood?: string | null
+  rows?: number
 }
 
 declare module 'claude-code' {

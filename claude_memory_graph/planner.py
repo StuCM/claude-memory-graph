@@ -14,6 +14,9 @@ The same planner answers over Arches data through ceist.arches (Rós Madair,
 Arches Search). See docs/QUERY-PLANNING.md.
 """
 
+import os
+import re
+
 from ceist import (Contains, DateField, DateRange, Entity, EntityRef, HasValue, LinkTo, Mention,
                    Not, Plan, Relation, Value, interpret, narrate)
 from ceist import ground as _ceist_ground
@@ -76,8 +79,9 @@ def _model_nouns() -> dict[str, str]:
 class MemoryVocabulary:
     """ceist.Vocabulary over a MemoryStore."""
 
-    def __init__(self, store: MemoryStore):
+    def __init__(self, store: MemoryStore, cached: bool = False):
         self.store = store
+        self.cached = cached     # the on-disk index: read-only stores only (the gate)
         self._docs = None
 
     def type_words(self) -> dict[str, str]:
@@ -94,8 +98,8 @@ class MemoryVocabulary:
 
     def rank_entities(self, terms: set[str]) -> list[tuple[float, Entity]]:
         if self._docs is None:
-            docs = [_with_aliases(d) for d in _corpus(self.store, include_concepts=True)]
-            self._docs = (docs, _idf(docs) if docs else {})
+            self._docs = (entity_index(self.store) if self.cached
+                          else _entity_docs(self.store))
         docs, idf = self._docs
         ranked = sorted(((_score(terms, d, idf), d) for d in docs),
                         key=lambda x: x[0], reverse=True)
@@ -116,6 +120,51 @@ class MemoryVocabulary:
 
     def hint_words(self) -> dict[str, str]:
         return _HINTS
+
+
+def _entity_docs(store: MemoryStore) -> tuple[list[dict], dict]:
+    docs = [_with_aliases(d) for d in _corpus(store, include_concepts=True)]
+    return docs, _idf(docs) if docs else {}
+
+
+_ENTITY_INDEX_VERSION = 1   # bump when the doc shape or _with_aliases changes
+
+
+def entity_index(store: MemoryStore) -> tuple[list[dict], dict]:
+    """(docs, idf) the planner ranks records over, rebuilt only when graph.nq
+    changed. Building it tokenizes every node (~230ms at 2,000 memories), and
+    the gate asks on every prompt with a question in it, each in a fresh
+    process — so it is pickled in the state home, keyed by the store file's
+    identity. It reflects the file, not unsaved writes: for a store opened
+    read-only from disk (the gate), never the MCP server's live one. Fail
+    open: any cache problem means a normal rebuild."""
+    import pickle
+    from .hookcore import state_home
+
+    nq = store._data_path
+    try:
+        st = nq.stat()
+    except (OSError, AttributeError, TypeError):
+        return _entity_docs(store)
+    key = (str(nq.resolve()), st.st_mtime_ns, st.st_size, st.st_ino, _ENTITY_INDEX_VERSION)
+    path = state_home() / "planner-index.pickle"
+    try:
+        with open(path, "rb") as f:
+            cached = pickle.load(f)
+        if cached.get("key") == key:
+            return cached["docs"], cached["idf"]
+    except Exception:
+        pass
+    docs, idf = _entity_docs(store)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+        with open(tmp, "wb") as f:
+            pickle.dump({"key": key, "docs": docs, "idf": idf}, f)
+        tmp.replace(path)
+    except Exception:
+        pass
+    return docs, idf
 
 
 def _with_aliases(doc: dict) -> dict:
@@ -147,7 +196,11 @@ def compile_sparql(plan: Plan, limit: int | None = ROW_LIMIT) -> str:
     group; every link is an open CrossLink in the links graph. A filter that
     joins variables from two GRAPH groups sits at the top level (the scope
     gotcha: inside a group it cannot see the other group's variables). A
-    negated condition is a FILTER NOT EXISTS around the same patterns."""
+    negated condition is a FILTER NOT EXISTS around the same patterns.
+
+    OPTIONALs and NOT EXISTS checks come after the joins, each in its own
+    GRAPH: inside a group, Oxigraph evaluates them over every record of the
+    type before the link narrows it (220ms vs 5ms at 2,000 decisions)."""
     salient = _salient(plan.type, plan.wh)
     counter = {"var": 0, "link": 0, "n": 0}
 
@@ -185,30 +238,35 @@ def compile_sparql(plan: Plan, limit: int | None = ROW_LIMIT) -> str:
         """Add p's patterns to out (blocks: GRAPH groups, links: CrossLink
         patterns, top: filters across groups)."""
         k = int(var.lstrip("?v"))
-        inner = []
+        inner, late = [], []
+        graph = f"<{GRAPH_CONCEPTS}>" if p.type in CONCEPT_TYPES else f"?g{k}"
+
+        def in_graph(patterns: list[str]) -> str:
+            return "{ GRAPH " + graph + " " + group(patterns) + " }"
+
         name_prop = "label" if p.type in CONCEPT_TYPES else "name"
         if is_subject:
             inner.append(f"{var} a mem:{p.type} ; mem:{name_prop} ?name .")
-            inner.extend(f"OPTIONAL {{ {var} mem:{s} ?p_{s} }}" for s in salient)
+            late.extend(f"OPTIONAL {in_graph([f'{var} mem:{s} ?p_{s}'])}" for s in salient)
             if plan.recent:
-                inner.append(f"OPTIONAL {{ {var} mem:updatedAt ?upd }}")
+                late.append(f"OPTIONAL {in_graph([f'{var} mem:updatedAt ?upd'])}")
         else:
             inner.append(f"{var} a mem:{p.type} .")
         for c in p.where:
             if isinstance(c, (HasValue, DateRange)):
                 inner.extend(value_patterns(c, var))
             elif isinstance(c, Not) and isinstance(c.condition, (HasValue, DateRange)):
-                inner.append("FILTER NOT EXISTS " + group(value_patterns(c.condition, var)))
-        inner.append(f"FILTER NOT EXISTS {{ {var} mem:invalidated ?dead{k} }}")
-        graph = f"<{GRAPH_CONCEPTS}>" if p.type in CONCEPT_TYPES else f"?g{k}"
+                late.append("FILTER NOT EXISTS " + in_graph(value_patterns(c.condition, var)))
+        late.append("FILTER NOT EXISTS " + in_graph([f"{var} mem:invalidated ?dead{k}"]))
         out["blocks"].append("GRAPH " + graph + " {\n    " + "\n    ".join(inner) + "\n  }")
+        out["late"].extend(late)
 
         for c in p.where:
             negated = isinstance(c, Not)
             c = c.condition if negated else c
             if isinstance(c, LinkTo):
                 # a negated link: the same patterns, collected apart and wrapped
-                dest = {"blocks": [], "links": [], "top": []} if negated else out
+                dest = {"blocks": [], "links": [], "late": [], "top": []} if negated else out
                 if isinstance(c.target, EntityRef):
                     other = f"<{c.target.entity.id}>"
                 else:
@@ -229,7 +287,8 @@ def compile_sparql(plan: Plan, limit: int | None = ROW_LIMIT) -> str:
                     dest["links"].extend(open_link(src, dst, c.relation))
                 if negated:
                     parts = dest["blocks"] + [f"GRAPH <{GRAPH_LINKS}> " + group(dest["links"])]
-                    out["top"].append("FILTER NOT EXISTS " + group(parts + dest["top"]))
+                    out["top"].append("FILTER NOT EXISTS "
+                                      + group(parts + dest["late"] + dest["top"]))
             elif isinstance(c, Mention) and is_subject:
                 tests = " && ".join(f'CONTAINS({blob()}, "{_lit(t)}")' for t in c.terms)
                 out["top"].append(f"FILTER(!({tests}))" if negated else f"FILTER({tests})")
@@ -237,11 +296,12 @@ def compile_sparql(plan: Plan, limit: int | None = ROW_LIMIT) -> str:
                 test = f'CONTAINS({blob()}, "{_lit(c.term)}")'
                 out["top"].append(f"FILTER(!{test})" if negated else f"FILTER({test})")
 
-    out = {"blocks": [], "links": [], "top": []}
+    out = {"blocks": [], "links": [], "late": [], "top": []}
     visit(plan, "?v0", True, out)
     where = list(out["blocks"])
     if out["links"]:
         where.append(f"GRAPH <{GRAPH_LINKS}> {{\n    " + "\n    ".join(out["links"]) + "\n  }")
+    where += out["late"]
     select = ["?name"] + [f"?p_{s}" for s in salient]
     if plan.recent:
         tail = f"\nORDER BY DESC(?upd)\nLIMIT {RECENT_LIMIT}"
@@ -321,6 +381,52 @@ def _did_you_mean(g) -> str:
                    f"'{w}' should always mean one of them, add it as a phrasing with "
                    f"memory_amend_relation add_verb_forms)\n"
                    for w, opts in g.suggestions)
+
+
+_WH_START = re.compile(r"\b(which|who|whom|what|when|where|why|how many|how)\b", re.I)
+_SENTENCE = re.compile(r"(?<=[.!?])\s+|\n+")
+
+
+def question_candidates(prompt: str, max_questions: int = 2) -> list[str]:
+    """Question-shaped sentences in a prompt, each trimmed to start at its
+    question word: "Before I touch anything, which decisions affect quartz?"
+    → "which decisions affect quartz?" (the lead-in would be a stray word)."""
+    from ceist import is_question
+    out = []
+    for s in _SENTENCE.split(prompt or ""):
+        s = s.strip()
+        if not s or not is_question(s):
+            continue
+        m = _WH_START.search(s)
+        q = s[m.start():] if m and m.start() > 0 and s.endswith("?") else s
+        if q not in out:
+            out.append(q)
+        if len(out) >= max_questions:
+            break
+    return out
+
+
+def answer(store: MemoryStore, question: str, max_rows: int = 8,
+           coverage: float = 0.8) -> tuple[str, list[str], int] | None:
+    """The strict path the gate uses to answer a question with no one asking:
+    (what it was understood as, rows, total) — or None unless the planner
+    understood ALL of it. No stray text filter, no "did you mean", no loose
+    "linked somehow", no loosened retry, and at least one row: silence is
+    better than a confident wrong answer injected as memory."""
+    meaning = interpret(MemoryVocabulary(store, cached=True), question, coverage,
+                        matcher=matcher())
+    g = meaning.grounding
+    if (meaning.statement or meaning.refused or meaning.direct is not None
+            or meaning.plan is None or g.suggestions or g.loose or g.contains
+            or g.uncovered or g.coverage < coverage):
+        return None
+    plan = meaning.plan
+    if any(isinstance(c, LinkTo) and c.relation is None for c in plan.where):
+        return None                          # "linked to X somehow" is not an answer
+    rows = _run_rows(store, compile_sparql(plan, None), plan)
+    if not rows:
+        return None
+    return narrate(plan), rows[:max_rows], len(rows)
 
 
 def handle(store: MemoryStore, text: str, explain: bool = False) -> str:

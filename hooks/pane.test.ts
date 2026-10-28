@@ -130,6 +130,16 @@ test('a memory server reaches Python with its token', {
   expect(seen.python[0].remote).toEqual({ url: 'https://memory.example.com', token: 's3cret' })
 })
 
+test('answer settings reach Python as gate keys', {
+  options: { answer_questions: false, answer_max_rows: 3 },
+}, async ($, on) => {
+  const seen = engine(on)
+  await $.classic.UserPromptSubmit({ prompt: 'which decisions affect quartz?' })
+  expect(seen.python[0].gate).toEqual({
+    ANSWER_QUESTIONS: false, ANSWER_MAX_QUESTIONS: 2, ANSWER_MAX_ROWS: 3, ANSWER_COVERAGE: 0.8,
+  })
+})
+
 test('a Python failure fails open', async ($, on) => {
   engine(on, () => 'crash')
   const result = await $.classic.UserPromptSubmit({ prompt: 'why pyoxigraph' })

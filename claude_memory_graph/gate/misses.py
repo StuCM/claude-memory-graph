@@ -86,7 +86,8 @@ def analyse(window: int = WINDOW_SECONDS) -> dict:
         wanted = _name_of(recall.get("target", "")) or recall.get("sparql", "")
 
         before = [d for d in decisions
-                  if d.get("session", "") == session
+                  if d.get("kind") != "answer"     # planner answers aren't recall decisions
+                  and d.get("session", "") == session
                   and 0 <= ts - d.get("ts", 0) <= window]
         if not before:
             continue  # recall with no gate decision in range — nothing to grade
