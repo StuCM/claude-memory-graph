@@ -69,9 +69,9 @@ still reaches the model.
 | **Questions answered per prompt** | `2` (default) | how many questions in one prompt are tried |
 | **Rows per answer** | `8` (default) | rows added per answer; the rest are counted, with a pointer to `memory_ask` |
 | **Answer strictness** | `0.8` (default), 0.5–1 | share of the question that must match the graph; lower answers more, and risks answering the wrong question |
-| **Memory server** | empty (default) · `https://…` | empty keeps memory on this machine; an address uses your hosted memory ([docs/REMOTE.md](docs/REMOTE.md)) |
-| **Memory server token** | secret | the server's `MEMORY_GRAPH_TOKEN`, kept in secure storage |
-| **Memory lookups with a server** | `server` (default) · `local copy` | `server`: recall and question answers run on the server, and this device never downloads the graph; `local copy`: download it and look it up here |
+| **Memory server** | `http://127.0.0.1:8848` (default) · `https://…` | the default is this machine's own server: one graph for every chat, started automatically at session start; an address uses your hosted memory ([docs/REMOTE.md](docs/REMOTE.md)). Give the address without `/mcp`. |
+| **Memory server token** | secret | a hosted server's `MEMORY_GRAPH_TOKEN`, kept in secure storage; empty for this machine's own |
+| **Memory lookups with a server** | `server` (default) · `local copy` | hosted servers only. `server`: recall and question answers run on the server, and this device never downloads the graph; `local copy`: download it and look it up here |
 
 Thresholds live in `~/.claude/memory-graph/gate.json` — see the tuning table in
 [docs/HANDBOOK.md](docs/HANDBOOK.md). Set `MEMORY_GRAPH_PATH` to move the store
@@ -155,7 +155,7 @@ retrieval works with you, and the command cadence.
 
 Each resource instance lives in its own named graph (`…/graph/resource/<uuid>`); cross-links live in a dedicated links graph; shared concepts in a concepts graph; the ontology (including LLM-added relations) in a schema graph. See `claude_memory_graph/base.ttl` for the base ontology.
 
-Each Claude Code session runs its own stdio server; each reloads the file when another has saved since. `serve` runs one shared process instead, and in server mode each session's stdio server is a proxy to it. The graph is persisted as NQuads after every write.
+One server process holds the graph, and every chat talks to it over HTTP: Claude Code's MCP connection, the prompt gate (`/api/hook`) and distill (`/api/distill`). By default it is this machine's own, on 127.0.0.1:8848, started in the background at the first session start and kept running for later chats; a plugin update replaces it at the next session start. A systemd user service can own it instead (`deploy/systemd/memory-graph.service`). If it isn't answering, the gate reads the graph from disk, so recall keeps working. Point the plugin at a hosted server instead and the same connections go there ([docs/REMOTE.md](docs/REMOTE.md)). `memory_distill` is always answered on the machine that holds the context logs: the plugin reads them and sends them to the server, which promotes them. The graph is persisted as NQuads after every write. (`claude-memory-graph` with no arguments still runs a stdio server, for an MCP client configured by hand.)
 
 The design docs are in [docs/](docs/index.md), also buildable as a site:
 `cd docs-site && npm ci && npm run dev`.

@@ -99,8 +99,8 @@ not `settings.json`). Then start a new session. To check:
   accepted";
 - or look at the pane's State tab, where `memory` should name the server.
 
-With the server set, the plugin's MCP server becomes a proxy to the remote
-one, and the ambient gate's graph reads run on the server too. That covers
+With the server set, Claude Code connects to the remote server's `/mcp`
+directly, and the ambient gate's graph reads run on the server too. That covers
 recall, the session-start prime, question answers and the review's health
 report. For each prompt the plugin sends the prompt to `/api/hook`, and the
 server answers from its live store and sends back only the text to add, so
@@ -120,7 +120,12 @@ Distill, whether it runs
 automatically at session start, through `/memory-graph:distill`, or through
 `memory_distill`, uploads this machine's undistilled logs, lets the server
 promote them, and then archives or trims the local files the same way a
-local distill would.
+local distill would. The plugin answers the `memory_distill` tool call
+itself on this machine, because the logs are here and not on the server.
+
+To go back to memory on this machine, set **Memory server** back to
+`http://127.0.0.1:8848` (its default). That is the same arrangement with
+the server on this machine: one graph for every chat, started on demand.
 
 If the server is unreachable, nothing breaks. With server lookups, recall
 stays silent until it is back; with a local copy, recall keeps injecting

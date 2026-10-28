@@ -58,20 +58,20 @@
     "server": {
       "type": "string",
       "title": "Memory server",
-      "description": "Leave empty to keep memory on this machine. Set to your hosted memory server (e.g. https://memory.example.com) to share one memory across every machine and the Claude apps; see docs/REMOTE.md.",
-      "default": ""
+      "description": "Where the memory graph runs. The default, http://127.0.0.1:8848, is this machine's own server: one graph for every chat, started automatically at session start and kept running (or run it as a service: deploy/systemd/). Set your hosted memory server (e.g. https://memory.example.com) to share one memory across every machine and the Claude apps; see docs/REMOTE.md.",
+      "default": "http://127.0.0.1:8848"
     },
     "server_token": {
       "type": "string",
       "title": "Memory server token",
       "sensitive": true,
-      "description": "The server's token (its MEMORY_GRAPH_TOKEN). Stored in secure storage.",
+      "description": "The hosted server's token (its MEMORY_GRAPH_TOKEN). Leave empty for this machine's own server. Stored in secure storage.",
       "default": ""
     },
     "lookups": {
       "type": "string",
       "title": "Memory lookups with a server",
-      "description": "Only applies when a memory server is set. server: recall and question answers run on the server, which sends back just the text to add, so this device never downloads the graph (best for phones and small devices). local copy: download the graph (refreshed at most once a minute) and look it up on this device, which keeps working briefly offline.",
+      "description": "Only applies to a hosted server. server: recall and question answers run on the server, which sends back just the text to add, so this device never downloads the graph (best for phones and small devices). local copy: download the graph (refreshed at most once a minute) and look it up on this device, which keeps working briefly offline.",
       "options": [
         "server",
         "local copy"
