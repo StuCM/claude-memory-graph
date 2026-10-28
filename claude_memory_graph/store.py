@@ -5,7 +5,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 import pyoxigraph as ox
 
@@ -688,52 +688,53 @@ class MemoryStore:
     def _neighbours(
         self, iris: list[ox.NamedNode]
     ) -> list[tuple[str, LinkedResource]]:
-        """One query: every OPEN link touching `iris`, with the other node's
+        """Every OPEN link touching `iris`, with the other node's
         full properties — covers both resource graphs and the concepts graph.
         Closed/invalidated edges (bi-temporal bounds) are excluded: retrieval
         defaults to "true now"; point-in-time questions go through SPARQL.
         Returns (touched_iri_value, linked_resource) pairs."""
-        values = " ".join(f"<{i.value}>" for i in iris)
-        # FILTER/BIND referencing ?me must sit at the top level: inside the
-        # GRAPH group, VALUES-bound ?me is out of scope (SPARQL bottom-up eval).
-        sparql = (
-            f'SELECT ?me ?other ?dir ?rel ?p ?o WHERE {{\n'
-            f'    VALUES ?me {{ {values} }}\n'
-            f'    GRAPH <{GRAPH_LINKS}> {{\n'
-            f'        ?link rdf:type mem:CrossLink ;\n'
-            f'              mem:linkSource ?s ;\n'
-            f'              mem:linkTarget ?t ;\n'
-            f'              mem:linkRelation ?rel .\n'
-            f'        FILTER NOT EXISTS {{ ?link mem:linkValidUntil ?closedAt }}\n'
-            f'        FILTER NOT EXISTS {{ ?link mem:linkInvalidatedAt ?invAt }}\n'
-            f'    }}\n'
-            f'    FILTER(?s = ?me || ?t = ?me)\n'
-            f'    BIND(IF(?s = ?me, ?t, ?s) AS ?other)\n'
-            f'    BIND(IF(?s = ?me, "outgoing", "incoming") AS ?dir)\n'
-            f'    GRAPH ?g {{ ?other ?p ?o }}\n'
-            f'    FILTER(?g != <{GRAPH_LINKS}> && ?g != <{GRAPH_SCHEMA}>)\n'
-            f'}}'
-        )
+        # Index lookups, not SPARQL: pyoxigraph planned every form of this
+        # query as a scan of all links, 35s for one well-linked Project.
+        links_graph = ox.NamedNode(GRAPH_LINKS)
+        skip = {GRAPH_LINKS, GRAPH_SCHEMA}
+        source, target = ox.NamedNode(MEM + "linkSource"), ox.NamedNode(MEM + "linkTarget")
+        props: dict[str, list] = {}
         groups: dict[tuple[str, str, str, str], LinkedResource] = {}
-        for solution in self._query(sparql):
-            me, other = solution["me"], solution["other"]
-            rel, dir_ = solution["rel"], solution["dir"]
-            p, o = solution["p"], solution["o"]
-            if not (isinstance(other, ox.NamedNode) and isinstance(rel, ox.Literal)):
-                continue
-            key = (me.value, other.value, rel.value, dir_.value)
-            lr = groups.setdefault(key, LinkedResource(
-                iri=other, model="", relation=rel.value, direction=dir_.value,
-            ))
-            if p == RDF_TYPE and isinstance(o, ox.NamedNode) and o.value.startswith(MEM):
-                lr.model = o.value[len(MEM):]
-            elif p.value.startswith(MEM) and isinstance(o, ox.Literal):
-                lr.properties[p.value[len(MEM):]] = o.value
+        for me in iris:
+            for end, far, dir_ in ((source, target, "outgoing"), (target, source, "incoming")):
+                for hit in self._store.quads_for_pattern(None, end, me, links_graph):
+                    link = {q.predicate.value[len(MEM):] if q.predicate.value.startswith(MEM)
+                            else q.predicate.value: q.object
+                            for q in self._store.quads_for_pattern(hit.subject, None, None, links_graph)}
+                    other, rel = link.get(far.value[len(MEM):]), link.get("linkRelation")
+                    if (link.get(RDF_TYPE.value) != ox.NamedNode(MEM + "CrossLink")
+                            or "linkValidUntil" in link or "linkInvalidatedAt" in link
+                            or not (isinstance(other, ox.NamedNode) and isinstance(rel, ox.Literal))):
+                        continue
+                    if other.value not in props:
+                        props[other.value] = [q for q in self._store.quads_for_pattern(other, None, None)
+                                              if isinstance(q.graph_name, ox.NamedNode)
+                                              and q.graph_name.value not in skip]
+                    key = (me.value, other.value, rel.value, dir_)
+                    if not props[other.value] or key in groups:
+                        continue
+                    lr = groups[key] = LinkedResource(
+                        iri=other, model="", relation=rel.value, direction=dir_,
+                    )
+                    for q in props[other.value]:
+                        p, o = q.predicate, q.object
+                        if p == RDF_TYPE and isinstance(o, ox.NamedNode) and o.value.startswith(MEM):
+                            lr.model = o.value[len(MEM):]
+                        elif p.value.startswith(MEM) and isinstance(o, ox.Literal):
+                            lr.properties[p.value[len(MEM):]] = o.value
         return [(key[0], lr) for key, lr in groups.items()]
 
     def recall(
-        self, resource_iri: ox.NamedNode, graph_id: str, depth: int
+        self, resource_iri: ox.NamedNode, graph_id: str, depth: int,
+        pick: Optional[Callable[[list[LinkedResource]], list[LinkedResource]]] = None,
     ) -> RecallResult:
+        """`pick` chooses which of a hop's new neighbours the next hop
+        expands from; without it every one is."""
         props = self.get_resource_properties(resource_iri, graph_id)
         graph = resource_graph_node(graph_id)
         model = self._get_resource_type(resource_iri, graph)
@@ -750,7 +751,7 @@ class MemoryStore:
                 lr.iri.value: lr.properties.get("name") or lr.properties.get("label", "")
                 for lr in linked
             }
-            next_frontier: list[ox.NamedNode] = []
+            fresh: list[LinkedResource] = []
             pairs = self._neighbours(frontier)
             if hop > 0:
                 degree = Counter(me for me, _ in pairs)
@@ -767,8 +768,8 @@ class MemoryStore:
                 if hop > 0:
                     lr.direction = f"via {via_name.get(me_value) or me_value}"
                 linked.append(lr)
-                next_frontier.append(lr.iri)
-            frontier = next_frontier
+                fresh.append(lr)
+            frontier = [lr.iri for lr in (pick(fresh) if pick else fresh)]
 
         return RecallResult(iri=resource_iri, model=model, properties=props,
                             linked=linked, hubs=hubs)

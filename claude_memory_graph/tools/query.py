@@ -37,8 +37,8 @@ def handle(store: MemoryStore, sparql: str) -> str:
             return "No results."
         return json.dumps(rows, separators=(",", ":"), ensure_ascii=False)
 
-    if isinstance(results, bool):
-        return str(results).lower()
+    if isinstance(results, (bool, ox.QueryBoolean)):
+        return str(bool(results)).lower()
 
     # CONSTRUCT / DESCRIBE → QueryTriples
     lines = []
