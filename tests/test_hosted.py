@@ -68,6 +68,13 @@ def server(tmp_path):
     thread.join(5)
 
 
+@pytest.fixture(autouse=True)
+def _hosted_not_local(monkeypatch):
+    """The test server listens on loopback, but stands for a hosted one."""
+    from claude_memory_graph import localserver
+    monkeypatch.setattr(localserver, "is_local", lambda url: False)
+
+
 @pytest.fixture
 def remote_env(server, monkeypatch, tmp_path):
     monkeypatch.setenv(remote.SERVER_ENV, server.base + "/mcp")

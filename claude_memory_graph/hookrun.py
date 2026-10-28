@@ -5,17 +5,21 @@ each event that needs Python — the graph, the context files, the logs — it
 runs `python -m claude_memory_graph.hookrun` with:
 
     {"event":   "SessionStart" | "UserPromptSubmit" | "PostToolUse" |
-                "Stop" | "PreCompact" | "SessionEnd",
+                "Stop" | "PreCompact" | "SessionEnd" | "Distill" (the
+                memory_distill tool call, answered here: payload = its args),
      "payload": the classic hook input (session_id, cwd, prompt,
                 transcript_path, stop_hook_active, tool_name, ...),
      "core":    the session's core state as last returned,
      "state":   {extension name: its per-session dict},
      "global":  {extension name: its cross-session dict},
      "enabled": [extension names; default: memory-recall, context-counter],
-     "remote":  {"url", "token", "lookups"} when memory lives on a server
-                (optional; lookups "server", the default, asks the server
-                to run the gate's graph reads; "replica" downloads the
-                graph and reads it here),
+     "remote":  {"url", "token", "lookups"}: the memory server. A loopback
+                url is this machine's own (localserver.py), started at
+                session start if it isn't running; the gate asks it, and
+                reads the graph from disk if it doesn't answer. A hosted
+                one: lookups "server", the default, asks it to run the
+                gate's graph reads; "replica" downloads the graph and reads
+                it here. Absent: the graph is read from disk,
      "gate":    gate.json keys set in the plugin's settings menu (optional;
                 they win over gate.json for this call)}
 
@@ -97,6 +101,39 @@ def _on_server(name: str, event: str, payload: dict, core: dict, state: dict,
     return str(reply.get("output") or "")
 
 
+def _distill_in_background() -> None:
+    """Session-start auto-distill: this machine's context logs go to the
+    server (local or hosted), which promotes them; the outcome is applied to
+    the files here. Detached, so the session doesn't wait on it."""
+    import subprocess
+    try:
+        subprocess.Popen([sys.executable, "-c",
+                          "from claude_memory_graph.remote import auto_distill_remote; "
+                          "auto_distill_remote()"],
+                         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                         stderr=subprocess.DEVNULL, start_new_session=True)
+    except OSError as exc:
+        log_error("auto-distill", exc)
+
+
+def _distill(args: dict, url: str, errors: list) -> str:
+    """memory_distill, answered on this machine (the mod hands the tool call
+    here): the context logs are here, wherever the graph is."""
+    try:
+        if url:
+            from .remote import remote_distill
+            return remote_distill(project=args.get("project"), dry_run=bool(args.get("dry_run")))
+        from . import distill as distill_mod
+        from .gate.runtime import open_store
+        report = distill_mod.distill(open_store(), project=args.get("project"),
+                                     dry_run=bool(args.get("dry_run")))
+        return report.render()
+    except Exception as exc:  # noqa: BLE001
+        errors.append(f"distill: {type(exc).__name__}: {exc}")
+        return (f"distill failed: {type(exc).__name__}: {exc}. Nothing was promoted; "
+                "the context files are unchanged.")
+
+
 def run(request: dict) -> dict:
     event = request.get("event", "")
     payload = request.get("payload") or {}
@@ -113,15 +150,29 @@ def run(request: dict) -> dict:
     if gate:
         from .gate import runtime
         runtime.override(gate)
-    on_server = bool(remote.get("url")) and remote.get("lookups", "server") == "server"
-    if on_server:
+    from .localserver import ensure_running, is_local
+    url = str(remote.get("url") or "")
+    local = bool(url) and is_local(url)
+    on_server = bool(url) and (local or remote.get("lookups", "server") == "server")
+    if url:
         from . import remote as remote_mod
-        from .gate.runtime import SERVER_LOOKUPS_ENV
-        os.environ[remote_mod.SERVER_ENV] = str(remote["url"])
+        os.environ[remote_mod.SERVER_ENV] = url
         os.environ[remote_mod.TOKEN_ENV] = str(remote.get("token") or "")
-        os.environ[SERVER_LOOKUPS_ENV] = "server"
-    elif remote.get("url"):
+    if on_server and not local:
+        from .gate.runtime import SERVER_LOOKUPS_ENV
+        os.environ[SERVER_LOOKUPS_ENV] = "server"   # no graph on this machine to fall back to
+    elif url and not local:
         _use_replica(remote, force=event == "SessionStart", errors=errors)
+    if event == "SessionStart" and local:
+        status = ensure_running(url)
+        core["server"] = status
+        if not status.startswith(("running", "started", "restarted")):
+            errors.append(f"local memory server {url}: {status}")
+    if event == "SessionStart" and url:
+        _distill_in_background()
+    if event == "Distill":
+        return {"output": _distill(payload, url, errors), "core": core, "state": state,
+                "global": global_state, "errors": errors}
     if event == "SessionStart":
         try:  # the context protocol writes here; the archive receives distilled files
             from .gate.nudge import _context_dir
@@ -137,8 +188,18 @@ def run(request: dict) -> dict:
             try:
                 args = (name, event, payload, core, state.setdefault(name, {}),
                         global_state.setdefault(name, {}))
-                result = (_on_server(*args, gate) if on_server and (name, event) in SERVER_EVENTS
-                          else run_extension(*args))
+                if on_server and (name, event) in SERVER_EVENTS:
+                    try:
+                        result = _on_server(*args, gate)
+                    except Exception as exc:  # noqa: BLE001
+                        if not local:
+                            raise
+                        # this machine's server is down: the graph is on disk here
+                        errors.append(f"local memory server {url}: {type(exc).__name__}; "
+                                      "read the graph from disk")
+                        result = run_extension(*args)
+                else:
+                    result = run_extension(*args)
                 if result:
                     outputs.append(result)
             except Exception as exc:  # one extension failing never silences the rest

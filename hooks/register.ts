@@ -24,6 +24,7 @@ const PANE = 'memory-graph'
 const TOOL_PREFIX = 'mcp__plugin_memory-graph_memory-graph__'
 const MEMORY_TOOLS = new Set(['memory_recall', 'memory_query', 'memory_search'])
 const MAX_CALLS = 50
+const LOCAL_SERVER = 'http://127.0.0.1:8848'
 const MAX_INJECTIONS = 40
 const MAX_OUTPUT = 600
 // File-inspection calls that make a turn a dig (mirrors gate/nudge.py).
@@ -86,10 +87,11 @@ const now = () => new Date().toISOString().slice(11, 19)
 type Reply = { output: string; core?: JsonObject; state?: Session['ext']; global?: Session['ext']; errors?: string[] }
 
 // What every Python call carries besides the event: which extensions run, and
-// the memory server when memory lives on one (docs/REMOTE.md).
+// the memory server: this machine's own (started on demand), or a hosted one
+// (docs/REMOTE.md).
 type RunConfig = {
   enabled: string[]
-  remote?: { url: string; token: string; lookups: 'server' | 'replica' }
+  remote: { url: string; token: string; lookups: 'server' | 'replica' }
   gate?: Record<string, boolean | number>
 }
 
@@ -168,14 +170,16 @@ function answerSettings(opts: Options): Record<string, boolean | number> {
 export const register: Register = (on, options) => {
   const opts = (options ?? {}) as Options
   const paneMode = opts.pane ?? 'auto'
-  const server = String(opts.server ?? '').trim()
+  // empty means this machine's own server, as the manifest's default does
+  const server = String(opts.server ?? '').trim().replace(/\/+$/, '').replace(/\/mcp$/, '') || LOCAL_SERVER
+  const isLocal = /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:|\/|$)/.test(server)
   const run: RunConfig = {
     enabled: ['memory-recall', 'context-counter', ...(opts.review ? ['graph-review'] : [])],
-    ...(server ? { remote: {
+    remote: {
       url: server, token: String(opts.server_token ?? ''),
       // 'server': the gate's graph reads run there and this device holds no copy
       lookups: opts.lookups === 'local copy' ? 'replica' as const : 'server' as const,
-    } } : {}),
+    },
     gate: answerSettings(opts),
   }
 
@@ -186,6 +190,11 @@ export const register: Register = (on, options) => {
     let protocol = ''
     try { protocol = await $.fs.read(`${$.plugin.root}/hooks/context-protocol.md`) } catch { /* fail open */ }
     const primed = await python($, 'SessionStart', e as unknown as JsonObject, run)
+    // The SessionStart call started this machine's server if it wasn't running;
+    // the MCP connection may have tried before it answered, so connect now.
+    if (isLocal) {
+      try { await $.mcp.connect('memory-graph') } catch { /* /mcp reconnects by hand */ }
+    }
     await recordInjection($, 'session start', primed)
     const added = [protocol, primed].filter(Boolean)
     return added.length ? { ...result, additionalContext: [...(result.additionalContext ?? []), ...added] } : result
@@ -270,7 +279,11 @@ export const register: Register = (on, options) => {
     const call: GraphCall = { id: e.tool_use_id, name, summary: describeInput(input), output: '', isErrored: false }
     await update($, calls, list => [call, ...list].slice(0, MAX_CALLS))
     if (paneMode === 'auto') await $.ui.open({ id: PANE, title: 'Memory graph' })
-    const result = await next(e)
+    // memory_distill reads this machine's context logs, so it is answered here
+    // and the files go to the server, wherever it runs.
+    const result = name === 'distill'
+      ? { result: { content: [{ type: 'text', text: (await python($, 'Distill', input, run)) || 'distill: no reply' }], isError: false } }
+      : await next(e)
     const output = result.deny ?? textOf(result.result)
     await update($, calls, list => list.map(c => (c.id === call.id
       ? { ...c, output, isErrored: Boolean(result.deny || result.isError) } : c)))
@@ -376,7 +389,7 @@ export const register: Register = (on, options) => {
         line('Recall', { bold: true }),
         line(`memories injected  ${memo} distinct this session`),
         line(`settings           pane ${paneMode} · review ${opts.review ? 'on' : 'off'} · answers ${opts.answer_questions === false ? 'off' : 'on'}`),
-        line(`memory             ${server ? `server ${server} (local replica for recall)` : 'this machine'}`),
+        line(`memory             ${isLocal ? `this machine's server ${server}` : `server ${server}${opts.lookups === 'local copy' ? ' (local copy for recall)' : ''}`}`),
         ...(err ? [blank(), line('Last error', { bold: true, color: 'red' }), line(err, { color: 'red' })] : []),
       ]
     } else {

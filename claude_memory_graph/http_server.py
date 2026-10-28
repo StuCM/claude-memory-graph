@@ -167,11 +167,23 @@ def api_routes(store: MemoryStore, read_only: bool):
     async def ping(request: Request):
         # behind the credential check, so a 200 also means the token is good;
         # "lookups" tells a client this server can run its gate (/api/hook)
-        return JSONResponse({"ok": True, "lookups": True})
+        from .localserver import _version
+        return JSONResponse({"ok": True, "lookups": True, "version": _version()})
 
     return [("/api/graph.nq", graph, ["GET"]), ("/api/distill", distill, ["POST"]),
             ("/api/hook", hook, ["POST"]), ("/api/gaps", gaps, ["GET"]),
             ("/api/ping", ping, ["GET"])]
+
+
+class _Asgi:
+    """An ASGI app Starlette's Route serves as one (a plain function or bound
+    method would be taken for a request handler and wrapped)."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        await self.app(scope, receive, send)
 
 
 _gate_lock = threading.Lock()
@@ -305,7 +317,11 @@ def build_app(store: MemoryStore, instructions: str, token: str = "",
         return _RequireAuth(app, metadata) if protect else app
 
     def endpoint(handler):
-        # a Starlette Route given a plain ASGI app needs request→response wrapping
+        # a Starlette Route given a plain ASGI app needs request→response
+        # wrapping; unguarded (loopback, no token) the handler is the endpoint,
+        # which Route wraps itself — wrapping twice answers every call with a 500
+        if not protect:
+            return handler
         from starlette.routing import request_response
         return guarded(request_response(handler))
 
@@ -328,7 +344,13 @@ def build_app(store: MemoryStore, instructions: str, token: str = "",
         routes += chat_routes(chat if isinstance(chat, ChatService)
                               else ChatService(store, title=title, scope=scope), auth,
                               public_url=public_url, read_only=read_only)
-    routes.append(Mount("/mcp", app=guarded(manager.handle_request)))
+    mcp = _Asgi(guarded(manager.handle_request))
+    # /mcp itself, not only under it: a Mount alone answers /mcp with a 307 to
+    # /mcp/, which a client has to follow with its POST. And a server address
+    # saved with its /mcp suffix (the old setting allowed it) reaches /mcp/mcp
+    # now that the plugin appends /mcp itself.
+    routes += [Route("/mcp/mcp", mcp), Mount("/mcp/mcp", app=mcp),
+               Route("/mcp", mcp), Mount("/mcp", app=mcp)]
 
     @contextlib.asynccontextmanager
     async def lifespan(app):

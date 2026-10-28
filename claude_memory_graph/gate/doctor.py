@@ -129,6 +129,21 @@ def report() -> str:
              f"{'; last error: ' + replica_meta['error'] if replica_meta.get('error') else ''}).")
         line("  Set MEMORY_GRAPH_SERVER and MEMORY_GRAPH_TOKEN in this shell to check it live.")
         line()
+    else:
+        from .. import localserver
+        have = localserver.running_version(localserver.DEFAULT_URL)
+        if have is None:
+            line(f"Memory server: this machine's ({localserver.DEFAULT_URL}) is not running — "
+                 "the next session starts it (or: systemctl --user start memory-graph).")
+        else:
+            line(f"Memory server: this machine's, at {localserver.DEFAULT_URL} "
+                 f"(v{have or '?'}).")
+            if have and have != localserver._version():
+                findings.append(("WARN",
+                    f"This machine's memory server is v{have}, this CLI v{localserver._version()}.",
+                    "One the plugin started is replaced at the next session start; "
+                    "a service you run restarts with: systemctl --user restart memory-graph."))
+        line()
     if (replica / "graph.nq").exists() and not shell_store:
         # the graph below is the server's, as this machine last saw it
         os.environ["MEMORY_GRAPH_PATH"] = str(replica)

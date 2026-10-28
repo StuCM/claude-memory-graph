@@ -370,9 +370,15 @@ so most tuning pressure should come from the miss report, not from gut feel.
   feature) — a grep-heavy turn writes a *trace* entry that distills to a `Pattern
   (kind: trace)`; look for those in `reflect`, not for a code graph.
 - **A session says "claude-memory-graph: command not found" / "tools not installed"** →
-  expected: plugin installs run the server via `uvx --from` and put NO CLI on PATH. In a
-  session the model should call the `memory_distill` tool (same code, safer); the CLI is
-  for terminals, via a repo checkout (`uv run …`) or `uv tool install`.
+  expected: plugin installs start the memory server from the plugin's own environment and
+  put NO CLI on PATH. In a session the model should call the `memory_distill` tool (the
+  plugin answers it on this machine); the CLI is for terminals, via a repo checkout
+  (`uv run …`) or `uv tool install`.
+- **Memory tools say the server failed to connect at session start** → this machine's server
+  was still starting. The plugin connects again once the session-start hook has started it;
+  if `/mcp` still shows it failed, choose Reconnect. `claude-memory-graph doctor` reports
+  whether it is running and its version; `~/.claude/memory-graph/state/server.log` has its
+  output.
 - **`distill` reports 0 files** → files must match `<project>__*.md` and contain
   `distilled: false` in the first 300 bytes; `--project` filters by cwd basename.
 - **`distill` refused something you want stored** → the residue line says exactly why

@@ -30,6 +30,9 @@ function engine(on: any, reply: (request: any) => Reply | 'crash' = () => ({ out
   on('store.get', (_: any, e: any) => ({ value: store.get(e.key) }))
   on('store.set', (_: any, e: any) => { store.set(e.key, e.value); return { value: undefined } })
   on('tool.call', () => ({ result: { content: [{ type: 'text', text: 'ok' }] } }))
+  const connects: string[] = []
+  ;(seen as any).connects = connects
+  on('mcp.connect', (_: any, e: any) => { connects.push(e.server); return { value: { isConnected: true, server: e.server } } })
   on('fs.exists', () => ({ value: true }))
   on('fs.read', () => ({ value: 'PROTOCOL' }))
   on('env.get', (_: any, e: any) => ({
@@ -116,10 +119,40 @@ test('review is opt-in', { options: { review: true } }, async ($, on) => {
   expect(seen.python[0].enabled).toContain('graph-review')
 })
 
-test('memory stays local unless a server is set', async ($, on) => {
+test('with no server set, memory is this machine\'s own server', async ($, on) => {
   const seen = engine(on)
   await $.classic.UserPromptSubmit({ prompt: 'hello there' })
-  expect(seen.python[0].remote).toBeUndefined()
+  expect(seen.python[0].remote).toEqual({ url: 'http://127.0.0.1:8848', token: '', lookups: 'server' })
+})
+
+test('an emptied server setting still means this machine', { options: { server: '' } }, async ($, on) => {
+  const seen = engine(on)
+  await $.classic.UserPromptSubmit({ prompt: 'hello there' })
+  expect(seen.python[0].remote.url).toBe('http://127.0.0.1:8848')
+})
+
+test('session start connects the MCP server once the local one is up', async ($, on) => {
+  const seen: any = engine(on)
+  await $.classic.SessionStart({ source: 'startup' })
+  expect(seen.python[0].event).toBe('SessionStart')
+  expect(seen.connects).toEqual(['memory-graph'])
+})
+
+test('a hosted server is not connected by hand', {
+  options: { server: 'https://memory.example.com/mcp', server_token: 't' },
+}, async ($, on) => {
+  const seen: any = engine(on)
+  await $.classic.SessionStart({ source: 'startup' })
+  expect(seen.connects).toEqual([])
+  expect(seen.python[0].remote.url).toBe('https://memory.example.com')
+})
+
+test('memory_distill is answered on this machine, not by the server', async ($, on) => {
+  const seen = engine(on, request => ({ output: request.event === 'Distill' ? 'files: 2 · promoted 3' : '' }))
+  const out: any = await $.tool.call({ tool: 'mcp__plugin_memory-graph_memory-graph__memory_distill', project: 'quartz' })
+  const call = seen.python.find((r: any) => r.event === 'Distill')
+  expect(call.payload).toEqual({ project: 'quartz' })
+  expect(JSON.stringify(out)).toContain('files: 2 · promoted 3')
 })
 
 test('a memory server reaches Python with its token', {
