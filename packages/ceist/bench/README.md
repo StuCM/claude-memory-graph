@@ -143,6 +143,49 @@ Signals taken from files the HER package already has, each tested alone and then
 
 **Not tested: data-presence priors** (prefer nodes that actually hold values). The HER package ships no records, so this needs a client's data.
 
+## Browser models, measured (2026-10-28)
+
+The ONNX sentence models and the Qwen models were run once their weights could be fetched (`fetch_models.sh`, which needs `huggingface.co` and the `*.hf.co` download hosts). They were run on CPU in Python, so the times are not browser times.
+
+**On the 57 hand-written cases (`compare.py`), each model matching node names with no vocabulary:**
+
+| matcher | right (of 50) | dangerous | size |
+| --- | --- | --- | --- |
+| WordLlama on node names | 13 | 4 | 16 MB |
+| MiniLM-L6 bi-encoder | 12 | 0 | ~23 MB |
+| bge-small bi-encoder | 20 | 5 | ~34 MB |
+| MiniLM cross-encoder | 0 | 0 | ~23 MB |
+| Qwen3 0.6B / 1.7B / 4B, choosing | 22 / 20 / 29 | **35 / 23 / 26** | 0.4–2.5 GB |
+| *vocabulary + WordLlama, for reference* | *47* | *1* | *16 MB + vocabulary* |
+
+A bigger model doesn't replace the vocabulary. The small LLMs answer nearly everything, including when no node fits (0–2 of 7 correct abstentions), so they give far more dangerous picks.
+
+**At HER scale (`her_compare.py`: 102 answerable and 18 unanswerable questions), the models placed beside or behind the vocabulary:**
+
+| matcher | right | dangerous | top guess right | ms/question (CPU) |
+| --- | --- | --- | --- | --- |
+| vocabulary + WordLlama (today) | 81 | 5 | 91 | 1 |
+| vocabulary + MiniLM-L6 | 80 | 4 | 93 | ~500 |
+| vocabulary + bge-small | 90 | 8 | 92 | 84 |
+| vocabulary + WordLlama; when unsure, the cross-encoder picks | 81 | 5 | 91 | 6 |
+| vocabulary + WordLlama; when unsure, Qwen3 0.6B / 1.7B / 4B picks | 89 / 84 / 89 | **26 / 7 / 19** | 92 | 2,600–5,800 |
+
+Those numbers use thresholds that weren't tuned for the new models. The fair comparison sweeps the minimum and gap rule for each one, and takes its best result with at most 3 dangerous answers:
+
+| matcher | right (of 102), ≤3 dangerous |
+| --- | --- |
+| vocabulary + WordLlama | 82 |
+| vocabulary + MiniLM-L6 | 88 |
+| **vocabulary + bge-small** | **89** |
+
+These thresholds were tuned on the same questions they're scored on, so all three numbers are upper bounds.
+
+- **bge-small is the one worth adopting.** It sits in the vectors layer's slot, against the same vocabulary, and gets about 7 more right than WordLlama at the same safety. At ~34 MB of int8 ONNX it runs in transformers.js. The cost is time: tens of milliseconds per phrase, against WordLlama's lookup. The vocabulary's 7,392 phrasings would be embedded once at build time and shipped as vectors.
+- **The ranking ceiling barely moves.** The top guess is right 91–93/102 for every matcher. The gain comes from scores that separate right from wrong better, so a threshold can say yes more often. The misses at the top are still vocabulary gaps.
+- **No LLM tie-breaker.** Qwen raises "right" only by also raising "dangerous". The cross-encoder, as wired (logit thresholds 0 and 1), never cleared its bar; it would need its own calibration to say anything.
+
+**Next:** a `bge-small` vectors layer in `ceist.matching`, with the vocabulary embedded at build time, and its thresholds tuned on questions held out from the ones it's scored on.
+
 ## In the browser
 
 | matcher | size | browser runtime |
