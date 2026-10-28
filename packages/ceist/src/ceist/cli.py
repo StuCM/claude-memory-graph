@@ -6,6 +6,9 @@
     ceist vocab check <bundle.json> <graphs dir>
     ceist eval --bundle <bundle.json> --questions <cases.json> [--config ceist.toml] [--report out.md]
                [--min-right N] [--max-dangerous N]      # the acceptance gate: exit 1 if missed
+               [--half even|odd]                         # every other question: tune on one half
+    ceist vectors fetch <model>                         # a transformer's weights (huggingface.co)
+    ceist vectors embed <bundle.json> [--config ceist.toml]   # embed its phrasings ahead of time
 """
 
 import argparse
@@ -60,7 +63,7 @@ def _eval(a):
     if not bundle:
         print("no bundle: pass --bundle or set [vocabulary] bundle in the config", file=sys.stderr)
         return 2
-    result = evaluate(bundle, a.questions, cfg)
+    result = evaluate(bundle, a.questions, cfg, half=a.half)
     text = report(result)
     print(text)
     if a.report:
@@ -73,6 +76,40 @@ def _eval(a):
     if failed:
         print("gate failed: " + "; ".join(failed), file=sys.stderr)
         return 1
+    return 0
+
+
+def _fetch(a):
+    from . import onnx
+    if a.model not in onnx.MODELS:
+        print(f"unknown model '{a.model}' (known: {', '.join(onnx.MODELS)})", file=sys.stderr)
+        return 2
+    print(onnx.fetch(a.model, a.cache_dir))
+    return 0
+
+
+def _embed(a):
+    """Every phrasing of a bundle through the configured transformer, once,
+    into the vector cache — so no question pays for it."""
+    import time
+    from . import bundle as _bundle
+    from . import config
+    cfg = config.load(a.config, **({"model": a.model} if a.model else {}))
+    if cfg.model == config.WORDLLAMA:
+        print("wordllama needs no embedding ahead of time (it is a lookup table)")
+        return 0
+    from . import onnx
+    why = onnx.missing(cfg.model, a.cache_dir, cfg.model_dir)
+    if why:
+        print(f"{cfg.model}: {why}", file=sys.stderr)
+        return 2
+    b = _bundle.load(a.bundle or cfg.bundle)
+    texts = sorted({t for m in b["models"].values() for e in m["entries"] for t in e["phrases"]}
+                   | {n.get("label", k) for m in b["models"].values()
+                      for k, n in m["nodes"].items()})
+    t0 = time.perf_counter()
+    onnx.encoder(cfg.model, a.cache_dir, cfg.model_dir).encode(texts)
+    print(f"{len(texts)} texts embedded with {cfg.model} in {time.perf_counter() - t0:.1f}s")
     return 0
 
 
@@ -114,7 +151,22 @@ def main(argv=None):
     p.add_argument("--report")
     p.add_argument("--min-right", type=int)
     p.add_argument("--max-dangerous", type=int)
+    p.add_argument("--half", choices=["even", "odd"],
+                   help="score every other question only: tune on one half, report the other")
     p.set_defaults(fn=_eval)
+
+    vec = sub.add_parser("vectors", help="transformer models for the vectors layer").add_subparsers(
+        dest="step", required=True)
+    p = vec.add_parser("fetch", help="download a model's weights once")
+    p.add_argument("model")
+    p.add_argument("--cache-dir")
+    p.set_defaults(fn=_fetch)
+    p = vec.add_parser("embed", help="embed a bundle's phrasings ahead of time")
+    p.add_argument("bundle", nargs="?")
+    p.add_argument("--config")
+    p.add_argument("--model")
+    p.add_argument("--cache-dir")
+    p.set_defaults(fn=_embed)
 
     a = ap.parse_args(argv)
     return a.fn(a) or 0

@@ -11,6 +11,8 @@ vectors = [
     "numpy",
     "wordllama>=0.4,<0.5; python_version < '3.14' and (sys_platform == 'darwin' or (sys_platform == 'win32' and platform_machine == 'AMD64') or (sys_platform == 'linux' and platform_machine == 'x86_64'))",
 ]
+# small transformers for the "vectors" layer (ceist.onnx: bge-small, MiniLM)
+onnx = ["numpy", "onnxruntime>=1.17", "tokenizers>=0.15"]
 # word roots for the "exact" layer's roots option (a light suffix rule otherwise)
 roots = ["simplemma"]
 
