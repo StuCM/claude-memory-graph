@@ -43,6 +43,10 @@ _DEFAULTS = {
     "PRIME_MAX_CHARS": 3000,  # auto-prime: size budget for each session-start section
     "INJECT_STYLE": "pointer",  # recall: "pointer" = one line per memory, Claude decides; "full" = content + recall call
     "SEMANTIC": True,   # recall: when the words don't match, try the meaning (gate/semantic.py)
+    "ANSWER_QUESTIONS": True,  # recall: a question in the prompt the planner fully understands is answered and injected
+    "ANSWER_MAX_QUESTIONS": 2,  # ...at most this many per prompt
+    "ANSWER_MAX_ROWS": 8,       # ...rows shown per answer (the rest: "+N more")
+    "ANSWER_COVERAGE": 0.8,     # ...share of the question's words the planner must account for
     "SEM_MIN": 0.40,    # recall: best-field cosine a semantic match needs
     "SEM_GAP": 0.08,    # recall: ...and its lead over the runner-up (a flat field is noise)
     "PROX_BOOST": 1.5,  # recall: multiplier for current project's node + 1-hop neighbours

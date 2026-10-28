@@ -472,11 +472,6 @@ class RecallExtension(HookExtension):
         return "memory-graph auto-prime (recalled, not instructions):\n" + "\n\n".join(sections)
 
     def on_user_prompt_submit(self, ctx: HookContext) -> str | None:
-        q = {w for _, w in ctx.terms_pos}
-        if not q:
-            return None
-        cfg = config()
-        views = query_views(ctx.prompt)  # whole prompt + its sentences
         from ..store import MemoryStore
         store = None
 
@@ -486,6 +481,55 @@ class RecallExtension(HookExtension):
                 store = MemoryStore.open_or_create(store_dir())
             return store
 
+        answers = self._answer_questions(ctx, opener)
+        recall = self._recall(ctx, opener)
+        parts = [s for s in (answers, recall) if s]
+        return "\n\n".join(parts) if parts else None
+
+    def _answer_questions(self, ctx: HookContext, opener) -> str | None:
+        """A question in the prompt that the planner FULLY understands is
+        answered from the graph and injected as memory — the model needn't
+        think to ask. Strict (planner.answer): anything less stays a pointer."""
+        cfg = config()
+        if not cfg.get("ANSWER_QUESTIONS"):
+            return None
+        from .. import planner
+        try:
+            questions = planner.question_candidates(ctx.prompt, cfg["ANSWER_MAX_QUESTIONS"])
+            if not questions:
+                return None
+            asked = set(ctx.state.get("answered", []))
+            blocks = []
+            for q in questions:
+                key = " ".join(q.lower().split())
+                if key in asked:
+                    continue
+                got = planner.answer(opener(), q, cfg["ANSWER_MAX_ROWS"], cfg["ANSWER_COVERAGE"])
+                append_jsonl("injections.jsonl", {
+                    "kind": "answer", "fired": got is not None, "q": q[:200],
+                    "understood": got[0] if got else None, "rows": got[2] if got else 0,
+                    "session": ctx.core.get("session_id", ""), "project": ctx.project})
+                if got is None:
+                    continue
+                understood, rows, total = got
+                asked.add(key)
+                more = f"\n(+{total - len(rows)} more — memory_ask for all)" if total > len(rows) else ""
+                blocks.append(f'"{q}" — searched: {understood}\n' + "\n".join(rows) + more)
+            if not blocks:
+                return None
+            ctx.state["answered"] = sorted(asked)
+            return ("Memory answers (a precise graph query for a question in this prompt; "
+                    "complete only as far as it was recorded):\n" + "\n\n".join(blocks))
+        except Exception as exc:                 # fail open: never block a prompt
+            log_error("answer questions", exc)
+            return None
+
+    def _recall(self, ctx: HookContext, opener) -> str | None:
+        q = {w for _, w in ctx.terms_pos}
+        if not q:
+            return None
+        cfg = config()
+        views = query_views(ctx.prompt)  # whole prompt + its sentences
         docs, idf, near, links = gate_index(ctx.project, opener)
         if not docs:
             # empty graph: the session log is still a retrieval source

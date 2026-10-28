@@ -321,6 +321,9 @@ export const register: Register = (on, options) => {
         line(`Gate decisions: ${fired} fired of ${rows.length}`, { bold: true }),
         ...rows.slice().reverse().slice(0, 15).map(r => {
           if (r.kind === 'prime') return line(`prime  ${r.project ?? ''}`, { dimColor: true })
+          if (r.kind === 'answer') return line(r.fired
+            ? `answered ${r.rows ?? 0} rows  ${r.understood ?? r.q ?? ''}`
+            : `unanswered  ${r.q ?? ''}`, { dimColor: !r.fired })
           const layer = r.kind === 'log' ? 'session log' : 'graph'
           const nodes = r.nodes?.length ? r.nodes.join(', ') : (r.top_node ?? '')
           const cluster = r.cluster ? ` +${r.cluster} similar` : ''
