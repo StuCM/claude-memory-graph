@@ -65,6 +65,10 @@ still reaches the model.
 |---|---|---|
 | **Memory graph pane** | `auto` (default) · `manual` · `off` | `auto` opens the pane on the first graph tool call; `manual` only via `/graph-panel`; `off` drops the pane and shows graph tool calls in the transcript as normal. Memory runs either way. |
 | **Periodic graph review** | off (default) · on | every few days, ends one turn asking for a graph tidy-up (over-long names, orphans, missing links) |
+| **Answer questions from memory** | on (default) · off | a question in a prompt that the graph fully understands is run, and its answer added as memory |
+| **Questions answered per prompt** | `2` (default) | how many questions in one prompt are tried |
+| **Rows per answer** | `8` (default) | rows added per answer; the rest are counted, with a pointer to `memory_ask` |
+| **Answer strictness** | `0.8` (default), 0.5–1 | share of the question that must match the graph; lower answers more, and risks answering the wrong question |
 | **Memory server** | empty (default) · `https://…` | empty keeps memory on this machine; an address uses your hosted memory ([docs/REMOTE.md](docs/REMOTE.md)) |
 | **Memory server token** | secret | the server's `MEMORY_GRAPH_TOKEN`, kept in secure storage |
 

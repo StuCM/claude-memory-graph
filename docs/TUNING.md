@@ -68,12 +68,15 @@ answered once per session.
  "understood": "Find Decisions that affect Project 'claude-memory-graph'.", "rows": 3}
 ```
 
-| Setting (`gate.json`) | Default | What it does |
-|---|---|---|
-| `ANSWER_QUESTIONS` | `true` | turn auto-answering off |
-| `ANSWER_MAX_QUESTIONS` | `2` | questions tried per prompt |
-| `ANSWER_MAX_ROWS` | `8` | rows injected per answer (the rest: "+N more — memory_ask for all") |
-| `ANSWER_COVERAGE` | `0.8` | how much of the question must ground |
+| `/config` setting | `gate.json` key | Default | What it does |
+|---|---|---|---|
+| Answer questions from memory | `ANSWER_QUESTIONS` | `true` | turn auto-answering off |
+| Questions answered per prompt | `ANSWER_MAX_QUESTIONS` | `2` | questions tried per prompt |
+| Rows per answer | `ANSWER_MAX_ROWS` | `8` | rows injected per answer (the rest: "+N more — memory_ask for all") |
+| Answer strictness | `ANSWER_COVERAGE` | `0.8` | how much of the question must ground |
+
+The `/config` settings win over `gate.json`. The gate.json keys are for running the gate
+without the plugin.
 
 Cost: a prompt with no question pays nothing. A prompt with a question adds about 95 ms at 500
 memories and 150 ms at 2,000. About half of that is loading the store, which the gate otherwise

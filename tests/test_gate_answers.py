@@ -68,3 +68,26 @@ def test_entity_index_is_reused_until_the_store_file_changes(graph, tmp_path, mo
     docs, _ = planner.entity_index(graph)
     assert len(built) == 2                                   # the file changed: rebuilt
     assert "Cache the planner index" in {d["name"] for d in docs}
+
+
+def test_settings_menu_values_override_gate_json(monkeypatch):
+    monkeypatch.setattr(runtime, "_config", {**runtime._DEFAULTS, "ANSWER_MAX_ROWS": 20})
+    runtime.override({"ANSWER_QUESTIONS": False, "ANSWER_MAX_ROWS": 3.0,
+                      "ANSWER_COVERAGE": 1, "NOT_A_KEY": 5, "ANSWER_MAX_QUESTIONS": "lots"})
+    cfg = runtime.config()
+    assert cfg["ANSWER_QUESTIONS"] is False
+    assert cfg["ANSWER_MAX_ROWS"] == 3 and isinstance(cfg["ANSWER_MAX_ROWS"], int)
+    assert cfg["ANSWER_COVERAGE"] == 1.0
+    assert cfg["ANSWER_MAX_QUESTIONS"] == 2                  # mistyped: ignored
+    assert "NOT_A_KEY" not in cfg
+
+
+def test_hookrun_applies_the_settings_menu(graph, monkeypatch):
+    from claude_memory_graph import hookrun
+    request = {"event": "UserPromptSubmit", "enabled": ["memory-recall"],
+               "payload": {"prompt": LONG, "cwd": "/w/claude-memory-graph", "session_id": "s"},
+               "core": {"project": "claude-memory-graph", "session_id": "s"}}
+    assert "Memory answers" in hookrun.run(request)["output"]
+    monkeypatch.setattr(runtime, "_config", dict(runtime._DEFAULTS))
+    off = hookrun.run({**request, "gate": {"ANSWER_QUESTIONS": False}})
+    assert "Memory answers" not in off["output"]

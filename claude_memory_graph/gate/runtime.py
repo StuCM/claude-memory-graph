@@ -77,3 +77,19 @@ def config() -> dict:
             pass  # no file / bad JSON -> defaults
         _config = cfg
     return _config
+
+
+def override(values: dict) -> None:
+    """Settings from the plugin's settings menu, over gate.json, for this
+    process (one hook call). Only known keys of the default's type are
+    taken: a stray or mistyped value is ignored, never a crash."""
+    cfg = config()
+    for key, value in values.items():
+        default = _DEFAULTS.get(key)
+        if default is None:
+            continue
+        if isinstance(default, bool):
+            if isinstance(value, bool):
+                cfg[key] = value
+        elif isinstance(value, (int, float)) and not isinstance(value, bool):
+            cfg[key] = type(default)(value)
