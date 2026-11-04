@@ -78,9 +78,19 @@ def test_count():
 
 
 def test_value_only_applies_where_a_type_has_the_field():
+    # Sites have no heritage status: answering "every site" would drop the
+    # word that constrains the question, so it refuses and says why
     m = interpret(Toy(), "which listed sites are there?")
-    assert m.plan.type == "Site" and not m.plan.where
+    assert m.plan is None and "'listed' is a value of heritage_status" in m.refused
     assert "listed" in m.grounding.uncovered
+
+
+def test_unplaced_words_refuse_instead_of_widening_the_answer():
+    # one grounded word ("candidate") lifts coverage over the threshold; the
+    # words that actually constrain the question must not be dropped silently
+    m = interpret(Toy(), "which candidate buildings were damaged in a fire?")
+    assert m.plan is None
+    assert "couldn't place" in m.refused and "'damaged'" in m.refused and "'fire'" in m.refused
 
 
 def test_leftover_word_gets_a_relaxation_without_it():
