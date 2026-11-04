@@ -169,7 +169,8 @@ clarify_min = 0.15
 
 ```
 ceist vocab describe <graphs dir> descriptions/ --reference <reference_data dir>   # read the models (Alizarin)
-ceist vocab prompt descriptions/ Monument Person …                                  # the instruction for an LLM (or agent)
+ceist vocab prompt descriptions/ Monument > prompt.txt                               # the instruction, with the schema inline
+ceist vocab save reply.json descriptions/ vocab/                                    # the LLM's JSON reply → vocab/<Model>.json
 ceist vocab assemble descriptions/ vocab/ -o her.bundle.json --graphs <graphs dir> # validate and bundle
 ceist vocab check her.bundle.json <graphs dir>                                      # stale since the graphs changed?
 ceist eval --bundle her.bundle.json --questions cases.json --config ceist.toml \
@@ -192,13 +193,16 @@ Nothing is trained: the vocabulary is phrasings per node, and use adds the ones 
 ```
 ceist vocab learn learn.jsonl --bundle her.bundle.json -o proposals.json --exclude cases.json
 #   picks → "confirmed" (approve: true); the rest → "to_assign", with the instruction for an LLM
-#   to set each one's node, or "none"; a person reviews and sets approve: true
+#   to set each one's node, or "none" (the items inline)
+ceist vocab assign proposals.json reply.json                       # its reply → "assign"; a person sets approve
 ceist vocab merge proposals.json vocab/ --bundle her.bundle.json   # into the right entries
 ceist vocab assemble descriptions/ vocab/ -o her.bundle.json --graphs <graphs dir>
 ceist eval --bundle her.bundle.json --questions cases.json --config ceist.toml   # did it help?
 ```
 
 A phrase picked as two different nodes is flagged as a conflict and waits for a person.
+
+**What an LLM sees.** The build and learn prompts carry everything inline: the model descriptions (the schema: node names, datatypes, small value lists), or the proposals to assign. No paths, so an agent is never pointed into the project folder where the records live, and the reply comes back as JSON for `save` / `assign` to validate. The learning log is masked when it is written (`learn.mask`): the records a question named become `<Type>`, quoted text `<text>`, other capitalised words `<Name>`, numbers other than years `<number>`; a phrase that is itself a name isn't logged.
 
 ### Qualified links: a link and a value on the same entry
 

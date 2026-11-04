@@ -17,7 +17,10 @@ models, in one file built once, offline.
 How it is made (`ceist vocab …`):
 
     describe   read the models (Alizarin) → one description per model
-    prompt     the instruction an LLM follows to write a model's entries
+    prompt     the instruction an LLM follows to write a model's entries, with the
+               model's description inline (the LLM sees the schema, never a path
+               into the project or a record)
+    save       the LLM's JSON reply → vocab/<Model>.json, validated
     assemble   validate the entries against the descriptions and write the bundle,
                with a hash of the graph files so a stale bundle is caught (`check`)
 """
@@ -131,21 +134,23 @@ PROMPT = """You are the offline "vocabulary build" step for a no-LLM natural-lan
 Arches data. At query time only exact phrase lookup and static word vectors run, so the everyday \
 phrasings people use for each node must be written now, once.
 
-Read ONLY the model description(s) listed below. Each lists the model's searchable nodes: alias, \
+The model description(s) are at the end of this message, inline. Use ONLY them: there are no files \
+to read, and you must not look for any (no records, no test questions: this is a blind build that \
+sees the schema, never the data). Each description lists the model's searchable nodes: alias, \
 name, datatype, card (the UI card it's on), path (its place in the model tree), label (the UI \
 widget label, if different), crm (its CIDOC-CRM context), targets (for links: which models it \
-points to), values (labels of a small concept collection) or values_count (a large thesaurus). \
-Do not read any test questions: this is a blind build.
+points to), values (labels of a small controlled list or concept collection) or values_count (a \
+large one).
 
-For each model write {vocab_dir}/<Model>.json:
-{{"model": "<Model>",
+Reply with ONLY one JSON object, keyed by model name, with each model's entries:
+{{"<Model>": {{"model": "<Model>",
  "entries": [
    {{"phrases": ["...", ...],          // lowercase everyday phrasings
     "kind": "date" | "link" | "property",
     "node": "<alias>",                // the node a question means
     "end_node": "<alias>",            // dates only: the END date of the same timespan, when node is its start
     "qualifier": {{"node": "<alias>", "value": "<label from values>"}}   // optional: when the meaning needs a concept value too
-   }}, ...]}}
+   }}, ...]}}, ...}}
 
 Guidance:
 - Think like the people who will ask: members of the public, researchers, officers. Spend effort \
@@ -164,13 +169,51 @@ a qualifier for generic involvement. Use only labels in the values list. Likewis
 - Include direction words where they matter ("sailing from" vs "sailing to").
 - Keep a model's entries distinguishable; 3–20 phrases per entry; skip nodes nobody would ask \
 about by name.
-Validate that each file parses as JSON.
+Check that your reply parses as JSON.
 
 Model descriptions:
-{files}
+{descriptions}
 """
 
 
-def prompt(descriptions_dir: str | Path, models: list[str], vocab_dir: str | Path) -> str:
-    files = "\n".join(str(Path(descriptions_dir) / f"{m}.json") for m in models)
-    return PROMPT.format(vocab_dir=vocab_dir, files=files)
+def prompt(descriptions_dir: str | Path, models: list[str]) -> str:
+    """The build instruction with the models' descriptions inline: the LLM is
+    handed the schema itself, never a path into the project (where the
+    records live). One model per prompt keeps it small (HER: 20–130 KB each)."""
+    blocks = []
+    for m in models:
+        d = json.loads((Path(descriptions_dir) / f"{m}.json").read_text())
+        blocks.append(json.dumps(d, ensure_ascii=False, separators=(",", ":")))
+    return PROMPT.format(descriptions="\n\n".join(blocks))
+
+
+def parse_reply(text: str) -> dict:
+    """An LLM's JSON reply, with any ```json fence around it removed."""
+    t = text.strip()
+    if t.startswith("```"):
+        t = t.split("\n", 1)[1] if "\n" in t else ""
+        t = t.rsplit("```", 1)[0]
+    return json.loads(t)
+
+
+def save(reply: str, descriptions_dir: str | Path, vocab_dir: str | Path) -> tuple[list[str], list[str], list[str]]:
+    """Write a build reply ({Model: {"model", "entries"}}) as <vocab dir>/<Model>.json,
+    validated against each model's description; (written, errors, warnings).
+    A model with errors is not written."""
+    out = Path(vocab_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    written, errors, warnings = [], [], []
+    for name, v in parse_reply(reply).items():
+        path = Path(descriptions_dir) / f"{name}.json"
+        if not path.exists():
+            errors.append(f"{name}: no description (not a model of this project)")
+            continue
+        v = {"model": name, "entries": v.get("entries", []) if isinstance(v, dict) else v}
+        err, warn = validate(json.loads(path.read_text()), v["entries"])
+        errors += err
+        warnings += warn
+        if err:
+            continue
+        (out / f"{name}.json").write_text(json.dumps(v, indent=1, ensure_ascii=False) + "\n")
+        written.append(name)
+    return written, errors, warnings

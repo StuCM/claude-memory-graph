@@ -4,7 +4,7 @@
             "did you mean" option a person picked              (record)
     learn   the log → proposals: picks are confirmed by a person already;
             the rest go to an LLM, which assigns each a node or "none"
-                                            (`ceist vocab learn`)
+                                            (`ceist vocab learn`, then `ceist vocab assign`)
     review  a person approves the proposals they agree with
     merge   the approved phrasings join the vocabulary files (`ceist vocab merge`)
     build   `ceist vocab assemble`, then `ceist eval` on held-out questions
@@ -23,6 +23,14 @@ A log line (JSONL, one per event):
 
 `options` are the "did you mean" offers, `chosen` the one the person picked
 (null: nothing offered fitted, or they gave up).
+
+Privacy: the log is what reaches an LLM, so it never holds record data.
+`from_grounding` masks the question before it is written: the records it
+named become `<Type>`, quoted text `<text>`, other capitalised words
+`<Name>`, long numbers `<number>` (years stay: they are how dates are
+asked). A phrase that is itself a name is not logged at all: it is a
+record, not vocabulary. The `learn` prompt carries the masked items inline,
+so the LLM is never pointed at a file.
 """
 
 import json
@@ -66,12 +74,70 @@ def record(path: str | Path, model: str, question: str, phrase: str, slot: str,
         pass
 
 
+_WORD = re.compile(r"[A-Za-z][\w'’-]*|\d[\d,.]*")
+_QUOTED = re.compile(r"\"[^\"]*\"|“[^”]*”|‘[^’]*’|(?<!\w)'[^']+'(?!\w)")
+_YEAR = re.compile(r"(1[0-9]|20)\d\d(s)?$")
+
+
+def mask(question: str, grounding=None) -> str:
+    """The question with record data taken out, for the learning log: the
+    records the grounding named → <Type>, quoted text → <text>, other
+    capitalised words (not the first) → <Name>, numbers other than years →
+    <number>. Values and dates the grounding placed are schema words, kept."""
+    keep = set()
+    if grounding is not None:
+        for v in getattr(grounding, "values", []) or []:
+            keep |= {w.lower() for w in _WORD.findall(v.phrase)}
+        for d in getattr(grounding, "dates", []) or []:
+            keep |= {w.lower() for w in _WORD.findall(d.phrase)}
+    anchor_terms: dict[str, str] = {}
+    for a in getattr(grounding, "anchors", None) or []:
+        for t in list(a.match_terms) + _WORD.findall(a.name or ""):
+            anchor_terms[t.lower()] = a.type or "Record"
+    text = _QUOTED.sub("<text>", question)
+    out, first, prev, pos = [], True, None, 0
+    for m in _WORD.finditer(text):
+        w = m.group(0)
+        lw = w.lower()
+        if lw.endswith(("'s", "’s")):
+            lw = lw[:-2]                        # "Ada's" names Ada
+        if lw in anchor_terms:
+            tag = f"<{anchor_terms[lw]}>"
+        elif w[0].isdigit():
+            tag = None if _YEAR.match(w) else "<number>"
+        elif w[0].isupper() and not first and lw not in keep and w != "I":
+            tag = "<Name>"
+        else:
+            tag = None
+        first = False
+        between = text[pos:m.start()]
+        if tag is not None and tag == prev and not between.strip():
+            pos = m.end()                       # "Ada Lovelace" → one <Person>
+            continue
+        out.append(between + (tag or w))
+        prev, pos = tag, m.end()
+    out.append(text[pos:])
+    return "".join(out)
+
+
+def _is_name(phrase: str, question: str) -> bool:
+    """The phrase is written as a proper name in the question ("Victoria Dock")."""
+    m = re.search(re.escape(phrase), question, re.I)
+    words = _WORD.findall(question[m.start():m.end()]) if m else []
+    return bool(words) and all(w[0].isupper() or w[0].isdigit() for w in words) and m.start() > 0
+
+
 def from_grounding(path: str | Path, question: str, grounding) -> int:
     """Log every phrase the planner couldn't place in a question (its
-    grounding's `unplaced`); how many. Call it after `interpret`."""
+    grounding's `unplaced`), with the question masked (`mask`); how many.
+    Call it after `interpret`. Phrases that are names aren't logged."""
+    masked, n = mask(question, grounding), 0
     for u in getattr(grounding, "unplaced", []) or []:
-        record(path, u.get("model", ""), question, u["phrase"], u["slot"], u.get("options"))
-    return len(getattr(grounding, "unplaced", []) or [])
+        if _is_name(u["phrase"], question):
+            continue
+        record(path, u.get("model", ""), masked, u["phrase"], u["slot"], u.get("options"))
+        n += 1
+    return n
 
 
 def _read(path) -> list[dict]:
@@ -170,24 +236,64 @@ PROMPT = """You are the "learn" step of a no-LLM natural-language search over Ar
 asked questions using the phrases below, and the search couldn't tell which field each meant. \
 Assign each one, so the next vocabulary build knows it.
 
-Edit {proposals} in place. For each item in "to_assign", set "assign" to:
-- {{"node": "<alias>"}} — the field the phrase means, chosen from its "candidates" (the fields \
-that fit where the phrase sat in the question). Add "qualifier": {{"node": "<alias>", "value": \
-"<label>"}} when the meaning needs a value too (a role such as Architect, a phase type such as \
-Demolition), using an existing entry's qualifier from the bundle; add "end_node" for a date that \
-is an event's start, as the bundle's entries for that event do.
-- "none" — when no field fits: the question asks for something the data doesn't hold, or the \
-phrase isn't about a field at all.
+Everything you need is in this message: there are no files to read. Names and numbers in the \
+questions are masked (<Person>, <Name>, <number>, …) on purpose; don't guess them.
 
-Read the example "questions" for each phrase; judge by them, not the phrase alone. Read the \
-bundle, {bundle}, for each model's nodes (labels, kinds, targets) and its existing entries — \
-match how those are written. Do not change "approve": a person reviews and sets it. Do not \
-touch "confirmed": those were picked by the people who asked. Keep the file valid JSON.
+Each item has an index "i", the model, the slot the phrase sat in, the phrase, up to three \
+example questions, and its "candidates": the fields that fit where the phrase sat, with their \
+labels. "qualifiers" lists how the model's existing entries pair a field with a value (a role \
+such as Architect, a phase type such as Demolition).
+
+Reply with ONLY a JSON array, one object per item you can judge:
+  {{"i": <index>, "assign": {{"node": "<alias from candidates>"}}}}   — the field the phrase means;
+      add "qualifier": {{"node": "<alias>", "value": "<label>"}} when the meaning needs a value too,
+      copying one from "qualifiers"; add "end_node" for a date that is an event's start
+  {{"i": <index>, "assign": "none"}}   — no field fits: the question asks for something the data
+      doesn't hold, or the phrase isn't about a field at all.
+Judge by the example questions, not the phrase alone. Check that your reply parses as JSON.
+
+Items:
+{items}
 """
 
 
-def prompt(proposals_path, bundle_path) -> str:
-    return PROMPT.format(proposals=proposals_path, bundle=bundle_path)
+def prompt(props: dict, bundle: dict) -> str:
+    """The assignment instruction with the items inline: only the masked
+    questions and the schema's own labels, never a path."""
+    items = []
+    for i, u in enumerate(props.get("to_assign", [])):
+        model = bundle["models"].get(u["model"], {})
+        nodes = model.get("nodes", {})
+        quals = sorted({(e["node"], e["qualifier"]["node"], str(e["qualifier"]["value"]))
+                        for e in model.get("entries", []) if e.get("qualifier")})
+        items.append({"i": i, "model": u["model"], "slot": u["slot"], "phrase": u["phrase"],
+                      "questions": u.get("questions", []),
+                      "candidates": [{"node": a, **{k: v for k, v in nodes[a].items()
+                                                    if k in ("label", "kind", "targets")}}
+                                     for a in u.get("candidates", []) if a in nodes],
+                      "qualifiers": [{"node": n, "qualifier": {"node": q, "value": v}}
+                                     for n, q, v in quals]})
+    return PROMPT.format(items=json.dumps(items, indent=1, ensure_ascii=False))
+
+
+def assign(props: dict, reply: str) -> tuple[int, list[str]]:
+    """Fill "assign" on the proposals from the LLM's reply to `prompt`;
+    (how many, errors). A node outside the item's candidates is refused.
+    "approve" is never touched: a person sets it."""
+    from .bundle import parse_reply
+    todo, done, errors = props.get("to_assign", []), 0, []
+    for a in parse_reply(reply):
+        i = a.get("i")
+        if not isinstance(i, int) or not 0 <= i < len(todo):
+            errors.append(f"no item {i!r}")
+            continue
+        u, value = todo[i], a.get("assign")
+        if value != "none" and not (isinstance(value, dict) and value.get("node") in u["candidates"]):
+            errors.append(f"item {i} ('{u['phrase']}'): {value!r} is not one of its candidates")
+            continue
+        u["assign"] = value
+        done += 1
+    return done, errors
 
 
 def _entry_key(e: dict):
