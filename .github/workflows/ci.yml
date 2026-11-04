@@ -25,9 +25,9 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.12"
-      # Alizarin reads the SKOS thesauri; the Rós Madair end-to-end tests skip
-      # without its bindings and emitter (a long Rust build).
-      - run: uv venv && uv pip install "./packages/ceist[vectors,onnx,roots]" alizarin pytest
+      # Alizarin (a ceist dependency) reads the Arches data; the Rós Madair
+      # end-to-end tests skip without its bindings and emitter (a long Rust build).
+      - run: uv venv && uv pip install "./packages/ceist[vectors,onnx,roots]" pytest
       - run: .venv/bin/python -m pytest -q packages/ceist/tests
       # The project flow end to end on the real Arches HER models: read them
       # through Alizarin, assemble the committed vocabulary into a bundle, and

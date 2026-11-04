@@ -15,7 +15,10 @@ Mapping:
                                      is_inverse: false} — the node is on this model
     LinkTo(node, Plan, in)           child group, relationship {path: (child slug, node),
                                      is_inverse: true} — the node is on the other model
-    HasValue(concept)                clause: NODE (slug, field) <concept_operator>
+    HasValue on a controlled list    clause: NODE (slug, field) REFERENCES_ANY [reference
+                                     items: the item and every narrower item, with labels]
+                                     — arches-search matches their labels (its reference facet)
+    HasValue on a concept (legacy)   clause: NODE (slug, field) <concept_operator>
                                      [the concept and every narrower concept]
     DateRange(node, lo, hi)          clause: BETWEEN [lo, hi] / GREATER_THAN_OR_EQUALS [lo] /
                                      LESS_THAN_OR_EQUALS [hi]   (ISO dates)
@@ -29,9 +32,10 @@ Arches Search walks relationships both ways, so — unlike Rós Madair — "site
 that have buildings designed by Ada" compiles. What it can't say, the compiler
 refuses by name (Unsupported):
 
-- concept values, unless `concept_operator` is given: arches-search indexes
-  concept ids but seeds no search facets for the concept datatype, so the
-  operator depends on what a deployment has added;
+- legacy concept values, unless `concept_operator` is given: arches-search
+  indexes concept ids but seeds no search facets for the concept datatype,
+  so the operator depends on what a deployment has added (controlled-list
+  values need nothing: the reference facets are seeded);
 - a link by any field, or a link to one named record walked backwards
   (a clause names the node it filters, on the model being searched);
 - free text and literal values; "count" and "most recent" are the caller's
@@ -97,14 +101,7 @@ def _group(plan: Plan, vocab, relationship: dict | None, concept_operator: str |
                                      _relationship(child, c.relation, True, negated),
                                      concept_operator))
         elif isinstance(c, HasValue):
-            if c.kind != "concept":
-                raise Unsupported(f"the literal value {c.label}")
-            if not concept_operator:
-                raise Unsupported(f"the concept {c.label}: arches-search seeds no facets for "
-                                  "concept nodes; pass concept_operator= for the one your "
-                                  "deployment adds")
-            ids = [c.value] + vocab.descendants(c.value)
-            clauses.append(_clause(slug, c.field, concept_operator, [ids], negated, c.label))
+            clauses.append(_value_clause(c, negated, vocab, plan.type, slug, concept_operator))
         elif isinstance(c, DateRange):
             if c.lo and c.hi:
                 op, values = "BETWEEN", [c.lo, c.hi]
@@ -131,15 +128,30 @@ def _tile_group(c: LinkTo, negated: bool, vocab, slug: str, concept_operator) ->
         raise Unsupported("a negated same-entry condition")
     if not isinstance(c.target, EntityRef) or c.direction != "out":
         raise Unsupported("a same-entry condition on a link to a set of records")
-    if not concept_operator:
-        raise Unsupported(f"the value {c.qualifier.label}: arches-search seeds no facets for "
-                          "concept nodes; pass concept_operator=")
     e, q = c.target.entity, c.qualifier
-    ids = [q.value] + vocab.descendants(q.value)
+    type_name = vocab.model_by_slug(slug).name
     return {"graph_slug": slug, "scope": "TILE", "logic": "AND",
             "clauses": [_clause(slug, c.relation, "REFERENCES_ANY", [[e.id]], False, e.name),
-                        _clause(slug, q.field, concept_operator, [ids], False, q.label)],
+                        _value_clause(q, False, vocab, type_name, slug, concept_operator)],
             "groups": [], "aggregations": [], "relationship": None}
+
+
+def _value_clause(c: HasValue, negated: bool, vocab, type_name: str, slug: str,
+                  concept_operator: str | None) -> dict:
+    """A controlled value, and every narrower one: reference items on a
+    controlled-list node, concept ids (with the deployment's operator) on a
+    legacy concept node."""
+    if c.kind != "concept":
+        raise Unsupported(f"the literal value {c.label}")
+    ids = [c.value] + vocab.descendants(c.value)
+    if vocab.is_reference(type_name, c.field):
+        return _clause(slug, c.field, "REFERENCES_ANY", [vocab.reference_items(ids)], negated,
+                       c.label)
+    if not concept_operator:
+        raise Unsupported(f"the concept {c.label}: arches-search seeds no facets for "
+                          "concept nodes; pass concept_operator= for the one your "
+                          "deployment adds")
+    return _clause(slug, c.field, concept_operator, [ids], negated, c.label)
 
 
 def to_payload(plan: Plan, vocab, concept_operator: str | None = None) -> dict:
@@ -162,6 +174,12 @@ def _read_clause(clause: dict, type_name: str, vocab, concept_operator: str | No
             and len(values[0]) == 1:
         e = vocab.entity(values[0][0])
         cond = LinkTo(alias, EntityRef(e), "out", style="field") if e else None
+    elif op == "REFERENCES_ANY" and datatype == "reference" and len(values) == 1:
+        ids = list(dict.fromkeys(lab.get("list_item_id") for item in values[0]
+                                 for lab in item.get("labels") or []))
+        # the first item is the value; the rest must be exactly its narrower items
+        if ids and sorted(ids[1:]) == sorted(vocab.descendants(ids[0])):
+            cond = HasValue(alias, ids[0], vocab.concept_label(ids[0]))
     elif op == concept_operator and datatype.startswith("concept") and len(values) == 1:
         ids = values[0]
         # the first id is the concept; the rest must be exactly its narrower concepts

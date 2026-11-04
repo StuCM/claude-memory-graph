@@ -1,22 +1,27 @@
 """The vocabulary of Arches resource models — for Rós Madair and Arches Search.
 
-Built from the data folder Alizarin and Rós Madair share:
+Built from the data folder Alizarin and Rós Madair share, read through
+Alizarin (graph shape, datatypes, node configs, reference data):
 
     <data_dir>/graphs/*.json             resource models (Arches graph exports)
     <data_dir>/resources/**/*.json       business data (for the names questions use)
-    <data_dir>/vocabularies/*.xml        SKOS thesauri (optional)
+    <data_dir>/vocabularies/*.xml        controlled lists and thesauri, as SKOS (optional)
+    <data_dir>/vocabularies/*.json       the same as Arches/Alizarin collection JSON (optional)
 
 What a question can name, from that:
 
 - **types**: each resource model, by its name ("Building" → "buildings");
 - **relations**: each resource-instance node, by its name and alias ("Site",
   "operator"), from its model to the models its config allows;
-- **controlled values**: every concept in the collection a concept node draws
-  from, by preferred and alternative label ("listed" → Heritage status =
-  Listed). Concept ids come from Alizarin's RDM cache, so they are exactly
-  the ids Rós Madair interned — the planner never re-derives them.
-  Alternative labels are read from the SKOS itself (Alizarin keeps only
-  preferred labels on concepts), matched to Alizarin's concepts by URI;
+- **controlled values**: every item of the list a node draws from, by
+  preferred and alternative label ("listed" → Heritage status = Listed).
+  Controlled lists (`reference` nodes, `config.controlledList`) are the
+  primary kind; concept nodes (`concept`, `concept-list`,
+  `config.rdmCollection`) are legacy and read the same way. Item ids come
+  from Alizarin's RDM cache, so they are exactly the ids Rós Madair interned
+  — the planner never re-derives them. Alternative labels are read from the
+  SKOS itself (Alizarin's SKOS reader keeps only preferred labels), matched
+  to Alizarin's items by URI;
 - **a vocabulary bundle** (`bundle=`, built by `ceist vocab assemble`):
   its link and date phrasings join the forms below;
 - **dates**: each date node, by its name, and by the words `date_forms`
@@ -24,8 +29,7 @@ What a question can name, from that:
   meant when no word picks;
 - **records**: resource names, for anchors ("Leeds Dock").
 
-Alizarin (`pip install alizarin`) is needed only for SKOS; without it,
-questions can still name types, relations and records.
+Alizarin (`pip install alizarin`) is required.
 """
 
 import json
@@ -34,16 +38,28 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import alizarin
+
 from .index import NameIndex
 from .text import plurals
 from .vocabulary import DateField, Entity, Relation, Value
 
 LINK_TYPES = {"resource-instance", "resource-instance-list"}
-CONCEPT_TYPES = {"concept", "concept-list"}
+REFERENCE_TYPES = {"reference"}                  # controlled lists: the primary kind
+CONCEPT_TYPES = {"concept", "concept-list"}      # SKOS concepts: legacy
+CONTROLLED_TYPES = REFERENCE_TYPES | CONCEPT_TYPES
 DATE_TYPES = {"date", "edtf"}     # HER keeps event dates (construction, loss) as EDTF
 _RDF = "{http://www.w3.org/1999/02/22-rdf-syntax-ns#}"
 _SKOS = "{http://www.w3.org/2004/02/skos/core#}"
 _XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
+_BASE_URI = "http://example.org/"
+
+
+def collection_of(node: dict) -> str | None:
+    """The list a controlled node draws from: `controlledList` (reference
+    nodes) or `rdmCollection` (concept nodes) — Alizarin's rule."""
+    cfg = node.get("config") or {}
+    return cfg.get("controlledList") or cfg.get("rdmCollection") or None
 
 
 def alt_labels(skos_xml: str, language: str) -> dict[str, list[str]]:
@@ -65,6 +81,26 @@ def alt_labels(skos_xml: str, language: str) -> dict[str, list[str]]:
     return out
 
 
+def load_reference_data(paths, language: str = "en"):
+    """(RustRdmCache, {URI: alt labels}) from SKOS XML and collection JSON
+    files. Collection JSON (Arches `reference_data/collections/*.json`, or
+    Alizarin's simplified form) goes through Alizarin's global cache, the
+    reader that keeps its hierarchy, then into this cache."""
+    rdm, alts = alizarin.RustRdmCache(), {}
+    for p in paths:
+        p = Path(p)
+        text = p.read_text()
+        if p.suffix == ".xml":
+            rdm.add_from_skos_xml(text, _BASE_URI)
+            alts.update(alt_labels(text, language))
+        elif p.suffix == ".json":
+            shared = alizarin.get_global_rdm_cache() if alizarin.has_global_rdm_cache() else None
+            for cid in alizarin.add_from_skos_json_to_global_cache(text):
+                shared = shared or alizarin.get_global_rdm_cache()
+                rdm.add_collection(shared.get_collection(cid))
+    return rdm, alts
+
+
 @dataclass
 class Model:
     graph_id: str
@@ -72,6 +108,9 @@ class Model:
     slug: str
     nodes: list[dict] = field(default_factory=list)
     doc: dict = field(default_factory=dict, repr=False)   # the graph JSON itself
+    wrapper: object = field(default=None, repr=False)     # Alizarin's ResourceModelWrapper
+    nodegroups: dict = field(default_factory=dict, repr=False)   # id → {cardinality, parent}
+    schema: dict = field(default_factory=dict, repr=False)       # alias tree (get_graph_schema)
 
 
 def slug_of(name: str) -> str:
@@ -85,6 +124,20 @@ def _graph_doc(path: Path) -> dict:
     return doc
 
 
+def _model(g: dict, language: str) -> Model:
+    """A graph registered with Alizarin and read through its model wrapper."""
+    gid = alizarin.register_graph(json.dumps(g)) or g["graphid"]
+    wrapper = alizarin.load_model(gid)
+    name = g.get("name") or g.get("slug") or gid
+    if isinstance(name, dict):                  # localized name
+        name = name.get(language) or next(iter(name.values()))
+    nodes = [n.to_dict() for n in wrapper.get_node_objects().values()]
+    groups = {k: {"cardinality": v.cardinality, "parent": v.parentnodegroup_id}
+              for k, v in wrapper.get_nodegroup_objects().items()}
+    return Model(gid, name, g.get("slug") or slug_of(name), nodes, g, wrapper, groups,
+                 alizarin.get_graph_schema(gid))
+
+
 class ArchesVocabulary:
     def __init__(self, graphs: list[dict], rdm_cache=None, resources: list[dict] = (),
                  language: str = "en", extra_type_words: dict[str, str] | None = None,
@@ -93,14 +146,11 @@ class ArchesVocabulary:
                  date_forms: dict[str, list[str]] | None = None,
                  bundle: str | Path | dict | None = None):
         self.language = language
-        self.alt_labels = alt_labels or {}       # concept URI → alternative labels
+        self.alt_labels = alt_labels or {}       # item URI → alternative labels
         self.models = {}
         for g in graphs:
-            name = g.get("name") or g.get("slug") or g["graphid"]
-            if isinstance(name, dict):                  # localized name
-                name = name.get(language) or next(iter(name.values()))
-            self.models[name] = Model(g["graphid"], name, g.get("slug") or slug_of(name),
-                                      g.get("nodes", []), g)
+            m = _model(g, language)
+            self.models[m.name] = m
         self.by_graph = {m.graph_id: m for m in self.models.values()}
         self.rdm = rdm_cache
         self.extra_type_words = extra_type_words or {}
@@ -113,15 +163,34 @@ class ArchesVocabulary:
         self._bundle_forms: dict[tuple[str, str], list[str]] = {}
         self._pending_qualified: list[tuple[str, dict]] = []
         self._qualified: list[Relation] | None = None
-        self.skipped_qualified = 0
+        self.skipped: list[str] = []             # bundle entries not used, and why
+        self.notes: list[str] = []               # what loading found worth saying
         if bundle is not None:
             self._absorb(bundle)
         self._narrower: dict[str, list[str]] = {}
-        self._concept_of: dict[str, str] = {}    # label value id → concept id
-        self._labels: dict[str, str] = {}        # concept id → label
+        self._concept_of: dict[str, str] = {}    # label value id / item URI → item id
+        self._labels: dict[str, str] = {}        # item id → label
+        self._items: dict[str, dict] = {}        # item id → {collection, uri, labels}
         self.resources = list(resources)
-        self._index = NameIndex([self._entity(r) for r in resources if self._entity(r)])
+        entities, unnamed = [], {}
+        for r in resources:
+            e = self._entity(r)
+            if e is None:
+                continue
+            if e.name == e.id:
+                unnamed[e.type] = unnamed.get(e.type, 0) + 1
+            entities.append(e)
+        for t, n in sorted(unnamed.items()):
+            self.notes.append(f"{n} {t} record(s) have no name (no descriptors, no "
+                              "resourceinstance.name): they can't be found by name")
+        self._index = NameIndex(entities)
         self.names = {e.id: e.name for e in self._index.entities}
+
+    @property
+    def skipped_qualified(self) -> int:
+        if self._qualified is None:
+            self.relations()
+        return len(self.skipped)
 
     # ── loading ───────────────────────────────────────────────────────────
     @classmethod
@@ -132,23 +201,18 @@ class ArchesVocabulary:
         for p in sorted((root / "resources").rglob("*.json")):
             doc = json.loads(p.read_text())
             resources += (doc.get("business_data") or {}).get("resources", [])
-        rdm, alts = None, {}
-        skos = sorted((root / "vocabularies").glob("*.xml")) if (root / "vocabularies").is_dir() else []
-        if skos:
-            import alizarin                              # the ids Rós Madair interned
-            rdm = alizarin.RustRdmCache()
-            for p in skos:
-                xml = p.read_text()
-                rdm.add_from_skos_xml(xml, "http://example.org/")
-                alts.update(alt_labels(xml, language))
+        vocab_dir = root / "vocabularies"
+        files = (sorted(vocab_dir.glob("*.xml")) + sorted(vocab_dir.glob("*.json"))
+                 if vocab_dir.is_dir() else [])
+        rdm, alts = load_reference_data(files, language) if files else (None, {})
         return cls(graphs, rdm, resources, language, alt_labels=alts, **kw)
 
     def _absorb(self, bundle) -> None:
         """A vocabulary bundle's phrasings (ceist.bundle): unqualified link
         entries become relation phrasings, date entries date phrasings.
         Entries that carry a qualifier ("designed by" → actor + role
-        Architect) become qualified relations (relations()); one whose
-        value isn't in its node's collection is counted in skipped_qualified."""
+        Architect) become qualified relations (relations()); one that can't
+        is listed in `skipped`, with the reason."""
         from . import bundle as _bundle
         b = bundle if isinstance(bundle, dict) else _bundle.load(bundle)
         for name, m in b["models"].items():
@@ -222,8 +286,18 @@ class ArchesVocabulary:
             n = next((x for x in m.nodes if x.get("alias") == e["node"]), None)
             q = e["qualifier"]
             cid = concepts.get((q["node"], str(q["value"]).lower()))
-            if n is None or n.get("datatype") not in LINK_TYPES or cid is None:
-                self.skipped_qualified += 1
+            said = f"{model}: '{(e.get('phrases') or ['?'])[0]}' → {e['node']} + {q['node']} = {q['value']}"
+            if n is None:
+                self.skipped.append(f"{said}: no node '{e['node']}'")
+                continue
+            if n.get("datatype") not in LINK_TYPES:
+                # a qualified date or property needs a tile-scoped condition
+                # the plan can't express yet (docs/tasks/ceist-group-grounding.md)
+                self.skipped.append(f"{said}: qualified {n.get('datatype')} entries aren't "
+                                    "supported yet, only qualified links")
+                continue
+            if cid is None:
+                self.skipped.append(f"{said}: '{q['value']}' isn't a value of {q['node']}")
                 continue
             targets = frozenset(self.by_graph[g["graphid"]].name
                                 for g in (n.get("config") or {}).get("graphs") or []
@@ -235,38 +309,55 @@ class ArchesVocabulary:
         return self._qualified
 
     def values(self) -> list[Value]:
+        """Every item of every controlled list (and legacy concept collection)
+        a node draws from, by preferred and alternative label."""
         if self.rdm is None:
             return []
         out = []
         for m in self.models.values():
             for n in m.nodes:
-                if n.get("datatype") not in CONCEPT_TYPES or not n.get("alias"):
+                if n.get("datatype") not in CONTROLLED_TYPES or not n.get("alias"):
                     continue
-                cid = (n.get("config") or {}).get("rdmCollection")
+                cid = collection_of(n)
                 coll = self.rdm.get_collection(cid) if cid and self.rdm.has_collection(cid) else None
                 if coll is None:
                     continue
-                for concept_id in coll.get_concept_ids():
-                    c = coll.get_concept(concept_id)
-                    self._narrower[concept_id] = list(getattr(c, "narrower", None) or [])
-                    self._concept_of[concept_id] = concept_id
-                    for lab in (c.to_dict().get("pref_label") or {}).values():
-                        if isinstance(lab, dict) and lab.get("id"):
-                            self._concept_of[lab["id"]] = concept_id
-                    prefs = c.pref_label if isinstance(c.pref_label, dict) else {}
-                    label = (c.get_label(self.language) or prefs.get(self.language)
-                             or next(iter(prefs.values()), concept_id))
+                for item_id in coll.get_concept_ids():
+                    c = coll.get_concept(item_id)
+                    self._index_item(cid, item_id, c)
+                    label = self._labels[item_id]
                     alts = list(self.alt_labels.get(getattr(c, "uri", None) or "", []))
                     native = getattr(c, "alt_labels", None) or {}
                     native = native.get(self.language, []) if isinstance(native, dict) else native
                     alts += [native] if isinstance(native, str) else list(native)
-                    self._labels[concept_id] = label
                     phrases = {label.lower()} | {str(a).lower() for a in alts}
                     for phrase in phrases:
                         if phrase:
-                            out.append(Value(phrase, n["alias"], concept_id, label,
+                            out.append(Value(phrase, n["alias"], item_id, label,
                                              frozenset({m.name}), "concept"))
         return out
+
+    def _index_item(self, collection_id: str, item_id: str, c) -> None:
+        """What read-back and the backends need about one list item: its
+        label, narrower items, label value ids, URI."""
+        if item_id in self._items:
+            return
+        self._narrower[item_id] = list(getattr(c, "narrower", None) or [])
+        self._concept_of[item_id] = item_id
+        labels = []
+        for lang, lab in (c.to_dict().get("pref_label") or {}).items():
+            if isinstance(lab, dict):
+                if lab.get("id"):
+                    self._concept_of[lab["id"]] = item_id
+                labels.append({"id": lab.get("id"), "value": lab.get("value"),
+                               "language_id": lang, "valuetype_id": "prefLabel"})
+        uri = getattr(c, "uri", None) or ""
+        if uri:
+            self._concept_of[uri] = item_id
+        prefs = c.pref_label if isinstance(c.pref_label, dict) else {}
+        self._labels[item_id] = (c.get_label(self.language) or prefs.get(self.language)
+                                 or next(iter(prefs.values()), item_id))
+        self._items[item_id] = {"collection": collection_id, "uri": uri, "labels": labels}
 
     def date_fields(self) -> list[DateField]:
         out = []
@@ -316,11 +407,38 @@ class ArchesVocabulary:
         n = self.node(type_name, alias) or {}
         return str(n.get("name") or alias).lower()
 
-    def concept_of(self, value_id: str) -> str | None:
-        """The concept a tile's stored value id (a label's id, or the concept's own) names."""
+    def concept_of(self, value) -> str | None:
+        """The item a tile's stored value names: a concept value's label id
+        (or the item's own id), or a controlled-list reference
+        ({"labels": [{"list_item_id", "id"}], "uri"})."""
         if not self._concept_of:
             self.values()
-        return self._concept_of.get(value_id)
+        if isinstance(value, dict):
+            for lab in value.get("labels") or []:
+                for key in ("list_item_id", "id"):
+                    hit = self._concept_of.get(lab.get(key) or "")
+                    if hit:
+                        return hit
+            return self._concept_of.get(value.get("uri") or "")
+        return self._concept_of.get(value) if isinstance(value, str) else None
+
+    def reference_items(self, item_ids) -> list[dict]:
+        """Items as Arches stores a reference value ({"uri", "list_id",
+        "labels": [...]}): what an Arches Search reference clause takes."""
+        if not self._items:
+            self.values()
+        out = []
+        for i in item_ids:
+            it = self._items.get(i)
+            if it is None:
+                continue
+            out.append({"uri": it["uri"], "list_id": it["collection"],
+                        "labels": [dict(lab, list_item_id=i) for lab in it["labels"]]})
+        return out
+
+    def is_reference(self, type_name: str, alias: str) -> bool:
+        """A controlled-list node (`reference`), not a legacy concept node."""
+        return (self.node(type_name, alias) or {}).get("datatype") in REFERENCE_TYPES
 
     def rank_entities(self, terms: set[str]) -> list[tuple[float, Entity]]:
         return self._index.rank(terms)
