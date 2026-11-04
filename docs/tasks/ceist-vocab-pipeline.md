@@ -53,10 +53,19 @@ vocab ──assemble──▶ bundle ──eval (gate)──▶ ship | stop
 use ──log (masked)──▶ learn ──LLM proposes──▶ person approves ──merge──▶ assemble ──eval──▶ ship
 ```
 
-### 1. Describe: one schema format for every source (`ceist.schema/1`)
+### 1. Describe: every source read as an Alizarin graph
 
-`ceist vocab describe` today is Arches-only (Alizarin). Define the intermediate
-format the rest of the pipeline reads, with one adapter per source:
+> **Superseded (2026-11-04):** the intermediate shape is an **Alizarin graph**, not
+> a new `ceist.schema/1` format. Non-Arches sources are mapped into one
+> (`build_graph_from_instructions` / `json_tree_to_tiles`), and the description is
+> produced from it. See [[ceist-alizarin-layer]] ("Beyond Arches"), which also
+> covers where queries run for non-Arches sources. The group table below still
+> describes what each source's mapping must produce. The JSON sketch is kept only
+> as the list of fields the description must carry. Controlled lists are the
+> primary value kind, and "private" is enforced by Alizarin's permitted nodegroups.
+
+`ceist vocab describe` today is Arches-only (Alizarin). Originally proposed: an
+intermediate format the rest of the pipeline reads, with one adapter per source:
 
 ```json
 {"format": "ceist.schema/1", "source": "arches|rdf|sql|jsonschema",
@@ -145,6 +154,7 @@ ceist vocab pipeline <source>        # all of the above, stops at the gate
 
 ## Depends
 
+[[ceist-alizarin-layer]] (the data layer every source is read through) ·
 [[ceist-group-grounding]] (the group format and the grounder that uses it). The
 HER descriptions, as the first real run.
 

@@ -162,6 +162,9 @@ group candidates per hop and not merge them across the whole question.
 
 ## Depends
 
+[[ceist-alizarin-layer]] first: `OnTile` evaluation runs over Alizarin trees
+(parent/child tiles), typed names read name nodes from the tree, and values
+include controlled lists (`reference`), which are primary; concepts are legacy.
 [[ceist-vocab-pipeline]] produces the group vocabulary (step 3 can be hand-written
 for the fixture first). The HER model descriptions (`ceist vocab describe`
 output) are needed to check group structures. They aren't in the repo.

@@ -54,8 +54,9 @@ sharing/federation is explicitly **future** work.
 
 | Task | Size | Depends on | Status |
 |---|---|---|---|
-| [[ceist-group-grounding]] — phrases → nodegroups → tile-scoped `OnTile` conditions; silent-drop fix; typed names; chained hops | L | — | planned (step 0, the silent drop, first) |
-| [[ceist-vocab-pipeline]] — automated, private, schema-agnostic vocabulary build + learn loop (Arches first, then RDF/SQL) | L | [[ceist-group-grounding]] | planned (privacy fixes first) |
+| [[ceist-alizarin-layer]] — Alizarin replaces the hand-written Arches layer (models, tiles as trees, datatypes, names); controlled lists primary, concepts legacy; other sources mapped into Alizarin graphs | M | — | planned (do first) |
+| [[ceist-group-grounding]] — phrases → nodegroups → tile-scoped `OnTile` conditions; silent-drop fix; typed names; chained hops | L | [[ceist-alizarin-layer]] (step 0 needs nothing) | planned (step 0, the silent drop, can ship now) |
+| [[ceist-vocab-pipeline]] — automated, private, schema-agnostic vocabulary build + learn loop | L | [[ceist-alizarin-layer]], [[ceist-group-grounding]] | planned (privacy fixes first) |
 
 ## Future (not now)
 
