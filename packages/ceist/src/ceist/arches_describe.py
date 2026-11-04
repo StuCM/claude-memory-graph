@@ -7,11 +7,13 @@ its path through the model's tree, its datatype, its CIDOC-CRM context and
 
 writes <out dir>/<Model name>.json, one per model. Needs alizarin.
 
-With reference_data (the package's SKOS concepts and collections, loaded by
-Alizarin), each concept node also lists its collection's labels when the
-collection is small enough to read (≤ 120 terms: roles, phase types,
-designation types); large thesauri (monument types) give only their size —
-those are matched through their own SKOS labels, not an LLM.
+With reference_data (the package's controlled lists and thesauri: SKOS XML
+or collection JSON under concepts/, collections/ or controlled_lists/,
+loaded by Alizarin), each controlled node — a controlled list (`reference`)
+or a legacy concept node — also lists its list's labels when the list is
+small enough to read (≤ 120 items: roles, phase types, designation types);
+large ones (monument types) give only their size — those are matched
+through their own labels, not an LLM.
 
 Skipped: semantic (structural) nodes, and the *_metatype concept nodes HER
 models hang off every qualifier — they say what kind of qualifier a value
@@ -22,6 +24,8 @@ import json
 from pathlib import Path
 
 import alizarin
+
+from .arches import CONTROLLED_TYPES, collection_of
 
 SKIP_TYPES = {"semantic"}
 
@@ -34,11 +38,11 @@ SMALL = 120
 
 
 def load_rdm(ref_dir: str):
-    rdm = alizarin.RustRdmCache()
+    from .arches import load_reference_data
     root = Path(ref_dir)
-    for p in sorted((root / "concepts").glob("*.xml")) + sorted((root / "collections").glob("*.xml")):
-        rdm.add_from_skos_xml(p.read_text(), "http://www.archesproject.org/")
-    return rdm
+    files = [p for d in ("concepts", "collections", "controlled_lists")
+             for ext in ("*.xml", "*.json") for p in sorted((root / d).glob(ext))]
+    return load_reference_data(files)[0]
 
 
 def collection_labels(rdm, cid):
@@ -101,8 +105,8 @@ def describe_graph(doc: dict, graph_names: dict, rdm=None) -> dict:
                 crm = [x for x in [crm_label(n.get("parentproperty"))] + inside[-2:] if x]
                 if crm:
                     entry["crm"] = list(dict.fromkeys(crm))
-                if n["datatype"] in ("concept", "concept-list"):
-                    labels = collection_labels(rdm, (n.get("config") or {}).get("rdmCollection"))
+                if n["datatype"] in CONTROLLED_TYPES:
+                    labels = collection_labels(rdm, collection_of(n))
                     if isinstance(labels, list):
                         entry["values"] = labels
                     elif labels:

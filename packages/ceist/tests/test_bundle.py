@@ -92,7 +92,9 @@ def test_cli(tmp_path, capsys):
     assert main(["vocab", "check", str(p / "b.json"), str(p / "graphs")]) == 0
     assert "describe" not in capsys.readouterr().err
     assert main(["vocab", "prompt", str(p / "desc"), "Building"]) == 0
-    assert "Building.json" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert '"alias":"height"' in out              # the description itself, inline
+    assert str(p) not in out                      # never a path into the project
     assert main(["eval", "--bundle", str(p / "b.json"), "--questions", str(p / "cases.json"),
                  "--config", str(_toml(p))]) == 0
     assert "| 2/3 |" in capsys.readouterr().out
@@ -102,3 +104,21 @@ def _toml(p):
     t = p / "ceist.toml"
     t.write_text('[matching]\nlayers = ["exact"]\n')
     return t
+
+
+def test_save_writes_a_reply_as_validated_vocab_files(tmp_path, capsys):
+    p = project(tmp_path)
+    reply = tmp_path / "reply.json"
+    reply.write_text("```json\n" + json.dumps({
+        "Building": {"model": "Building", "entries": [
+            {"phrases": ["how tall"], "kind": "property", "node": "height"}]},
+        "Nowhere": {"entries": []}}) + "\n```")
+    out = tmp_path / "vocab2"
+    assert main(["vocab", "save", str(reply), str(p / "desc"), str(out)]) == 1   # Nowhere: refused
+    assert json.loads((out / "Building.json").read_text())["entries"][0]["node"] == "height"
+    assert not (out / "Nowhere.json").exists()
+    assert "no description" in capsys.readouterr().err
+    bad = tmp_path / "bad.json"
+    bad.write_text(json.dumps({"Building": {"entries": [{"phrases": ["x"], "node": "nope"}]}}))
+    written, errors, _ = bundle.save(bad.read_text(), p / "desc", tmp_path / "vocab3")
+    assert written == [] and "no node 'nope'" in errors[0]

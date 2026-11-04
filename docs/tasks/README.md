@@ -50,6 +50,14 @@ sharing/federation is explicitly **future** work.
 | dashboard — self-contained HTML report over the logs (tiles, per-day activity, top memories, gaps, health notes) | S | pulse | **done** (gate/dashboard.py, `dashboard` CLI) |
 | [[remote-server]] — shared memory over streamable HTTP (`serve`, bearer auth); tools travel, hooks stay per-machine (v2: remote gate corpus) | M | — | **v1 done** |
 
+## ceist — natural-language search over a schema (no LLM at query time)
+
+| Task | Size | Depends on | Status |
+|---|---|---|---|
+| [[ceist-alizarin-layer]] — Alizarin replaces the hand-written Arches layer (models, tiles as trees, datatypes, names); controlled lists primary, concepts legacy; other sources mapped into Alizarin graphs | M | — | planned (do first) |
+| [[ceist-group-grounding]] — phrases → nodegroups → tile-scoped `OnTile` conditions; silent-drop fix; typed names; chained hops | L | [[ceist-alizarin-layer]] (step 0 needs nothing) | planned (step 0, the silent drop, can ship now) |
+| [[ceist-vocab-pipeline]] — automated, private, schema-agnostic vocabulary build + learn loop | L | [[ceist-alizarin-layer]], [[ceist-group-grounding]] | planned (privacy fixes first) |
+
 ## Future (not now)
 
 | Task | Doc |

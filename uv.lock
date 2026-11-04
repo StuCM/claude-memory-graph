@@ -18,6 +18,21 @@ members = [
 ]
 
 [[package]]
+name = "alizarin"
+version = "2.0.0b9"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/da/61/71ceacb1f4931d0cfec5b1bee7f331ae6b309e4ba9e1378217542ad3b4e9/alizarin-2.0.0b9.tar.gz", hash = "sha256:2bfdf32bdc0655f3a46f5b8ecf9a9f38949ca2aba3aa012af5bbfe4abf00b15e", size = 469416, upload-time = "2026-09-12T13:37:47.989Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6f/ff/b0394f363a98d1767489115ff4a5dc4edf0ff535f77314b4a087b1e59c15/alizarin-2.0.0b9-cp39-abi3-macosx_10_12_x86_64.whl", hash = "sha256:dd4d65efbcd50d9dfec2b53f2d37a3f248b4d1fbe1a9c834b622cfc65c66d2e3", size = 2046835, upload-time = "2026-09-12T13:37:40.163Z" },
+    { url = "https://files.pythonhosted.org/packages/67/f1/bcf135e37de9e3387f73a5086a4c2fc1b46a19b4f5510d42d07450b245b9/alizarin-2.0.0b9-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:42cd6b2baa6e03087fa924e1ce9e60f896ec69bb21c39586a414142590a644f8", size = 2021088, upload-time = "2026-09-12T13:37:41.717Z" },
+    { url = "https://files.pythonhosted.org/packages/fb/f0/2cbcbb32581cd12340f41cf048b01739d572d61e4718f444ebbf5f0995cf/alizarin-2.0.0b9-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:896e1245efb81d07ada404cbaf0b66fe14b78b04fdbef551a0f26ebf8b971e12", size = 14252959, upload-time = "2026-09-12T13:37:44.526Z" },
+    { url = "https://files.pythonhosted.org/packages/ab/40/a87f6ed45051c260d55597f9f5afeb584c319d620b3e5415f89c2fd0b77d/alizarin-2.0.0b9-cp39-abi3-win_amd64.whl", hash = "sha256:3d8f44f54cf14199ae851ac4583034296ef47f65cced468d235c0d18d0fe639a", size = 1737098, upload-time = "2026-09-12T13:37:46.64Z" },
+]
+
+[[package]]
 name = "annotated-types"
 version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -71,6 +86,9 @@ wheels = [
 name = "ceist"
 version = "0.2.0"
 source = { editable = "packages/ceist" }
+dependencies = [
+    { name = "alizarin" },
+]
 
 [package.optional-dependencies]
 onnx = [
@@ -90,6 +108,7 @@ vectors = [
 
 [package.metadata]
 requires-dist = [
+    { name = "alizarin", specifier = ">=2.0.0b9,<3" },
     { name = "numpy", marker = "extra == 'onnx'" },
     { name = "numpy", marker = "extra == 'vectors'" },
     { name = "onnxruntime", marker = "extra == 'onnx'", specifier = ">=1.17" },

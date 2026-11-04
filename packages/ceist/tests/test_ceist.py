@@ -78,9 +78,19 @@ def test_count():
 
 
 def test_value_only_applies_where_a_type_has_the_field():
+    # Sites have no heritage status: answering "every site" would drop the
+    # word that constrains the question, so it refuses and says why
     m = interpret(Toy(), "which listed sites are there?")
-    assert m.plan.type == "Site" and not m.plan.where
+    assert m.plan is None and "'listed' is a value of heritage_status" in m.refused
     assert "listed" in m.grounding.uncovered
+
+
+def test_unplaced_words_refuse_instead_of_widening_the_answer():
+    # one grounded word ("candidate") lifts coverage over the threshold; the
+    # words that actually constrain the question must not be dropped silently
+    m = interpret(Toy(), "which candidate buildings were damaged in a fire?")
+    assert m.plan is None
+    assert "couldn't place" in m.refused and "'damaged'" in m.refused and "'fire'" in m.refused
 
 
 def test_leftover_word_gets_a_relaxation_without_it():
@@ -264,3 +274,17 @@ def test_unsure_suggests_instead_of_guessing():
     m = interpret(TwoDates(), "which buildings were painted in 1850?", today=TODAY, matcher=chain())
     assert m.plan is None and "did you mean" in m.refused
     assert m.grounding.suggestions[0][0] == "painted"
+
+
+def test_two_relations_between_the_same_two_things_refuse_not_recurse():
+    # HER: "Who owned the barge?" grounded 'who' → actor and 'owned' →
+    # actor#Owner, both Person–Organization; building the plan looped forever
+    import pytest
+    from ceist.ground import Edge, Grounding, Node
+    from ceist.plan import _build, _Cycle
+    person, org = Node("var", "Person", 0.0, var="?v0"), Node("var", "Organization", 2.0, var="?v1")
+    g = Grounding(nodes=[person, org],
+                  edges=[Edge("actor", 0.0, form="who", source=person, target=org),
+                         Edge("actor#Owner", 1.0, form="owned", source=person, target=org)])
+    with pytest.raises(_Cycle, match="both join"):
+        _build(g, person, None)
