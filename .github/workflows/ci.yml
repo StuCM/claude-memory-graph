@@ -29,10 +29,13 @@ jobs:
       # end-to-end tests skip without its bindings and emitter (a long Rust build).
       - run: uv venv && uv pip install "./packages/ceist[vectors,onnx,roots]" pytest
       - run: .venv/bin/python -m pytest -q packages/ceist/tests
-      # The project flow end to end on the real Arches HER models: read them
+      # The project flow end to end on the real Arches HER models (HER 2.0, the
+      # Arches 8 models whose controlled values are controlled lists): read them
       # through Alizarin, assemble the committed vocabulary into a bundle, and
       # gate on the blind acceptance questions with the shipping config.
-      - run: git clone --depth 1 https://github.com/archesproject/arches-her "$RUNNER_TEMP/arches-her"
+      - run: git clone --depth 1 -b dev/2.0.x https://github.com/archesproject/arches-her "$RUNNER_TEMP/arches-her"
+      - name: HER controlled lists all load
+        run: .venv/bin/python packages/ceist/bench/her_lists.py "$RUNNER_TEMP/arches-her/arches_her/pkg"
       - name: HER acceptance gate
         run: |
           P="$RUNNER_TEMP/arches-her/arches_her/pkg"
