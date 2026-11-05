@@ -3,8 +3,11 @@
     ceist vocab describe <graphs dir> <descriptions dir> [--reference <reference_data dir>]
     ceist vocab prompt <descriptions dir> <Model> [<Model> …]   # the schema inline: no paths, no data
     ceist vocab save <reply.json> <descriptions dir> <vocab dir>   # the LLM's reply → vocab/<Model>.json
+    ceist vocab split <descriptions dir> <vocab dir> [-o <out dir>]   # → <Model>/<nodegroup>.json + manifest
     ceist vocab assemble <descriptions dir> <vocab dir> -o <bundle.json> [--graphs <graphs dir>]
-    ceist vocab check <bundle.json> <graphs dir>
+    ceist vocab check <bundle.json> <graphs dir> [--vocab <vocab dir> --descriptions <dir>]
+    ceist vocab slice <bundle.json | vocab dir> --data <business_data dir> --graphs <graphs dir> -o <out>
+                      [--reference <reference_data dir>]   # only what the data uses; read locally
     ceist vocab try <data dir> <questions.txt> --bundle <bundle.json> [--log learn.jsonl]   # how each reads
     ceist vocab learn <learn.jsonl> --bundle <bundle.json> -o proposals.json [--exclude cases.json]
     ceist vocab assign <proposals.json> <reply.json>    # the LLM's reply to `learn` → "assign" fields
@@ -62,12 +65,59 @@ def _assemble(a):
     return 0
 
 
+def _split(a):
+    from .bundle import split
+    written, errors = split(a.descriptions, a.vocab, a.out or a.vocab)
+    for e in errors:
+        print(f"  ! {e}", file=sys.stderr)
+    print(f"{len(written)} nodegroup file(s) written to {a.out or a.vocab}")
+    return 1 if errors else 0
+
+
 def _check(a):
-    from .bundle import load, stale
+    from .bundle import load, stale, stale_groups
     if stale(load(a.bundle), a.graphs):
         print(f"stale: the graphs changed since {a.bundle} was built — rebuild the vocabulary")
         return 1
+    if a.vocab:
+        if not a.descriptions:
+            print("--vocab needs --descriptions", file=sys.stderr)
+            return 2
+        groups = stale_groups(a.vocab, a.descriptions)
+        for g in groups:
+            print(f"stale: {g}")
+        if groups:
+            return 1
     print("up to date")
+    return 0
+
+
+def _size(path: Path) -> int:
+    return sum(p.stat().st_size for p in path.rglob("*.json")) if path.is_dir() else path.stat().st_size
+
+
+def _slice(a):
+    from . import bundle as _bundle
+    from .slicing import Usage, slice_bundle, slice_vocab
+    src, out = Path(a.source), Path(a.out)
+    use = Usage(a.graphs, a.data, a.reference)
+    if src.is_dir():
+        sliced = slice_vocab(src, out, use)
+    else:
+        b = slice_bundle(_bundle.load(src), use)
+        sliced = b["sliced"]
+        out.write_text(json.dumps(b, separators=(",", ":")))
+    for model, groups in sorted(use.groups.items()):
+        if use.records[model]:
+            print(f"{model}: {use.records[model]} records; {len(use.kept[model])} of "
+                  f"{len(groups)} nodegroups kept")
+    print(f"dropped: models with no records {sliced['models'] or '-'}")
+    for kind in ("groups", "links", "values"):
+        for model, what in sorted(sliced[kind].items()):
+            print(f"dropped {kind}, {model}: {', '.join(sorted(set(what)))}")
+    if use.used is None:
+        print("values not checked: no --reference")
+    print(f"{_size(src) // 1024} KB → {_size(out) // 1024} KB ({out})")
     return 0
 
 
@@ -231,10 +281,26 @@ def main(argv=None):
     p.add_argument("--force", action="store_true")
     p.set_defaults(fn=_assemble)
 
+    p = vocab.add_parser("split", help="one file per nodegroup, plus a manifest")
+    p.add_argument("descriptions")
+    p.add_argument("vocab")
+    p.add_argument("-o", "--out", help="default: the vocab dir itself")
+    p.set_defaults(fn=_split)
+
     p = vocab.add_parser("check", help="is the bundle older than the graphs?")
     p.add_argument("bundle")
     p.add_argument("graphs")
+    p.add_argument("--vocab", help="a split vocab dir: also list its stale nodegroups")
+    p.add_argument("--descriptions", help="the current descriptions (with --vocab)")
     p.set_defaults(fn=_check)
+
+    p = vocab.add_parser("slice", help="cut a bundle or split vocab down to what a dataset uses")
+    p.add_argument("source", help="a bundle, or a split vocab dir")
+    p.add_argument("--data", required=True, help="the business data (read here, never sent)")
+    p.add_argument("--graphs", required=True)
+    p.add_argument("--reference", help="reference_data: to keep only the values the data holds")
+    p.add_argument("-o", "--out", required=True)
+    p.set_defaults(fn=_slice)
 
     p = vocab.add_parser("try", help="real questions: how each reads; log what wasn't placed")
     p.add_argument("data_dir", help="graphs/ (and resources/, vocabularies/) as Alizarin reads them")

@@ -45,6 +45,62 @@ def project(tmp_path):
     return tmp_path
 
 
+GROUPS = {"built_start": "construction", "built_end": "construction", "gone_start": "demolition",
+          "actor": "actors", "role": "actors", "height": "dimensions"}
+
+
+def grouped(desc=DESC):
+    """DESC as `ceist vocab describe` writes it now: each node with its nodegroup."""
+    return dict(desc, nodegroups={g: {"id": f"ng-{g}", "parent": None} for g in set(GROUPS.values())},
+                nodes=[dict(n, nodegroup=GROUPS[n["alias"]]) for n in desc["nodes"]])
+
+
+def test_split_layout_assembles_to_the_same_bundle(tmp_path, capsys):
+    p = project(tmp_path)
+    (p / "desc" / "Building.json").write_text(json.dumps(grouped()))
+    before, _, _ = bundle.assemble(p / "desc", p / "vocab", p / "graphs")
+    assert [e["node"] for e in before["models"]["Building"]["entries"]] == [
+        "actor", "built_start", "gone_start", "height"]            # ordered by nodegroup
+    assert main(["vocab", "split", str(p / "desc"), str(p / "vocab")]) == 0
+    assert "4 nodegroup file(s)" in capsys.readouterr().out
+    actors = json.loads((p / "vocab" / "Building" / "actors.json").read_text())
+    assert actors == {"model": "Building", "nodegroup": "actors", "entries": [VOCAB["entries"][2]]}
+    manifest = json.loads((p / "vocab" / "manifest.json").read_text())
+    assert manifest["models"]["Building"]["nodegroups"]["actors"]["id"] == "ng-actors"
+    (p / "vocab" / "Building" / "dimensions.json").unlink()      # read from the split files, not Building.json
+    after, _, warnings = bundle.assemble(p / "desc", p / "vocab", p / "graphs")
+    assert [e["node"] for e in after["models"]["Building"]["entries"]] == ["actor", "built_start", "gone_start"]
+    assert warnings == ["Building.json not read: manifest.json says the split layout is read"]
+    bundle.split(p / "desc", p / "vocab", p / "vocab")
+    assert bundle.assemble(p / "desc", p / "vocab", p / "graphs")[0] == before
+
+
+def test_split_refuses_descriptions_without_nodegroups(tmp_path):
+    p = project(tmp_path)
+    written, errors = bundle.split(p / "desc", p / "vocab", p / "out")
+    assert written == [] and "describe" in errors[0]
+
+
+def test_check_finds_the_nodegroups_whose_description_changed(tmp_path, capsys):
+    p = project(tmp_path)
+    (p / "desc" / "Building.json").write_text(json.dumps(grouped()))
+    bundle.split(p / "desc", p / "vocab", p / "vocab")
+    main(["vocab", "assemble", str(p / "desc"), str(p / "vocab"), "-o", str(p / "b.json"),
+          "--graphs", str(p / "graphs")])
+    check = ["vocab", "check", str(p / "b.json"), str(p / "graphs"), "--vocab", str(p / "vocab"),
+             "--descriptions", str(p / "desc")]
+    assert main(check) == 0
+    d = grouped()
+    d["nodes"][-1]["values"] = ["metres"]                        # height
+    d["nodes"].append({"alias": "roof", "name": "Roof", "datatype": "string", "nodegroup": "roofs"})
+    d["nodegroups"]["roofs"] = {"id": "ng-roofs", "parent": None}
+    (p / "desc" / "Building.json").write_text(json.dumps(d))
+    capsys.readouterr()
+    assert main(check) == 1
+    assert capsys.readouterr().out.splitlines() == ["stale: Building.dimensions: its description changed",
+                                                    "stale: Building.roofs: new nodegroup"]
+
+
 def test_validate_catches_bad_entries():
     bad = [{"phrases": ["x"], "node": "nope"},
            {"phrases": ["y"], "node": "built_start", "end_node": "height"},
