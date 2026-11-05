@@ -62,7 +62,7 @@ def graphs_hash(graphs_dir: str | Path) -> str:
 def validate(description: dict, entries: list[dict]) -> tuple[list[str], list[str]]:
     """(errors, warnings) for one model's entries against its description."""
     nodes = {n["alias"]: n for n in description["nodes"]}
-    errors, warnings, seen = [], [], {}
+    errors, warnings = [], []
     for i, e in enumerate(entries):
         where = f"{description['name']} entry {i} ({e.get('node')})"
         n = nodes.get(e.get("node"))
@@ -82,13 +82,22 @@ def validate(description: dict, entries: list[dict]) -> tuple[list[str], list[st
                 errors.append(f"{where}: qualifier node '{q.get('node')}' not in the model")
             elif isinstance(qn.get("values"), list) and q.get("value") not in qn["values"]:
                 errors.append(f"{where}: '{q.get('value')}' is not a value of {q['node']}")
-        for ph in e.get("phrases", []):
-            key = ph.strip().lower()
-            if key in seen and seen[key] != i:
-                warnings.append(f"{description['name']}: '{key}' is a phrasing of two entries "
-                                f"({entries[seen[key]]['node']}, {e['node']}) — ambiguous on purpose?")
-            seen.setdefault(key, i)
+    for key, owners in shared_phrases(entries).items():
+        for i in owners[1:]:
+            warnings.append(f"{description['name']}: '{key}' is a phrasing of two entries "
+                            f"({entries[owners[0]]['node']}, {entries[i]['node']}) — ambiguous on purpose?")
     return errors, warnings
+
+
+def shared_phrases(entries: list[dict]) -> dict[str, list[int]]:
+    """Each phrase that belongs to more than one entry, with those entries' indices."""
+    owners: dict[str, list[int]] = {}
+    for i, e in enumerate(entries):
+        for ph in e.get("phrases", []):
+            seen = owners.setdefault(ph.strip().lower(), [])
+            if i not in seen:
+                seen.append(i)
+    return {k: v for k, v in owners.items() if len(v) > 1}
 
 
 def nodegroups(graph: dict) -> tuple[dict[str, dict], dict[str, str]]:

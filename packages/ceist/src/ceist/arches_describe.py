@@ -38,12 +38,15 @@ def _text(v):
 SMALL = 120
 
 
+def reference_files(ref_dir: str | Path) -> list[Path]:
+    root = Path(ref_dir)
+    return [p for d in ("concepts", "collections", "controlled_lists")
+            for ext in ("*.xml", "*.json") for p in sorted((root / d).glob(ext))]
+
+
 def load_rdm(ref_dir: str):
     from .arches import load_reference_data
-    root = Path(ref_dir)
-    files = [p for d in ("concepts", "collections", "controlled_lists")
-             for ext in ("*.xml", "*.json") for p in sorted((root / d).glob(ext))]
-    return load_reference_data(files)[0]
+    return load_reference_data(reference_files(ref_dir))[0]
 
 
 def collection_labels(rdm, cid):
