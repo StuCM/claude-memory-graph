@@ -94,8 +94,32 @@ def test_unplaced_words_refuse_instead_of_widening_the_answer():
     assert "couldn't place" in m.refused and "'damaged'" in m.refused and "'fire'" in m.refused
 
 
-def test_leftover_word_gets_a_relaxation_without_it():
+class FreeText(Toy):
+    free_text = True
+
+    def relations(self):
+        return super().relations() + [Relation("part_of", ("part of",), frozenset({"Building"}),
+                                               frozenset({"Building"}))]
+
+
+def test_an_unplaced_word_refuses_unless_the_vocabulary_has_free_text():
     m = interpret(Toy(), "which buildings on site Leeds Dock are wonky?")
+    assert m.plan is None and m.relaxations == []
+    assert "couldn't place 'wonky'" in m.refused
+    # a relation with nowhere to go: listing every Building instead widens it just the same
+    loose = interpret(FreeText(), "which buildings are part of?")
+    assert narrate(loose.plan) == "Find Buildings." and loose.grounding.loose == "'part of'"
+    strict = FreeText()
+    strict.free_text = False
+    m = interpret(strict, "which buildings are part of?")
+    assert m.plan is None and "cannot resolve both ends of relation part_of" in m.refused
+    # the end it couldn't find may be a word nothing placed ("in Down"): that is named
+    m = interpret(strict, "which buildings are part of wonkyville?")
+    assert m.plan is None and "couldn't place 'wonkyville'" in m.refused
+
+
+def test_leftover_word_gets_a_relaxation_without_it():
+    m = interpret(FreeText(), "which buildings on site Leeds Dock are wonky?")
     assert any(isinstance(c, Contains) and c.term == "wonky" for c in m.plan.where)
     relaxed = m.relaxations[-1]
     assert relaxed.drops == "wonky"
@@ -257,8 +281,7 @@ def chain():
 def test_leftover_relation_by_meaning():
     q = "which buildings were drawn by Ada Lovelace?"
     without = interpret(Toy(), q)
-    assert not any(isinstance(c, LinkTo) and c.relation == "architect"
-                   for c in without.plan.where)                  # a loose link, before
+    assert without.plan is None and "couldn't place 'drawn'" in without.refused
     m = interpret(Toy(), q, matcher=chain())
     (c,) = m.plan.where
     assert c.relation == "architect" and c.target.entity.id == "p-1"
@@ -354,7 +377,7 @@ def test_a_vocabulary_may_let_part_of_a_name_bind():
 def test_a_named_thing_left_unjoined_refuses_instead_of_dropping():
     # the Person var is joined to Ada, but nothing joins either to the Sites asked for
     m = interpret(Toy(), "which sites is Ada Lovelace the architect of?")
-    assert m.plan is None and "couldn't tell how they relate to the Site" in m.refused
+    assert m.plan is None and "'architect' (architect) can't join Person and Site" in m.refused
 
 
 def test_a_shared_phrasing_goes_to_the_relation_joining_the_named_types():
@@ -388,6 +411,21 @@ def test_a_shared_phrase_no_relation_fits_falls_back_to_a_loose_link():
     assert narrate(m.plan) == "Find Persons linked to or from Site 'Salts Mill'."
     assert any("'in' set aside" in n for n in m.grounding.notes)
     assert m.grounding.coverage == 1.0
+
+
+class At(Toy):
+    """'at' names one relation, an Object's repository owner, which can't join a Building and a Site."""
+    def relations(self):
+        return [Relation("repository_owner", ("at", "kept by"), frozenset({"Object"}),
+                         frozenset({"Person"}))]
+
+
+def test_one_relation_that_cant_join_what_is_named_is_never_bound():
+    # was "Find Buildings whose repository owner is Site 'Leeds Dock'", which Rós Madair can't compile
+    m = interpret(At(), "which buildings are at Leeds Dock?")
+    assert narrate(m.plan) == "Find Buildings linked to or from Site 'Leeds Dock'."   # "at", as if unlisted
+    m = interpret(At(), "which buildings are kept by Leeds Dock?")
+    assert m.plan is None and "'kept by' (repository_owner) can't join Building and Site" in m.refused
 
 
 def test_a_set_aside_phrase_keeps_its_negation():
@@ -441,4 +479,5 @@ def test_find_leading_a_question_is_the_command_not_a_value():
     m = interpret(Fleet(), "Find people with the surname Brunel")
     assert [v.phrase for v in m.grounding.values] == []
     assert "evidence_type" not in m.refused
-    assert m.direct is not None and m.direct.id == "p-brunel"
+    # "surname" is no field it knows: Brunel alone could be the wrong Brunel
+    assert m.direct is None and "couldn't place 'surname'" in m.refused

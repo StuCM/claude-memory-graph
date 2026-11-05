@@ -72,7 +72,11 @@ def judge(expect: dict | None, key) -> str:
     if key is None:
         return "missed"
     node, qual, end = key
-    want_q = (expect.get("qualifier") or {}).get("value")
+    # a value the case sets on the node itself ("scheduled": designation type = Scheduled)
+    # is a condition, not a qualifier
+    own = next((c.get("value") for c in expect.get("conditions") or []
+                if c.get("node") == expect["node"] and c.get("value")), None)
+    want_q = (expect.get("qualifier") or {}).get("value") or own
     if expect["node"] not in (node, end):
         return "dangerous"
     if want_q and not qual:

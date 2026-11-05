@@ -175,10 +175,9 @@ def test_pipeline_builds_per_nodegroup_resolves_collisions_and_gates(tmp_path, c
     assert ("Warning: one-word group phrases (each takes its word anywhere outside a record's "
             "name): Building construction_date: construction") in report
     assert "| 3/3 | 0 | **0** | 0 | 1/1 |" in report                     # phrase level
-    # planner level: the real question names a person with no record (missed), and the
-    # planner reads "painted in 1900" as a construction date plus a text mention
-    assert "| 2 | 0 | **1** | 1 | 0 |" in report
-    assert "- which buildings were painted in 1900? → Find Buildings whose construction date" in report
+    # planner level: the real question names a person with no record (missed), and
+    # "painted in 1900" is refused: no text mention stands in for "painted"
+    assert "| 2 | 0 | **0** | 1 | 1 |" in report
     assert "| Building | 6 | 4 | 2 | 0 | 0 | 7 | 2 | 0 |" in report
     assert "| Person | 1 | 0 | 1 | 0 | 0 | 1 | 1 | 0 |" in report
 
@@ -224,6 +223,20 @@ def test_the_gate_fails_on_too_few_right_or_any_dangerous(tmp_path, capsys):
                         min_right=3, log=lambda _: None) == 1
     assert "right 1 < 3" in (out / "report.md").read_text()
     assert not (out / "descriptions" / "Person.json").exists()
+
+
+def test_the_gate_rejects_an_entry_for_a_node_its_model_lacks(tmp_path):
+    data, ref, cmd, _ = project(tmp_path)
+    out = tmp_path / "out"
+    stray = out / "vocab" / "Building" / "repository.json"     # left by a build of another model
+    stray.parent.mkdir(parents=True)
+    stray.write_text(json.dumps({"model": "Building", "nodegroup": "repository", "entries": [
+        {"phrases": ["at"], "kind": "link", "node": "repository_owner"}]}))
+    assert pipeline.run(data / "graphs", out, ref, llm_cmd=cmd, models=["Building"],
+                        log=lambda _: None) == 1
+    report = (out / "report.md").read_text()
+    assert "**failed: bundle: Building entry" in report
+    assert "(repository_owner): no node 'repository_owner'" in report
 
 
 def test_a_reply_that_fails_its_schema_is_asked_again_then_reported(tmp_path):

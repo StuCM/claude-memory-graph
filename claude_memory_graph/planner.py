@@ -81,6 +81,9 @@ class MemoryVocabulary:
     # "Stuart" names Person 'Stuart Marshall': memories are asked about by first names
     # and short forms nobody records as aliases
     partial_names = True
+    # memory_ask answers a word it can't place as a text filter, or lists the type,
+    # and says so in its reply (handle's "ignored ..." and "couldn't place ..." lines)
+    free_text = True
 
     def __init__(self, store: MemoryStore, cached: bool = False):
         self.store = store

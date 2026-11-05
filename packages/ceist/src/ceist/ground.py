@@ -8,8 +8,9 @@ nouns, modifiers, negators and hints → implied types (who → Person) → up t
 two named anchors (only a whole name or alias may bind; never a guess, and a
 shorter relation, group or value phrase inside one gives way to it) → each
 group phrase takes the values and date of its clause → one leftover word as a
-text filter → coverage → wire the relations to their ends → scope each
-negator ("not", "without", "non-") to the next thing named.
+text filter, if the vocabulary has free text → coverage → wire the relations
+to their ends → scope each negator ("not", "without", "non-") to the next
+thing named.
 
 With a matcher (ceist.matching.Chain), words the exact pass left over get a
 second chance before they become a text filter: a run of leftover words
@@ -459,10 +460,11 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
         _match_leftovers(g, matcher, words, consumed, parts_of, relations, groups)
     held = _fill_groups(g, words, consumed, parts_of)
 
-    # ── one leftover word → a text filter; more stay uncovered
+    # ── one leftover word → a text filter, where the vocabulary has free text; else uncovered
+    free_text = getattr(vocab, "free_text", False)
     remaining = [(i, w) for i, _s, _e, w in words if i not in consumed and parts_of(w)]
     contains_pos = None
-    if len(remaining) == 1 and remaining[0][0] not in held:
+    if free_text and len(remaining) == 1 and remaining[0][0] not in held:
         i, w = remaining[0]
         contains_pos = float(i)
         g.contains = sorted(parts_of(w))[0]
@@ -480,12 +482,16 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
     _assign_edges(g, relations, seen)
     if (g.refuse.startswith("cannot resolve") and g.anchor is None
             and any(n.kind == "var" for n in g.nodes)):
-        # "what technologies do we use?": the relation has no second end, but
-        # the question still names what it wants — list that
-        dropped = ", ".join(f"'{e.form}'" for e in g.edges)
-        g.edges, g.refuse = [], ""
-        g.notes.append(f"could not place {dropped}; listing the type instead")
-        g.loose = dropped
+        if free_text:
+            # "what technologies do we use?": the relation has no second end, but
+            # the question still names what it wants — list that
+            dropped = ", ".join(f"'{e.form}'" for e in g.edges)
+            g.edges, g.refuse = [], ""
+            g.notes.append(f"could not place {dropped}; listing the type instead")
+            g.loose = dropped
+        elif g.uncovered:
+            # "in Down": the end it couldn't find is a word nothing placed; plan.py names that
+            g.refuse = ""
     if len(g.vars()) > MAX_VARS:
         g.refuse = f"{len(g.vars())} typed variables — the grammar caps at {MAX_VARS}"
         return g
@@ -686,12 +692,15 @@ def _scope_negations(g: Grounding, negs: list[tuple[int, str]], contains_pos) ->
 
 def _fit_relations(g: Grounding, relations: dict[str, Relation],
                    sharing: dict[str, list[str]]) -> None:
-    """A shared phrase ("in": a tale's parent story, a monument's named
-    location) binds only a relation that can join two of the things named;
-    when none can it is set aside, so the anchor is linked loosely as if no
-    phrase were there. The word stays consumed: it was understood, as "at"
-    is. A phrase naming one relation is specific ("architect"): it keeps it,
-    and a type it implies but nobody named refuses later, in plan.py."""
+    """A phrase binds only a relation that can join two of the things named. A
+    shared phrase ("in": a tale's parent story, a monument's named location)
+    takes the one of its relations that can; when none can, or a bare
+    function word ("at") names one that can't, it is set aside, so the anchor
+    is linked loosely as if no phrase were there. The word stays consumed: it
+    was understood, as "at" is. A phrase with a content word naming one
+    relation is specific ("architect"): it keeps it when it can join two
+    things named (a type it implies but nobody named refuses later, in
+    plan.py), and refuses when it can't."""
     if len(g.nodes) < 2:
         return
     used = {e.relation for e in g.edges}
@@ -700,11 +709,14 @@ def _fit_relations(g: Grounding, relations: dict[str, Relation],
         return any(r.joins(a.type, b.type) for a in g.nodes for b in g.nodes if a is not b)
 
     for edge in list(g.edges):
-        if len(sharing.get(edge.form, [])) < 2 or fits(relations[edge.relation]):
+        if fits(relations[edge.relation]):
             continue
+        types = " and ".join(sorted({n.type for n in g.nodes}))
+        if len(sharing.get(edge.form, [])) < 2 and terms_pos(edge.form):
+            g.refuse = f"'{edge.form}' ({edge.relation}) can't join {types}"
+            return
         pick = next((r for r in sharing.get(edge.form, [])
                      if r not in used and fits(relations[r])), None)
-        types = " and ".join(sorted({n.type for n in g.nodes}))
         if pick is None:
             g.edges.remove(edge)
             g.notes.append(f"'{edge.form}' set aside: no relation it names joins {types}")
