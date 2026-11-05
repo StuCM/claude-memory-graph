@@ -105,6 +105,50 @@ source goes.
 - Cached per group by hash of its description. A schema change rebuilds only the
   groups that changed. `ceist vocab check` already detects a stale bundle.
 
+### Layout: one file per nodegroup (built)
+
+A graph's vocabulary is built once, for the whole graph, and kept as one file per
+nodegroup:
+
+```
+vocab/manifest.json                    {"format": "ceist.vocab-groups/1", "models": {"Monument":
+                                         {"graphid": …, "nodegroups": {"construction_phases":
+                                           {"id": …, "parent": null, "description_sha256": …}}}}}
+vocab/Monument/construction_phases.json   {"model", "nodegroup", "entries": [...]}
+```
+
+- A group file's `group` key is reserved for the group's own block ([[ceist-group-grounding]]).
+- `ceist vocab describe` gives each node its `nodegroup` (the alias of the group's top
+  node) and each description a `nodegroups` table, so `ceist vocab split <descriptions>
+  <vocab dir>` turns the old one-file-per-model layout into this one.
+- `assemble` reads either layout. With `manifest.json` present, it reads the split one and
+  warns about each old file it ignores. Both give the same bundle: a model's entries are
+  ordered by nodegroup.
+- `ceist vocab check <bundle> <graphs> --vocab <dir> --descriptions <dir>` lists the groups
+  whose description changed, appeared or went. Those groups are the ones to rebuild.
+- `bench/her/vocab` holds both layouts for now. The demo's `ask.py` reads the old files,
+  and `learn`/`merge` still write them. Re-run `split` after a merge, until the old files go.
+
+### Slice: only what a dataset uses (built)
+
+```
+ceist vocab slice <bundle.json | vocab dir> --data <business_data dir> --graphs <graphs dir> \
+                  -o <out> [--reference <reference_data dir>]
+```
+
+This reads the business data on the machine it runs on, and nothing goes to an LLM. It keeps:
+- the nodegroups that hold tiles, plus their ancestors;
+- links whose target model has records (a target that isn't among the graphs leaves the
+  link open, as `ArchesVocabulary.relations()` reads it);
+- with `--reference`, the qualified entries whose value occurs in the data, or is broader
+  than a value that does ("listed" covers "Grade II").
+
+It prints the size before and after, and what it dropped. The cuts are recorded under
+`sliced` (`models`, `groups`, `links`, `values`), in the bundle or in the sliced manifest,
+so a refusal can later say "this dataset holds no construction phases". Nothing reads that
+record yet. On the demo, Monument keeps 7 of its 38 nodegroups, and the bundle goes from
+145 KB to 17 KB with every demo answer unchanged.
+
 ### 3. Questions and gate
 
 - A **separate** LLM call writes the acceptance questions from the description only,

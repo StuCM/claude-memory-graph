@@ -1,0 +1,75 @@
+{
+ "model": "Application Area",
+ "nodegroup": "designation_and_protection_assignment",
+ "entries": [
+  {
+   "phrases": [
+    "designation",
+    "protection",
+    "protected",
+    "is it protected",
+    "protection status",
+    "designation type",
+    "heritage designation",
+    "conservation area",
+    "archaeological priority area",
+    "statutory protection",
+    "listed",
+    "scheduled"
+   ],
+   "kind": "property",
+   "node": "designation_or_protection_type"
+  },
+  {
+   "phrases": [
+    "designation name",
+    "name of designation",
+    "protection name",
+    "list entry name"
+   ],
+   "kind": "property",
+   "node": "designation_name"
+  },
+  {
+   "phrases": [
+    "grade",
+    "listing grade",
+    "what grade",
+    "grade listed",
+    "which grade"
+   ],
+   "kind": "property",
+   "node": "grade"
+  },
+  {
+   "phrases": [
+    "at risk",
+    "risk",
+    "risk status",
+    "heritage at risk",
+    "is it at risk",
+    "under threat"
+   ],
+   "kind": "property",
+   "node": "risk_status"
+  },
+  {
+   "phrases": [
+    "designation link",
+    "list entry link",
+    "designation url"
+   ],
+   "kind": "property",
+   "node": "reference_url"
+  },
+  {
+   "phrases": [
+    "designation document",
+    "designation file",
+    "protection document"
+   ],
+   "kind": "link",
+   "node": "digital_file_s__n1"
+  }
+ ]
+}

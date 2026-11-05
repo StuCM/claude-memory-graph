@@ -1,0 +1,42 @@
+{
+ "model": "Artefact",
+ "nodegroup": "inscription",
+ "entries": [
+  {
+   "phrases": [
+    "inscription",
+    "inscribed",
+    "writing",
+    "text on it",
+    "legend",
+    "what does it say",
+    "inscribed text",
+    "lettering",
+    "engraved text",
+    "words on it"
+   ],
+   "kind": "property",
+   "node": "inscription_content"
+  },
+  {
+   "phrases": [
+    "translation",
+    "what does the inscription mean",
+    "translated",
+    "meaning of inscription",
+    "english translation"
+   ],
+   "kind": "property",
+   "node": "translation_text"
+  },
+  {
+   "phrases": [
+    "inscription notes",
+    "inscription note",
+    "notes on inscription"
+   ],
+   "kind": "property",
+   "node": "inscription_note_text"
+  }
+ ]
+}

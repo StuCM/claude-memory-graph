@@ -1,0 +1,22 @@
+{
+ "model": "Consultation",
+ "nodegroup": "related_monuments_and_areas",
+ "entries": [
+  {
+   "phrases": [
+    "affected monuments",
+    "heritage assets affected",
+    "related monuments",
+    "nearby monuments",
+    "archaeological sites",
+    "monuments",
+    "heritage assets",
+    "historic sites affected",
+    "impact on monuments",
+    "related areas"
+   ],
+   "kind": "link",
+   "node": "related_monuments_and_areas"
+  }
+ ]
+}

@@ -1,0 +1,20 @@
+{
+ "model": "Heritage Story",
+ "nodegroup": "translation",
+ "entries": [
+  {
+   "phrases": [
+    "translation",
+    "translations",
+    "translated version",
+    "other languages",
+    "in another language",
+    "language versions",
+    "in welsh",
+    "in french"
+   ],
+   "kind": "link",
+   "node": "translation"
+  }
+ ]
+}

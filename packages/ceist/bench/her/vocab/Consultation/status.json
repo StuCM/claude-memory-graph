@@ -1,0 +1,22 @@
+{
+ "model": "Consultation",
+ "nodegroup": "status",
+ "entries": [
+  {
+   "phrases": [
+    "status",
+    "open",
+    "active",
+    "is it open",
+    "live",
+    "ongoing",
+    "current status",
+    "is it still open",
+    "open or closed",
+    "consultation status"
+   ],
+   "kind": "property",
+   "node": "status"
+  }
+ ]
+}

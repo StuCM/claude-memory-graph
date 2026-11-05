@@ -1,0 +1,67 @@
+{
+ "model": "Person",
+ "nodegroup": "images",
+ "entries": [
+  {
+   "phrases": [
+    "images",
+    "image",
+    "photos",
+    "photo",
+    "pictures",
+    "picture",
+    "photographs",
+    "what does it look like",
+    "illustrations"
+   ],
+   "kind": "property",
+   "node": "images"
+  },
+  {
+   "phrases": [
+    "caption",
+    "image caption",
+    "photo caption",
+    "picture caption"
+   ],
+   "kind": "property",
+   "node": "caption"
+  },
+  {
+   "phrases": [
+    "copyright holder",
+    "copyright owner",
+    "image copyright owned by",
+    "photo credit",
+    "who owns the copyright",
+    "image credit"
+   ],
+   "kind": "link",
+   "node": "copyright_holder"
+  },
+  {
+   "phrases": [
+    "copyright",
+    "copyright type",
+    "licence",
+    "license",
+    "image licence",
+    "rights",
+    "reuse rights",
+    "creative commons",
+    "crown copyright"
+   ],
+   "kind": "property",
+   "node": "copyright_type"
+  },
+  {
+   "phrases": [
+    "copyright note",
+    "copyright statement",
+    "rights statement"
+   ],
+   "kind": "property",
+   "node": "copyright_note_text"
+  }
+ ]
+}

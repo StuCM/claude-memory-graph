@@ -1,0 +1,69 @@
+{
+ "model": "Monument",
+ "nodegroup": "area_assignment",
+ "entries": [
+  {
+   "phrases": [
+    "area status date",
+    "area status since",
+    "status since",
+    "status dates"
+   ],
+   "kind": "date",
+   "node": "area_status_start_date",
+   "end_node": "area_status_end_date"
+  },
+  {
+   "phrases": [
+    "area status",
+    "status of the area",
+    "aonb",
+    "area of outstanding natural beauty",
+    "national park",
+    "common land",
+    "green belt",
+    "special area"
+   ],
+   "kind": "property",
+   "node": "area_status"
+  },
+  {
+   "phrases": [
+    "ownership",
+    "land ownership",
+    "ownership type",
+    "public or private ownership",
+    "ownership status",
+    "public ownership"
+   ],
+   "kind": "property",
+   "node": "ownership"
+  },
+  {
+   "phrases": [
+    "shine form",
+    "form of remains",
+    "above or below ground",
+    "below-ground features",
+    "buried features",
+    "above-ground features",
+    "below ground"
+   ],
+   "kind": "property",
+   "node": "shine_form"
+  },
+  {
+   "phrases": [
+    "shine significance",
+    "significance",
+    "how significant",
+    "importance",
+    "why important",
+    "why is it important",
+    "significant"
+   ],
+   "kind": "property",
+   "node": "shine_significance"
+  }
+ ]
+}

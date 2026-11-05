@@ -1,0 +1,21 @@
+{
+ "model": "Application Area",
+ "nodegroup": "application_area_names",
+ "entries": [
+  {
+   "phrases": [
+    "name",
+    "called",
+    "site name",
+    "application area name",
+    "title",
+    "what is it called",
+    "area name",
+    "known as",
+    "name of the site"
+   ],
+   "kind": "property",
+   "node": "application_area_name"
+  }
+ ]
+}

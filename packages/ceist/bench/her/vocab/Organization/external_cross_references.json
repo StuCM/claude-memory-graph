@@ -1,0 +1,46 @@
+{
+ "model": "Organization",
+ "nodegroup": "external_cross_references",
+ "entries": [
+  {
+   "phrases": [
+    "cross reference",
+    "external reference",
+    "other reference numbers",
+    "external id",
+    "external record number",
+    "see also reference"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference"
+  },
+  {
+   "phrases": [
+    "reference source",
+    "cross reference source",
+    "source of external reference",
+    "which database"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_source"
+  },
+  {
+   "phrases": [
+    "cross reference note",
+    "external reference note"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_description"
+  },
+  {
+   "phrases": [
+    "url",
+    "web link",
+    "website",
+    "link"
+   ],
+   "kind": "property",
+   "node": "url"
+  }
+ ]
+}

@@ -1,0 +1,25 @@
+{
+ "model": "Activity",
+ "nodegroup": "associated_monuments_and_areas",
+ "entries": [
+  {
+   "phrases": [
+    "monuments",
+    "sites",
+    "related sites",
+    "what site",
+    "which monument",
+    "associated monuments",
+    "heritage assets investigated",
+    "site investigated",
+    "what was investigated",
+    "finds",
+    "artefacts",
+    "wrecks",
+    "buildings recorded"
+   ],
+   "kind": "link",
+   "node": "associated_monuments_and_areas"
+  }
+ ]
+}

@@ -1,0 +1,47 @@
+{
+ "model": "Artefact",
+ "nodegroup": "repository_storage_location",
+ "entries": [
+  {
+   "phrases": [
+    "held by",
+    "museum",
+    "repository",
+    "where is it kept",
+    "who holds it",
+    "in the collection of",
+    "collection",
+    "owned by",
+    "owner",
+    "curated by",
+    "which museum",
+    "where is it now",
+    "held in"
+   ],
+   "kind": "link",
+   "node": "repository_owner"
+  },
+  {
+   "phrases": [
+    "storage area",
+    "stored in",
+    "store room",
+    "storage location",
+    "shelf",
+    "where is it stored"
+   ],
+   "kind": "property",
+   "node": "storage_area_name"
+  },
+  {
+   "phrases": [
+    "storage building",
+    "store building",
+    "which building is it stored in",
+    "storage building name"
+   ],
+   "kind": "property",
+   "node": "storage_building_name"
+  }
+ ]
+}

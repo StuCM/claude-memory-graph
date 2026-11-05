@@ -1,0 +1,48 @@
+{
+ "model": "Bibliographic Source",
+ "nodegroup": "external_cross_references",
+ "entries": [
+  {
+   "phrases": [
+    "cross reference note",
+    "cross reference notes",
+    "external reference note"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_description"
+  },
+  {
+   "phrases": [
+    "cross reference",
+    "external reference",
+    "other reference",
+    "external id",
+    "related reference number"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference"
+  },
+  {
+   "phrases": [
+    "cross reference source",
+    "reference source",
+    "source of reference",
+    "which database"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_source"
+  },
+  {
+   "phrases": [
+    "url",
+    "website",
+    "web link",
+    "web address",
+    "online link",
+    "link to website"
+   ],
+   "kind": "property",
+   "node": "url"
+  }
+ ]
+}

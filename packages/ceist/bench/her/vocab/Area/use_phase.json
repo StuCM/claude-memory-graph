@@ -1,0 +1,63 @@
+{
+ "model": "Area",
+ "nodegroup": "use_phase",
+ "entries": [
+  {
+   "phrases": [
+    "used",
+    "in use",
+    "when was it used",
+    "period of use",
+    "occupied",
+    "occupation",
+    "inhabited",
+    "active",
+    "in operation",
+    "operated",
+    "when was it occupied",
+    "date of use",
+    "use phase",
+    "abandoned",
+    "disused"
+   ],
+   "kind": "date",
+   "node": "use_phase_start_date",
+   "end_node": "use_phase_end_date"
+  },
+  {
+   "phrases": [
+    "period of use era",
+    "used during period",
+    "use period",
+    "period when used",
+    "era of use"
+   ],
+   "kind": "link",
+   "node": "use_phase_period"
+  },
+  {
+   "phrases": [
+    "function",
+    "used as",
+    "purpose",
+    "what was it used for",
+    "functional type",
+    "use",
+    "role",
+    "what was it for"
+   ],
+   "kind": "property",
+   "node": "functional_type"
+  },
+  {
+   "phrases": [
+    "use description",
+    "use notes",
+    "function notes",
+    "use phase description"
+   ],
+   "kind": "property",
+   "node": "use_phase_description"
+  }
+ ]
+}

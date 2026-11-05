@@ -1,0 +1,21 @@
+{
+ "model": "Artefact",
+ "nodegroup": "associated_activities",
+ "entries": [
+  {
+   "phrases": [
+    "activities",
+    "excavation project",
+    "fieldwork",
+    "recovered during",
+    "investigation",
+    "found during",
+    "which excavation",
+    "events",
+    "survey"
+   ],
+   "kind": "link",
+   "node": "associated_activities"
+  }
+ ]
+}

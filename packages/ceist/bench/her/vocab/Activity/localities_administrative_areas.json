@@ -1,0 +1,28 @@
+{
+ "model": "Activity",
+ "nodegroup": "localities_administrative_areas",
+ "entries": [
+  {
+   "phrases": [
+    "borough",
+    "local authority",
+    "administrative area",
+    "district",
+    "parish",
+    "council area",
+    "which borough",
+    "which council"
+   ],
+   "kind": "property",
+   "node": "area_name"
+  },
+  {
+   "phrases": [
+    "area type",
+    "type of administrative area"
+   ],
+   "kind": "property",
+   "node": "area_type"
+  }
+ ]
+}

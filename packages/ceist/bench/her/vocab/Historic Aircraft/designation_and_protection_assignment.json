@@ -1,0 +1,115 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "designation_and_protection_assignment",
+ "entries": [
+  {
+   "phrases": [
+    "designation",
+    "protection",
+    "protected",
+    "is it protected",
+    "legal protection",
+    "protection status",
+    "designation type",
+    "heritage designation",
+    "statutory protection",
+    "protected wreck",
+    "protected place",
+    "scheduled"
+   ],
+   "kind": "property",
+   "node": "designation_or_protection_type"
+  },
+  {
+   "phrases": [
+    "designated",
+    "date designated",
+    "when designated",
+    "when was it protected",
+    "designation date",
+    "date of protection",
+    "protected since",
+    "first protected"
+   ],
+   "kind": "date",
+   "node": "designation_start_date",
+   "end_node": "designation_end_date"
+  },
+  {
+   "phrases": [
+    "designation amended",
+    "amendment date",
+    "date amended",
+    "protection amended"
+   ],
+   "kind": "date",
+   "node": "designation_amendment_date"
+  },
+  {
+   "phrases": [
+    "designation name",
+    "list entry name",
+    "protection name",
+    "name of designation"
+   ],
+   "kind": "property",
+   "node": "designation_name"
+  },
+  {
+   "phrases": [
+    "grade",
+    "listing grade",
+    "what grade",
+    "grade listed",
+    "which grade",
+    "listed grade"
+   ],
+   "kind": "property",
+   "node": "grade"
+  },
+  {
+   "phrases": [
+    "at risk",
+    "risk",
+    "risk status",
+    "heritage at risk",
+    "is it at risk",
+    "under threat",
+    "endangered"
+   ],
+   "kind": "property",
+   "node": "risk_status"
+  },
+  {
+   "phrases": [
+    "local list criteria",
+    "local listing criteria",
+    "reasons for local listing",
+    "criteria",
+    "why locally listed"
+   ],
+   "kind": "property",
+   "node": "local_heritage_list_criteria_type"
+  },
+  {
+   "phrases": [
+    "list entry link",
+    "designation link",
+    "designation url",
+    "official list link"
+   ],
+   "kind": "property",
+   "node": "reference_url"
+  },
+  {
+   "phrases": [
+    "designation document",
+    "listing document",
+    "protection document",
+    "designation file"
+   ],
+   "kind": "link",
+   "node": "digital_file_s_"
+  }
+ ]
+}

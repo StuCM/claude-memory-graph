@@ -1,0 +1,35 @@
+{
+ "model": "Consultation",
+ "nodegroup": "external_cross_references",
+ "entries": [
+  {
+   "phrases": [
+    "cross reference",
+    "external reference",
+    "other reference numbers",
+    "cross references"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference"
+  },
+  {
+   "phrases": [
+    "cross reference source",
+    "which database",
+    "source of the cross reference"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_source"
+  },
+  {
+   "phrases": [
+    "website",
+    "web link",
+    "url",
+    "online link"
+   ],
+   "kind": "property",
+   "node": "url"
+  }
+ ]
+}

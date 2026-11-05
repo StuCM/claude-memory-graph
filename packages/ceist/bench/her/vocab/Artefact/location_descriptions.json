@@ -1,0 +1,22 @@
+{
+ "model": "Artefact",
+ "nodegroup": "location_descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "findspot",
+    "find spot",
+    "where was it found",
+    "location found",
+    "location",
+    "where",
+    "findspot description",
+    "location description",
+    "whereabouts",
+    "found at"
+   ],
+   "kind": "property",
+   "node": "location_description"
+  }
+ ]
+}

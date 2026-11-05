@@ -1,0 +1,21 @@
+{
+ "model": "Monument",
+ "nodegroup": "parent_monument_or_area",
+ "entries": [
+  {
+   "phrases": [
+    "part of",
+    "parent monument",
+    "parent site",
+    "within the complex",
+    "part of which site",
+    "parent record",
+    "belongs to",
+    "component of",
+    "parent area"
+   ],
+   "kind": "link",
+   "node": "parent_monument_or_area"
+  }
+ ]
+}

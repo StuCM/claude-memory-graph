@@ -1,0 +1,22 @@
+{
+ "model": "Monument",
+ "nodegroup": "location_descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "location",
+    "where is it",
+    "where is it located",
+    "location description",
+    "situated",
+    "whereabouts",
+    "where",
+    "position",
+    "setting",
+    "lies"
+   ],
+   "kind": "property",
+   "node": "location_description"
+  }
+ ]
+}

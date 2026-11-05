@@ -1,0 +1,19 @@
+{
+ "model": "Artefact",
+ "nodegroup": "finder",
+ "entries": [
+  {
+   "phrases": [
+    "found by",
+    "finder",
+    "discovered by",
+    "who found it",
+    "who discovered it",
+    "detectorist",
+    "name of finder"
+   ],
+   "kind": "property",
+   "node": "finder_name"
+  }
+ ]
+}

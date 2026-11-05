@@ -1,0 +1,22 @@
+{
+ "model": "Digital Object",
+ "nodegroup": "file_content",
+ "entries": [
+  {
+   "phrases": [
+    "file",
+    "download",
+    "attachment",
+    "the file",
+    "image",
+    "document",
+    "picture",
+    "photo",
+    "view the file",
+    "open"
+   ],
+   "kind": "property",
+   "node": "file"
+  }
+ ]
+}

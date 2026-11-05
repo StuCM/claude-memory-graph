@@ -21,8 +21,16 @@ How it is made (`ceist vocab …`):
                model's description inline (the LLM sees the schema, never a path
                into the project or a record)
     save       the LLM's JSON reply → vocab/<Model>.json, validated
+    split      vocab/<Model>.json → vocab/<Model>/<nodegroup alias>.json, plus
+               vocab/manifest.json: each nodegroup's id, parent and a hash of its
+               description, so `check --vocab` finds the groups that went stale
     assemble   validate the entries against the descriptions and write the bundle,
                with a hash of the graph files so a stale bundle is caught (`check`)
+    slice      (ceist.slicing) cut a bundle down to what one dataset uses
+
+A vocabulary directory holds either layout; with a manifest.json it is read
+as the split one. A group file is {"model", "nodegroup", "entries"}; the key
+"group" is reserved for the group's own block (docs/tasks/ceist-group-grounding.md).
 """
 
 import hashlib
@@ -30,6 +38,8 @@ import json
 from pathlib import Path
 
 FORMAT = "ceist.vocab/1"
+LAYOUT = "ceist.vocab-groups/1"
+MANIFEST = "manifest.json"
 DATE = {"date", "edtf"}
 
 
@@ -81,21 +91,64 @@ def validate(description: dict, entries: list[dict]) -> tuple[list[str], list[st
     return errors, warnings
 
 
+def nodegroups(graph: dict) -> tuple[dict[str, dict], dict[str, str]]:
+    """A graph's nodegroups, {alias: {"id", "parent"}}, and each node's nodegroup
+    alias. A nodegroup is named by its top node, whose id it shares."""
+    alias = {n["nodeid"]: n.get("alias") or n["nodeid"] for n in graph["nodes"]}
+    groups = {alias.get(g["nodegroupid"], g["nodegroupid"]):
+              {"id": g["nodegroupid"], "parent": alias.get(g.get("parentnodegroup_id"))}
+              for g in graph.get("nodegroups", [])}
+    node_group = {n["alias"]: alias.get(n["nodegroup_id"], n["nodegroup_id"])
+                  for n in graph["nodes"] if n.get("alias") and n.get("nodegroup_id")}
+    return groups, node_group
+
+
+def group_hash(description: dict, group: str) -> str:
+    nodes = [n for n in description["nodes"] if n.get("nodegroup") == group]
+    return hashlib.sha256(json.dumps(nodes, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+
+
+def _descriptions(descriptions_dir: str | Path) -> dict:
+    out = {}
+    for p in sorted(Path(descriptions_dir).glob("*.json")):
+        d = json.loads(p.read_text())
+        out[d["name"]] = d
+    return out
+
+
+def read_vocab(vocab_dir: str | Path) -> tuple[list[dict], list[str]]:
+    """Each model's {"model", "entries"} from either layout, plus warnings.
+    Split layout: a model's entries in the order of its group files' names."""
+    root = Path(vocab_dir)
+    files = sorted((p for p in root.glob("*.json") if p.name != MANIFEST), key=lambda p: p.stem)
+    if not (root / MANIFEST).exists():
+        return [json.loads(p.read_text()) for p in files], []
+    out = []
+    for d in sorted(p for p in root.iterdir() if p.is_dir()):
+        groups = sorted(d.glob("*.json"), key=lambda p: p.stem)
+        if groups:
+            out.append({"model": d.name, "entries": [e for g in groups
+                                                     for e in json.loads(g.read_text())["entries"]]})
+    warnings = [f"{p.name} not read: {MANIFEST} says the split layout is read" for p in files]
+    return out, warnings
+
+
 def assemble(descriptions_dir: str | Path, vocab_dir: str | Path,
              graphs_dir: str | Path | None = None) -> tuple[dict, list[str], list[str]]:
-    """The bundle, plus (errors, warnings). A bundle with errors shouldn't ship."""
-    descriptions = {json.loads(p.read_text())["name"]: json.loads(p.read_text())
-                    for p in sorted(Path(descriptions_dir).glob("*.json"))}
-    models, errors, warnings = {}, [], []
-    for p in sorted(Path(vocab_dir).glob("*.json")):
-        v = json.loads(p.read_text())
+    """The bundle, plus (errors, warnings). A bundle with errors shouldn't ship.
+    A model's entries are ordered by nodegroup, so both layouts give the same bundle."""
+    descriptions = _descriptions(descriptions_dir)
+    models, errors = {}, []
+    vocab, warnings = read_vocab(vocab_dir)
+    for v in vocab:
         d = descriptions.get(v["model"])
         if d is None:
-            errors.append(f"{p.name}: no description for model '{v['model']}'")
+            errors.append(f"{v['model']}: no description for model '{v['model']}'")
             continue
         err, warn = validate(d, v["entries"])
         errors += err
         warnings += warn
+        group_of = {n["alias"]: n.get("nodegroup") or "" for n in d["nodes"]}
         models[v["model"]] = {
             "graphid": d.get("graphid"),
             "nodes": {n["alias"]: {k: x for k, x in (("kind", kind_of(n)),
@@ -103,7 +156,7 @@ def assemble(descriptions_dir: str | Path, vocab_dir: str | Path,
                                                       ("targets", n.get("targets"))) if x}
                       for n in d["nodes"]},
             "entries": [dict(e, phrases=sorted({x.strip().lower() for x in e["phrases"] if x.strip()}))
-                        for e in v["entries"]],
+                        for e in sorted(v["entries"], key=lambda e: group_of.get(e.get("node"), ""))],
         }
     missing = sorted(set(descriptions) - set(models))
     if missing:
@@ -116,6 +169,73 @@ def assemble(descriptions_dir: str | Path, vocab_dir: str | Path,
                                          for e in m["entries"])},
              "models": models}
     return bundle, errors, warnings
+
+
+def manifest(descriptions: dict) -> dict:
+    return {"format": LAYOUT, "models": {
+        name: {"graphid": d.get("graphid"),
+               "nodegroups": {a: dict(g, description_sha256=group_hash(d, a))
+                              for a, g in sorted((d.get("nodegroups") or {}).items())}}
+        for name, d in sorted(descriptions.items())}}
+
+
+def split(descriptions_dir: str | Path, vocab_dir: str | Path,
+          out_dir: str | Path) -> tuple[list[str], list[str]]:
+    """vocab/<Model>.json → <out>/<Model>/<nodegroup alias>.json and <out>/manifest.json;
+    (files written, errors). A model with errors is not written."""
+    descriptions = _descriptions(descriptions_dir)
+    out = Path(out_dir)
+    written, errors, done = [], [], {}
+    for p in sorted((p for p in Path(vocab_dir).glob("*.json") if p.name != MANIFEST),
+                    key=lambda p: p.stem):
+        v = json.loads(p.read_text())
+        d = descriptions.get(v["model"])
+        if d is None or "nodegroups" not in d:
+            errors.append(f"{p.name}: no description of {v['model']}'s nodegroups "
+                          "(run `ceist vocab describe` again)")
+            continue
+        group_of = {n["alias"]: n.get("nodegroup") for n in d["nodes"]}
+        by_group: dict[str, list] = {}
+        for e in v["entries"]:
+            g = group_of.get(e.get("node"))
+            if g is None:
+                errors.append(f"{v['model']}: '{e.get('node')}' is in no nodegroup")
+            by_group.setdefault(g, []).append(e)
+        if None in by_group:
+            continue
+        model_dir = out / v["model"]
+        model_dir.mkdir(parents=True, exist_ok=True)
+        for old in model_dir.glob("*.json"):
+            old.unlink()
+        for g, entries in sorted(by_group.items()):
+            path = model_dir / f"{g}.json"
+            path.write_text(json.dumps({"model": v["model"], "nodegroup": g, "entries": entries},
+                                       indent=1, ensure_ascii=False) + "\n")
+            written.append(str(path))
+        done[v["model"]] = d
+    if done:
+        (out / MANIFEST).write_text(json.dumps(manifest(done), indent=1) + "\n")
+    return written, errors
+
+
+def stale_groups(vocab_dir: str | Path, descriptions_dir: str | Path) -> list[str]:
+    """The nodegroups whose description changed since the split vocabulary was written."""
+    m = json.loads((Path(vocab_dir) / MANIFEST).read_text())
+    descriptions = _descriptions(descriptions_dir)
+    out = []
+    for name, model in m["models"].items():
+        d = descriptions.get(name)
+        if d is None:
+            out.append(f"{name}: no longer described")
+            continue
+        now = manifest({name: d})["models"][name]["nodegroups"]
+        for a, g in model["nodegroups"].items():
+            if a not in now:
+                out.append(f"{name}.{a}: no longer in the model")
+            elif now[a]["description_sha256"] != g["description_sha256"]:
+                out.append(f"{name}.{a}: its description changed")
+        out += [f"{name}.{a}: new nodegroup" for a in now if a not in model["nodegroups"]]
+    return out
 
 
 def load(path: str | Path) -> dict:

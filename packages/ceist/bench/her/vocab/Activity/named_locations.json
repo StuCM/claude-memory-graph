@@ -1,0 +1,16 @@
+{
+ "model": "Activity",
+ "nodegroup": "named_locations",
+ "entries": [
+  {
+   "phrases": [
+    "named location",
+    "place name",
+    "named place",
+    "nearby place"
+   ],
+   "kind": "link",
+   "node": "named_location"
+  }
+ ]
+}

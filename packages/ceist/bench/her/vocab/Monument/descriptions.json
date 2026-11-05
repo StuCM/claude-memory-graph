@@ -1,0 +1,26 @@
+{
+ "model": "Monument",
+ "nodegroup": "descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "description",
+    "describe",
+    "summary",
+    "about",
+    "details",
+    "tell me about",
+    "history",
+    "what is known",
+    "information",
+    "account",
+    "overview",
+    "background",
+    "significance statement",
+    "notes"
+   ],
+   "kind": "property",
+   "node": "description"
+  }
+ ]
+}

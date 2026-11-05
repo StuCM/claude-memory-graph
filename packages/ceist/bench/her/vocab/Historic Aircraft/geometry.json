@@ -1,0 +1,32 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "geometry",
+ "entries": [
+  {
+   "phrases": [
+    "map",
+    "coordinates",
+    "geometry",
+    "on the map",
+    "footprint",
+    "mapped extent",
+    "spatial location",
+    "show on map",
+    "latitude",
+    "longitude"
+   ],
+   "kind": "property",
+   "node": "geospatial_coordinates"
+  },
+  {
+   "phrases": [
+    "feature shape",
+    "geometry type",
+    "point or polygon",
+    "shape of the feature"
+   ],
+   "kind": "property",
+   "node": "feature_shape"
+  }
+ ]
+}

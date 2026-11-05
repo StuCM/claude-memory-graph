@@ -1,0 +1,59 @@
+{
+ "model": "Consultation",
+ "nodegroup": "advice",
+ "entries": [
+  {
+   "phrases": [
+    "advice given",
+    "advised",
+    "advice date",
+    "date of advice",
+    "when was advice given",
+    "advice issued",
+    "advice provided"
+   ],
+   "kind": "date",
+   "node": "date_advice_applied",
+   "end_node": "advice_applied_end_date"
+  },
+  {
+   "phrases": [
+    "advice type",
+    "type of advice",
+    "what advice",
+    "kind of advice",
+    "condition",
+    "condition type",
+    "recommended condition",
+    "what condition"
+   ],
+   "kind": "property",
+   "node": "advice_type"
+  },
+  {
+   "phrases": [
+    "advice",
+    "advice text",
+    "what was the advice",
+    "advice details",
+    "content of advice",
+    "our advice"
+   ],
+   "kind": "property",
+   "node": "advice_text"
+  },
+  {
+   "phrases": [
+    "advice given by",
+    "who advised",
+    "advisor",
+    "adviser",
+    "advised by",
+    "who gave the advice",
+    "who gave advice"
+   ],
+   "kind": "link",
+   "node": "advice_applied_by"
+  }
+ ]
+}

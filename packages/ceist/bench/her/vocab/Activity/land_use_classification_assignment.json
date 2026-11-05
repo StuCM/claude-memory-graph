@@ -1,0 +1,54 @@
+{
+ "model": "Activity",
+ "nodegroup": "land_use_classification_assignment",
+ "entries": [
+  {
+   "phrases": [
+    "geology",
+    "bedrock",
+    "underlying geology",
+    "solid geology",
+    "rock type"
+   ],
+   "kind": "property",
+   "node": "geology"
+  },
+  {
+   "phrases": [
+    "subsoil",
+    "sub soil",
+    "soil type",
+    "drift geology"
+   ],
+   "kind": "property",
+   "node": "sub_soil"
+  },
+  {
+   "phrases": [
+    "land use",
+    "land use classification",
+    "current land use",
+    "land cover"
+   ],
+   "kind": "property",
+   "node": "land_use_classification"
+  },
+  {
+   "phrases": [
+    "land use assessed",
+    "land use assessment date"
+   ],
+   "kind": "date",
+   "node": "land_use_assessment_start_date",
+   "end_node": "land_use_assessment_end_date"
+  },
+  {
+   "phrases": [
+    "land use notes",
+    "land use note"
+   ],
+   "kind": "property",
+   "node": "land_use_notes_value"
+  }
+ ]
+}

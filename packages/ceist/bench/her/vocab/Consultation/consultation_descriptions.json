@@ -1,0 +1,21 @@
+{
+ "model": "Consultation",
+ "nodegroup": "consultation_descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "description",
+    "about",
+    "summary",
+    "details",
+    "describe",
+    "tell me about",
+    "what is it about",
+    "information",
+    "background"
+   ],
+   "kind": "property",
+   "node": "consultation_description"
+  }
+ ]
+}

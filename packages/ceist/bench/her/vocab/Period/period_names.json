@@ -1,0 +1,18 @@
+{
+ "model": "Period",
+ "nodegroup": "period_names",
+ "entries": [
+  {
+   "phrases": [
+    "name",
+    "called",
+    "period name",
+    "what is it called",
+    "preferred name",
+    "title"
+   ],
+   "kind": "property",
+   "node": "period_name"
+  }
+ ]
+}

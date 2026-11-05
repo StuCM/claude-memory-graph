@@ -1,0 +1,21 @@
+{
+ "model": "Organization",
+ "nodegroup": "descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "description",
+    "summary",
+    "about",
+    "history",
+    "overview",
+    "tell me about",
+    "what do they do",
+    "background",
+    "profile"
+   ],
+   "kind": "property",
+   "node": "description"
+  }
+ ]
+}

@@ -1,0 +1,18 @@
+{
+ "model": "Activity",
+ "nodegroup": "location_descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "location description",
+    "describe the location",
+    "directions",
+    "how to find it",
+    "where exactly",
+    "situated"
+   ],
+   "kind": "property",
+   "node": "location_description"
+  }
+ ]
+}

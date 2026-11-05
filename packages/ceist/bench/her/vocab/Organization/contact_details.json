@@ -1,0 +1,41 @@
+{
+ "model": "Organization",
+ "nodegroup": "contact_details",
+ "entries": [
+  {
+   "phrases": [
+    "contact",
+    "phone",
+    "email",
+    "telephone",
+    "contact details",
+    "fax",
+    "how to contact",
+    "phone number",
+    "email address",
+    "get in touch"
+   ],
+   "kind": "property",
+   "node": "contact_point"
+  },
+  {
+   "phrases": [
+    "contact method",
+    "contact type"
+   ],
+   "kind": "property",
+   "node": "contact_point_type"
+  },
+  {
+   "phrases": [
+    "contact name",
+    "contact person",
+    "correspondence name",
+    "who to contact",
+    "named contact"
+   ],
+   "kind": "property",
+   "node": "contact_name_for_correspondence"
+  }
+ ]
+}

@@ -1,0 +1,71 @@
+{
+ "model": "Consultation",
+ "nodegroup": "consultation_dates",
+ "entries": [
+  {
+   "phrases": [
+    "consultation dates",
+    "consulted",
+    "consultation period",
+    "during the consultation",
+    "consultation timeframe",
+    "how long did the consultation take",
+    "duration of consultation"
+   ],
+   "kind": "date",
+   "node": "log_date",
+   "end_node": "completion_date"
+  },
+  {
+   "phrases": [
+    "logged",
+    "received",
+    "date received",
+    "log date",
+    "date logged",
+    "when was it logged",
+    "when was it received",
+    "registered",
+    "submitted",
+    "opened",
+    "start of consultation",
+    "when did it come in"
+   ],
+   "kind": "date",
+   "node": "log_date"
+  },
+  {
+   "phrases": [
+    "completed",
+    "closed",
+    "finished",
+    "completion date",
+    "date completed",
+    "when was it completed",
+    "when was it closed",
+    "responded",
+    "response date",
+    "date closed",
+    "signed off"
+   ],
+   "kind": "date",
+   "node": "completion_date"
+  },
+  {
+   "phrases": [
+    "target date",
+    "deadline",
+    "due",
+    "due date",
+    "response due",
+    "by when",
+    "target response date",
+    "when is it due",
+    "deadline for response"
+   ],
+   "kind": "date",
+   "node": "target_date_start",
+   "end_node": "target_date_end"
+  }
+ ]
+}

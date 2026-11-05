@@ -1,0 +1,15 @@
+{
+ "model": "Consultation",
+ "nodegroup": "spatial_accuracy_qualifier",
+ "entries": [
+  {
+   "phrases": [
+    "spatial accuracy",
+    "how accurate is the location",
+    "positional accuracy"
+   ],
+   "kind": "property",
+   "node": "spatial_accuracy_qualifier"
+  }
+ ]
+}

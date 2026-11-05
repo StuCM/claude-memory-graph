@@ -1,0 +1,21 @@
+{
+ "model": "Application Area",
+ "nodegroup": "associated_activities",
+ "entries": [
+  {
+   "phrases": [
+    "activities",
+    "fieldwork",
+    "excavations",
+    "investigations",
+    "surveys",
+    "associated activities",
+    "archaeological work",
+    "related activities",
+    "events"
+   ],
+   "kind": "link",
+   "node": "associated_activities"
+  }
+ ]
+}

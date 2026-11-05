@@ -1,0 +1,22 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "names",
+ "entries": [
+  {
+   "phrases": [
+    "name",
+    "called",
+    "what is it called",
+    "aircraft name",
+    "title",
+    "what was it called",
+    "known as",
+    "serial",
+    "registration",
+    "identifier"
+   ],
+   "kind": "property",
+   "node": "name"
+  }
+ ]
+}

@@ -1,0 +1,32 @@
+{
+ "model": "Maritime Vessel",
+ "nodegroup": "names",
+ "entries": [
+  {
+   "phrases": [
+    "name",
+    "called",
+    "vessel name",
+    "ship name",
+    "what was it called",
+    "named",
+    "name of the ship",
+    "name of the vessel",
+    "boat name",
+    "what is it called"
+   ],
+   "kind": "property",
+   "node": "name"
+  },
+  {
+   "phrases": [
+    "current name",
+    "former name",
+    "previous name",
+    "renamed"
+   ],
+   "kind": "property",
+   "node": "name_currency"
+  }
+ ]
+}

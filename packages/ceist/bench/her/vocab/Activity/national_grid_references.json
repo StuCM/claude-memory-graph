@@ -1,0 +1,18 @@
+{
+ "model": "Activity",
+ "nodegroup": "national_grid_references",
+ "entries": [
+  {
+   "phrases": [
+    "grid reference",
+    "ngr",
+    "national grid reference",
+    "os grid reference",
+    "grid ref",
+    "os reference"
+   ],
+   "kind": "property",
+   "node": "national_grid_reference"
+  }
+ ]
+}

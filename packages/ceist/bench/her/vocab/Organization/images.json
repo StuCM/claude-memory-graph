@@ -1,0 +1,56 @@
+{
+ "model": "Organization",
+ "nodegroup": "images",
+ "entries": [
+  {
+   "phrases": [
+    "images",
+    "photos",
+    "pictures",
+    "photographs",
+    "pics",
+    "photo"
+   ],
+   "kind": "property",
+   "node": "images"
+  },
+  {
+   "phrases": [
+    "caption",
+    "image caption",
+    "photo caption"
+   ],
+   "kind": "property",
+   "node": "caption_note"
+  },
+  {
+   "phrases": [
+    "copyright holder",
+    "image copyright owner",
+    "who owns the copyright",
+    "photo credit"
+   ],
+   "kind": "link",
+   "node": "copyright_holder"
+  },
+  {
+   "phrases": [
+    "copyright",
+    "licence",
+    "rights",
+    "copyright status",
+    "crown copyright",
+    "creative commons"
+   ],
+   "kind": "property",
+   "node": "copyright_type"
+  },
+  {
+   "phrases": [
+    "copyright note"
+   ],
+   "kind": "property",
+   "node": "copyright_note_text"
+  }
+ ]
+}

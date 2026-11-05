@@ -1,5 +1,5 @@
 """Read Arches models through Alizarin into the node descriptions the
-vocabulary build and the matchers use: each searchable node with its card,
+vocabulary build and the matchers use: each searchable node with its card and nodegroup,
 its path through the model's tree, its datatype, its CIDOC-CRM context and
 (for links) its targets.
 
@@ -26,6 +26,7 @@ from pathlib import Path
 import alizarin
 
 from .arches import CONTROLLED_TYPES, collection_of
+from .bundle import nodegroups
 
 SKIP_TYPES = {"semantic"}
 
@@ -75,6 +76,7 @@ def describe_graph(doc: dict, graph_names: dict, rdm=None) -> dict:
     groups = {ng["nodegroupid"]: ng for ng in g.get("nodegroups", [])}
     card_of = {c["nodegroup_id"]: _text(c["name"]) for c in g.get("cards", [])}
     label_of = {x["node_id"]: _text(x.get("label")) for x in g.get("cards_x_nodes_x_widgets", [])}
+    by_alias, group_of = nodegroups(g)
 
     def card(ngid):
         while ngid:
@@ -95,7 +97,7 @@ def describe_graph(doc: dict, graph_names: dict, rdm=None) -> dict:
             if n and n["datatype"] not in SKIP_TYPES and not alias.endswith("metatype"):
                 entry = {"alias": alias, "name": name, "datatype": n["datatype"],
                          "card": card(n.get("nodegroup_id")),
-                         "path": " > ".join(here[:-1])}
+                         "path": " > ".join(here[:-1]), "nodegroup": group_of.get(alias)}
                 if label_of.get(n["nodeid"]) and label_of[n["nodeid"]] != name:
                     entry["label"] = label_of[n["nodeid"]]
                 targets = [graph_names.get(x.get("graphid"), x.get("graphid"))
@@ -116,7 +118,7 @@ def describe_graph(doc: dict, graph_names: dict, rdm=None) -> dict:
 
     walk(tree, [])
     return {"name": _text(g["name"]), "graphid": g["graphid"],
-            "description": _text(g.get("description")), "nodes": out}
+            "description": _text(g.get("description")), "nodegroups": by_alias, "nodes": out}
 
 
 def describe(src: str | Path, dest: str | Path, ref_dir: str | Path | None = None) -> dict:

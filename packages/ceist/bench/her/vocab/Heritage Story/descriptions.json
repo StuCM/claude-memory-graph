@@ -1,0 +1,29 @@
+{
+ "model": "Heritage Story",
+ "nodegroup": "descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "story",
+    "narrative",
+    "description",
+    "what is the story",
+    "tell me",
+    "summary",
+    "about",
+    "content",
+    "text",
+    "account",
+    "the story of",
+    "what happened",
+    "tale",
+    "overview",
+    "history",
+    "tell me about",
+    "details"
+   ],
+   "kind": "property",
+   "node": "description"
+  }
+ ]
+}

@@ -1,0 +1,20 @@
+{
+ "model": "Activity",
+ "nodegroup": "activity_names",
+ "entries": [
+  {
+   "phrases": [
+    "name",
+    "title",
+    "called",
+    "activity name",
+    "project name",
+    "event name",
+    "what is it called",
+    "name of the investigation"
+   ],
+   "kind": "property",
+   "node": "activity_name"
+  }
+ ]
+}

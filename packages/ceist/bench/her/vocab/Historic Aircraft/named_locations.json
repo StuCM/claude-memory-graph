@@ -1,0 +1,17 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "named_locations",
+ "entries": [
+  {
+   "phrases": [
+    "named location",
+    "named place",
+    "place name",
+    "which place",
+    "place"
+   ],
+   "kind": "link",
+   "node": "named_location"
+  }
+ ]
+}

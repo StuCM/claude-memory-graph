@@ -1,0 +1,22 @@
+{
+ "model": "Bibliographic Source",
+ "nodegroup": "descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "description",
+    "abstract",
+    "summary",
+    "about",
+    "what is it about",
+    "synopsis",
+    "contents",
+    "overview",
+    "details",
+    "subject"
+   ],
+   "kind": "property",
+   "node": "description"
+  }
+ ]
+}

@@ -1,0 +1,19 @@
+{
+ "model": "Consultation",
+ "nodegroup": "application_type",
+ "entries": [
+  {
+   "phrases": [
+    "application type",
+    "type of application",
+    "planning application type",
+    "what kind of application",
+    "kind of application",
+    "consent type",
+    "type of consent"
+   ],
+   "kind": "property",
+   "node": "application_type"
+  }
+ ]
+}

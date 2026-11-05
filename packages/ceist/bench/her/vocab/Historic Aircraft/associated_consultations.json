@@ -1,0 +1,17 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "associated_consultations",
+ "entries": [
+  {
+   "phrases": [
+    "consultations",
+    "planning consultations",
+    "planning cases",
+    "associated consultations",
+    "planning applications"
+   ],
+   "kind": "link",
+   "node": "associated_consultations"
+  }
+ ]
+}

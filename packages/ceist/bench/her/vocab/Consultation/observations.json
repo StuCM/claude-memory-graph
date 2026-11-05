@@ -1,0 +1,30 @@
+{
+ "model": "Consultation",
+ "nodegroup": "observations",
+ "entries": [
+  {
+   "phrases": [
+    "observations",
+    "what was observed",
+    "site observations",
+    "findings on site",
+    "what was seen",
+    "observation notes",
+    "what did they see"
+   ],
+   "kind": "property",
+   "node": "observation_notes"
+  },
+  {
+   "phrases": [
+    "observed by",
+    "observations by",
+    "who observed",
+    "observer",
+    "who made the observations"
+   ],
+   "kind": "link",
+   "node": "observed_by"
+  }
+ ]
+}

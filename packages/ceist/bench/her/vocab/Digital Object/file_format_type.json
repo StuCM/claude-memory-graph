@@ -1,0 +1,21 @@
+{
+ "model": "Digital Object",
+ "nodegroup": "file_format_type",
+ "entries": [
+  {
+   "phrases": [
+    "format",
+    "file format",
+    "file type",
+    "extension",
+    "what format",
+    "pdf or jpg",
+    "type of file",
+    "mime type",
+    "kind of file"
+   ],
+   "kind": "property",
+   "node": "file_format_type"
+  }
+ ]
+}

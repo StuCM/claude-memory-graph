@@ -1,0 +1,46 @@
+{
+ "model": "Area",
+ "nodegroup": "components",
+ "entries": [
+  {
+   "phrases": [
+    "component evidence",
+    "component evidence type",
+    "evidence for components"
+   ],
+   "kind": "property",
+   "node": "evidence_type"
+  },
+  {
+   "phrases": [
+    "components",
+    "features",
+    "parts",
+    "elements",
+    "component type",
+    "what features",
+    "architectural features"
+   ],
+   "kind": "property",
+   "node": "component_type"
+  },
+  {
+   "phrases": [
+    "component material",
+    "material of components",
+    "features made of"
+   ],
+   "kind": "property",
+   "node": "component_material"
+  },
+  {
+   "phrases": [
+    "component technique",
+    "component construction technique",
+    "technique of components"
+   ],
+   "kind": "property",
+   "node": "construction_technique"
+  }
+ ]
+}

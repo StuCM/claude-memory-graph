@@ -1,0 +1,20 @@
+{
+ "model": "Maritime Vessel",
+ "nodegroup": "associated_activities",
+ "entries": [
+  {
+   "phrases": [
+    "activities",
+    "related activities",
+    "investigations",
+    "surveys carried out",
+    "fieldwork",
+    "events",
+    "archaeological work",
+    "dives on the wreck"
+   ],
+   "kind": "link",
+   "node": "associated_activities"
+  }
+ ]
+}

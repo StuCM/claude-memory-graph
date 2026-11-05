@@ -1,0 +1,16 @@
+{
+ "model": "Activity",
+ "nodegroup": "coordinate_system",
+ "entries": [
+  {
+   "phrases": [
+    "coordinate system",
+    "projection",
+    "osgb36",
+    "wgs84"
+   ],
+   "kind": "property",
+   "node": "coordinate_system_value"
+  }
+ ]
+}

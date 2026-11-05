@@ -1,0 +1,16 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "spatial_metadata_descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "spatial metadata",
+    "spatial notes",
+    "mapping notes",
+    "geometry notes"
+   ],
+   "kind": "property",
+   "node": "spatial_metadata_notes"
+  }
+ ]
+}

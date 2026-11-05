@@ -1,0 +1,103 @@
+{
+ "model": "Monument",
+ "nodegroup": "addresses",
+ "entries": [
+  {
+   "phrases": [
+    "address",
+    "full address",
+    "what is the address",
+    "street address",
+    "postal address",
+    "address of the site"
+   ],
+   "kind": "property",
+   "node": "full_address"
+  },
+  {
+   "phrases": [
+    "street",
+    "road",
+    "which street",
+    "what street",
+    "on which road",
+    "street name",
+    "lane"
+   ],
+   "kind": "property",
+   "node": "street_value"
+  },
+  {
+   "phrases": [
+    "town",
+    "city",
+    "which town",
+    "town or city",
+    "which city",
+    "in which town"
+   ],
+   "kind": "property",
+   "node": "town_or_city_value"
+  },
+  {
+   "phrases": [
+    "locality",
+    "village",
+    "neighbourhood",
+    "neighborhood",
+    "hamlet",
+    "suburb",
+    "area of"
+   ],
+   "kind": "property",
+   "node": "locality_value"
+  },
+  {
+   "phrases": [
+    "county",
+    "which county",
+    "shire"
+   ],
+   "kind": "property",
+   "node": "county_value"
+  },
+  {
+   "phrases": [
+    "postcode",
+    "post code",
+    "postal code",
+    "zip code"
+   ],
+   "kind": "property",
+   "node": "postcode_value"
+  },
+  {
+   "phrases": [
+    "house name",
+    "address building name",
+    "name of building in address"
+   ],
+   "kind": "property",
+   "node": "building_name_value"
+  },
+  {
+   "phrases": [
+    "house number",
+    "building number",
+    "street number",
+    "number on the street"
+   ],
+   "kind": "property",
+   "node": "building_number_value"
+  },
+  {
+   "phrases": [
+    "address status",
+    "former address",
+    "current address"
+   ],
+   "kind": "property",
+   "node": "address_status"
+  }
+ ]
+}

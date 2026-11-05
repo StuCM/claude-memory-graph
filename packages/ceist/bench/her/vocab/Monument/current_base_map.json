@@ -1,0 +1,15 @@
+{
+ "model": "Monument",
+ "nodegroup": "current_base_map",
+ "entries": [
+  {
+   "phrases": [
+    "base map",
+    "current base map",
+    "base mapping"
+   ],
+   "kind": "property",
+   "node": "current_base_map_name"
+  }
+ ]
+}

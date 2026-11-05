@@ -1,0 +1,21 @@
+{
+ "model": "Monument",
+ "nodegroup": "named_locations",
+ "entries": [
+  {
+   "phrases": [
+    "named location",
+    "place",
+    "named place",
+    "settlement",
+    "which place",
+    "place name",
+    "located in",
+    "located at",
+    "situated in"
+   ],
+   "kind": "link",
+   "node": "named_location"
+  }
+ ]
+}

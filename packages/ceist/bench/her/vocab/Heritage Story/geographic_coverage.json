@@ -1,0 +1,35 @@
+{
+ "model": "Heritage Story",
+ "nodegroup": "geographic_coverage",
+ "entries": [
+  {
+   "phrases": [
+    "location",
+    "where",
+    "map",
+    "coordinates",
+    "geographic coverage",
+    "where is it set",
+    "geography",
+    "on the map",
+    "where did it happen",
+    "where does it take place",
+    "footprint",
+    "boundary",
+    "lat long"
+   ],
+   "kind": "property",
+   "node": "geospatial_coordinates"
+  },
+  {
+   "phrases": [
+    "feature shape",
+    "shape on the map",
+    "point or polygon",
+    "geometry type"
+   ],
+   "kind": "property",
+   "node": "feature_shape"
+  }
+ ]
+}

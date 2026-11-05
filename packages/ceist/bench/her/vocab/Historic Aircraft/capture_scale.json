@@ -1,0 +1,16 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "capture_scale",
+ "entries": [
+  {
+   "phrases": [
+    "capture scale",
+    "map scale",
+    "scale of capture",
+    "digitised at what scale"
+   ],
+   "kind": "property",
+   "node": "capture_scale"
+  }
+ ]
+}

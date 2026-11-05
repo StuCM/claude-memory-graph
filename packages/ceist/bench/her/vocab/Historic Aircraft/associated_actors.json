@@ -1,0 +1,272 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "associated_actors",
+ "entries": [
+  {
+   "phrases": [
+    "associated with",
+    "involved",
+    "people",
+    "organisations",
+    "organizations",
+    "who was involved",
+    "connected to",
+    "associated people",
+    "associated person",
+    "linked person",
+    "related people",
+    "who is connected"
+   ],
+   "kind": "link",
+   "node": "actor"
+  },
+  {
+   "phrases": [
+    "owned by",
+    "owner",
+    "who owned it",
+    "owners",
+    "belonged to",
+    "operated by",
+    "operator"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Owner"
+   }
+  },
+  {
+   "phrases": [
+    "designed by",
+    "designer",
+    "who designed it",
+    "design by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Designer"
+   }
+  },
+  {
+   "phrases": [
+    "engineer",
+    "engineered by",
+    "engineers"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Engineer"
+   }
+  },
+  {
+   "phrases": [
+    "found by",
+    "discovered by",
+    "finder",
+    "who found it",
+    "who discovered it",
+    "discoverer"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Finder"
+   }
+  },
+  {
+   "phrases": [
+    "excavated by",
+    "excavator",
+    "dug up by",
+    "who excavated it",
+    "who dug it up"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Excavator"
+   }
+  },
+  {
+   "phrases": [
+    "salvaged by",
+    "salvager",
+    "recovered by",
+    "who recovered it",
+    "who salvaged it"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Salvager"
+   }
+  },
+  {
+   "phrases": [
+    "dived by",
+    "diver",
+    "divers",
+    "who dived on it"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Diver"
+   }
+  },
+  {
+   "phrases": [
+    "photographed by",
+    "photographer",
+    "who photographed it"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Photographer"
+   }
+  },
+  {
+   "phrases": [
+    "surveyed by",
+    "surveyor",
+    "who surveyed it"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Surveyor"
+   }
+  },
+  {
+   "phrases": [
+    "recorded by",
+    "recorder",
+    "who recorded it"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Recorder"
+   }
+  },
+  {
+   "phrases": [
+    "researched by",
+    "researcher",
+    "who researched it"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Researcher"
+   }
+  },
+  {
+   "phrases": [
+    "donated by",
+    "donor",
+    "who donated it",
+    "gifted by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Donor"
+   }
+  },
+  {
+   "phrases": [
+    "famous person",
+    "person of historic interest",
+    "notable person",
+    "historic figure",
+    "famous people"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Person of Historic Interest"
+   }
+  },
+  {
+   "phrases": [
+    "funded by",
+    "funder",
+    "financed by",
+    "paid for by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Funding Body/Financier"
+   }
+  },
+  {
+   "phrases": [
+    "sponsored by",
+    "sponsor",
+    "sponsors"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Sponsor"
+   }
+  },
+  {
+   "phrases": [
+    "curator",
+    "curated by",
+    "who curated it"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Curator"
+   }
+  },
+  {
+   "phrases": [
+    "role",
+    "what role",
+    "their role",
+    "role in",
+    "in what capacity"
+   ],
+   "kind": "property",
+   "node": "role_type"
+  },
+  {
+   "phrases": [
+    "association dates",
+    "when were they associated",
+    "date of association",
+    "association period",
+    "associated from"
+   ],
+   "kind": "date",
+   "node": "associated_actor_start_date",
+   "end_node": "associated_actor_end_date"
+  }
+ ]
+}

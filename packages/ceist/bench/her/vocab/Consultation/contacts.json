@@ -1,0 +1,130 @@
+{
+ "model": "Consultation",
+ "nodegroup": "contacts",
+ "entries": [
+  {
+   "phrases": [
+    "applicant",
+    "who applied",
+    "applied by",
+    "submitted by",
+    "who is the applicant",
+    "applicants",
+    "application made by",
+    "who made the application",
+    "client"
+   ],
+   "kind": "link",
+   "node": "applicant"
+  },
+  {
+   "phrases": [
+    "developer",
+    "developed by",
+    "who is the developer",
+    "development company"
+   ],
+   "kind": "link",
+   "node": "applicant",
+   "qualifier": {
+    "node": "applicant_role_type",
+    "value": "Developer"
+   }
+  },
+  {
+   "phrases": [
+    "agent",
+    "planning agent",
+    "acting on behalf",
+    "represented by",
+    "consultant",
+    "agents",
+    "applicant's agent",
+    "who is the agent"
+   ],
+   "kind": "link",
+   "node": "agent"
+  },
+  {
+   "phrases": [
+    "architect",
+    "architects",
+    "designed by",
+    "who is the architect"
+   ],
+   "kind": "link",
+   "node": "agent",
+   "qualifier": {
+    "node": "agent_role_type",
+    "value": "Architect"
+   }
+  },
+  {
+   "phrases": [
+    "owner",
+    "landowner",
+    "site owner",
+    "who owns the site",
+    "owned by",
+    "owners",
+    "property owner",
+    "freeholder"
+   ],
+   "kind": "link",
+   "node": "owner"
+  },
+  {
+   "phrases": [
+    "casework officer",
+    "case officer",
+    "caseworker",
+    "who is handling it",
+    "assigned officer",
+    "archaeology advisor",
+    "archaeological advisor",
+    "officer in charge",
+    "who dealt with it",
+    "handled by"
+   ],
+   "kind": "link",
+   "node": "casework_officer"
+  },
+  {
+   "phrases": [
+    "planning officer",
+    "borough planner",
+    "council officer",
+    "planner",
+    "council planning officer",
+    "lpa officer"
+   ],
+   "kind": "link",
+   "node": "planning_officer"
+  },
+  {
+   "phrases": [
+    "planning authority",
+    "local planning authority",
+    "council",
+    "lpa",
+    "planning body",
+    "borough council",
+    "which council",
+    "local authority",
+    "determining authority"
+   ],
+   "kind": "link",
+   "node": "planning_body"
+  },
+  {
+   "phrases": [
+    "consulting contact",
+    "contact",
+    "point of contact",
+    "contact details"
+   ],
+   "kind": "property",
+   "node": "consulting_contact"
+  }
+ ]
+}

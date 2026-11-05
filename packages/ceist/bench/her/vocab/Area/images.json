@@ -1,0 +1,58 @@
+{
+ "model": "Area",
+ "nodegroup": "images",
+ "entries": [
+  {
+   "phrases": [
+    "image copyright holder",
+    "who owns the copyright",
+    "copyright owner",
+    "image rights holder"
+   ],
+   "kind": "link",
+   "node": "copyright_holder"
+  },
+  {
+   "phrases": [
+    "images",
+    "photos",
+    "pictures",
+    "photographs",
+    "image",
+    "photo"
+   ],
+   "kind": "property",
+   "node": "images"
+  },
+  {
+   "phrases": [
+    "image caption",
+    "caption",
+    "photo caption"
+   ],
+   "kind": "property",
+   "node": "captiion"
+  },
+  {
+   "phrases": [
+    "copyright",
+    "licence",
+    "license",
+    "rights",
+    "copyright status",
+    "reuse rights"
+   ],
+   "kind": "property",
+   "node": "copyright_type"
+  },
+  {
+   "phrases": [
+    "copyright note",
+    "copyright notes",
+    "credit line"
+   ],
+   "kind": "property",
+   "node": "copyright_note_text"
+  }
+ ]
+}

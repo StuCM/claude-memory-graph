@@ -1,0 +1,19 @@
+{
+ "model": "Application Area",
+ "nodegroup": "associated_application_area",
+ "entries": [
+  {
+   "phrases": [
+    "related application areas",
+    "adjacent application areas",
+    "other application areas",
+    "neighbouring sites",
+    "associated application areas",
+    "overlapping application areas",
+    "linked application areas"
+   ],
+   "kind": "link",
+   "node": "associated_application_area"
+  }
+ ]
+}

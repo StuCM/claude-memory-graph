@@ -1,0 +1,19 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "digital_file_s__n1",
+ "entries": [
+  {
+   "phrases": [
+    "digital files",
+    "documents",
+    "attachments",
+    "files",
+    "associated files",
+    "digital objects",
+    "reports"
+   ],
+   "kind": "link",
+   "node": "digital_file_s__n1"
+  }
+ ]
+}

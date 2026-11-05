@@ -1,0 +1,48 @@
+{
+ "model": "Bibliographic Source",
+ "nodegroup": "publication",
+ "entries": [
+  {
+   "phrases": [
+    "published",
+    "publication date",
+    "when was it published",
+    "year of publication",
+    "date published",
+    "publication year",
+    "came out",
+    "issued",
+    "printed",
+    "published in",
+    "date of publication",
+    "when did it come out",
+    "first published",
+    "year published"
+   ],
+   "kind": "date",
+   "node": "date_of_publication"
+  },
+  {
+   "phrases": [
+    "publisher",
+    "published by",
+    "who published it",
+    "publishing house",
+    "press"
+   ],
+   "kind": "property",
+   "node": "publisher"
+  },
+  {
+   "phrases": [
+    "place of publication",
+    "where was it published",
+    "where published",
+    "publication place",
+    "city of publication"
+   ],
+   "kind": "property",
+   "node": "publication_placename_value"
+  }
+ ]
+}
