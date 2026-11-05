@@ -1,5 +1,5 @@
 {
- "_about": "Held-out HER questions, written from the model descriptions only (vocabulary not seen).",
+ "_about": "Held-out HER questions, written from the model descriptions only (vocabulary not seen). Cases with \"source\": \"e2e\" are planner-level (question → conditions), written for group grounding; `ceist eval` skips them.",
  "cases": [
   {
    "model": "Monument",
@@ -1096,6 +1096,79 @@
    "phrase": "house price",
    "slot": "property",
    "expect": null
+  },
+  {
+   "model": "Monument",
+   "q": "Which monuments were demolished before 1900?",
+   "source": "e2e",
+   "expect": {
+    "conditions": [
+     {
+      "node": "construction_phase_type",
+      "value": "Destruction",
+      "tile": "construction_phases"
+     },
+     {
+      "node": "construction_phase_start_date",
+      "tile": "construction_phases"
+     }
+    ]
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "Which monuments were restored after 1950?",
+   "source": "e2e",
+   "expect": {
+    "conditions": [
+     {
+      "node": "construction_phase_type",
+      "value": "Repairs",
+      "tile": "construction_phases"
+     },
+     {
+      "node": "construction_phase_start_date",
+      "tile": "construction_phases"
+     }
+    ]
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "Which monuments were altered in the 1960s?",
+   "source": "e2e",
+   "expect": {
+    "conditions": [
+     {
+      "node": "construction_phase_type",
+      "value": "Alteration",
+      "tile": "construction_phases"
+     },
+     {
+      "node": "construction_phase_start_date",
+      "tile": "construction_phases"
+     }
+    ]
+   }
+  },
+  {
+   "model": "Monument",
+   "q": "Which monuments were destroyed by fire?",
+   "source": "e2e",
+   "expect": null
+  },
+  {
+   "model": "Heritage Story",
+   "q": "Which heritage stories are for children?",
+   "source": "e2e",
+   "expect": {
+    "conditions": [
+     {
+      "node": "audience_type",
+      "value": "Children"
+     }
+    ]
+   }
   }
  ]
 }

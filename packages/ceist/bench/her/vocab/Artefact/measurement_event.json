@@ -18,111 +18,6 @@
   },
   {
    "phrases": [
-    "height",
-    "how tall",
-    "tall",
-    "high",
-    "how high"
-   ],
-   "kind": "property",
-   "node": "dimension_value",
-   "qualifier": {
-    "node": "dimension_type",
-    "value": "Height"
-   }
-  },
-  {
-   "phrases": [
-    "length",
-    "how long",
-    "long",
-    "longest dimension"
-   ],
-   "kind": "property",
-   "node": "dimension_value",
-   "qualifier": {
-    "node": "dimension_type",
-    "value": "Length"
-   }
-  },
-  {
-   "phrases": [
-    "breadth",
-    "width",
-    "how wide",
-    "wide",
-    "across"
-   ],
-   "kind": "property",
-   "node": "dimension_value",
-   "qualifier": {
-    "node": "dimension_type",
-    "value": "Breadth"
-   }
-  },
-  {
-   "phrases": [
-    "depth",
-    "how deep",
-    "deep",
-    "thickness",
-    "how thick",
-    "thick"
-   ],
-   "kind": "property",
-   "node": "dimension_value",
-   "qualifier": {
-    "node": "dimension_type",
-    "value": "Depth"
-   }
-  },
-  {
-   "phrases": [
-    "weight",
-    "how heavy",
-    "weighs",
-    "heavy",
-    "mass",
-    "how much does it weigh"
-   ],
-   "kind": "property",
-   "node": "dimension_value",
-   "qualifier": {
-    "node": "dimension_type",
-    "value": "Weight"
-   }
-  },
-  {
-   "phrases": [
-    "quantity",
-    "how many",
-    "number of items",
-    "count",
-    "number of objects",
-    "how many pieces"
-   ],
-   "kind": "property",
-   "node": "dimension_value",
-   "qualifier": {
-    "node": "dimension_type",
-    "value": "Quantity"
-   }
-  },
-  {
-   "phrases": [
-    "volume",
-    "capacity",
-    "how much does it hold"
-   ],
-   "kind": "property",
-   "node": "dimension_value",
-   "qualifier": {
-    "node": "dimension_type",
-    "value": "Volume"
-   }
-  },
-  {
-   "phrases": [
     "unit",
     "measurement unit",
     "units",
@@ -131,5 +26,103 @@
    "kind": "property",
    "node": "dimension_measurement_unit"
   }
- ]
+ ],
+ "group": {
+  "phrases": [],
+  "nodes": {},
+  "combos": [
+   {
+    "phrases": [
+     "height",
+     "how tall",
+     "tall",
+     "high",
+     "how high"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Height"
+    }
+   },
+   {
+    "phrases": [
+     "length",
+     "how long",
+     "long",
+     "longest dimension"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Length"
+    }
+   },
+   {
+    "phrases": [
+     "breadth",
+     "width",
+     "how wide",
+     "wide",
+     "across"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Breadth"
+    }
+   },
+   {
+    "phrases": [
+     "depth",
+     "how deep",
+     "deep",
+     "thickness",
+     "how thick",
+     "thick"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Depth"
+    }
+   },
+   {
+    "phrases": [
+     "weight",
+     "how heavy",
+     "weighs",
+     "heavy",
+     "mass",
+     "how much does it weigh"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Weight"
+    }
+   },
+   {
+    "phrases": [
+     "quantity",
+     "how many",
+     "number of items",
+     "count",
+     "number of objects",
+     "how many pieces"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Quantity"
+    }
+   },
+   {
+    "phrases": [
+     "volume",
+     "capacity",
+     "how much does it hold"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Volume"
+    }
+   }
+  ],
+  "answers": {}
+ }
 }

@@ -7,6 +7,8 @@ Kept:
 - links whose target model has records;
 - qualified entries whose value occurs in the data, or is broader than one
   that does ("listed" covers "Grade II"); only checked with reference data.
+  A group block's combos are cut the same way, and the block goes with its
+  nodegroup.
 
 What was cut is recorded under "sliced", so a refusal can say "this dataset
 holds no construction phases" rather than "couldn't place".
@@ -121,6 +123,17 @@ def _entries(use: Usage, model: str, entries: list[dict], sliced: dict) -> list[
     return kept
 
 
+def _group(use: Usage, model: str, block: dict, sliced: dict) -> dict:
+    """A group block without the combos `use` cuts, each read as the entries it means."""
+    combos = []
+    for c in block.get("combos") or []:
+        node = c.get("node") or next(iter(c["set"]))
+        parts = [{"node": node, "qualifier": {"node": a, "value": v}} for a, v in c["set"].items()]
+        if len(_entries(use, model, parts, sliced)) == len(parts):
+            combos.append(c)
+    return dict(block, combos=combos)
+
+
 def _record(use: Usage, models: list[str]) -> dict:
     return {"models": [m for m in models if not use.records[m]],
             "groups": {m: use.dropped_groups(m) for m in models
@@ -139,6 +152,9 @@ def slice_bundle(bundle: dict, use: Usage) -> dict:
         models[name] = dict(m, nodes={a: n for a, n in m["nodes"].items()
                                       if group_of.get(a) in use.kept[name]},
                         entries=_entries(use, name, m["entries"], sliced))
+        if "groups" in m:
+            models[name]["groups"] = {a: _group(use, name, b, sliced) for a, b in m["groups"].items()
+                                      if a in use.kept[name]}
     built = dict(bundle.get("built") or {}, models=len(models),
                  entries=sum(len(m["entries"]) for m in models.values()),
                  phrasings=sum(len(e["phrases"]) for m in models.values() for e in m["entries"]))
@@ -159,11 +175,15 @@ def slice_vocab(vocab_dir: str | Path, out_dir: str | Path, use: Usage) -> dict:
             continue
         for f in sorted((root / name).glob("*.json")):
             g = json.loads(f.read_text())
-            entries = _entries(use, name, g["entries"], sliced)
-            if entries:
+            kept = dict(g, entries=_entries(use, name, g["entries"], sliced))
+            if g.get("group") and g["nodegroup"] in use.kept[name]:
+                kept["group"] = _group(use, name, g["group"], sliced)
+            else:
+                kept.pop("group", None)
+            if kept["entries"] or "group" in kept:
                 (out / name).mkdir(parents=True, exist_ok=True)
                 (out / name / f.name).write_text(
-                    json.dumps(dict(g, entries=entries), indent=1, ensure_ascii=False) + "\n")
+                    json.dumps(kept, indent=1, ensure_ascii=False) + "\n")
     out.mkdir(parents=True, exist_ok=True)
     (out / MANIFEST).write_text(json.dumps(dict(manifest, sliced=sliced), indent=1) + "\n")
     return sliced

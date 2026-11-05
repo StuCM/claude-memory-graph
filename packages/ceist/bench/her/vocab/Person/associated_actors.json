@@ -38,114 +38,105 @@
    ],
    "kind": "link",
    "node": "actor"
-  },
-  {
-   "phrases": [
-    "worked for",
-    "employed by",
-    "employer",
-    "employee of",
-    "job at",
-    "employment"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Employee"
-   }
-  },
-  {
-   "phrases": [
-    "patron",
-    "patron of",
-    "patronage",
-    "benefactor"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Patron"
-   }
-  },
-  {
-   "phrases": [
-    "client",
-    "clients",
-    "client of"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Client"
-   }
-  },
-  {
-   "phrases": [
-    "architect",
-    "architects",
-    "architect for"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Architect"
-   }
-  },
-  {
-   "phrases": [
-    "builder",
-    "builders",
-    "building firm"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Builder"
-   }
-  },
-  {
-   "phrases": [
-    "owner",
-    "owned",
-    "owner of"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Owner"
-   }
-  },
-  {
-   "phrases": [
-    "contributor",
-    "contributed to",
-    "collaborator"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Contributor"
-   }
-  },
-  {
-   "phrases": [
-    "sponsor",
-    "sponsored by",
-    "funded by"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Sponsor"
-   }
   }
- ]
+ ],
+ "group": {
+  "phrases": [],
+  "nodes": {},
+  "combos": [
+   {
+    "phrases": [
+     "worked for",
+     "employed by",
+     "employer",
+     "employee of",
+     "job at",
+     "employment"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Employee"
+    }
+   },
+   {
+    "phrases": [
+     "patron",
+     "patron of",
+     "patronage",
+     "benefactor"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Patron"
+    }
+   },
+   {
+    "phrases": [
+     "client",
+     "clients",
+     "client of"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Client"
+    }
+   },
+   {
+    "phrases": [
+     "architect",
+     "architects",
+     "architect for"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Architect"
+    }
+   },
+   {
+    "phrases": [
+     "builder",
+     "builders",
+     "building firm"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Builder"
+    }
+   },
+   {
+    "phrases": [
+     "owner",
+     "owned",
+     "owner of"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Owner"
+    }
+   },
+   {
+    "phrases": [
+     "contributor",
+     "contributed to",
+     "collaborator"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Contributor"
+    }
+   },
+   {
+    "phrases": [
+     "sponsor",
+     "sponsored by",
+     "funded by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Sponsor"
+    }
+   }
+  ],
+  "answers": {}
+ }
 }

@@ -160,7 +160,7 @@ def interpret(vocab: Vocabulary, text: str, today=None, matcher=None) -> Interpr
         out.refused = str(e)
         return out
     plan.count, plan.recent, plan.wh = g.count, g.recent, g.wh
-    why = _attach_values(g, plan) or _attach_dates(g, plan)
+    why = _attach_groups(g, plan) or _attach_values(g, plan) or _attach_dates(g, plan)
     if why:
         out.refused = why + _did_you_mean(g)
         return out
@@ -264,6 +264,23 @@ def _quoted(words) -> str:
 
 def _did_you_mean(g: Grounding) -> str:
     return "".join(f"; did you mean {' or '.join(opts)} for '{w}'?" for w, opts in g.suggestions)
+
+
+def _attach_groups(g: Grounding, plan: Plan) -> str:
+    """Each group phrase joins the plan of its model as one tile condition; a
+    lone condition is the same on any tile, so it stands alone."""
+    for gm in g.groups:
+        p = next((p for p in _plans(plan) if p.type == gm.group.model), None)
+        if p is None:
+            g.uncovered.append(gm.phrase)
+            return f"'{gm.phrase}' describes {gm.group.model} records, which nothing asked for is"
+        conds = [HasValue(v.field, v.value, v.label, v.kind) for v in gm.values]
+        if gm.date is not None:
+            f = gm.group.date
+            conds.append(DateRange(f.field, gm.date.lo, gm.date.hi, f.label))
+        c = conds[0] if len(conds) == 1 else OnTile(gm.group.name, conds)
+        p.where.append(Not(c) if gm.negated else c)
+    return ""
 
 
 def _attach_values(g: Grounding, plan: Plan) -> str:

@@ -63,7 +63,8 @@ def _assemble(a):
         return 1
     Path(a.out).write_text(json.dumps(b, separators=(",", ":")))
     built = b["built"]
-    print(f"{built['models']} models, {built['entries']} entries, {built['phrasings']} phrasings "
+    print(f"{built['models']} models, {built['entries']} entries, {built['phrasings']} phrasings, "
+          f"{built['groups']} groups "
           f"→ {a.out} ({Path(a.out).stat().st_size // 1024} KB)")
     return 0
 

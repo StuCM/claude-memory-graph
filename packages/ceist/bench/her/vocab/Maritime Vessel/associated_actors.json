@@ -30,216 +30,6 @@
   },
   {
    "phrases": [
-    "captain",
-    "captained by",
-    "commanded by",
-    "skipper",
-    "commander",
-    "who captained it"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Captain"
-   }
-  },
-  {
-   "phrases": [
-    "master mariner",
-    "master of the ship",
-    "ship's master"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Master Mariner"
-   }
-  },
-  {
-   "phrases": [
-    "designed by",
-    "designer",
-    "who designed it"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Designer"
-   }
-  },
-  {
-   "phrases": [
-    "architect",
-    "naval architect"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Architect"
-   }
-  },
-  {
-   "phrases": [
-    "engineer",
-    "engineered by"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Engineer"
-   }
-  },
-  {
-   "phrases": [
-    "manufactured by",
-    "manufacturer",
-    "made by"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Manufacturer"
-   }
-  },
-  {
-   "phrases": [
-    "salvaged by",
-    "salvor",
-    "salvager",
-    "salvage company"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Salvager"
-   }
-  },
-  {
-   "phrases": [
-    "dived by",
-    "diver",
-    "divers",
-    "dived on by"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Diver"
-   }
-  },
-  {
-   "phrases": [
-    "found by",
-    "discovered by",
-    "finder",
-    "who found it",
-    "who discovered it"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Finder"
-   }
-  },
-  {
-   "phrases": [
-    "surveyed by",
-    "surveyor"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Surveyor"
-   }
-  },
-  {
-   "phrases": [
-    "recorded by",
-    "recorder"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Recorder"
-   }
-  },
-  {
-   "phrases": [
-    "excavated by",
-    "excavator"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Excavator"
-   }
-  },
-  {
-   "phrases": [
-    "researched by",
-    "researcher"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Researcher"
-   }
-  },
-  {
-   "phrases": [
-    "photographed by",
-    "photographer"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Photographer"
-   }
-  },
-  {
-   "phrases": [
-    "famous person",
-    "historic figure",
-    "person of historic interest",
-    "notable person"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Person of Historic Interest"
-   }
-  },
-  {
-   "phrases": [
-    "funded by",
-    "financed by",
-    "funder",
-    "financier"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Funding Body/Financier"
-   }
-  },
-  {
-   "phrases": [
     "role",
     "role type",
     "what role",
@@ -248,5 +38,190 @@
    "kind": "property",
    "node": "role_type"
   }
- ]
+ ],
+ "group": {
+  "phrases": [],
+  "nodes": {},
+  "combos": [
+   {
+    "phrases": [
+     "captain",
+     "captained by",
+     "commanded by",
+     "skipper",
+     "commander",
+     "who captained it"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Captain"
+    }
+   },
+   {
+    "phrases": [
+     "master mariner",
+     "master of the ship",
+     "ship's master"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Master Mariner"
+    }
+   },
+   {
+    "phrases": [
+     "designed by",
+     "designer",
+     "who designed it"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Designer"
+    }
+   },
+   {
+    "phrases": [
+     "architect",
+     "naval architect"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Architect"
+    }
+   },
+   {
+    "phrases": [
+     "engineer",
+     "engineered by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Engineer"
+    }
+   },
+   {
+    "phrases": [
+     "manufactured by",
+     "manufacturer",
+     "made by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Manufacturer"
+    }
+   },
+   {
+    "phrases": [
+     "salvaged by",
+     "salvor",
+     "salvager",
+     "salvage company"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Salvager"
+    }
+   },
+   {
+    "phrases": [
+     "dived by",
+     "diver",
+     "divers",
+     "dived on by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Diver"
+    }
+   },
+   {
+    "phrases": [
+     "found by",
+     "discovered by",
+     "finder",
+     "who found it",
+     "who discovered it"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Finder"
+    }
+   },
+   {
+    "phrases": [
+     "surveyed by",
+     "surveyor"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Surveyor"
+    }
+   },
+   {
+    "phrases": [
+     "recorded by",
+     "recorder"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Recorder"
+    }
+   },
+   {
+    "phrases": [
+     "excavated by",
+     "excavator"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Excavator"
+    }
+   },
+   {
+    "phrases": [
+     "researched by",
+     "researcher"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Researcher"
+    }
+   },
+   {
+    "phrases": [
+     "photographed by",
+     "photographer"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Photographer"
+    }
+   },
+   {
+    "phrases": [
+     "famous person",
+     "historic figure",
+     "person of historic interest",
+     "notable person"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Person of Historic Interest"
+    }
+   },
+   {
+    "phrases": [
+     "funded by",
+     "financed by",
+     "funder",
+     "financier"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Funding Body/Financier"
+    }
+   }
+  ],
+  "answers": {}
+ }
 }

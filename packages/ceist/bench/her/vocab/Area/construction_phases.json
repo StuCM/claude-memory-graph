@@ -28,85 +28,6 @@
   },
   {
    "phrases": [
-    "altered",
-    "alterations",
-    "modified",
-    "extended",
-    "remodelled",
-    "when was it altered",
-    "date of alteration",
-    "enlarged",
-    "added to"
-   ],
-   "kind": "date",
-   "node": "construction_phase_start_date",
-   "end_node": "construction_phase_end_date",
-   "qualifier": {
-    "node": "construction_phase_type",
-    "value": "Alteration"
-   }
-  },
-  {
-   "phrases": [
-    "demolished",
-    "destroyed",
-    "torn down",
-    "pulled down",
-    "knocked down",
-    "razed",
-    "when was it demolished",
-    "date of demolition",
-    "demolition",
-    "destruction",
-    "levelled",
-    "cleared"
-   ],
-   "kind": "date",
-   "node": "construction_phase_start_date",
-   "end_node": "construction_phase_end_date",
-   "qualifier": {
-    "node": "construction_phase_type",
-    "value": "Destruction"
-   }
-  },
-  {
-   "phrases": [
-    "converted",
-    "conversion",
-    "when was it converted",
-    "change of use",
-    "repurposed",
-    "adapted for"
-   ],
-   "kind": "date",
-   "node": "construction_phase_start_date",
-   "end_node": "construction_phase_end_date",
-   "qualifier": {
-    "node": "construction_phase_type",
-    "value": "Conversion"
-   }
-  },
-  {
-   "phrases": [
-    "repaired",
-    "repairs",
-    "restored",
-    "restoration",
-    "renovated",
-    "refurbished",
-    "when was it repaired",
-    "rebuilt"
-   ],
-   "kind": "date",
-   "node": "construction_phase_start_date",
-   "end_node": "construction_phase_end_date",
-   "qualifier": {
-    "node": "construction_phase_type",
-    "value": "Repairs"
-   }
-  },
-  {
-   "phrases": [
     "period",
     "era",
     "what period",
@@ -234,5 +155,79 @@
    "kind": "property",
    "node": "phase_description"
   }
- ]
+ ],
+ "group": {
+  "phrases": [],
+  "nodes": {},
+  "combos": [
+   {
+    "phrases": [
+     "altered",
+     "alterations",
+     "modified",
+     "extended",
+     "remodelled",
+     "when was it altered",
+     "date of alteration",
+     "enlarged",
+     "added to"
+    ],
+    "node": "construction_phase_start_date",
+    "set": {
+     "construction_phase_type": "Alteration"
+    }
+   },
+   {
+    "phrases": [
+     "demolished",
+     "destroyed",
+     "torn down",
+     "pulled down",
+     "knocked down",
+     "razed",
+     "when was it demolished",
+     "date of demolition",
+     "demolition",
+     "destruction",
+     "levelled",
+     "cleared"
+    ],
+    "node": "construction_phase_start_date",
+    "set": {
+     "construction_phase_type": "Destruction"
+    }
+   },
+   {
+    "phrases": [
+     "converted",
+     "conversion",
+     "when was it converted",
+     "change of use",
+     "repurposed",
+     "adapted for"
+    ],
+    "node": "construction_phase_start_date",
+    "set": {
+     "construction_phase_type": "Conversion"
+    }
+   },
+   {
+    "phrases": [
+     "repaired",
+     "repairs",
+     "restored",
+     "restoration",
+     "renovated",
+     "refurbished",
+     "when was it repaired",
+     "rebuilt"
+    ],
+    "node": "construction_phase_start_date",
+    "set": {
+     "construction_phase_type": "Repairs"
+    }
+   }
+  ],
+  "answers": {}
+ }
 }

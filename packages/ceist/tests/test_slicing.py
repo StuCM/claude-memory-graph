@@ -132,9 +132,15 @@ def test_slice_keeps_values_in_the_data_and_the_broader_ones(tmp_path):
          "qualifier": {"node": "heritage_status", "value": "Listed"}},
         {"phrases": ["candidate"], "kind": "property", "node": "heritage_status",
          "qualifier": {"node": "heritage_status", "value": "Candidate"}}]})
+    b["models"]["Building"]["groups"] = {"associated_actor": {"combos": [
+        {"phrases": ["drew"], "node": "actor", "set": {"actor_role": "Architect"}},
+        {"phrases": ["made"], "node": "actor", "set": {"actor_role": "Builder"}}]}}
     sliced = slice_bundle(b, Usage(root / "graphs", root / "resources", tmp_path / "ref"))
     assert [e["phrases"][0] for e in sliced["models"]["Building"]["entries"]] == ["designed by", "listed"]
+    assert sliced["models"]["Building"]["groups"]["associated_actor"]["combos"] == [
+        {"phrases": ["drew"], "node": "actor", "set": {"actor_role": "Architect"}}]
     assert sliced["sliced"]["values"] == {"Building": ["actor_role = Builder",
-                                                       "heritage_status = Candidate"]}
+                                                       "heritage_status = Candidate",
+                                                       "actor_role = Builder"]}
     unchecked = slice_bundle(b, Usage(root / "graphs", root / "resources"))
     assert len(unchecked["models"]["Building"]["entries"]) == 4

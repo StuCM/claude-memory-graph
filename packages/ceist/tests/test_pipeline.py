@@ -292,3 +292,22 @@ def test_judge_plan_reads_inside_a_tile_condition():
     assert pipeline.judge_plan(case, m, {}) == "right"
     case["expect"]["qualifier"]["value"] = "Builder"
     assert pipeline.judge_plan(case, m, {}) == "partial"
+
+
+def test_judge_plan_checks_expected_conditions_and_their_tile():
+    from types import SimpleNamespace
+
+    from ceist.plan import DateRange, HasValue, OnTile, Plan
+    destroyed = HasValue("phase_type", "c-d", "Destruction")
+    before = DateRange("phase_date", None, "1899-12-31")
+    want = {"model": "Building", "expect": {"conditions": [
+        {"node": "phase_type", "value": "Destruction", "tile": "phase"},
+        {"node": "phase_date", "tile": "phase"}]}}
+
+    def judged(*where):
+        return pipeline.judge_plan(want, SimpleNamespace(plan=Plan("Building", list(where)),
+                                                         refused=""), {})
+    assert judged(OnTile("phase", [destroyed, before])) == "right"
+    assert judged(OnTile("phase", [destroyed])) == "partial"          # the date dropped
+    assert judged(destroyed, before) == "dangerous"                    # not on one tile
+    assert judged(OnTile("phase", [HasValue("phase_type", "c-a", "Alteration"), before])) == "dangerous"

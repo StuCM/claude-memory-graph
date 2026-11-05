@@ -113,6 +113,39 @@ def test_validate_catches_bad_entries():
     assert any("'built' is a phrasing of two entries" in w for w in warnings)
 
 
+BLOCK = {"phrases": ["involved"], "nodes": {"actor": {"role": "actor"}, "role": {"role": "type"}},
+         "combos": [{"phrases": ["built by"], "node": "actor", "set": {"role": "Builder"}}],
+         "answers": {"who": "actor"}}
+
+
+def test_group_blocks_are_checked_split_and_assembled(tmp_path):
+    d = grouped()
+    assert bundle.validate_group(d, "actors", BLOCK) == []
+    bad = {"nodes": {"height": {"role": "measure"}, "role": {"role": "boss"}},
+           "combos": [{"phrases": ["flown by"], "set": {"role": "Pilot"}}],
+           "answers": {"when": "built_start"}}
+    errors = bundle.validate_group(d, "actors", bad)
+    assert len(errors) == 4, errors
+    assert any("'height' is not a node of this group" in e for e in errors)
+    assert any("role 'boss'" in e for e in errors)
+    assert any("'Pilot' is not a value of role" in e for e in errors)
+    assert any("answers.when" in e for e in errors)
+    p = project(tmp_path)
+    (p / "desc" / "Building.json").write_text(json.dumps(d))
+    (p / "vocab" / "Building.json").write_text(json.dumps(dict(VOCAB, groups={"actors": BLOCK})))
+    bundle.split(p / "desc", p / "vocab", p / "vocab")
+    assert json.loads((p / "vocab" / "Building" / "actors.json").read_text())["group"] == BLOCK
+    b, errors, _ = bundle.assemble(p / "desc", p / "vocab", p / "graphs")
+    assert not errors and b["format"] == "ceist.vocab/2" and b["built"]["groups"] == 1
+    assert b["models"]["Building"]["groups"] == {"actors": BLOCK}
+    (p / "vocab" / "Building" / "actors.json").write_text(json.dumps(
+        {"model": "Building", "nodegroup": "actors", "entries": [], "group": bad}))
+    assert len(bundle.assemble(p / "desc", p / "vocab", p / "graphs")[1]) == 4
+    v1 = p / "v1.json"
+    v1.write_text(json.dumps({"format": "ceist.vocab/1", "models": {}}))
+    assert bundle.load(v1)["models"] == {}
+
+
 def test_assemble_and_stale(tmp_path):
     p = project(tmp_path)
     b, errors, _ = bundle.assemble(p / "desc", p / "vocab", p / "graphs")

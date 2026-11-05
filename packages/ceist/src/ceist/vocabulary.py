@@ -68,6 +68,17 @@ class DateField:
     default: bool = False                       # the one meant when no word picks
 
 
+@dataclass(frozen=True)
+class Group:
+    """A nodegroup a phrase can name ("burnt down"): one tile of it, its values
+    set by the phrase and filled from the words around it."""
+    name: str                                   # the nodegroup alias
+    model: str
+    forms: tuple[tuple[str, tuple[Value, ...]], ...]   # (phrase, the values it sets)
+    fields: frozenset[str] = frozenset()        # controlled nodes a word nearby may fill
+    date: DateField | None = None               # where a date nearby goes
+
+
 @dataclass
 class Entity:
     """A named record the question may anchor on."""
@@ -109,3 +120,5 @@ class Vocabulary(Protocol):
 
     # optional: def date_fields(self) -> list[DateField]
     #   Without it, years and dates in a question are ordinary words.
+    # optional: def groups(self) -> list[Group]
+    #   Without it, no phrase names a tile.

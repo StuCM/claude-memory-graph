@@ -236,9 +236,11 @@ def test_skipped_bundle_entries_say_why(data):
     v = ArchesVocabulary.from_data_dir(data[0], bundle=bundle)
     rels = {r.name for r in v.relations()}
     assert "actor#Destruction" in rels
-    assert v.skipped_qualified == 2
-    assert any("qualified reference entries aren't supported yet" in s for s in v.skipped)
+    assert v.skipped_qualified == 1
     assert any("'Shipwreck' isn't a value of phase_type" in s for s in v.skipped)
+    (burnt,) = v.groups()                    # a qualified property is a tile of its group now
+    assert burnt.name == "phases" and burnt.forms[0][0] == "burnt down"
+    assert [x.label for x in burnt.forms[0][1]] == ["Destruction"]
 
 
 def test_a_record_without_a_name_is_noted(data, tmp_path):

@@ -24,22 +24,6 @@
   },
   {
    "phrases": [
-    "captain",
-    "captained by",
-    "commanded by",
-    "commander",
-    "skipper",
-    "aircraft captain"
-   ],
-   "kind": "link",
-   "node": "crew_member",
-   "qualifier": {
-    "node": "crew_role",
-    "value": "Captain"
-   }
-  },
-  {
-   "phrases": [
     "crew role",
     "crew position",
     "role on board",
@@ -48,5 +32,26 @@
    "kind": "property",
    "node": "crew_role"
   }
- ]
+ ],
+ "group": {
+  "phrases": [],
+  "nodes": {},
+  "combos": [
+   {
+    "phrases": [
+     "captain",
+     "captained by",
+     "commanded by",
+     "commander",
+     "skipper",
+     "aircraft captain"
+    ],
+    "node": "crew_member",
+    "set": {
+     "crew_role": "Captain"
+    }
+   }
+  ],
+  "answers": {}
+ }
 }

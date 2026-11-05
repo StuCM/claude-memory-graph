@@ -1,6 +1,6 @@
 # Task: ceist — ground phrases to node groups (tile-scoped conditions)
 
-Status: planned · Owner: Stuart · Created: 2026-11-04 · Size: L
+Status: steps 0–4 built · Owner: Stuart · Created: 2026-11-04 · Size: L
 
 ## Goal
 
@@ -65,6 +65,29 @@ qualified entry has its link and its value in one nodegroup (137 of 137).
 `LinkTo(…, qualifier)` now plans as `OnTile(<the link's nodegroup>, [link, value])`. The
 exception is a link walked backwards: its tile is on the other record, so it keeps the
 `qualifier` shim, and only Alizarin answers it.
+
+## Findings: steps 2–4 built (checked 2026-11-05)
+
+- **Bundle `ceist.vocab/2`.** Each model gains `groups`; a split vocabulary keeps each block in its
+  nodegroup file under `group`. `validate_group` checks nodes (on that tile), roles, combo values and
+  `answers`. The 181 HER qualified entries are now combos (137 links, 16 dates, 28 properties); the
+  44 dates and properties that were skipped now load. The flat `bench/her/vocab/<Model>.json` files
+  are unchanged: the demo reads them.
+- **Hand-written blocks**: the fixture's `phase` group (`arches_fixture.write(phases=True)`), and
+  HER Monument (`construction_phases`, `associated_actors`) and Heritage Story (`associated_actors`,
+  `audience_type`). The demo's Monument and Tale graphs have the same nodegroup aliases.
+- **HER plans.** The 120 reviewed answers are unchanged on 2.0 and 1.1. Five end-to-end cases were
+  added; three were refused before ("before 1900" could be any of 27 dates) and now plan as one
+  construction phases tile, "destroyed by fire" stays refused (HER records no cause), and "for
+  children" is unchanged.
+- **What the demo data can answer.** None of the tile-scoped questions. Monument fills 7 of 38
+  nodegroups (geometry, names, cross-references, descriptions, location data, system reference
+  numbers, named locations) and no construction phase or actor tile. Tale fills names,
+  descriptions, parent story, one associated monument, and `associated_actors` with the actor only
+  (26 tiles, no `role_type`). So "tales written by X" is one tile with an empty role: no answers.
+  Also, `ask/data` has no `vocabularies/`, so no value loads and every combo is skipped. Showing
+  the pattern needs both: reference data in `ask/data`, and tiles with two filled nodes (a role on
+  the actor tiles, or construction phases).
 
 ## Design
 
