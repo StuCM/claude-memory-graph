@@ -104,7 +104,9 @@ def test_leftover_word_gets_a_relaxation_without_it():
 def test_statement_and_thin_grounding_refuse():
     assert interpret(Toy(), "Refactor the loader").statement
     m = interpret(Toy(), "what colour is the bikeshed?")
-    assert m.plan is None and "coverage" in m.refused
+    assert m.plan is None and "couldn't place 'bikeshed', 'colour'" in m.refused
+    m = interpret(Toy(), "what is it?")
+    assert m.plan is None and "nothing in it names anything" in m.refused
 
 
 def test_about_goes_straight_to_the_record():
@@ -279,15 +281,16 @@ def test_unsure_suggests_instead_of_guessing():
 def test_two_relations_between_the_same_two_things_refuse_not_recurse():
     # HER: "Who owned the barge?" grounded 'who' → actor and 'owned' →
     # actor#Owner, both Person–Organization; building the plan looped forever
-    import pytest
-    from ceist.ground import Edge, Grounding, Node
-    from ceist.plan import _build, _Cycle
-    person, org = Node("var", "Person", 0.0, var="?v0"), Node("var", "Organization", 2.0, var="?v1")
-    g = Grounding(nodes=[person, org],
-                  edges=[Edge("actor", 0.0, form="who", source=person, target=org),
-                         Edge("actor#Owner", 1.0, form="owned", source=person, target=org)])
-    with pytest.raises(_Cycle, match="both join"):
-        _build(g, person, None)
+    class Owners(Toy):
+        def type_words(self):
+            return {"person": "Person", "organization": "Organization", "barge": "Organization"}
+
+        def relations(self):
+            return [Relation("actor", ("who",), frozenset({"Person"}), frozenset({"Organization"})),
+                    Relation("actor#Owner", ("owned",), frozenset({"Person"}),
+                             frozenset({"Organization"}))]
+    m = interpret(Owners(), "who owned the barge?")
+    assert m.plan is None and "both join" in m.refused
 
 
 def test_only_a_whole_name_binds_a_record():
@@ -359,3 +362,46 @@ def test_a_phrase_with_one_fitting_relation_is_unchanged():
     m = interpret(Toy(), "which buildings are on site Leeds Dock?")
     assert m.plan.where[0].relation == "site"
     assert not any("set aside" in n or "instead" in n for n in m.grounding.notes)
+
+
+
+class Fleet(Toy):
+    """HER-shaped labels: a one-letter altLabel ('S' for Statutory), the unit
+    inch as 'in', and the evidence type 'Find'."""
+    records = Toy.records + [entity("Person", "p-brunel", "Brunel")]
+
+    def type_words(self):
+        return {"aircraft": "Aircraft", "airmen": "Person", "people": "Person"}
+
+    def relations(self):
+        return [Relation("flew", ("flew",), frozenset({"Person"}), frozenset({"Aircraft"}))]
+
+    def values(self):
+        return [Value("lancaster", "aircraft_function", "c-lanc", "Lancaster",
+                      frozenset({"Aircraft"})),
+                Value("in", "measurement_unit", "c-inch", "inch", frozenset({"Aircraft"})),
+                Value("s", "name_use_type", "c-stat", "Statutory", frozenset({"Aircraft"})),
+                Value("find", "evidence_type", "c-find", "Find", frozenset({"Aircraft"}))]
+
+
+def _values(plan):
+    from ceist.plan import _plans
+    return [c.label for p in _plans(plan) for c in p.where if isinstance(c, HasValue)]
+
+
+def test_a_label_with_no_content_word_never_matches():
+    m = interpret(Fleet(), "what's the Lancaster's name?")
+    assert [v.phrase for v in m.grounding.values] == ["lancaster"]
+
+
+def test_flew_in_the_lancaster_is_not_measured_in_inches():
+    m = interpret(Fleet(), "Which airmen flew in the Lancaster?")
+    assert narrate(m.plan) == "Find Persons that flew any Aircraft whose aircraft function is Lancaster."
+    assert _values(m.plan) == ["Lancaster"]
+
+
+def test_find_leading_a_question_is_the_command_not_a_value():
+    m = interpret(Fleet(), "Find people with the surname Brunel")
+    assert [v.phrase for v in m.grounding.values] == []
+    assert "evidence_type" not in m.refused
+    assert m.direct is not None and m.direct.id == "p-brunel"

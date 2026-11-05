@@ -189,6 +189,7 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
              for i, m in enumerate(WORD_RE.finditer(raw))]
     terms = {w for _, w in terms_pos(text)}
     consumed: set[int] = set()
+    taken: list[tuple[int, int]] = []
 
     def parts_of(word: str) -> set[str]:
         # raw words like "memory-graph" must meet terms ("memory", "graph")
@@ -207,6 +208,7 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
             g.wh = words[0][3]
         elif words[0][3] in IMPERATIVE:
             g.wh = "what"                 # "list decisions" = "what decisions"
+            taken.append((words[0][1], words[0][2]))   # "Find people…": not the value Find
         consumed.add(0)
     if len(words) > 1 and words[0][3] == "how" and words[1][3] in ("many", "much"):
         g.count, g.wh = True, "what"      # not "how" → its implied type
@@ -220,7 +222,6 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
 
     # ── relations
     relations = {r.name: r for r in vocab.relations()}
-    taken: list[tuple[int, int]] = []
     matched: set[str] = set()
     sharing: dict[str, list[str]] = {}    # each bound phrase → every relation it names
     # A phrasing that is just a type's name ("monuments", for a link called
@@ -259,7 +260,10 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
     # ── controlled values ("listed", "active")
     by_phrase: dict[str, list[Value]] = {}
     for v in vocab.values():
-        by_phrase.setdefault(v.phrase, []).append(v)
+        # a label with no content word ("S", "in": inch) matches a letter or
+        # a function word in every question
+        if terms_pos(v.phrase):
+            by_phrase.setdefault(v.phrase, []).append(v)
     for phrase, cands, m in _phrase_spans(raw, list(by_phrase.items()), taken):
         g.values.append(ValueMatch(phrase, consume_span(m.start(), m.end()), cands))
         g.notes.append(f"'{phrase}' → value of "

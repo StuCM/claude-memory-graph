@@ -29,6 +29,7 @@ From that it builds a small, backend-neutral **plan**, and each **output** compi
 1. **Ground.**
    - Relation phrases are matched first, longest first.
    - Controlled values and type names follow; multi-word types like "insurance policies" count.
+   - A value label with no content word (an altLabel "S", the unit "in") is never matched: it would match a letter or a function word in every question.
    - Dates: "in 1850", "before 1900", "after", "since", "between 1800 and 1850", "the 1890s", "the 19th century", "May 2020", ISO dates, "last year", "in the last 3 months". A word like "built" picks the date field. Without one, the type's only date (or its default date) is used; if it could be either of two, the planner refuses and asks which.
    - Negation: "not", "no", "without", "never", "isn't", "don't", "non-". Each one negates the next thing named: a relation, a value, a date, or a type ("sites with **no buildings** designed by X" negates the hop to buildings, not the architect).
    - Up to two named records become anchors. Only a name may bind one: a record that merely mentions the word does not.
@@ -36,7 +37,7 @@ From that it builds a small, backend-neutral **plan**, and each **output** compi
 2. **Refuse rather than guess.**
    - Statements are not answered.
    - Neither are questions outside the grammar.
-   - Neither are questions where too little of the text grounded (coverage below 60%).
+   - Neither are questions with a word nothing placed (beyond the one leftover word that becomes a text filter), since answering without it would widen the question.
    - Neither are questions naming two records whose role in the question is unclear.
    - Neither are questions with a "not" that has nothing after it to negate, because dropping it would invert the answer.
 3. **Plan.**
