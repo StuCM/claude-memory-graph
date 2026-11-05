@@ -149,6 +149,83 @@ so a refusal can later say "this dataset holds no construction phases". Nothing 
 record yet. On the demo, Monument keeps 7 of its 38 nodegroups, and the bundle goes from
 145 KB to 17 KB with every demo answer unchanged.
 
+### Pipeline: the scripted LLM build (built, Arches)
+
+```
+ceist vocab pipeline <graphs dir> -o <out> [--reference <reference_data>] [--questions real.txt]
+                     [--llm-cmd CMD] [--model M] [--models A,B] [--config ceist.toml]
+                     [--min-right N] [--max-dangerous N] [--jobs N]
+```
+
+It runs describe → CRM roles → one analysis per nodegroup → a collision pass per model →
+questions → assemble → gate → coverage report, and exits 1 when the gate fails.
+`<out>` holds `descriptions/`, `vocab/` (split layout), `cases.json`, `bundle.json`,
+`report.md`, `collisions.json`, `audit.jsonl` and `cache/`.
+
+- **The LLM.** By default each prompt is piped to Claude Code headless, over the user's
+  subscription: `claude -p --output-format json --tools "" --strict-mcp-config
+  --setting-sources project --no-session-persistence --system-prompt …`, run from an empty
+  temporary directory. `--tools ""` removes every built-in tool, `--strict-mcp-config`
+  every MCP server, and `--setting-sources project` (an empty directory has none) drops the
+  user's hooks and plugins. `--model` goes to `claude`. `--llm-cmd` replaces it with any
+  command that reads the prompt on stdin and prints the reply. There is no API-key path.
+  On 2026-11-05, `claude -p` run from inside a Claude Code desktop session failed with
+  "OAuth session expired and could not be refreshed": the CLI's stored login there is the
+  app's to refresh. Run the pipeline from a terminal where `claude` is logged in.
+- **The cache.** A nodegroup's reply is kept under a hash of the prompt version, `--model`,
+  the model's name, the group's name and its described nodes (with their CRM roles). Change
+  one group and only that group, plus its model's collision pass, is asked again. The
+  outline and the prompt text aren't in the key: bump `PROMPT_VERSION` when a prompt changes.
+- **Failures.** A reply that fails its check twice, or a call that errs or times out
+  (30 minutes), is recorded and not cached, and the run goes on. The report lists the failed
+  calls at the end, and a rerun asks only those again.
+- **The audit.** Every call appends `{kind, model, group, ts, sha256, prompt}` to
+  `audit.jsonl`. Cache hits aren't calls, so they aren't logged again.
+- **CRM roles,** a deterministic pre-pass over the graph (`pipeline.crm_roles`). A node's
+  role comes from its own class, then the property into it, and for a literal from the class
+  of the node it describes: `E52`/`E61` or `P82a`/`P82b` → date (a `P82a` node names its
+  `P82b` sibling as `pairs_with`), `E39`/`E21`/`E74` or `P14` → actor, `E53` or `P53`/`P7`/`P89`
+  → place, `E41` or `P1` → name, `E42` → identifier, `E55` via `P2` → type, a `P3` note →
+  description. The inverse property goes in `reverse` (`P14` → "performed"), for reverse
+  phrasings. The roles go to the LLM as `hint`s to confirm or correct. They aren't written
+  into the descriptions, so the manifest hashes don't move.
+- **One analysis per nodegroup,** with the model's outline in context. The reply is checked
+  against the description (`pipeline.check_group`), and a reply that fails is asked once
+  more, with the errors. A group that fails twice is reported, not written:
+
+  ```json
+  {"purpose": "…", "skip": null | {"reason": "…"}, "phrases": ["…"],
+   "nodes": {"<alias>": {"role": "date|actor|place|type|name|…", "phrases": [], "end_node": "…"}},
+   "combos": [{"phrases": [], "node": "<alias>", "set": {"<alias>": "<value>"}}],
+   "intents": [{"intent": "filter|list|count|when|who|where|which kind", "with": [], "wordings": []}]}
+  ```
+
+  Each node with phrases becomes an entry, and so does each combo that sets one value (a
+  qualified entry). The group file also gets the reply as its `group` block, in the shape of
+  [[ceist-group-grounding]] §2: `phrases`, `nodes` (role, end node), `combos` (`phrases`,
+  `set`), `answers` (when/who/where, from the roles), plus `purpose`, `skip` and `intents`.
+  Combos that set several values live only there, until 005 reads them.
+- **Collisions.** `bundle.shared_phrases` (what `validate` warns about) goes back to the
+  LLM once per model. It keeps each phrase on one entry, or leaves it on all of them as
+  deliberately ambiguous. The decisions are in `collisions.json`.
+- **Questions.** A separate prompt per model, given the description but never the
+  vocabulary, writes 8–12 cases. Two of them expect a refusal. `--questions` lines are
+  masked (`learn.mask`), and one call labels them; the case keeps the raw text locally.
+  `cases.json` is frozen: when it's already in `<out>`, it's reused. When a question call
+  failed, the cases go to `cases.unfrozen.json` instead, so a rerun asks again.
+- **The gate.** `ceist eval` at the phrase level, plus every case through `interpret`
+  (graphs and reference data loaded, no records). A plan is right when it's of the case's
+  model and uses the expected node (either end of a date) and qualifier value. It's
+  dangerous when it answers a case that expects a refusal, or answers with another type or
+  node. `--min-right` applies to the phrase level, and `--max-dangerous` to both levels. With
+  no cases at all, the gate fails when either threshold is given, and warns otherwise.
+- **Against the hand-tuned vocabulary:** `bench/demo_compare.py <starches-demo>/ask <out>/bundle.json`
+  runs the demo README's questions through the demo's `ask.answer` with both, and prints the
+  answers that differ.
+- **Coverage** (`report.md`): per model, the nodegroups built, skipped on purpose (with a
+  reason), missed (no phrasings, no reason) and failed, and the nodes with no phrasings,
+  split the same way.
+
 ### 3. Questions and gate
 
 - A **separate** LLM call writes the acceptance questions from the description only,
@@ -182,7 +259,7 @@ ceist vocab build schema.json -o vocab/ [--llm api|local] [--audit audit.jsonl]
 ceist vocab questions schema.json -o cases.json [--add real-questions.txt]
 ceist vocab assemble … && ceist eval … --min-right … --max-dangerous …
 ceist vocab learn <log> … → review → ceist vocab merge … (exists)
-ceist vocab pipeline <source>        # all of the above, stops at the gate
+ceist vocab pipeline <source>        # all of the above, stops at the gate (built for Arches)
 ```
 
 ## Order
