@@ -63,26 +63,43 @@ def validate(description: dict, entries: list[dict]) -> tuple[list[str], list[st
     """(errors, warnings) for one model's entries against its description."""
     nodes = {n["alias"]: n for n in description["nodes"]}
     errors, warnings = [], []
+    if not isinstance(entries, list):
+        return [f"{description['name']}: entries is not a list"], []
+    shaped = list(entries)          # malformed entries blanked, so shared_phrases can read them
     for i, e in enumerate(entries):
+        if not isinstance(e, dict) or not isinstance(e.get("node"), str):
+            errors.append(f"{description['name']} entry {i}: not an object with a node")
+            shaped[i] = {}
+            continue
         where = f"{description['name']} entry {i} ({e.get('node')})"
         n = nodes.get(e.get("node"))
         if n is None:
             errors.append(f"{where}: no node '{e.get('node')}'")
             continue
-        if not e.get("phrases"):
+        phrases = e.get("phrases")
+        if not isinstance(phrases, list) or not all(isinstance(p, str) for p in phrases):
+            errors.append(f"{where}: phrases is not a list of strings")
+            shaped[i] = {}
+            continue
+        if not phrases:
             errors.append(f"{where}: no phrases")
         if e.get("end_node"):
-            end = nodes.get(e["end_node"])
+            end = nodes.get(e["end_node"]) if isinstance(e["end_node"], str) else None
             if end is None or kind_of(end) != "date":
-                errors.append(f"{where}: end_node '{e['end_node']}' is not a date of this model")
+                errors.append(f"{where}: end_node {e['end_node']!r} is not a date of this model")
+            elif kind_of(n) != "date":
+                errors.append(f"{where}: end_node on a node that is not a date")
         q = e.get("qualifier")
-        if q:
+        if q and not (isinstance(q, dict) and isinstance(q.get("node"), str)
+                      and isinstance(q.get("value"), str)):
+            errors.append(f"{where}: qualifier {q!r} is not {{\"node\", \"value\"}}")
+        elif q:
             qn = nodes.get(q.get("node"))
             if qn is None:
                 errors.append(f"{where}: qualifier node '{q.get('node')}' not in the model")
             elif isinstance(qn.get("values"), list) and q.get("value") not in qn["values"]:
                 errors.append(f"{where}: '{q.get('value')}' is not a value of {q['node']}")
-    for key, owners in shared_phrases(entries).items():
+    for key, owners in shared_phrases(shaped).items():
         for i in owners[1:]:
             warnings.append(f"{description['name']}: '{key}' is a phrasing of two entries "
                             f"({entries[owners[0]]['node']}, {entries[i]['node']}) — ambiguous on purpose?")
@@ -332,7 +349,13 @@ def save(reply: str, descriptions_dir: str | Path, vocab_dir: str | Path) -> tup
     out = Path(vocab_dir)
     out.mkdir(parents=True, exist_ok=True)
     written, errors, warnings = [], [], []
-    for name, v in parse_reply(reply).items():
+    try:
+        models = parse_reply(reply)
+    except ValueError as e:
+        return [], [f"the reply is not JSON: {e}"], []
+    if not isinstance(models, dict):
+        return [], [f"the reply is a JSON {type(models).__name__}, not an object keyed by model"], []
+    for name, v in models.items():
         path = Path(descriptions_dir) / f"{name}.json"
         if not path.exists():
             errors.append(f"{name}: no description (not a model of this project)")

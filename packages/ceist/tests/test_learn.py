@@ -4,8 +4,6 @@ places them. The held-out questions never feed it."""
 
 import json
 
-import pytest
-
 from ceist import bundle as _bundle
 from ceist import learn
 from ceist.matching import Item
@@ -105,7 +103,6 @@ def test_merge_adds_approved_phrasings_to_the_right_entries(tmp_path):
 
 def test_the_loop_end_to_end_on_arches_data(tmp_path):
     """try → log → learn → approve → merge → the next build places the phrase."""
-    pytest.importorskip("alizarin")
     import arches_fixture as fx
     from ceist import config
     from ceist.arches import ArchesVocabulary
@@ -187,3 +184,36 @@ def test_the_learn_prompt_is_inline_and_assign_fills_it(tmp_path):
     assert props["to_assign"][i["drafted by"]]["assign"] == {"node": "architect"}
     assert props["to_assign"][i["knocked about"]]["assign"] is None
     assert all(u["approve"] is False for u in props["to_assign"])          # a person approves
+
+
+def test_assign_reports_a_malformed_reply_instead_of_crashing():
+    props = {"to_assign": [{"phrase": "knocked about"}]}            # no candidates
+    assert learn.assign(props, json.dumps({"i": 0, "assign": "none"})) == \
+        (0, ["the reply is a JSON dict, not an array of items"])
+    assert learn.assign(props, "nope")[1][0].startswith("the reply is not JSON")
+    done, errors = learn.assign(props, json.dumps([7, {"i": 0, "assign": {"node": "x"}}]))
+    assert done == 0 and errors == ["7 is not an item",
+                                    "item 0 ('knocked about'): {'node': 'x'} is not one of its candidates"]
+
+
+def test_mask_catches_a_name_that_starts_the_question():
+    assert learn.mask("Brunel built which bridges?") == "<Name> built which bridges?"
+    assert learn.mask("Which bridges did Brunel build?") == "Which bridges did <Name> build?"
+
+
+class _Anchor:
+    type, name, match_terms = "Person", "Ada Lovelace", ["ada", "lovelace"]
+
+
+def test_a_logged_phrase_is_masked_like_the_question(tmp_path):
+    class G:
+        anchors = [_Anchor()]
+        unplaced = [{"phrase": "ada lovelace", "slot": "property", "model": "Building"},
+                    {"phrase": "knocked about by brunel", "slot": "property", "model": "Building"},
+                    {"phrase": "victoria dock", "slot": "property", "model": "Building"}]
+    log = tmp_path / "learn.jsonl"
+    q = "Victoria Dock buildings ada lovelace saw knocked about by Brunel?"
+    assert learn.from_grounding(log, q, G()) == 1
+    (ev,) = [json.loads(line) for line in log.read_text().splitlines()]
+    assert ev["phrase"] == "knocked about by <Name>"
+    assert ev["q"] == "<Name> buildings <Person> saw knocked about by <Name>?"
