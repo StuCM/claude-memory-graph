@@ -273,6 +273,25 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
         consumed.update(i for i, s, _e, _w in words if s < about.end())
         g.notes.append("'… about X' → X itself")
 
+    groups = list(getattr(vocab, "groups", lambda: [])())
+    by_form: dict[str, list] = {}
+    for grp in groups:
+        for phrase, preset in grp.forms:
+            if terms_pos(phrase):
+                by_form.setdefault(phrase, []).append((grp, preset))
+    by_phrase: dict[str, list[Value]] = {}
+    for v in vocab.values():
+        # a label with no content word ("S", "in": inch) matches a letter or
+        # a function word in every question
+        if terms_pos(v.phrase):
+            by_phrase.setdefault(v.phrase, []).append(v)
+    # a longer group or value phrase wins over a relation phrase inside it:
+    # "bronze age" is a period, not 'age' (cultural_period) and a stray "bronze"
+    shape = taken + [(s, e) for i, s, e, _w in words if i in consumed]
+    longer = [(m.start(), m.end()) for p in (*by_form, *by_phrase)
+              for m in re.finditer(rf"(?<![a-z0-9]){re.escape(p)}(?![a-z0-9])", raw)
+              if not any(m.start() < e and m.end() > s for s, e in shape)]
+
     # ── relations
     relations = {r.name: r for r in vocab.relations()}
     matched: set[str] = set()
@@ -296,7 +315,7 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
              if re.search(rf"(?<![a-z0-9]){re.escape(w)}(?![a-z0-9])", raw)}
     forms = sorted(((f, r.name) for r in relations.values() for f in r.forms),
                    key=lambda x: not (relations[x[1]].domain | relations[x[1]].range) & named)
-    for form, rel, m in ([] if g.about else _phrase_spans(raw, forms, taken, names)):
+    for form, rel, m in ([] if g.about else _phrase_spans(raw, forms, taken, names + longer)):
         if just_a_type(form) and (form.split()[0] in _LEAD_WORDS
                                   or _SUBJECT_LEAD.search(raw[:m.start()])):
             taken.remove((m.start(), m.end()))
@@ -311,12 +330,6 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
     g.edges.sort(key=lambda e: e.pos)
 
     # ── group phrases ("burnt down"): filled from their clause below
-    groups = list(getattr(vocab, "groups", lambda: [])())
-    by_form: dict[str, list] = {}
-    for grp in groups:
-        for phrase, preset in grp.forms:
-            if terms_pos(phrase):
-                by_form.setdefault(phrase, []).append((grp, preset))
     for phrase, cands, m in _phrase_spans(raw, list(by_form.items()), taken, names):
         at = [i for i, s, e, _w in words if s >= m.start() and e <= m.end()]
         if consumed & set(at):                        # "how many": the question's shape
@@ -325,12 +338,6 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
         g.groups.append(GroupGround(phrase, consume_span(m.start(), m.end()), at, cands))
 
     # ── controlled values ("listed", "active")
-    by_phrase: dict[str, list[Value]] = {}
-    for v in vocab.values():
-        # a label with no content word ("S", "in": inch) matches a letter or
-        # a function word in every question
-        if terms_pos(v.phrase):
-            by_phrase.setdefault(v.phrase, []).append(v)
     for phrase, cands, m in _phrase_spans(raw, list(by_phrase.items()), taken, names):
         g.values.append(ValueMatch(phrase, consume_span(m.start(), m.end()), cands))
         g.notes.append(f"'{phrase}' → value of "
@@ -455,6 +462,8 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
             break                     # one anchor per relation at most
     g.anchor = g.anchors[0] if g.anchors else None
     _fit_relations(g, relations, sharing)
+    if not g.nodes and not g.edges and not g.about:
+        _imply_model(g, add_var, raw, words)
 
     if matcher is not None and not g.about:
         _match_leftovers(g, matcher, words, consumed, parts_of, relations, groups)
@@ -605,6 +614,26 @@ def _match_leftovers(g: Grounding, matcher, words, consumed, parts_of, relations
             take(run)
         elif res.options:
             g.suggestions.append((phrase, [o.label for o in res.options]))
+
+
+def _imply_model(g: Grounding, add_var, raw: str, words) -> None:
+    """No type named ("how many raths are there?"): values that only one model
+    holds name it. Values two models hold refuse with "did you mean" each."""
+    named = [(v.phrase, v.pos, {o for c in v.candidates for o in c.owners},
+              all(c.owners for c in v.candidates)) for v in g.values]
+    named += [(gm.phrase, gm.pos, {grp.model for grp, _ in gm.candidates}, True)
+              for gm in g.groups]
+    if not named or not all(known for *_, known in named):
+        return
+    first = min(named, key=lambda x: x[1])
+    # "what's the brooch made of?" asks about one brooch, not which brooches
+    if not _SUBJECT_LEAD.search(raw[:words[int(first[1])][1]]):
+        return
+    models = set().union(*(owners for _p, _pos, owners, _k in named))
+    if len(models) == 1:
+        add_var(models.pop(), first[1], f"'{first[0]}' implies")
+    else:
+        g.suggestions.append(("', '".join(p for p, *_ in named), sorted(models)))
 
 
 def _fill_groups(g: Grounding, words, consumed: set[int], parts_of) -> set[int]:

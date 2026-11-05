@@ -151,7 +151,7 @@ def interpret(vocab: Vocabulary, text: str, today=None, matcher=None) -> Interpr
         out.direct = g.anchor.entity
         return out
     if g.subject is None:
-        out.refused = "no queryable subject"
+        out.refused = "no queryable subject" + _did_you_mean(g)
         return out
 
     try:
