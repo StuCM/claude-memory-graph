@@ -778,7 +778,10 @@
     "named place",
     "settlement",
     "which place",
-    "place name"
+    "place name",
+    "located in",
+    "located at",
+    "situated in"
    ],
    "kind": "link",
    "node": "named_location"

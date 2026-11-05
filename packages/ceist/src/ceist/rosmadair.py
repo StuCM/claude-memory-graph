@@ -10,7 +10,9 @@ Mapping (ros-madair-query's serde form; Rós Madair itself is unchanged):
 
     LinkTo(path, EntityRef, out)     {"has_link": {"path", "target"}}
     LinkTo(path, Plan, out)          {"on_link": {"path", "model", "where"}}  (multi-hop)
-    LinkTo(None, EntityRef, any)     {"backlink": {"target"}}   (linked to it, any field)
+    LinkTo(None, EntityRef, any)     {"backlink": {"target"}}   (linked to it, any field), and
+                                     when it is the only condition, the record's own links
+                                     read from its tiles (linked_from)
     LinkTo(…, qualifier=HasValue)    {"on_tile": [<the link>, {"concept": …}]}   (one tile holds both:
                                      "designed by Ada" = actor Ada with role Architect)
     HasValue(concept)                {"concept": {"path", "op": "descendant_or_self_of", "value"}}
@@ -205,6 +207,26 @@ def read_back(compiled: Compiled, vocab) -> Plan:
 
 # ── the runner ───────────────────────────────────────────────────────────
 
+def linked_from(reader, plan: Plan, vocab) -> set[str]:
+    """For a plan that is only a loose link to a named record, the records of
+    the plan's type that record's own tiles link to. `backlink` finds only
+    the records linking to it, and Rós Madair has no inverse link (ROS-MADAIR.md
+    #3), so "which site is Navan Fort at?" reads Navan Fort's tiles instead."""
+    from .alizarin import _links
+    from .arches import LINK_TYPES
+    if not (len(plan.where) == 1 and isinstance(c := plan.where[0], LinkTo)
+            and c.relation is None and isinstance(c.target, EntityRef)):
+        return set()
+    link_nodes = {n["nodeid"] for m in vocab.models.values() for n in m.nodes
+                  if n.get("datatype") in LINK_TYPES}
+    out = set()
+    for tile in json.loads(reader.resource_tiles(c.target.entity.id)):
+        for node, value in (tile.get("data") or {}).items():
+            if node in link_nodes:
+                out.update(t for t in _links(value) if t)
+    return out & vocab.ids_of(plan.type)
+
+
 def _scoped_by_model(where: dict | None) -> bool:
     """Whether a filter only matches records of the query's model: some
     conjunct names a node of it (a vacuous filter or a backlink doesn't)."""
@@ -269,6 +291,7 @@ def ask(text: str, vocab, snapshot_dir: str, explain: bool = False, limit: int =
             ids = set(reader.resolve(json.dumps(query), graph))
             if not scoped:
                 ids &= vocab.ids_of(plan.type)
+            ids |= linked_from(reader, plan, vocab)
             for m in compiled.minus:
                 ids -= set(reader.resolve(json.dumps(m), graph))
             ids = sorted(ids, key=lambda i: vocab.names.get(i, i))

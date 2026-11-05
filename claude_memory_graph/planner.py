@@ -79,6 +79,10 @@ def _model_nouns() -> dict[str, str]:
 class MemoryVocabulary:
     """ceist.Vocabulary over a MemoryStore."""
 
+    # "Stuart" names Person 'Stuart Marshall': memories are asked about by first names
+    # and short forms nobody records as aliases
+    partial_names = True
+
     def __init__(self, store: MemoryStore, cached: bool = False):
         self.store = store
         self.cached = cached     # the on-disk index: read-only stores only (the gate)

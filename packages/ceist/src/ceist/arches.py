@@ -264,12 +264,15 @@ class ArchesVocabulary:
                 forms = {str(n.get("name") or "").lower(), n["alias"].replace("_", " ").lower()}
                 forms |= {f.lower() for f in self.relation_forms.get(n["alias"], [])}
                 forms |= {f.lower() for f in self._bundle_forms.get((m.name, n["alias"]), [])}
-                r = by_alias.setdefault(n["alias"], {"forms": set(), "domain": set(), "range": set()})
+                r = by_alias.setdefault(n["alias"], {"forms": set(), "domain": set(), "range": set(),
+                                                    "ends": set()})
                 r["forms"] |= forms
+                r["ends"].add((m.name, frozenset(targets)))
                 r["domain"].add(m.name)
                 r["range"] |= targets
         out = [Relation(alias, tuple(sorted(f for f in r["forms"] if f)), frozenset(r["domain"]),
-                        frozenset(r["range"]), style="field") for alias, r in by_alias.items()]
+                        frozenset(r["range"]), style="field", ends=frozenset(r["ends"]))
+               for alias, r in by_alias.items()]
         return out + self._qualified_relations()
 
     def _qualified_relations(self) -> list[Relation]:

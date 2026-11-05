@@ -4,7 +4,7 @@ Pipeline: shape → relations (longest phrase first, on the raw text, so
 "works on" keeps its stopword) → controlled values ("listed", "active") →
 dates ("before 1900", with the word that picks the field: "built") → type
 nouns, modifiers, negators and hints → implied types (who → Person) → up to
-two named anchors (only a name-term hit may bind; never a guess) → one
+two named anchors (only a whole name or alias may bind; never a guess) → one
 leftover word as a text filter → coverage → wire the relations to their ends
 → scope each negator ("not", "without", "non-") to the next thing named.
 
@@ -222,12 +222,13 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
     relations = {r.name: r for r in vocab.relations()}
     taken: list[tuple[int, int]] = []
     matched: set[str] = set()
+    sharing: dict[str, list[str]] = {}    # each bound phrase → every relation it names
     # A phrasing that is just a type's name ("monuments", for a link called
     # "associated monuments") is the type where the question names its
     # subject — "which monuments …", "how many sites …" — not the relation:
     # taking it would leave the question with no subject. Elsewhere ("on site
     # Leeds Dock") it stays the relation.
-    type_names = set(vocab.type_words())
+    type_names = vocab.type_words()
 
     def just_a_type(form: str) -> bool:
         words = form.split()
@@ -235,7 +236,12 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
             words = words[1:]
         return " ".join(words) in type_names
 
-    forms = [(f, r.name) for r in relations.values() for f in r.forms]
+    # a phrasing two relations share ("part of": a tale's parent story, a
+    # group's parent organisation) goes to one that joins the types the question names
+    named = {t for w, t in type_names.items()
+             if re.search(rf"(?<![a-z0-9]){re.escape(w)}(?![a-z0-9])", raw)}
+    forms = sorted(((f, r.name) for r in relations.values() for f in r.forms),
+                   key=lambda x: not (relations[x[1]].domain | relations[x[1]].range) & named)
     for form, rel, m in ([] if g.about else _phrase_spans(raw, forms, taken)):
         if just_a_type(form) and (form.split()[0] in _LEAD_WORDS
                                   or _SUBJECT_LEAD.search(raw[:m.start()])):
@@ -247,6 +253,7 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
         matched.add(rel)
         g.edges.append(_edge(relations[rel], consume_span(m.start(), m.end()), form=form))
         g.notes.append(f"'{form}' → relation {rel}")
+        sharing[form] = [r for f, r in forms if f == form]
     g.edges.sort(key=lambda e: e.pos)
 
     # ── controlled values ("listed", "active")
@@ -330,16 +337,18 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
     if g.wh in implied and implied[g.wh] not in seen:
         add_var(implied[g.wh], 0.0, f"'{g.wh}' implies")
 
-    # ── anchors: leftover terms against the records — only a NAME-term hit
-    # may bind, never a guess. Up to two ("designed by Ada on site Salts Mill").
-    expected = {t for e in g.edges if e.relation in relations
-                for t in relations[e.relation].domain | relations[e.relation].range}
+    # ── anchors: leftover terms against the records — only a whole name (or
+    # alias) may bind, never a guess. Up to two ("designed by Ada on site Salts Mill").
+    partial = getattr(vocab, "partial_names", False)
+    expected = {t for e in g.edges for r in sharing.get(e.form, [e.relation]) if r in relations
+                for t in relations[r].domain | relations[r].range}
     for _ in range(MAX_ANCHORS):
         leftovers = [(i, w) for i, _s, _e, w in words if i not in consumed and parts_of(w)]
         if not leftovers:
             break
         left = set().union(*(parts_of(w) for _i, w in leftovers))
-        ranked = vocab.rank_entities(left)
+        ranked = [(s, e) for s, e in vocab.rank_entities(left)
+                  if partial or e.named_by(left)]
         if not ranked:
             break
         score, top = ranked[0]
@@ -373,6 +382,7 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
         if len(g.anchors) >= len(g.edges):
             break                     # one anchor per relation at most
     g.anchor = g.anchors[0] if g.anchors else None
+    _fit_relations(g, relations, sharing)
 
     if matcher is not None and not g.about:
         _match_leftovers(g, matcher, words, consumed, parts_of, relations)
@@ -530,6 +540,36 @@ def _scope_negations(g: Grounding, negs: list[tuple[int, str]], contains_pos) ->
                 "value": lambda v: f"value '{v.phrase}'",
                 "date": lambda d: f"date '{d.phrase}'"}[kind](what)
         g.notes.append(f"'{word}' negates {name}")
+
+
+def _fit_relations(g: Grounding, relations: dict[str, Relation],
+                   sharing: dict[str, list[str]]) -> None:
+    """A shared phrase ("in": a tale's parent story, a monument's named
+    location) binds only a relation that can join two of the things named;
+    when none can it is set aside, so the anchor is linked loosely as if no
+    phrase were there. The word stays consumed: it was understood, as "at"
+    is. A phrase naming one relation is specific ("architect"): it keeps it,
+    and a type it implies but nobody named refuses later, in plan.py."""
+    if len(g.nodes) < 2:
+        return
+    used = {e.relation for e in g.edges}
+
+    def fits(r: Relation) -> bool:
+        return any(r.joins(a.type, b.type) for a in g.nodes for b in g.nodes if a is not b)
+
+    for edge in list(g.edges):
+        if len(sharing.get(edge.form, [])) < 2 or fits(relations[edge.relation]):
+            continue
+        pick = next((r for r in sharing.get(edge.form, [])
+                     if r not in used and fits(relations[r])), None)
+        types = " and ".join(sorted({n.type for n in g.nodes}))
+        if pick is None:
+            g.edges.remove(edge)
+            g.notes.append(f"'{edge.form}' set aside: no relation it names joins {types}")
+            continue
+        used.add(pick)
+        g.edges[g.edges.index(edge)] = _edge(relations[pick], edge.pos, form=edge.form)
+        g.notes.append(f"'{edge.form}' → relation {pick} instead: it joins {types}")
 
 
 def _imply_join(g: Grounding, relations: dict[str, Relation]) -> None:

@@ -41,7 +41,7 @@ def _link(c: LinkTo, forms: bool, canonical: bool, negated: bool) -> str:
         # same entry: "whose actor is Person 'Ada Lovelace' (role type: Architect)"
         target += f" ({_field(c.qualifier.field)}: {c.qualifier.label})"
     if c.relation is None:
-        return f"{'not ' if negated else ''}linked to {target}"
+        return f"{'not ' if negated else ''}linked to or from {target}"
     if c.style == "field":
         # a node on a record: "whose site is X" / "that are the site of X"
         name = c.relation.replace("_", " ")

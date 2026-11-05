@@ -37,6 +37,8 @@ So "how many buildings are there?" answers 7.
 
 **What ceist does:** it refuses by name questions like "which sites have buildings designed by Ada?". That needs Sites that a Building's `site` node points at, where the Building matches a sub-filter. The refusal suggests asking from the other side. ceist's Alizarin and Arches Search outputs both answer it.
 
+For a loose link to one named record ("which site is Navan Fort at?"), `linked_from` reads that record's own tiles (`Reader.resource_tiles`) and adds the records of the asked-for type they link to, beside the `backlink` results. The narration says "linked to or from".
+
 **To drop it:** an inverse link predicate, e.g. `{"linked_from": {"model", "path", "where"}}` meaning "records that a `model` record's `path` points at, where that record matches `where`". This could reuse the reverse edge index that `backlink` already uses.
 
 ## 4. `quantize_date` isn't exposed to Python (drift risk)

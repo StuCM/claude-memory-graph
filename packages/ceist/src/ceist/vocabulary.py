@@ -33,6 +33,16 @@ class Relation:
     qualifier: tuple[str, str, str] | None = None   # (field, value, label) that must hold
                                                 # on the same record entry (tile) as the link:
                                                 # designed by → actor with role Architect
+    ends: frozenset[tuple[str, frozenset[str]]] = frozenset()   # (a type holding the link, the
+                                                # types it may target; empty = any), when
+                                                # domain × range is coarser than the truth
+
+    def joins(self, source: str, target: str) -> bool:
+        """Whether this link can run from a `source` record to a `target` one."""
+        if self.ends:
+            return any(m == source and (not t or target in t) for m, t in self.ends)
+        return ((not self.domain or source in self.domain)
+                and (not self.range or target in self.range))
 
 
 @dataclass(frozen=True)
@@ -66,6 +76,12 @@ class Entity:
     name_terms: frozenset[str] = frozenset()
     terms: frozenset[str] = frozenset()
     extra: dict = field(default_factory=dict)   # backend-specific (graph id, gid, …)
+    aliases: tuple[frozenset[str], ...] = ()    # the terms of each other name it goes by
+
+    def named_by(self, words: set[str]) -> bool:
+        """The words hold its whole name, or a whole alias: "County Carn" is not
+        named by "county"."""
+        return any(n and n <= words for n in (self.name_terms, *self.aliases))
 
 
 class Vocabulary(Protocol):
@@ -80,7 +96,9 @@ class Vocabulary(Protocol):
 
     def rank_entities(self, terms: set[str]) -> list[tuple[float, Entity]]:
         """Records ranked by how well their names/text match `terms`, best
-        first. Only candidates with a score above zero."""
+        first. Only candidates with a score above zero.
+        A record binds only when the question holds its whole name or an
+        alias; a vocabulary with `partial_names = True` lets any name word bind."""
 
     def implied_types(self) -> dict[str, str]:
         """Question words that imply a type ("who" → "Person"). May be empty."""

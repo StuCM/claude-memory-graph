@@ -291,6 +291,13 @@ def test_end_to_end_explains(vocab, snapshot):
     assert "── query says ──" in out and "✓ matches" in out
 
 
+def test_end_to_end_reads_a_named_records_own_links(vocab, snapshot):
+    # the Clock Tower holds the link to Leeds Dock, so a backlink alone finds nothing
+    from ceist.rosmadair import ask
+    out = ask("which sites is the Clock Tower at?", vocab, str(snapshot))
+    assert "Site 'Leeds Dock'" in out and "Salts Mill" not in out, out
+
+
 def test_end_to_end_refuses_a_query_that_reads_back_wrong(vocab, snapshot, monkeypatch):
     import ceist.rosmadair as rm
     real = rm._expr

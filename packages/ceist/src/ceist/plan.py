@@ -160,6 +160,16 @@ def interpret(vocab: Vocabulary, text: str, coverage_min: float = COVERAGE_MIN,
         out.refused = ("named " + " and ".join(f"{a.type} '{a.name}'" for a in g.anchors)
                        + ", but couldn't tell how each relates to what's asked")
         return out
+    joined = _reached(g, g.subject)
+    stray = [n for n in g.nodes if not any(n is j for j in joined)
+             and not (loose_anchor and n is g.anchor)]
+    if stray:
+        out.plan = None
+        out.refused = ("named " + " and ".join(f"{n.type} '{n.name}'" if n.kind == "anchor"
+                                               else f"{n.type} records" for n in stray)
+                       + f", but couldn't tell how {'it relates' if len(stray) == 1 else 'they relate'}"
+                       f" to the {g.subject.type} records asked for")
+        return out
     if loose_anchor:
         plan.where.append(LinkTo(None, EntityRef(g.anchor.entity), "any"))
     if g.contains:
@@ -186,6 +196,19 @@ def _linked(g: Grounding, node: Node) -> bool:
 
 class _Cycle(Exception):
     """Two relations join the same things in a loop: which is meant is a guess."""
+
+
+def _reached(g: Grounding, start: Node) -> list[Node]:
+    """The nodes the edges join to `start`: _build drops any other silently."""
+    out, todo = [start], [start]
+    while todo:
+        n = todo.pop()
+        for e in g.edges:
+            for a, b in ((e.source, e.target), (e.target, e.source)):
+                if a is n and not any(b is x for x in out):
+                    out.append(b)
+                    todo.append(b)
+    return out
 
 
 def _build(g: Grounding, node: Node, via: Edge | None, path: tuple = ()) -> Plan:

@@ -288,3 +288,74 @@ def test_two_relations_between_the_same_two_things_refuse_not_recurse():
                          Edge("actor#Owner", 1.0, form="owned", source=person, target=org)])
     with pytest.raises(_Cycle, match="both join"):
         _build(g, person, None)
+
+
+def test_only_a_whole_name_binds_a_record():
+    # "county" is a word of 'County Carn' but not its name
+    toy = Toy()
+    toy.records = Toy.records + [entity("Building", "b-carn", "County Carn")]
+    m = interpret(toy, "which buildings are on site County Nowhere?")
+    assert m.direct is None
+    assert not any(isinstance(c, LinkTo) and isinstance(c.target, EntityRef)
+                   for c in (m.plan.where if m.plan else []))
+    toy.records.append(Entity("Site", "s-down", "County Down", frozenset({"county", "down"}),
+                              frozenset({"county", "down"}), aliases=(frozenset({"dún"}),)))
+    m = interpret(toy, "which buildings are on site County Down?")
+    assert m.plan.where[0].target.entity.id == "s-down"
+
+
+def test_a_vocabulary_may_let_part_of_a_name_bind():
+    toy = Toy()
+    toy.partial_names = True
+    assert interpret(toy, "what do we know about Ada?").direct.id == "p-1"
+    assert interpret(Toy(), "what do we know about Ada?").direct is None
+
+
+def test_a_named_thing_left_unjoined_refuses_instead_of_dropping():
+    # the Person var is joined to Ada, but nothing joins either to the Sites asked for
+    m = interpret(Toy(), "which sites is Ada Lovelace the architect of?")
+    assert m.plan is None and "couldn't tell how they relate to the Site" in m.refused
+
+
+def test_a_shared_phrasing_goes_to_the_relation_joining_the_named_types():
+    class Parts(Toy):
+        def relations(self):
+            return [Relation("parent_group", ("part of",), frozenset({"Group"}), frozenset({"Group"})),
+                    Relation("parent_site", ("part of",), frozenset({"Site"}), frozenset({"Site"}))]
+    m = interpret(Parts(), "which sites are part of Salts Mill?")
+    assert m.plan.where[0].relation == "parent_site"
+
+
+class In(Toy):
+    """'in' names two relations; the architect one is listed first, so word
+    order alone would pick it."""
+    def relations(self):
+        return [Relation("architect", ("in",), frozenset({"Building"}), frozenset({"Person"})),
+                Relation("site", ("in", "on site"), ends=frozenset({("Building", frozenset())})),
+                Relation("parent_site", ("in",), frozenset({"Site"}), frozenset({"Site"}))]
+
+
+def test_a_shared_phrase_binds_the_relation_that_joins_the_anchor():
+    m = interpret(In(), "which buildings are in Leeds Dock?")
+    assert [(c.relation, c.target.entity.id) for c in m.plan.where] == [("site", "s-dock")]
+    m = interpret(In(), "which sites are in Salts Mill?")
+    assert m.plan.where[0].relation == "parent_site"
+
+
+def test_a_shared_phrase_no_relation_fits_falls_back_to_a_loose_link():
+    m = interpret(In(), "which person is in Salts Mill?")
+    assert m.plan.where == [LinkTo(None, EntityRef(m.grounding.anchor.entity), "any")]
+    assert narrate(m.plan) == "Find Persons linked to or from Site 'Salts Mill'."
+    assert any("'in' set aside" in n for n in m.grounding.notes)
+    assert m.grounding.coverage == 1.0
+
+
+def test_a_set_aside_phrase_keeps_its_negation():
+    m = interpret(In(), "which person is not in Salts Mill?")
+    assert m.plan is None and "'not'" in m.refused
+
+
+def test_a_phrase_with_one_fitting_relation_is_unchanged():
+    m = interpret(Toy(), "which buildings are on site Leeds Dock?")
+    assert m.plan.where[0].relation == "site"
+    assert not any("set aside" in n or "instead" in n for n in m.grounding.notes)
