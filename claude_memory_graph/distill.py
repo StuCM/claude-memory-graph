@@ -157,10 +157,17 @@ def _mark_distilled(path: Path) -> None:
 def _archive(path: Path) -> Path:
     archive = path.parent / "archive"
     archive.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now().strftime('%H%M%S')
     target = archive / path.name
-    if target.exists():  # never overwrite an archived file
-        target = archive / f"{path.stem}__{datetime.now().strftime('%H%M%S')}{path.suffix}"
-    path.rename(target)
+    n = 0
+    while True:
+        try:
+            os.link(path, target)  # never overwrite an archived file: rename() would
+            break
+        except FileExistsError:
+            n += 1
+            target = archive / f"{path.stem}__{stamp}{'' if n == 1 else f'_{n}'}{path.suffix}"
+    path.unlink()
     return target
 
 

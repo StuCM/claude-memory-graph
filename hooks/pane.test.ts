@@ -152,7 +152,9 @@ test('memory_distill is answered on this machine, not by the server', async ($, 
   const out: any = await $.tool.call({ tool: 'mcp__plugin_memory-graph_memory-graph__memory_distill', project: 'quartz' })
   const call = seen.python.find((r: any) => r.event === 'Distill')
   expect(call.payload).toEqual({ project: 'quartz' })
-  expect(JSON.stringify(out)).toContain('files: 2 · promoted 3')
+  // The engine checks a hook's own answer against an MCP tool's output shape:
+  // a string or a content array, never the { content } envelope.
+  expect(out.result).toBe('files: 2 · promoted 3')
 })
 
 test('a memory server reaches Python with its token', {

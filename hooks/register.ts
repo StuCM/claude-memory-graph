@@ -280,9 +280,11 @@ export const register: Register = (on, options) => {
     await update($, calls, list => [call, ...list].slice(0, MAX_CALLS))
     if (paneMode === 'auto') await $.ui.open({ id: PANE, title: 'Memory graph' })
     // memory_distill reads this machine's context logs, so it is answered here
-    // and the files go to the server, wherever it runs.
+    // and the files go to the server, wherever it runs. The engine refuses an
+    // MCP answer that is not a string or a content array, after Python has
+    // already run.
     const result = name === 'distill'
-      ? { result: { content: [{ type: 'text', text: (await python($, 'Distill', input, run)) || 'distill: no reply' }], isError: false } }
+      ? { result: (await python($, 'Distill', input, run)) || 'distill: no reply' }
       : await next(e)
     const output = result.deny ?? textOf(result.result)
     await update($, calls, list => list.map(c => (c.id === call.id
