@@ -1,0 +1,19 @@
+{
+ "model": "Activity",
+ "nodegroup": "parent_activity",
+ "entries": [
+  {
+   "phrases": [
+    "part of",
+    "parent activity",
+    "parent project",
+    "larger project",
+    "sub-activity of",
+    "phase of project",
+    "overall project"
+   ],
+   "kind": "link",
+   "node": "parent_activity"
+  }
+ ]
+}

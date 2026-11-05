@@ -1,0 +1,17 @@
+{
+ "model": "Activity",
+ "nodegroup": "record_status_assignment",
+ "entries": [
+  {
+   "phrases": [
+    "record status",
+    "status",
+    "published status",
+    "backlog",
+    "skeleton record"
+   ],
+   "kind": "property",
+   "node": "record_status"
+  }
+ ]
+}

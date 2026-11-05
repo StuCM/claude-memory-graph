@@ -1,0 +1,151 @@
+{
+ "model": "Person",
+ "nodegroup": "associated_actors",
+ "entries": [
+  {
+   "phrases": [
+    "association dates",
+    "associated from",
+    "period of association",
+    "when were they associated",
+    "association start",
+    "involvement dates",
+    "dates of involvement"
+   ],
+   "kind": "date",
+   "node": "associated_actor_start_date",
+   "end_node": "associated_actor_end_date"
+  },
+  {
+   "phrases": [
+    "associated with",
+    "associates",
+    "associated people",
+    "associated organisations",
+    "associated organizations",
+    "connected with",
+    "linked to",
+    "related people",
+    "worked with",
+    "colleagues",
+    "network",
+    "relationships",
+    "people connected",
+    "organisations",
+    "organizations",
+    "contacts",
+    "involved with"
+   ],
+   "kind": "link",
+   "node": "actor"
+  },
+  {
+   "phrases": [
+    "worked for",
+    "employed by",
+    "employer",
+    "employee of",
+    "job at",
+    "employment"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Employee"
+   }
+  },
+  {
+   "phrases": [
+    "patron",
+    "patron of",
+    "patronage",
+    "benefactor"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Patron"
+   }
+  },
+  {
+   "phrases": [
+    "client",
+    "clients",
+    "client of"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Client"
+   }
+  },
+  {
+   "phrases": [
+    "architect",
+    "architects",
+    "architect for"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Architect"
+   }
+  },
+  {
+   "phrases": [
+    "builder",
+    "builders",
+    "building firm"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Builder"
+   }
+  },
+  {
+   "phrases": [
+    "owner",
+    "owned",
+    "owner of"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Owner"
+   }
+  },
+  {
+   "phrases": [
+    "contributor",
+    "contributed to",
+    "collaborator"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Contributor"
+   }
+  },
+  {
+   "phrases": [
+    "sponsor",
+    "sponsored by",
+    "funded by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Sponsor"
+   }
+  }
+ ]
+}

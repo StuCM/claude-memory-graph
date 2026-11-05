@@ -1,0 +1,133 @@
+{
+ "model": "Consultation",
+ "nodegroup": "attendees",
+ "entries": [
+  {
+   "phrases": [
+    "attendees",
+    "who attended",
+    "who was at the site visit",
+    "site visit attendees",
+    "attended by",
+    "who went on the visit",
+    "visitors"
+   ],
+   "kind": "link",
+   "node": "attendee"
+  },
+  {
+   "phrases": [
+    "inspector of ancient monuments",
+    "historic england inspector",
+    "inspector"
+   ],
+   "kind": "link",
+   "node": "attendee",
+   "qualifier": {
+    "node": "attendee_type",
+    "value": "HIstoric England Inspector of Ancient Monuments"
+   }
+  },
+  {
+   "phrases": [
+    "conservation officer",
+    "borough conservation officer",
+    "council conservation officer"
+   ],
+   "kind": "link",
+   "node": "attendee",
+   "qualifier": {
+    "node": "attendee_type",
+    "value": "Borough Conservation Officer"
+   }
+  },
+  {
+   "phrases": [
+    "enforcement officer",
+    "borough enforcement officer",
+    "planning enforcement officer"
+   ],
+   "kind": "link",
+   "node": "attendee",
+   "qualifier": {
+    "node": "attendee_type",
+    "value": "Borough Enforcement Officer"
+   }
+  },
+  {
+   "phrases": [
+    "archaeological contractor",
+    "contractor archaeologist",
+    "field unit"
+   ],
+   "kind": "link",
+   "node": "attendee",
+   "qualifier": {
+    "node": "attendee_type",
+    "value": "Archaeological Contractor"
+   }
+  },
+  {
+   "phrases": [
+    "archaeological consultant",
+    "heritage consultant",
+    "consultant archaeologist"
+   ],
+   "kind": "link",
+   "node": "attendee",
+   "qualifier": {
+    "node": "attendee_type",
+    "value": "Archaeological Consultant"
+   }
+  },
+  {
+   "phrases": [
+    "glaas advisor",
+    "glaas adviser",
+    "historic england advisor"
+   ],
+   "kind": "link",
+   "node": "attendee",
+   "qualifier": {
+    "node": "attendee_type",
+    "value": "Historic England GLAAS Advisor"
+   }
+  },
+  {
+   "phrases": [
+    "buildings inspector",
+    "historic england buildings inspector",
+    "inspector of historic buildings"
+   ],
+   "kind": "link",
+   "node": "attendee",
+   "qualifier": {
+    "node": "attendee_type",
+    "value": "Historic England Buildings Inspector"
+   }
+  },
+  {
+   "phrases": [
+    "construction contractor",
+    "building contractor",
+    "main contractor"
+   ],
+   "kind": "link",
+   "node": "attendee",
+   "qualifier": {
+    "node": "attendee_type",
+    "value": "Construction Contractor"
+   }
+  },
+  {
+   "phrases": [
+    "attendee type",
+    "attendee role",
+    "who were they",
+    "capacity of attendee"
+   ],
+   "kind": "property",
+   "node": "attendee_type"
+  }
+ ]
+}

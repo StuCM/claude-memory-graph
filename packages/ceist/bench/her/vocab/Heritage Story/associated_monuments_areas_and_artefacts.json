@@ -1,0 +1,28 @@
+{
+ "model": "Heritage Story",
+ "nodegroup": "associated_monuments_areas_and_artefacts",
+ "entries": [
+  {
+   "phrases": [
+    "monuments",
+    "sites",
+    "places in the story",
+    "buildings",
+    "related sites",
+    "artefacts",
+    "objects",
+    "featured sites",
+    "which monuments",
+    "associated monuments",
+    "associated sites",
+    "places featured",
+    "heritage assets",
+    "related monuments",
+    "which buildings",
+    "places mentioned"
+   ],
+   "kind": "link",
+   "node": "associated_monuments_areas_and_artefacts"
+  }
+ ]
+}

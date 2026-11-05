@@ -1,0 +1,32 @@
+{
+ "model": "Maritime Vessel",
+ "nodegroup": "nationalities",
+ "entries": [
+  {
+   "phrases": [
+    "nationality",
+    "flag",
+    "what country",
+    "which country",
+    "national flag",
+    "country of origin",
+    "flagged",
+    "whose ship"
+   ],
+   "kind": "property",
+   "node": "craft_nationality"
+  },
+  {
+   "phrases": [
+    "port of registry",
+    "registered at",
+    "home port",
+    "port of registration",
+    "place of registration",
+    "registered in"
+   ],
+   "kind": "property",
+   "node": "place_of_registration"
+  }
+ ]
+}

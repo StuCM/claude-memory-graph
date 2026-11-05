@@ -1,0 +1,62 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "area_assignment",
+ "entries": [
+  {
+   "phrases": [
+    "area status",
+    "status of the area",
+    "area designation status"
+   ],
+   "kind": "property",
+   "node": "area_status"
+  },
+  {
+   "phrases": [
+    "area status date",
+    "area status since",
+    "when was the area status assigned"
+   ],
+   "kind": "date",
+   "node": "area_status_start_date",
+   "end_node": "area_status_end_date"
+  },
+  {
+   "phrases": [
+    "area reference",
+    "area assignment reference",
+    "area reference note"
+   ],
+   "kind": "property",
+   "node": "area_reference_value"
+  },
+  {
+   "phrases": [
+    "ownership",
+    "land ownership",
+    "ownership status",
+    "public or private ownership"
+   ],
+   "kind": "property",
+   "node": "ownership"
+  },
+  {
+   "phrases": [
+    "shine form",
+    "shine feature form",
+    "form of shine feature"
+   ],
+   "kind": "property",
+   "node": "shine_form"
+  },
+  {
+   "phrases": [
+    "shine significance",
+    "shine",
+    "shine candidate significance"
+   ],
+   "kind": "property",
+   "node": "shine_significance"
+  }
+ ]
+}

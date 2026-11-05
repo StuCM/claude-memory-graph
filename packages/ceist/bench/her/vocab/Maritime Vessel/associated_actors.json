@@ -1,0 +1,252 @@
+{
+ "model": "Maritime Vessel",
+ "nodegroup": "associated_actors",
+ "entries": [
+  {
+   "phrases": [
+    "association dates",
+    "associated from",
+    "involvement dates",
+    "when was the person involved"
+   ],
+   "kind": "date",
+   "node": "associated_actor_start_date",
+   "end_node": "associated_actor_end_date"
+  },
+  {
+   "phrases": [
+    "associated with",
+    "involved",
+    "people involved",
+    "organisations involved",
+    "who was involved",
+    "associated people",
+    "associated organisations",
+    "connected with",
+    "linked people"
+   ],
+   "kind": "link",
+   "node": "actor"
+  },
+  {
+   "phrases": [
+    "captain",
+    "captained by",
+    "commanded by",
+    "skipper",
+    "commander",
+    "who captained it"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Captain"
+   }
+  },
+  {
+   "phrases": [
+    "master mariner",
+    "master of the ship",
+    "ship's master"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Master Mariner"
+   }
+  },
+  {
+   "phrases": [
+    "designed by",
+    "designer",
+    "who designed it"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Designer"
+   }
+  },
+  {
+   "phrases": [
+    "architect",
+    "naval architect"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Architect"
+   }
+  },
+  {
+   "phrases": [
+    "engineer",
+    "engineered by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Engineer"
+   }
+  },
+  {
+   "phrases": [
+    "manufactured by",
+    "manufacturer",
+    "made by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Manufacturer"
+   }
+  },
+  {
+   "phrases": [
+    "salvaged by",
+    "salvor",
+    "salvager",
+    "salvage company"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Salvager"
+   }
+  },
+  {
+   "phrases": [
+    "dived by",
+    "diver",
+    "divers",
+    "dived on by"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Diver"
+   }
+  },
+  {
+   "phrases": [
+    "found by",
+    "discovered by",
+    "finder",
+    "who found it",
+    "who discovered it"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Finder"
+   }
+  },
+  {
+   "phrases": [
+    "surveyed by",
+    "surveyor"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Surveyor"
+   }
+  },
+  {
+   "phrases": [
+    "recorded by",
+    "recorder"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Recorder"
+   }
+  },
+  {
+   "phrases": [
+    "excavated by",
+    "excavator"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Excavator"
+   }
+  },
+  {
+   "phrases": [
+    "researched by",
+    "researcher"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Researcher"
+   }
+  },
+  {
+   "phrases": [
+    "photographed by",
+    "photographer"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Photographer"
+   }
+  },
+  {
+   "phrases": [
+    "famous person",
+    "historic figure",
+    "person of historic interest",
+    "notable person"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Person of Historic Interest"
+   }
+  },
+  {
+   "phrases": [
+    "funded by",
+    "financed by",
+    "funder",
+    "financier"
+   ],
+   "kind": "link",
+   "node": "actor",
+   "qualifier": {
+    "node": "role_type",
+    "value": "Funding Body/Financier"
+   }
+  },
+  {
+   "phrases": [
+    "role",
+    "role type",
+    "what role",
+    "in what capacity"
+   ],
+   "kind": "property",
+   "node": "role_type"
+  }
+ ]
+}

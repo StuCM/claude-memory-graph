@@ -1,0 +1,38 @@
+{
+ "model": "Organization",
+ "nodegroup": "bibliographic_source_citation",
+ "entries": [
+  {
+   "phrases": [
+    "sources",
+    "bibliography",
+    "references",
+    "published in",
+    "literature",
+    "publications",
+    "books",
+    "cited in",
+    "reading list"
+   ],
+   "kind": "link",
+   "node": "bibliographic_source_citation"
+  },
+  {
+   "phrases": [
+    "page number",
+    "pages",
+    "which page"
+   ],
+   "kind": "property",
+   "node": "page_s_"
+  },
+  {
+   "phrases": [
+    "source comment",
+    "citation comment"
+   ],
+   "kind": "property",
+   "node": "comment"
+  }
+ ]
+}

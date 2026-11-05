@@ -1,0 +1,297 @@
+{
+ "model": "Maritime Vessel",
+ "nodegroup": "construction_phases",
+ "entries": [
+  {
+   "phrases": [
+    "built",
+    "constructed",
+    "when was it built",
+    "date built",
+    "year built",
+    "build date",
+    "construction date",
+    "launched",
+    "when was it launched",
+    "completed",
+    "laid down",
+    "shipbuilding date",
+    "when was it made",
+    "construction phase"
+   ],
+   "kind": "date",
+   "node": "construction_phase_start_date",
+   "end_node": "construction_phase_end_date"
+  },
+  {
+   "phrases": [
+    "altered",
+    "modified",
+    "refitted",
+    "refit",
+    "rebuilt",
+    "alteration",
+    "when was it altered"
+   ],
+   "kind": "date",
+   "node": "construction_phase_start_date",
+   "end_node": "construction_phase_end_date",
+   "qualifier": {
+    "node": "construction_phase_type",
+    "value": "Alteration"
+   }
+  },
+  {
+   "phrases": [
+    "converted",
+    "conversion",
+    "when was it converted",
+    "converted to"
+   ],
+   "kind": "date",
+   "node": "construction_phase_start_date",
+   "end_node": "construction_phase_end_date",
+   "qualifier": {
+    "node": "construction_phase_type",
+    "value": "Conversion"
+   }
+  },
+  {
+   "phrases": [
+    "repaired",
+    "repairs",
+    "when was it repaired",
+    "overhauled",
+    "mended"
+   ],
+   "kind": "date",
+   "node": "construction_phase_start_date",
+   "end_node": "construction_phase_end_date",
+   "qualifier": {
+    "node": "construction_phase_type",
+    "value": "Repairs"
+   }
+  },
+  {
+   "phrases": [
+    "destroyed",
+    "scrapped",
+    "dismantled",
+    "destruction",
+    "when was it destroyed",
+    "broken up for scrap"
+   ],
+   "kind": "date",
+   "node": "construction_phase_start_date",
+   "end_node": "construction_phase_end_date",
+   "qualifier": {
+    "node": "construction_phase_type",
+    "value": "Destruction"
+   }
+  },
+  {
+   "phrases": [
+    "phase type",
+    "construction phase type",
+    "type of phase"
+   ],
+   "kind": "property",
+   "node": "construction_phase_type"
+  },
+  {
+   "phrases": [
+    "built by",
+    "builder",
+    "shipbuilder",
+    "shipyard",
+    "who built it",
+    "constructed by",
+    "shipwright",
+    "yard",
+    "building yard"
+   ],
+   "kind": "link",
+   "node": "builder"
+  },
+  {
+   "phrases": [
+    "period",
+    "era",
+    "age",
+    "what period",
+    "cultural period",
+    "historical period",
+    "built in which period",
+    "archaeological period",
+    "from what period"
+   ],
+   "kind": "link",
+   "node": "cultural_period"
+  },
+  {
+   "phrases": [
+    "vessel type",
+    "type of ship",
+    "kind of boat",
+    "what type of vessel",
+    "ship type",
+    "class of vessel",
+    "type of vessel",
+    "what kind of ship",
+    "boat type",
+    "kind of vessel",
+    "what sort of ship"
+   ],
+   "kind": "property",
+   "node": "maritime_vessel_type"
+  },
+  {
+   "phrases": [
+    "rigging",
+    "rig",
+    "rigged",
+    "sail plan",
+    "type of rigging",
+    "rigged as",
+    "how was it rigged"
+   ],
+   "kind": "property",
+   "node": "type_of_rigging"
+  },
+  {
+   "phrases": [
+    "propulsion",
+    "powered by",
+    "engine",
+    "how was it propelled",
+    "motive power",
+    "propulsion type",
+    "engine type",
+    "steam powered",
+    "sail powered",
+    "power source"
+   ],
+   "kind": "property",
+   "node": "propulsion_type"
+  },
+  {
+   "phrases": [
+    "construction technique",
+    "clinker built",
+    "hull construction",
+    "build technique",
+    "shipbuilding technique",
+    "carvel",
+    "how was the hull built"
+   ],
+   "kind": "property",
+   "node": "construction_technique"
+  },
+  {
+   "phrases": [
+    "construction method",
+    "production method",
+    "riveted",
+    "welded",
+    "fastening",
+    "how was it made",
+    "method of construction"
+   ],
+   "kind": "property",
+   "node": "construction_method"
+  },
+  {
+   "phrases": [
+    "material",
+    "made of",
+    "what is it made of",
+    "hull material",
+    "built of",
+    "construction material",
+    "main material",
+    "wooden",
+    "iron",
+    "steel",
+    "what material"
+   ],
+   "kind": "property",
+   "node": "main_construction_material"
+  },
+  {
+   "phrases": [
+    "covering",
+    "sheathing",
+    "hull covering",
+    "sheathed",
+    "copper sheathed",
+    "covering material"
+   ],
+   "kind": "property",
+   "node": "covering_material"
+  },
+  {
+   "phrases": [
+    "fixtures",
+    "fittings",
+    "fixtures and fittings",
+    "equipment on board",
+    "fitted with",
+    "features on board"
+   ],
+   "kind": "property",
+   "node": "fixtures_and_fittings_type"
+  },
+  {
+   "phrases": [
+    "guns",
+    "ordnance",
+    "armament",
+    "weapons",
+    "cannon",
+    "armed with",
+    "how many guns",
+    "artillery"
+   ],
+   "kind": "property",
+   "node": "ordnance_type"
+  },
+  {
+   "phrases": [
+    "evidence",
+    "evidence type",
+    "what survives",
+    "surviving remains",
+    "remains",
+    "condition",
+    "state of remains",
+    "survival",
+    "how much survives",
+    "state of preservation"
+   ],
+   "kind": "property",
+   "node": "construction_phase_evidence_type"
+  },
+  {
+   "phrases": [
+    "confidence",
+    "certainty",
+    "how certain",
+    "confidence of interpretation",
+    "how sure",
+    "interpretation confidence"
+   ],
+   "kind": "property",
+   "node": "phase_certainty"
+  },
+  {
+   "phrases": [
+    "phase description",
+    "construction history",
+    "build history",
+    "construction details"
+   ],
+   "kind": "property",
+   "node": "phase_description"
+  }
+ ]
+}

@@ -1,0 +1,37 @@
+{
+ "model": "Historic Landscape Characterization",
+ "nodegroup": "spatial_record_authorization",
+ "entries": [
+  {
+   "phrases": [
+    "spatial record authorised",
+    "spatial record authorized",
+    "date of authorisation",
+    "date of authorization",
+    "when was the mapping authorised"
+   ],
+   "kind": "date",
+   "node": "date_of_authorization",
+   "end_node": "authorization_end_date"
+  },
+  {
+   "phrases": [
+    "authorisation status",
+    "authorization status",
+    "mapping approved"
+   ],
+   "kind": "property",
+   "node": "authorization_type"
+  },
+  {
+   "phrases": [
+    "authorised by",
+    "authorized by",
+    "authoriser",
+    "authorizer"
+   ],
+   "kind": "property",
+   "node": "authorizer_name"
+  }
+ ]
+}

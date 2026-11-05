@@ -1,0 +1,18 @@
+{
+ "model": "Activity",
+ "nodegroup": "associated_activities",
+ "entries": [
+  {
+   "phrases": [
+    "related activities",
+    "other activities",
+    "linked activities",
+    "associated activities",
+    "follow up work",
+    "previous work"
+   ],
+   "kind": "link",
+   "node": "associated_activities"
+  }
+ ]
+}

@@ -1,0 +1,22 @@
+{
+ "model": "Activity",
+ "nodegroup": "activity_type",
+ "entries": [
+  {
+   "phrases": [
+    "activity type",
+    "type of activity",
+    "what kind of activity",
+    "fieldwork type",
+    "investigation type",
+    "kind of investigation",
+    "what sort of work",
+    "type of fieldwork",
+    "event type",
+    "type of event"
+   ],
+   "kind": "property",
+   "node": "activity_type"
+  }
+ ]
+}

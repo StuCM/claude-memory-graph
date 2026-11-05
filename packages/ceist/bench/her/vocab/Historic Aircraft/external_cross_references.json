@@ -1,0 +1,46 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "external_cross_references",
+ "entries": [
+  {
+   "phrases": [
+    "cross reference",
+    "external reference",
+    "other reference numbers",
+    "cross references",
+    "references in other databases"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference"
+  },
+  {
+   "phrases": [
+    "cross reference source",
+    "which database",
+    "source of the cross reference"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_source"
+  },
+  {
+   "phrases": [
+    "cross reference note",
+    "cross reference notes",
+    "note on cross reference"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_description"
+  },
+  {
+   "phrases": [
+    "website",
+    "web link",
+    "url",
+    "online link",
+    "more information online"
+   ],
+   "kind": "property",
+   "node": "url"
+  }
+ ]
+}

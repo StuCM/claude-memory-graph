@@ -1,0 +1,33 @@
+{
+ "model": "Maritime Vessel",
+ "nodegroup": "crew",
+ "entries": [
+  {
+   "phrases": [
+    "crew",
+    "crew member",
+    "crew members",
+    "sailors",
+    "who sailed on it",
+    "served on",
+    "seamen",
+    "on board",
+    "mariners",
+    "crewed by"
+   ],
+   "kind": "link",
+   "node": "crew_member"
+  },
+  {
+   "phrases": [
+    "crew role",
+    "rank",
+    "position on board",
+    "crew position",
+    "job on board"
+   ],
+   "kind": "property",
+   "node": "crew_role"
+  }
+ ]
+}

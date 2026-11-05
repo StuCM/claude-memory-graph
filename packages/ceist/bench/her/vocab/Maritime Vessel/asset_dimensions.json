@@ -1,0 +1,147 @@
+{
+ "model": "Maritime Vessel",
+ "nodegroup": "asset_dimensions",
+ "entries": [
+  {
+   "phrases": [
+    "dimensions",
+    "size",
+    "how big",
+    "measurements",
+    "measured",
+    "dimension",
+    "how large"
+   ],
+   "kind": "property",
+   "node": "dimension_value"
+  },
+  {
+   "phrases": [
+    "how long",
+    "length",
+    "long",
+    "length overall",
+    "overall length"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Length"
+   }
+  },
+  {
+   "phrases": [
+    "how wide",
+    "beam",
+    "breadth",
+    "width",
+    "wide"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Breadth"
+   }
+  },
+  {
+   "phrases": [
+    "depth",
+    "how deep",
+    "depth of hold",
+    "deep"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Depth"
+   }
+  },
+  {
+   "phrases": [
+    "how tall",
+    "height",
+    "how high",
+    "tall",
+    "high"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Height"
+   }
+  },
+  {
+   "phrases": [
+    "tonnage",
+    "tons",
+    "how many tons",
+    "burthen",
+    "tonnes",
+    "gross tonnage",
+    "registered tonnage"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Tonnage"
+   }
+  },
+  {
+   "phrases": [
+    "weight",
+    "how heavy",
+    "heavy",
+    "weigh"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Weight"
+   }
+  },
+  {
+   "phrases": [
+    "volume",
+    "capacity",
+    "cubic capacity"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type",
+    "value": "Volume"
+   }
+  },
+  {
+   "phrases": [
+    "draught",
+    "draft",
+    "how much water does it draw"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type_qualifier",
+    "value": "Draught"
+   }
+  },
+  {
+   "phrases": [
+    "displacement",
+    "displaced"
+   ],
+   "kind": "property",
+   "node": "dimension_value",
+   "qualifier": {
+    "node": "dimension_type_qualifier",
+    "value": "Displacement"
+   }
+  }
+ ]
+}

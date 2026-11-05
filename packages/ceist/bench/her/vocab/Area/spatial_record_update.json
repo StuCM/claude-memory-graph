@@ -1,0 +1,27 @@
+{
+ "model": "Area",
+ "nodegroup": "spatial_record_update",
+ "entries": [
+  {
+   "phrases": [
+    "spatial record updated by",
+    "who updated the mapping",
+    "map updater"
+   ],
+   "kind": "property",
+   "node": "updater_name"
+  },
+  {
+   "phrases": [
+    "spatial record updated",
+    "map updated",
+    "geometry updated",
+    "mapping last updated",
+    "location data updated"
+   ],
+   "kind": "date",
+   "node": "update_start_date",
+   "end_node": "update_end_date"
+  }
+ ]
+}

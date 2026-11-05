@@ -1,0 +1,35 @@
+{
+ "model": "Application Area",
+ "nodegroup": "geometry",
+ "entries": [
+  {
+   "phrases": [
+    "map",
+    "boundary",
+    "red line",
+    "red line boundary",
+    "extent",
+    "geometry",
+    "coordinates",
+    "footprint",
+    "outline",
+    "on the map",
+    "show on map",
+    "site boundary",
+    "polygon"
+   ],
+   "kind": "property",
+   "node": "geospatial_coordinates"
+  },
+  {
+   "phrases": [
+    "feature shape",
+    "geometry type",
+    "point or polygon",
+    "shape of the feature"
+   ],
+   "kind": "property",
+   "node": "feature_shape"
+  }
+ ]
+}

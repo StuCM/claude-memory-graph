@@ -1,0 +1,29 @@
+{
+ "model": "Artefact",
+ "nodegroup": "localities_administrative_areas",
+ "entries": [
+  {
+   "phrases": [
+    "borough",
+    "local authority",
+    "council",
+    "administrative area",
+    "which borough",
+    "district",
+    "council area",
+    "london borough"
+   ],
+   "kind": "property",
+   "node": "area_name"
+  },
+  {
+   "phrases": [
+    "administrative area type",
+    "type of administrative area",
+    "area level"
+   ],
+   "kind": "property",
+   "node": "area_type"
+  }
+ ]
+}

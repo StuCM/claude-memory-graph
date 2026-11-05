@@ -1,0 +1,36 @@
+{
+ "model": "Maritime Vessel",
+ "nodegroup": "owner",
+ "entries": [
+  {
+   "phrases": [
+    "owned from",
+    "period of ownership",
+    "ownership dates",
+    "bought",
+    "purchased",
+    "acquired",
+    "sold",
+    "changed hands",
+    "when was it owned"
+   ],
+   "kind": "date",
+   "node": "ownership_start_date",
+   "end_node": "ownership_end_date"
+  },
+  {
+   "phrases": [
+    "owned by",
+    "owner",
+    "who owned it",
+    "shipowner",
+    "proprietor",
+    "owners",
+    "owning company",
+    "belonged to"
+   ],
+   "kind": "link",
+   "node": "owner"
+  }
+ ]
+}

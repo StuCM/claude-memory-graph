@@ -1,0 +1,90 @@
+{
+ "model": "Monument",
+ "nodegroup": "use_phase",
+ "entries": [
+  {
+   "phrases": [
+    "in use",
+    "was in use",
+    "used from",
+    "used until",
+    "occupied",
+    "occupation",
+    "in operation",
+    "operated",
+    "operational",
+    "functioning",
+    "active",
+    "inhabited",
+    "period of use dates",
+    "use dates",
+    "when was it used",
+    "abandoned",
+    "went out of use",
+    "disused"
+   ],
+   "kind": "date",
+   "node": "use_phase_start_date",
+   "end_node": "use_phase_end_date"
+  },
+  {
+   "phrases": [
+    "period of use",
+    "use period",
+    "used during",
+    "occupation period",
+    "period in use",
+    "period when used"
+   ],
+   "kind": "link",
+   "node": "use_phase_period"
+  },
+  {
+   "phrases": [
+    "function",
+    "used as",
+    "use",
+    "what was it used for",
+    "purpose",
+    "functional type",
+    "what is it used for",
+    "original use",
+    "current use",
+    "role",
+    "usage",
+    "what did it do"
+   ],
+   "kind": "property",
+   "node": "functional_type"
+  },
+  {
+   "phrases": [
+    "use description",
+    "how was it used",
+    "use history",
+    "history of use",
+    "description of use"
+   ],
+   "kind": "property",
+   "node": "use_phase_description"
+  },
+  {
+   "phrases": [
+    "evidence of use",
+    "use evidence",
+    "evidence for use"
+   ],
+   "kind": "property",
+   "node": "use_phase_evidence_type"
+  },
+  {
+   "phrases": [
+    "use date text",
+    "period of use display date",
+    "use display date"
+   ],
+   "kind": "property",
+   "node": "use_phase_display_date"
+  }
+ ]
+}

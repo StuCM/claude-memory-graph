@@ -1,0 +1,56 @@
+{
+ "model": "Consultation",
+ "nodegroup": "consultation_area",
+ "entries": [
+  {
+   "phrases": [
+    "application area",
+    "application site",
+    "red line boundary",
+    "site boundary",
+    "development site",
+    "application boundary",
+    "site area"
+   ],
+   "kind": "link",
+   "node": "related_application_area"
+  },
+  {
+   "phrases": [
+    "location",
+    "where is it",
+    "site location",
+    "location description",
+    "address",
+    "where",
+    "whereabouts",
+    "situated",
+    "where is the site"
+   ],
+   "kind": "property",
+   "node": "consultation_location_description"
+  },
+  {
+   "phrases": [
+    "map",
+    "coordinates",
+    "geometry",
+    "on the map",
+    "mapped location",
+    "show on map",
+    "spatial extent"
+   ],
+   "kind": "property",
+   "node": "geospatial_coordinates"
+  },
+  {
+   "phrases": [
+    "feature shape",
+    "geometry type",
+    "point or polygon"
+   ],
+   "kind": "property",
+   "node": "feature_shape"
+  }
+ ]
+}

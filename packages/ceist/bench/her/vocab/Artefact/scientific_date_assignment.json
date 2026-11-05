@@ -1,0 +1,75 @@
+{
+ "model": "Artefact",
+ "nodegroup": "scientific_date_assignment",
+ "entries": [
+  {
+   "phrases": [
+    "scientific date",
+    "scientifically dated",
+    "radiocarbon date",
+    "carbon dated",
+    "c14 date",
+    "calibrated date",
+    "lab date",
+    "absolute date"
+   ],
+   "kind": "date",
+   "node": "scientific_date_start_date",
+   "end_node": "scientific_date_end_date"
+  },
+  {
+   "phrases": [
+    "when was the date determined",
+    "date determined",
+    "date of analysis",
+    "when was it sampled",
+    "when was it tested"
+   ],
+   "kind": "date",
+   "node": "when_determined_start_date",
+   "end_node": "when_determined_end_date"
+  },
+  {
+   "phrases": [
+    "dating method",
+    "how was it dated",
+    "dating technique",
+    "method of dating",
+    "dated using",
+    "scientific dating method"
+   ],
+   "kind": "property",
+   "node": "dating_method"
+  },
+  {
+   "phrases": [
+    "lab reference",
+    "laboratory reference",
+    "laboratory code",
+    "lab number",
+    "sample number"
+   ],
+   "kind": "property",
+   "node": "laboratory_reference"
+  },
+  {
+   "phrases": [
+    "standard deviation",
+    "error margin",
+    "plus or minus",
+    "date error"
+   ],
+   "kind": "property",
+   "node": "standard_deviation_value"
+  },
+  {
+   "phrases": [
+    "scientific date notes",
+    "dating notes",
+    "notes on dating"
+   ],
+   "kind": "property",
+   "node": "note"
+  }
+ ]
+}

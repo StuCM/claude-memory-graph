@@ -1,0 +1,69 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "bibliographic_source_citation",
+ "entries": [
+  {
+   "phrases": [
+    "sources",
+    "bibliography",
+    "references",
+    "published in",
+    "cited in",
+    "literature",
+    "publications",
+    "books",
+    "source",
+    "further reading"
+   ],
+   "kind": "link",
+   "node": "bibliographic_source_citation"
+  },
+  {
+   "phrases": [
+    "page",
+    "pages",
+    "page number",
+    "which page"
+   ],
+   "kind": "property",
+   "node": "page_s_"
+  },
+  {
+   "phrases": [
+    "figure",
+    "figures",
+    "fig",
+    "figure number"
+   ],
+   "kind": "property",
+   "node": "figs_"
+  },
+  {
+   "phrases": [
+    "plate",
+    "plates",
+    "plate number"
+   ],
+   "kind": "property",
+   "node": "plate_s_"
+  },
+  {
+   "phrases": [
+    "source comment",
+    "citation note",
+    "source notes"
+   ],
+   "kind": "property",
+   "node": "comment"
+  },
+  {
+   "phrases": [
+    "source number",
+    "citation number",
+    "source reference number"
+   ],
+   "kind": "property",
+   "node": "source_number_value"
+  }
+ ]
+}

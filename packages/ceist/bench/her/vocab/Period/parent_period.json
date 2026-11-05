@@ -1,0 +1,21 @@
+{
+ "model": "Period",
+ "nodegroup": "parent_period",
+ "entries": [
+  {
+   "phrases": [
+    "part of",
+    "parent period",
+    "sub-period of",
+    "within",
+    "broader period",
+    "belongs to",
+    "subdivision of",
+    "larger period",
+    "main period"
+   ],
+   "kind": "link",
+   "node": "parent_period"
+  }
+ ]
+}

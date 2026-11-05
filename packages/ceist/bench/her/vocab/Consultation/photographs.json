@@ -1,0 +1,59 @@
+{
+ "model": "Consultation",
+ "nodegroup": "photographs",
+ "entries": [
+  {
+   "phrases": [
+    "photos",
+    "photographs",
+    "site photos",
+    "pictures",
+    "images",
+    "site photographs",
+    "photo",
+    "picture"
+   ],
+   "kind": "property",
+   "node": "photographs"
+  },
+  {
+   "phrases": [
+    "photo caption",
+    "caption",
+    "image caption"
+   ],
+   "kind": "property",
+   "node": "caption_note"
+  },
+  {
+   "phrases": [
+    "copyright holder",
+    "photo copyright holder",
+    "who owns the copyright",
+    "photo credit"
+   ],
+   "kind": "link",
+   "node": "copyright_holder"
+  },
+  {
+   "phrases": [
+    "copyright",
+    "licence",
+    "license",
+    "photo rights",
+    "copyright status"
+   ],
+   "kind": "property",
+   "node": "copyright_type"
+  },
+  {
+   "phrases": [
+    "copyright note",
+    "copyright statement",
+    "rights statement"
+   ],
+   "kind": "property",
+   "node": "copyright_note_text"
+  }
+ ]
+}

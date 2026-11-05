@@ -1,0 +1,23 @@
+{
+ "model": "Monument",
+ "nodegroup": "associated_activities",
+ "entries": [
+  {
+   "phrases": [
+    "activities",
+    "associated activities",
+    "investigations",
+    "events",
+    "fieldwork",
+    "archaeological work",
+    "excavations",
+    "surveys",
+    "archaeological investigations",
+    "projects",
+    "watching brief"
+   ],
+   "kind": "link",
+   "node": "associated_activities"
+  }
+ ]
+}

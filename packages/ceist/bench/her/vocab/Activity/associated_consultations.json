@@ -1,0 +1,18 @@
+{
+ "model": "Activity",
+ "nodegroup": "associated_consultations",
+ "entries": [
+  {
+   "phrases": [
+    "consultation",
+    "planning application",
+    "linked consultation",
+    "planning case",
+    "planning consultation",
+    "development control case"
+   ],
+   "kind": "link",
+   "node": "associated_consultations"
+  }
+ ]
+}

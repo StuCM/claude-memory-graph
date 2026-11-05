@@ -1,0 +1,17 @@
+{
+ "model": "Person",
+ "nodegroup": "digital_file_s_",
+ "entries": [
+  {
+   "phrases": [
+    "digital files",
+    "files",
+    "documents",
+    "attachments",
+    "scans"
+   ],
+   "kind": "link",
+   "node": "digital_file_s_"
+  }
+ ]
+}

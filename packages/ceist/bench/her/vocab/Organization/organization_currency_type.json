@@ -1,0 +1,19 @@
+{
+ "model": "Organization",
+ "nodegroup": "organization_currency_type",
+ "entries": [
+  {
+   "phrases": [
+    "current",
+    "still active",
+    "defunct",
+    "still exists",
+    "historic organisation",
+    "still operating",
+    "currency"
+   ],
+   "kind": "property",
+   "node": "organization_currency_type"
+  }
+ ]
+}

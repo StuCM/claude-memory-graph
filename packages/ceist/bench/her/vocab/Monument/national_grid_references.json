@@ -1,0 +1,21 @@
+{
+ "model": "Monument",
+ "nodegroup": "national_grid_references",
+ "entries": [
+  {
+   "phrases": [
+    "grid reference",
+    "ngr",
+    "os grid reference",
+    "national grid reference",
+    "grid ref",
+    "easting",
+    "northing",
+    "eastings and northings",
+    "ordnance survey reference"
+   ],
+   "kind": "property",
+   "node": "national_grid_reference"
+  }
+ ]
+}

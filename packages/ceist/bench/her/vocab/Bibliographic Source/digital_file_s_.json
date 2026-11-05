@@ -1,0 +1,19 @@
+{
+ "model": "Bibliographic Source",
+ "nodegroup": "digital_file_s_",
+ "entries": [
+  {
+   "phrases": [
+    "digital copy",
+    "digital file",
+    "pdf",
+    "scan",
+    "online copy",
+    "attachments",
+    "files"
+   ],
+   "kind": "link",
+   "node": "digital_file_s_"
+  }
+ ]
+}

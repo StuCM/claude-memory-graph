@@ -1,0 +1,20 @@
+{
+ "model": "Place",
+ "nodegroup": "names",
+ "entries": [
+  {
+   "phrases": [
+    "name",
+    "place name",
+    "placename",
+    "called",
+    "what is it called",
+    "known as",
+    "name of place",
+    "title"
+   ],
+   "kind": "property",
+   "node": "placename"
+  }
+ ]
+}

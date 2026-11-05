@@ -1,0 +1,60 @@
+{
+ "model": "Activity",
+ "nodegroup": "area_assignment",
+ "entries": [
+  {
+   "phrases": [
+    "area status",
+    "land status",
+    "crown estate",
+    "area of outstanding natural beauty",
+    "common land"
+   ],
+   "kind": "property",
+   "node": "area_status"
+  },
+  {
+   "phrases": [
+    "area status date",
+    "area status from",
+    "in the area since"
+   ],
+   "kind": "date",
+   "node": "area_status_start_date",
+   "end_node": "area_status_end_date"
+  },
+  {
+   "phrases": [
+    "shine form",
+    "form of feature",
+    "above or below ground"
+   ],
+   "kind": "property",
+   "node": "shine_form"
+  },
+  {
+   "phrases": [
+    "shine significance",
+    "shine"
+   ],
+   "kind": "property",
+   "node": "shine_significance"
+  },
+  {
+   "phrases": [
+    "land ownership",
+    "ownership of land",
+    "who owns the land"
+   ],
+   "kind": "property",
+   "node": "ownership"
+  },
+  {
+   "phrases": [
+    "area reference"
+   ],
+   "kind": "property",
+   "node": "area_reference_value"
+  }
+ ]
+}

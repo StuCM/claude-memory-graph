@@ -1,0 +1,20 @@
+{
+ "model": "Consultation",
+ "nodegroup": "assessment_of_significance",
+ "entries": [
+  {
+   "phrases": [
+    "significance",
+    "assessment of significance",
+    "heritage significance",
+    "how significant",
+    "importance",
+    "significance assessment",
+    "why is it significant",
+    "statement of significance"
+   ],
+   "kind": "property",
+   "node": "notes"
+  }
+ ]
+}

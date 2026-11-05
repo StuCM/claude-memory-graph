@@ -1,0 +1,20 @@
+{
+ "model": "Application Area",
+ "nodegroup": "descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "description",
+    "about",
+    "summary",
+    "details",
+    "describe",
+    "tell me about",
+    "information",
+    "what is it"
+   ],
+   "kind": "property",
+   "node": "description"
+  }
+ ]
+}

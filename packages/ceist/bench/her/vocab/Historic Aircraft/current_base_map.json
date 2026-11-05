@@ -1,0 +1,16 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "current_base_map",
+ "entries": [
+  {
+   "phrases": [
+    "base map",
+    "current base map",
+    "which base map",
+    "basemap"
+   ],
+   "kind": "property",
+   "node": "current_base_map_name"
+  }
+ ]
+}

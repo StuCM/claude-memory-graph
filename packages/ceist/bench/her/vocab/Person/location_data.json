@@ -1,0 +1,114 @@
+{
+ "model": "Person",
+ "nodegroup": "location_data",
+ "entries": [
+  {
+   "phrases": [
+    "address",
+    "home address",
+    "lived at",
+    "where did he live",
+    "where did she live",
+    "where does he live",
+    "where does she live",
+    "residence",
+    "lived",
+    "resided",
+    "full address",
+    "where lived",
+    "home"
+   ],
+   "kind": "property",
+   "node": "full_address"
+  },
+  {
+   "phrases": [
+    "street",
+    "road",
+    "which street",
+    "street name"
+   ],
+   "kind": "property",
+   "node": "street_value"
+  },
+  {
+   "phrases": [
+    "town",
+    "city",
+    "which town",
+    "which city",
+    "town or city"
+   ],
+   "kind": "property",
+   "node": "town_or_city_value"
+  },
+  {
+   "phrases": [
+    "locality",
+    "village",
+    "neighbourhood",
+    "neighborhood",
+    "suburb"
+   ],
+   "kind": "property",
+   "node": "locality_value"
+  },
+  {
+   "phrases": [
+    "county",
+    "which county",
+    "shire"
+   ],
+   "kind": "property",
+   "node": "county_value"
+  },
+  {
+   "phrases": [
+    "postcode",
+    "post code",
+    "postal code",
+    "zip code"
+   ],
+   "kind": "property",
+   "node": "postcode_value"
+  },
+  {
+   "phrases": [
+    "house name",
+    "building name",
+    "name of house"
+   ],
+   "kind": "property",
+   "node": "building_name_value"
+  },
+  {
+   "phrases": [
+    "house number",
+    "building number",
+    "street number"
+   ],
+   "kind": "property",
+   "node": "building_number_value"
+  },
+  {
+   "phrases": [
+    "address type",
+    "personal or organisational address",
+    "personal address",
+    "work address"
+   ],
+   "kind": "property",
+   "node": "address_type"
+  },
+  {
+   "phrases": [
+    "address status",
+    "former address",
+    "current address",
+    "previous address"
+   ],
+   "kind": "property",
+   "node": "address_status"
+  }
+ ]
+}

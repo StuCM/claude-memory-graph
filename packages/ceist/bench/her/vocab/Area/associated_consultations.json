@@ -1,0 +1,18 @@
+{
+ "model": "Area",
+ "nodegroup": "associated_consultations",
+ "entries": [
+  {
+   "phrases": [
+    "consultations",
+    "planning applications",
+    "planning cases",
+    "casework",
+    "planning consultation",
+    "development proposals"
+   ],
+   "kind": "link",
+   "node": "associated_consultations"
+  }
+ ]
+}

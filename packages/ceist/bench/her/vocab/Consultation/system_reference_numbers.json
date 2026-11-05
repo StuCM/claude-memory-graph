@@ -1,0 +1,41 @@
+{
+ "model": "Consultation",
+ "nodegroup": "system_reference_numbers",
+ "entries": [
+  {
+   "phrases": [
+    "reference number",
+    "record number",
+    "her number",
+    "case number",
+    "consultation number",
+    "record id",
+    "id number",
+    "consultation reference"
+   ],
+   "kind": "property",
+   "node": "primary_reference_number"
+  },
+  {
+   "phrases": [
+    "legacy id",
+    "legacy reference",
+    "old reference",
+    "former id",
+    "old case number"
+   ],
+   "kind": "property",
+   "node": "legacy_id"
+  },
+  {
+   "phrases": [
+    "uuid",
+    "resource id",
+    "system id",
+    "unique identifier"
+   ],
+   "kind": "property",
+   "node": "resourceid"
+  }
+ ]
+}

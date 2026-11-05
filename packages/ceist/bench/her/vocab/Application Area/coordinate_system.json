@@ -1,0 +1,16 @@
+{
+ "model": "Application Area",
+ "nodegroup": "coordinate_system",
+ "entries": [
+  {
+   "phrases": [
+    "coordinate system",
+    "projection",
+    "spatial reference system",
+    "crs"
+   ],
+   "kind": "property",
+   "node": "coordinate_system_value"
+  }
+ ]
+}

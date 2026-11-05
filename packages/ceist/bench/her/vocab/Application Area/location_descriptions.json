@@ -1,0 +1,20 @@
+{
+ "model": "Application Area",
+ "nodegroup": "location_descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "location",
+    "where is it",
+    "location description",
+    "situated",
+    "whereabouts",
+    "where",
+    "where is it located",
+    "where is the site"
+   ],
+   "kind": "property",
+   "node": "location_description"
+  }
+ ]
+}

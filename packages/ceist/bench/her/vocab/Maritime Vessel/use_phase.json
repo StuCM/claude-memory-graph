@@ -1,0 +1,67 @@
+{
+ "model": "Maritime Vessel",
+ "nodegroup": "use_phase",
+ "entries": [
+  {
+   "phrases": [
+    "in use",
+    "in service",
+    "used",
+    "operated",
+    "service life",
+    "in commission",
+    "active service",
+    "when was it in service",
+    "period of use dates",
+    "working life",
+    "decommissioned"
+   ],
+   "kind": "date",
+   "node": "use_phase_start_date",
+   "end_node": "use_phase_end_date"
+  },
+  {
+   "phrases": [
+    "period of use",
+    "period in use",
+    "used in which period",
+    "period of service"
+   ],
+   "kind": "link",
+   "node": "use_phase_period"
+  },
+  {
+   "phrases": [
+    "craft type",
+    "function",
+    "used as",
+    "what was it used for",
+    "role of vessel",
+    "purpose",
+    "functional type",
+    "what did it do"
+   ],
+   "kind": "property",
+   "node": "functional_craft_type"
+  },
+  {
+   "phrases": [
+    "evidence of use",
+    "use phase evidence"
+   ],
+   "kind": "property",
+   "node": "use_phase_evidence_type"
+  },
+  {
+   "phrases": [
+    "use description",
+    "service history",
+    "history of use",
+    "career",
+    "operational history"
+   ],
+   "kind": "property",
+   "node": "use_phase_description"
+  }
+ ]
+}

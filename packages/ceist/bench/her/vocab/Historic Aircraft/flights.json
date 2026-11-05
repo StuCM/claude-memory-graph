@@ -1,0 +1,171 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "flights",
+ "entries": [
+  {
+   "phrases": [
+    "flight",
+    "flew",
+    "took off",
+    "departed",
+    "departure date",
+    "date of flight",
+    "when did it fly",
+    "last flight",
+    "final flight",
+    "flight date",
+    "mission date",
+    "sortie date"
+   ],
+   "kind": "date",
+   "node": "date_of_departure",
+   "end_node": "date_of_loss"
+  },
+  {
+   "phrases": [
+    "lost",
+    "crashed",
+    "shot down",
+    "went down",
+    "date of loss",
+    "when was it lost",
+    "when did it crash",
+    "crash date",
+    "came down",
+    "ditched",
+    "loss date",
+    "date crashed"
+   ],
+   "kind": "date",
+   "node": "date_of_loss"
+  },
+  {
+   "phrases": [
+    "expected to arrive",
+    "due to arrive",
+    "expected arrival",
+    "expected date of arrival",
+    "estimated arrival",
+    "eta"
+   ],
+   "kind": "date",
+   "node": "expected_date_start",
+   "end_node": "expected_date_end"
+  },
+  {
+   "phrases": [
+    "flight type",
+    "type of flight",
+    "mission",
+    "mission type",
+    "kind of flight",
+    "sortie",
+    "what mission",
+    "purpose of flight"
+   ],
+   "kind": "property",
+   "node": "flight_type"
+  },
+  {
+   "phrases": [
+    "manner of loss",
+    "how was it lost",
+    "cause of loss",
+    "why did it crash",
+    "how did it crash",
+    "what happened to it",
+    "fate",
+    "cause of crash",
+    "how did it come down",
+    "reason for loss",
+    "how was it destroyed"
+   ],
+   "kind": "property",
+   "node": "manner_of_loss"
+  },
+  {
+   "phrases": [
+    "cargo",
+    "payload",
+    "carrying",
+    "what was it carrying",
+    "bomb load",
+    "load",
+    "freight",
+    "cargo type"
+   ],
+   "kind": "property",
+   "node": "cargo_type"
+  },
+  {
+   "phrases": [
+    "crash site",
+    "where did it crash",
+    "wreck site",
+    "where it came down",
+    "crash location",
+    "site of crash",
+    "wreckage site",
+    "where is the wreck",
+    "crash place"
+   ],
+   "kind": "link",
+   "node": "crash_site"
+  },
+  {
+   "phrases": [
+    "crash site type",
+    "type of crash site",
+    "what kind of crash site",
+    "kind of site where it crashed"
+   ],
+   "kind": "property",
+   "node": "crash_site_type"
+  },
+  {
+   "phrases": [
+    "flight description",
+    "flight details",
+    "mission details",
+    "account of the flight",
+    "story of the flight",
+    "what happened on the flight",
+    "loss account"
+   ],
+   "kind": "property",
+   "node": "flight_description"
+  },
+  {
+   "phrases": [
+    "place of departure",
+    "departed from",
+    "took off from",
+    "where did it take off",
+    "where did it fly from",
+    "origin",
+    "base",
+    "airfield",
+    "home base",
+    "flew from",
+    "starting point"
+   ],
+   "kind": "property",
+   "node": "place_of_departure_name"
+  },
+  {
+   "phrases": [
+    "destination",
+    "heading to",
+    "flying to",
+    "where was it going",
+    "bound for",
+    "target",
+    "where was it flying",
+    "intended destination",
+    "flew to"
+   ],
+   "kind": "property",
+   "node": "place_of_destination_name"
+  }
+ ]
+}

@@ -1,0 +1,99 @@
+{
+ "model": "Monument",
+ "nodegroup": "scientific_date_assignment",
+ "entries": [
+  {
+   "phrases": [
+    "radiocarbon dated",
+    "carbon dated",
+    "carbon-dated",
+    "scientifically dated",
+    "scientific date",
+    "scientific dating",
+    "c14 date",
+    "radiocarbon date",
+    "dendro date",
+    "tree-ring date",
+    "dendrochronological date",
+    "luminescence date",
+    "calibrated date",
+    "absolute date"
+   ],
+   "kind": "date",
+   "node": "scientific_date_start_date",
+   "end_node": "scientific_date_end_date"
+  },
+  {
+   "phrases": [
+    "date determined",
+    "when was the sample dated",
+    "when was the date determined",
+    "analysis date",
+    "date of analysis",
+    "lab analysis date"
+   ],
+   "kind": "date",
+   "node": "when_determined_start_date",
+   "end_node": "when_determined_end_date"
+  },
+  {
+   "phrases": [
+    "dating method",
+    "how was it dated",
+    "radiocarbon",
+    "dendrochronology",
+    "scientific dating method",
+    "carbon dating",
+    "tree-ring dating",
+    "luminescence",
+    "archaeomagnetism",
+    "method of dating"
+   ],
+   "kind": "property",
+   "node": "dating_method"
+  },
+  {
+   "phrases": [
+    "lab reference",
+    "laboratory reference",
+    "lab code",
+    "laboratory code",
+    "sample number",
+    "lab number"
+   ],
+   "kind": "property",
+   "node": "laboratory_reference"
+  },
+  {
+   "phrases": [
+    "standard deviation",
+    "error margin",
+    "plus or minus",
+    "margin of error",
+    "date error",
+    "sigma"
+   ],
+   "kind": "property",
+   "node": "standard_deviation_value"
+  },
+  {
+   "phrases": [
+    "scientific dating notes",
+    "dating notes",
+    "sample notes",
+    "date notes"
+   ],
+   "kind": "property",
+   "node": "note"
+  },
+  {
+   "phrases": [
+    "standard deviation note",
+    "error note",
+    "notes on standard deviation"
+   ],
+   "kind": "property",
+   "node": "standard_deviation_note"
+  }
+ ]
+}

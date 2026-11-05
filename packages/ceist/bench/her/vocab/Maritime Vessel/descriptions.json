@@ -1,0 +1,22 @@
+{
+ "model": "Maritime Vessel",
+ "nodegroup": "descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "description",
+    "describe",
+    "about",
+    "summary",
+    "history",
+    "overview",
+    "tell me about",
+    "details",
+    "what is it",
+    "account"
+   ],
+   "kind": "property",
+   "node": "description"
+  }
+ ]
+}

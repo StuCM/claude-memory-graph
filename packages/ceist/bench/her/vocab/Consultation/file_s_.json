@@ -1,0 +1,19 @@
+{
+ "model": "Consultation",
+ "nodegroup": "file_s_",
+ "entries": [
+  {
+   "phrases": [
+    "files",
+    "documents",
+    "attachments",
+    "digital files",
+    "associated files",
+    "reports",
+    "file"
+   ],
+   "kind": "link",
+   "node": "file_s_"
+  }
+ ]
+}

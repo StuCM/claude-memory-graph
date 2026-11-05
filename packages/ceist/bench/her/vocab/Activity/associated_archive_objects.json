@@ -1,0 +1,34 @@
+{
+ "model": "Activity",
+ "nodegroup": "associated_archive_objects",
+ "entries": [
+  {
+   "phrases": [
+    "archive holder",
+    "archive object held by",
+    "holder of archive object"
+   ],
+   "kind": "link",
+   "node": "archive_holder"
+  },
+  {
+   "phrases": [
+    "archive title",
+    "archive object",
+    "archive item"
+   ],
+   "kind": "property",
+   "node": "archive_object_title"
+  },
+  {
+   "phrases": [
+    "archive reference",
+    "archive object reference",
+    "archive accession number",
+    "accession number"
+   ],
+   "kind": "property",
+   "node": "archive_object_reference"
+  }
+ ]
+}

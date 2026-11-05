@@ -1,0 +1,36 @@
+{
+ "model": "Monument",
+ "nodegroup": "geometry",
+ "entries": [
+  {
+   "phrases": [
+    "coordinates",
+    "geometry",
+    "on the map",
+    "map",
+    "lat long",
+    "latitude",
+    "longitude",
+    "footprint",
+    "boundary",
+    "extent",
+    "polygon",
+    "geolocation",
+    "map location",
+    "spatial extent"
+   ],
+   "kind": "property",
+   "node": "geospatial_coordinates"
+  },
+  {
+   "phrases": [
+    "feature shape",
+    "shape on the map",
+    "point or polygon",
+    "geometry type"
+   ],
+   "kind": "property",
+   "node": "feature_shape"
+  }
+ ]
+}

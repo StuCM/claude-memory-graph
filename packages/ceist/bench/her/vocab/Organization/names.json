@@ -1,0 +1,31 @@
+{
+ "model": "Organization",
+ "nodegroup": "names",
+ "entries": [
+  {
+   "phrases": [
+    "name",
+    "called",
+    "organisation name",
+    "organization name",
+    "title",
+    "company name",
+    "what is it called",
+    "firm name",
+    "trading name"
+   ],
+   "kind": "property",
+   "node": "organization_name"
+  },
+  {
+   "phrases": [
+    "former name",
+    "alternative name",
+    "registered name",
+    "previously known as"
+   ],
+   "kind": "property",
+   "node": "organization_name_use_type"
+  }
+ ]
+}

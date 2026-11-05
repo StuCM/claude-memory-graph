@@ -1,0 +1,142 @@
+{
+ "model": "Monument",
+ "nodegroup": "designation_and_protection_assignment",
+ "entries": [
+  {
+   "phrases": [
+    "designated",
+    "listed in",
+    "date listed",
+    "when was it listed",
+    "date of listing",
+    "first listed",
+    "scheduled in",
+    "date scheduled",
+    "when was it scheduled",
+    "designation date",
+    "date protected",
+    "when was it protected",
+    "de-listed",
+    "delisted on",
+    "listing date"
+   ],
+   "kind": "date",
+   "node": "designation_start_date",
+   "end_node": "designation_end_date"
+  },
+  {
+   "phrases": [
+    "listing amended",
+    "designation amended",
+    "amendment date",
+    "list entry amended",
+    "date of amendment",
+    "when was the listing amended"
+   ],
+   "kind": "date",
+   "node": "designation_amendment_date"
+  },
+  {
+   "phrases": [
+    "designation documents",
+    "listing documents",
+    "listing description file",
+    "list entry document"
+   ],
+   "kind": "link",
+   "node": "digital_file_s_"
+  },
+  {
+   "phrases": [
+    "designation",
+    "designations",
+    "protection",
+    "protected status",
+    "is it listed",
+    "listed",
+    "listed building",
+    "scheduled monument",
+    "scheduled",
+    "statutory protection",
+    "designation type",
+    "heritage protection",
+    "conservation area",
+    "world heritage site",
+    "protected",
+    "registered park",
+    "registered battlefield",
+    "locally listed",
+    "legal protection",
+    "status"
+   ],
+   "kind": "property",
+   "node": "designation_or_protection_type"
+  },
+  {
+   "phrases": [
+    "grade",
+    "listing grade",
+    "what grade",
+    "listed grade",
+    "grade i",
+    "grade ii",
+    "grade ii*",
+    "which grade",
+    "grade listed"
+   ],
+   "kind": "property",
+   "node": "grade"
+  },
+  {
+   "phrases": [
+    "at risk",
+    "heritage at risk",
+    "risk status",
+    "is it at risk",
+    "endangered",
+    "threatened",
+    "condition",
+    "state of repair",
+    "under threat",
+    "risk register",
+    "vulnerable"
+   ],
+   "kind": "property",
+   "node": "risk_status"
+  },
+  {
+   "phrases": [
+    "designation name",
+    "list entry name",
+    "listed name",
+    "name on the list",
+    "scheduled name"
+   ],
+   "kind": "property",
+   "node": "designation_name"
+  },
+  {
+   "phrases": [
+    "local list criteria",
+    "local heritage list criteria",
+    "why locally listed",
+    "reasons for local listing",
+    "local listing criteria",
+    "selection criteria"
+   ],
+   "kind": "property",
+   "node": "local_heritage_list_criteria_type"
+  },
+  {
+   "phrases": [
+    "list entry link",
+    "designation url",
+    "listing link",
+    "designation link",
+    "list entry url"
+   ],
+   "kind": "property",
+   "node": "reference_url"
+  }
+ ]
+}

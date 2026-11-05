@@ -1,0 +1,36 @@
+{
+ "model": "Consultation",
+ "nodegroup": "outcomes",
+ "entries": [
+  {
+   "phrases": [
+    "outcome",
+    "decision",
+    "planning decision",
+    "was it approved",
+    "approved",
+    "refused",
+    "result",
+    "granted",
+    "planning outcome",
+    "was permission granted",
+    "was it refused",
+    "decision outcome"
+   ],
+   "kind": "property",
+   "node": "planning_outcome"
+  },
+  {
+   "phrases": [
+    "audit outcome",
+    "reason for delay",
+    "why was it late",
+    "delay reason",
+    "why delayed",
+    "missed deadline reason"
+   ],
+   "kind": "property",
+   "node": "audit_outcome"
+  }
+ ]
+}

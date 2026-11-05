@@ -1,0 +1,76 @@
+{
+ "model": "Digital Object",
+ "nodegroup": "audit_metadata",
+ "entries": [
+  {
+   "phrases": [
+    "record created",
+    "date record created",
+    "when was the record created",
+    "added to the record",
+    "date added",
+    "entered into the database",
+    "record creation date"
+   ],
+   "kind": "date",
+   "node": "creation_date",
+   "end_node": "creation_end_date"
+  },
+  {
+   "phrases": [
+    "last updated",
+    "record updated",
+    "date of last update",
+    "when was the record updated",
+    "last modified",
+    "last edited",
+    "record last changed"
+   ],
+   "kind": "date",
+   "node": "date_of_last_update",
+   "end_node": "update_end_date"
+  },
+  {
+   "phrases": [
+    "record created by",
+    "who created the record",
+    "record creator",
+    "who entered the record"
+   ],
+   "kind": "property",
+   "node": "creator_name"
+  },
+  {
+   "phrases": [
+    "last updated by",
+    "who updated the record",
+    "record updated by",
+    "record editor"
+   ],
+   "kind": "property",
+   "node": "updater_name"
+  },
+  {
+   "phrases": [
+    "validation",
+    "validation status",
+    "record checked",
+    "has the record been checked",
+    "quality check",
+    "needs work"
+   ],
+   "kind": "property",
+   "node": "validation"
+  },
+  {
+   "phrases": [
+    "audit note",
+    "audit notes",
+    "record notes",
+    "editorial notes"
+   ],
+   "kind": "property",
+   "node": "audit_note"
+  }
+ ]
+}

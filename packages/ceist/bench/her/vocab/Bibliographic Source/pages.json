@@ -1,0 +1,17 @@
+{
+ "model": "Bibliographic Source",
+ "nodegroup": "pages",
+ "entries": [
+  {
+   "phrases": [
+    "number of pages",
+    "how many pages",
+    "page count",
+    "length in pages",
+    "how long is it"
+   ],
+   "kind": "property",
+   "node": "number_of_pages"
+  }
+ ]
+}

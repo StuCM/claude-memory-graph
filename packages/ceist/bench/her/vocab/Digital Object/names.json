@@ -1,0 +1,20 @@
+{
+ "model": "Digital Object",
+ "nodegroup": "names",
+ "entries": [
+  {
+   "phrases": [
+    "name",
+    "title",
+    "called",
+    "file name",
+    "what is it called",
+    "filename",
+    "caption",
+    "known as"
+   ],
+   "kind": "property",
+   "node": "name"
+  }
+ ]
+}

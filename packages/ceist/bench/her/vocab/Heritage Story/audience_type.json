@@ -1,0 +1,79 @@
+{
+ "model": "Heritage Story",
+ "nodegroup": "audience_type",
+ "entries": [
+  {
+   "phrases": [
+    "audience",
+    "intended audience",
+    "who is it for",
+    "target audience",
+    "suitable for",
+    "aimed at",
+    "readership",
+    "audience type"
+   ],
+   "kind": "property",
+   "node": "audience_type"
+  },
+  {
+   "phrases": [
+    "for children",
+    "children",
+    "kids",
+    "for kids",
+    "for schools",
+    "child-friendly",
+    "family-friendly"
+   ],
+   "kind": "property",
+   "node": "audience_type",
+   "qualifier": {
+    "node": "audience_type",
+    "value": "Children"
+   }
+  },
+  {
+   "phrases": [
+    "for academics",
+    "academic",
+    "scholarly",
+    "for researchers",
+    "for scholars"
+   ],
+   "kind": "property",
+   "node": "audience_type",
+   "qualifier": {
+    "node": "audience_type",
+    "value": "Academics"
+   }
+  },
+  {
+   "phrases": [
+    "for adults",
+    "adults",
+    "grown-ups"
+   ],
+   "kind": "property",
+   "node": "audience_type",
+   "qualifier": {
+    "node": "audience_type",
+    "value": "Adults"
+   }
+  },
+  {
+   "phrases": [
+    "for the public",
+    "general public",
+    "public audience",
+    "for everyone"
+   ],
+   "kind": "property",
+   "node": "audience_type",
+   "qualifier": {
+    "node": "audience_type",
+    "value": "Public"
+   }
+  }
+ ]
+}

@@ -1,0 +1,21 @@
+{
+ "model": "Period",
+ "nodegroup": "period_type",
+ "entries": [
+  {
+   "phrases": [
+    "type of period",
+    "period type",
+    "kind of period",
+    "what kind of period",
+    "category of period",
+    "cultural period",
+    "historic period",
+    "geological period",
+    "political period"
+   ],
+   "kind": "property",
+   "node": "period_type"
+  }
+ ]
+}

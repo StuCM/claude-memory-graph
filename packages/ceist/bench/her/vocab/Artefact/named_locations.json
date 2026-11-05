@@ -1,0 +1,18 @@
+{
+ "model": "Artefact",
+ "nodegroup": "named_locations",
+ "entries": [
+  {
+   "phrases": [
+    "named location",
+    "place found",
+    "find place",
+    "findplace",
+    "named place",
+    "place name of findspot"
+   ],
+   "kind": "link",
+   "node": "named_location"
+  }
+ ]
+}

@@ -1,0 +1,41 @@
+{
+ "model": "Artefact",
+ "nodegroup": "discovery",
+ "entries": [
+  {
+   "phrases": [
+    "discovery method",
+    "how was it found",
+    "how discovered",
+    "metal detecting",
+    "metal detector find",
+    "method of discovery",
+    "metal detected"
+   ],
+   "kind": "property",
+   "node": "discovery_method"
+  },
+  {
+   "phrases": [
+    "recovery technique",
+    "recovery method",
+    "how was it recovered",
+    "recovered by"
+   ],
+   "kind": "property",
+   "node": "recovery_technique"
+  },
+  {
+   "phrases": [
+    "discovery notes",
+    "circumstances of discovery",
+    "find circumstances",
+    "discovery details",
+    "how it was discovered",
+    "story of the find"
+   ],
+   "kind": "property",
+   "node": "discovery_note"
+  }
+ ]
+}

@@ -1,0 +1,33 @@
+{
+ "model": "Maritime Vessel",
+ "nodegroup": "geometry",
+ "entries": [
+  {
+   "phrases": [
+    "location",
+    "where is it",
+    "coordinates",
+    "map",
+    "position",
+    "on the map",
+    "geographic location",
+    "whereabouts on map",
+    "lat long",
+    "latitude and longitude",
+    "spatial extent"
+   ],
+   "kind": "property",
+   "node": "geospatial_coordinates"
+  },
+  {
+   "phrases": [
+    "feature shape",
+    "geometry type",
+    "shape of feature",
+    "point or area"
+   ],
+   "kind": "property",
+   "node": "feature_shape"
+  }
+ ]
+}

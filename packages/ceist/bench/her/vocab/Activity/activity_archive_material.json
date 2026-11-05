@@ -1,0 +1,51 @@
+{
+ "model": "Activity",
+ "nodegroup": "activity_archive_material",
+ "entries": [
+  {
+   "phrases": [
+    "archive deposited with",
+    "archive repository",
+    "where is the archive held",
+    "stored at",
+    "archive location",
+    "museum holding archive",
+    "deposited at",
+    "archive depository"
+   ],
+   "kind": "link",
+   "node": "repository_owner"
+  },
+  {
+   "phrases": [
+    "archive type",
+    "type of archive",
+    "archive material",
+    "what archive",
+    "archive contents",
+    "what records were produced"
+   ],
+   "kind": "property",
+   "node": "archive_source_type"
+  },
+  {
+   "phrases": [
+    "storage location",
+    "stored in building",
+    "store building",
+    "archive store"
+   ],
+   "kind": "property",
+   "node": "storage_building_name"
+  },
+  {
+   "phrases": [
+    "storage area",
+    "shelf location",
+    "store area"
+   ],
+   "kind": "property",
+   "node": "storage_area_name"
+  }
+ ]
+}

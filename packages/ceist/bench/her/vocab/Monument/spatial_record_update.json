@@ -1,0 +1,26 @@
+{
+ "model": "Monument",
+ "nodegroup": "spatial_record_update",
+ "entries": [
+  {
+   "phrases": [
+    "spatial record updated",
+    "geometry updated",
+    "mapping updated",
+    "map last updated"
+   ],
+   "kind": "date",
+   "node": "update_start_date",
+   "end_node": "update_end_date_n1"
+  },
+  {
+   "phrases": [
+    "geometry updated by",
+    "mapping updated by",
+    "spatial record updated by"
+   ],
+   "kind": "property",
+   "node": "updater_name_n1"
+  }
+ ]
+}

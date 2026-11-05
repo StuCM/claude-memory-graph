@@ -1,0 +1,30 @@
+{
+ "model": "Application Area",
+ "nodegroup": "localities_administrative_areas",
+ "entries": [
+  {
+   "phrases": [
+    "borough",
+    "district",
+    "parish",
+    "administrative area",
+    "local authority area",
+    "council area",
+    "which borough",
+    "what borough",
+    "which district"
+   ],
+   "kind": "property",
+   "node": "area_name"
+  },
+  {
+   "phrases": [
+    "area type",
+    "type of administrative area",
+    "kind of area"
+   ],
+   "kind": "property",
+   "node": "area_type"
+  }
+ ]
+}

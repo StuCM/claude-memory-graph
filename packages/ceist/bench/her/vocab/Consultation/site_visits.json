@@ -1,0 +1,41 @@
+{
+ "model": "Consultation",
+ "nodegroup": "site_visits",
+ "entries": [
+  {
+   "phrases": [
+    "site visit",
+    "visited",
+    "visit date",
+    "date of visit",
+    "inspected",
+    "went on site",
+    "when was the site visited",
+    "site inspection",
+    "site meeting"
+   ],
+   "kind": "date",
+   "node": "date_of_visit",
+   "end_node": "end_date"
+  },
+  {
+   "phrases": [
+    "visit display date",
+    "approximate visit date",
+    "visit date as written"
+   ],
+   "kind": "property",
+   "node": "display_date"
+  },
+  {
+   "phrases": [
+    "visit location",
+    "where was the visit",
+    "site visit location",
+    "location of visit"
+   ],
+   "kind": "property",
+   "node": "location_description"
+  }
+ ]
+}
