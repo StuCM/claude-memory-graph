@@ -481,3 +481,59 @@ def test_find_leading_a_question_is_the_command_not_a_value():
     assert "evidence_type" not in m.refused
     # "surname" is no field it knows: Brunel alone could be the wrong Brunel
     assert m.direct is None and "couldn't place 'surname'" in m.refused
+
+
+BRONZE = Value("bronze age", "period", "c-ba", "Bronze Age", frozenset({"Building"}))
+
+
+class Ages(Toy):
+    """'age' names a relation no Building has; "bronze age" is a period, as a
+    value or as a phase combo. "site hut" is a value with the relation 'site' inside."""
+    combo = False
+
+    def relations(self):
+        return Toy.relations(self) + [Relation("cultural_period", ("age",), frozenset({"Person"}),
+                                               frozenset({"Site"}))]
+
+    def values(self):
+        return Toy.values(self) + ([] if self.combo else [BRONZE]) + [
+            Value("site hut", "type", "c-hut", "Site hut", frozenset({"Building"})),
+            Value("raths", "type", "c-rath", "Rath", frozenset({"Building"})),
+            Value("ruins", "condition", "c-ruin", "Ruin", frozenset({"Building", "Site"}))]
+
+    def groups(self):
+        return [Group("phase", "Building", (("bronze age", (BRONZE,)),),
+                      frozenset({"type"}))] if self.combo else []
+
+
+@pytest.mark.parametrize("combo", [False, True])
+def test_a_longer_value_phrase_beats_a_relation_phrase_inside_it(combo):
+    toy = Ages()
+    toy.combo = combo
+    m = interpret(toy, "which bronze age buildings are designed by Ada Lovelace?")
+    assert narrate(m.plan) == ("Find Buildings that designed by Person 'Ada Lovelace' "
+                               "and whose period is Bronze Age.")
+
+
+def test_a_relation_phrase_outside_the_longer_value_still_grounds():
+    m = interpret(Ages(), "which site hut buildings have site Leeds Dock?")
+    assert [(c.relation, c.target.entity.id) for c in m.plan.where if isinstance(c, LinkTo)] \
+        == [("site", "s-dock")]
+    assert _values(m.plan) == ["Site hut"]
+
+
+def test_a_value_only_one_model_holds_implies_that_model():
+    m = interpret(Ages(), "how many raths are there?")
+    assert narrate(m.plan) == "Count Buildings whose type is Rath."
+    # a question about one thing's attribute names no subject: "made of" would be dropped
+    m = interpret(Ages(), "what's the raths made of?")
+    assert m.plan is None and m.refused == "no queryable subject"
+    # grounded with a relation, the relation's own variable is still the subject
+    m = interpret(Ages(), "which raths are on site Leeds Dock?")
+    assert narrate(m.plan) == "Find Buildings that on site Site 'Leeds Dock' and whose type is Rath."
+
+
+def test_a_value_two_models_hold_asks_which_instead_of_answering():
+    m = interpret(Ages(), "how many ruins are there?")
+    assert m.plan is None
+    assert m.refused == "no queryable subject; did you mean Building or Site for 'ruins'?"
