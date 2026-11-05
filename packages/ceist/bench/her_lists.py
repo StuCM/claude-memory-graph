@@ -13,17 +13,15 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-from ceist.arches import (CONCEPT_TYPES, REFERENCE_TYPES, ArchesVocabulary, _graph_doc,
-                          collection_of, load_reference_data)
+from ceist.arches import (CONCEPT_TYPES, REFERENCE_TYPES, ArchesVocabulary, collection_of,
+                          graph_doc, load_reference_data)
+from ceist.arches_describe import reference_files
 
 
 def main(pkg: str) -> int:
     root = Path(pkg)
-    graphs = [_graph_doc(p) for p in sorted((root / "graphs" / "resource_models").glob("*.json"))]
-    ref = root / "reference_data"
-    files = [p for d in ("controlled_lists", "collections", "concepts")
-             for ext in ("*.xml", "*.json") for p in sorted((ref / d).glob(ext))]
-    rdm, alts = load_reference_data(files)
+    graphs = [graph_doc(p) for p in sorted((root / "graphs" / "resource_models").glob("*.json"))]
+    rdm, alts = load_reference_data(reference_files(root / "reference_data"))
     vocab = ArchesVocabulary(graphs, rdm, alt_labels=alts)
     kinds, missing = Counter(), Counter()
     for m in vocab.models.values():

@@ -94,10 +94,8 @@ def load_reference_data(paths, language: str = "en"):
             rdm.add_from_skos_xml(text, _BASE_URI)
             alts.update(alt_labels(text, language))
         elif p.suffix == ".json":
-            shared = alizarin.get_global_rdm_cache() if alizarin.has_global_rdm_cache() else None
             for cid in alizarin.add_from_skos_json_to_global_cache(text):
-                shared = shared or alizarin.get_global_rdm_cache()
-                rdm.add_collection(shared.get_collection(cid))
+                rdm.add_collection(alizarin.get_global_rdm_cache().get_collection(cid))
     return rdm, alts
 
 
@@ -126,7 +124,7 @@ def slug_of(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
 
 
-def _graph_doc(path: Path) -> dict:
+def graph_doc(path: Path) -> dict:
     doc = json.loads(path.read_text())
     if isinstance(doc, dict) and isinstance(doc.get("graph"), list):
         return doc["graph"][0]
@@ -205,7 +203,7 @@ class ArchesVocabulary:
     @classmethod
     def from_data_dir(cls, data_dir: str | Path, language: str = "en", **kw) -> "ArchesVocabulary":
         root = Path(data_dir)
-        graphs = [_graph_doc(p) for p in sorted((root / "graphs").glob("*.json"))]
+        graphs = [graph_doc(p) for p in sorted((root / "graphs").glob("*.json"))]
         resources = read_resources(root / "resources")
         vocab_dir = root / "vocabularies"
         files = (sorted(vocab_dir.glob("*.xml")) + sorted(vocab_dir.glob("*.json"))
