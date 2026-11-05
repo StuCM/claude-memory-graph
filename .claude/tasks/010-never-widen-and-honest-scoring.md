@@ -10,6 +10,9 @@ files:
   - claude_memory_graph/planner.py
 blocked: files: lacks claude_memory_graph/planner.py, which needs free_text = True on MemoryVocabulary (item 2: keep memory_ask's text filter); edit committed, suites pass, gate stops at scope
 blocked-by: worker
+gate: pass
+gateSha: 2d91506c64cdb889e4f8abf90a317141cd319ab1
+gateAt: 2026-11-05T19:56:04.451Z
 ---
 
 # Never widen, fit links by CIDOC-CRM, and score honestly
@@ -109,3 +112,11 @@ The CRM fit and the fit-relations change altered no HER plan. HER eval is unchan
 - Pattern: Rós Madair `backlink` is pathless and points the other way. "X that Y's link points at" needs an inverse path predicate (ROS-MADAIR.md #3).
 
 ## Review rounds
+
+### Round 1 (crew-reviewer): PASS
+- Free text is opt-in (`free_text`, default False via getattr); only `MemoryVocabulary` sets it. Text filter, type listing and "mention" relaxation all gated. No silent widening left in Arches paths.
+- CRM clash: `clash` returns False for any class outside `PARENTS`; empty-target links fit all models unless a known clash; `range` untouched. Narrow as specced.
+- Scorer: node must still match, value compared case-insensitively; different node or value stays dangerous, missing value is partial. Tests pin all four.
+- memory_ask: tests/test_planner.py 33 pass; Ceist targeted 135 pass. One side effect (single-relation content-word phrase that can't join named types now refuses, also for memory) is disclosed and no test hits it.
+- HER re-pins: the 8 changes are each a dropped word ("mentioning 'x'") or a bare type listing; justified, refusal is correct.
+- Non-blocking notes: Opus demo target (21/0) not met (20/0), reason recorded (Ros Madair backlink, item 5). Demo "which tales feature Cu Chulainn?" now refuses; fix is a one-line `RELATION_FORMS` addition in the demo, to be done there.
