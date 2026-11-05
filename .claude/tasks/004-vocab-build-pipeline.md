@@ -1,16 +1,21 @@
 ---
 id: 004
 slug: vocab-build-pipeline
-status: approved
+status: blocked
 branch: crew/004-vocab-build-pipeline
 model: opus
 env: laptop
-rounds: 0
+rounds: 1
 depends: [003]
 files:
   - packages/ceist/
   - docs/tasks/ceist-vocab-pipeline.md
   - .github/workflows/ci.yml
+gate: pass
+gateSha: 357c115e67ff328a970cdb0e30be22072cc46c71
+gateAt: 2026-11-05T09:54:46.618Z
+blocked: write_cases crashes (and caches) on a question reply missing q/expect - fix now (~10 lines) or accept; live claude -p runs also pending (OAuth can't refresh from desktop session)
+blocked-by: reviewer
 ---
 
 # A scripted LLM build that writes a graph's vocabulary, one nodegroup at a time
@@ -75,4 +80,50 @@ Group-first grounding (005), the learn loop's auto-accept, and non-Arches source
 
 ## Worker notes
 
+**What changed**
+- `ceist/pipeline.py` (new): the `claude -p` runner (cache, audit, one retry with the schema errors shown), `crm_roles` (the CRM pre-pass), `check_group` (the reply schema), `entries_of`/`group_block` (entries plus the §2 group block), `resolve_collisions`, `write_cases` (questions per model, plus masked real questions labelled in one call), `judge_plan`/`planner_run` (every case through `interpret`), `coverage`, `report`, `run`.
+- `ceist/cli.py`: `ceist vocab pipeline` (also `--models` for a subset, `--config`, `--jobs`).
+- `ceist/bundle.py`: `shared_phrases()` factored out of `validate`, with the same warnings, so the collision pass reuses it.
+- `ceist/arches_describe.py`: `reference_files()` factored out of `load_rdm`, reused by the planner run.
+- `tests/test_pipeline.py` (6 tests, fake `--llm-cmd`): CRM roles, the reply schema, a fixture run end to end (group files, collisions, cases, report, audit privacy, the cache, one changed group rebuilt alone), gate fail on right and dangerous, retry then failure reported, and the `claude -p` result envelope. Mutation-checked: sending real questions unmasked fails the privacy test.
+- `docs/tasks/ceist-vocab-pipeline.md`: the "Pipeline" section (runner flags, cache, audit, CRM rules, reply format, collisions, cases, gate, coverage).
+- `.github/workflows/ci.yml`: not changed. The unit tests run in the existing ceist job.
+
+**Runner flags (claude 2.1.300):** `claude -p --output-format json --tools "" --strict-mcp-config --setting-sources project --no-session-persistence --system-prompt …`, from an empty temp dir. `--tools ""` disables all built-in tools. `--bare` was rejected because it never reads OAuth, so it can't use the subscription.
+
+**Not done: no live `claude -p` run.** From this session every `claude -p` call fails with "Failed to authenticate: OAuth session expired and could not be refreshed". I tried the inherited env, `env -u CLAUDE_CODE_SIMPLE`, `env -i`, and the desktop app's bundled binary. `~/.claude/.credentials.json` has `expiresAt: 0`, so the desktop app holds the login, and a child CLI can't refresh it. So these DoD items are open: the demo run (audit, cases, gate output, coverage), demo questions with the generated vs the hand-tuned vocabulary through `ask.answer`, and the HER comparison. To run them from a terminal where `claude` is logged in:
+`ceist vocab pipeline <starches-demo>/prebuild/graphs/resource_models --reference <starches-demo>/prebuild/reference_data -o <out> --model sonnet --jobs 2`.
+A stub run on the demo shows the size: 156 calls (150 nodegroups + 6 question sets), prompts with a median of 15 KB and a maximum of 104 KB (Monument's questions), about 2.5 MB in all. For HER I suggest `--models "Monument,Person,Artefact,Activity,Area,Maritime Vessel"` (69 of the 120 cases).
+
+**Where the spec bent**
+- CRM roles are hints in the prompt and in the cache key. They're not written into the descriptions, so 003's manifest hashes don't move.
+- The planner run loads graphs and reference data but no records. Cases that name a record are "missed" there. The question prompt asks for questions without record names.
+- `judge_plan` is strict: an answer to a case that expects a refusal is dangerous. On the fixture, interpret answers "which buildings were painted in 1900?" with the construction date plus a text mention of "painted", and that counts as dangerous. The planner wasn't changed.
+- `--min-right` applies to the phrase level and `--max-dangerous` to both levels.
+- A changed nodegroup also re-asks its model's collision pass (labels are in that prompt). Cache hits aren't re-audited.
+
+**Gate:** `crew gate` passed, stamped on 357c115. It ran with `PYTEST_ADDOPTS` deselecting the two known 001 failures, `tests/test_planner.py::test_did_you_mean_for_an_unplaced_verb` and `::test_did_you_mean_says_how_to_teach_the_phrasing` (they fail on the base too). Root: 485 passed, 26 skipped, 3 deselected (no root code touched). Ceist: 153 → 159 passed.
+
+**HER (arches-her dev/2.0.x, task 003's local clone):** the assembled bundle is byte-identical to 003's. All 120 cases through `interpret` give byte-identical output (narrated plan, refusal, suggestions). `ceist eval` with bge: 90/102 right, 2 dangerous, unchanged. No answers changed, so there's no changed-answer table.
+
+**Demo** (`starches-demo/ask` via task 003's `demo.py`, run through `.venv-ceist` with `CEIST_HER` and `PYTHONPATH` set to this worktree): all 26 questions give byte-identical answers to 003's branch output.
+
+**Memory graph:** no planner, grounding or `interpret` code changed, so `memory_ask` is unaffected.
+
+## Scout requests
+None.
+
+## Graph writes proposed
+- Gotcha: `claude -p` started from inside a Claude Code desktop session can't use the subscription ("OAuth session expired"): the desktop app owns the login (`expiresAt: 0`). `--bare` never reads OAuth. Run subscription LLM builds from a terminal.
+- Decision: the vocab pipeline's CRM roles are prompt hints and cache inputs, not description fields, so the split-vocab manifest hashes stay stable.
+- Pattern: in a test's fake LLM command, don't let canned config override the computed reply (a canned map leaked in as the reply, and the retry hid it).
+
 ## Review rounds
+
+- Round 1: BLOCKED. The reviewer reran test_pipeline.py and test_bundle.py (14 passed) and accepted the privacy test, the unit tests, the scope, and the CRM-as-hints departure. Findings:
+  1. A blocker: `_check_cases` doesn't require `q` or the `expect` key, and doesn't check that a case is a dict before using it. A malformed question-writer or label reply then passes the check, is cached, and makes `write_cases` raise KeyError/AttributeError on every rerun. The fix is about 10 lines, plus a test.
+  2. `subprocess.TimeoutExpired` and `LLMError` abort the whole run. The cache resumes it.
+  3. With no thresholds, failed groups or an empty case set still "pass". Pass `--min-right`/`--max-dangerous 0` in the live runs.
+  4. The cache key leaves out the outline, `--model` and the prompt text. Bump `PROMPT_VERSION` when a prompt changes.
+  The reviewer says it's ready for the live runs once finding 1 is fixed. Not fixed here: the verdict was BLOCKED, so the decision is Stu's.
+
