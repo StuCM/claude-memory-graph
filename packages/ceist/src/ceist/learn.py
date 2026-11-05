@@ -192,7 +192,7 @@ def proposals(log_path, bundle: dict, exclude=None) -> dict:
     held_out = set()
     if exclude:
         held_out = {(c["model"], _norm(c["phrase"]))
-                    for c in json.loads(Path(exclude).read_text())["cases"]}
+                    for c in json.loads(Path(exclude).read_text())["cases"] if "phrase" in c}
     known = _known(bundle)
     picked: dict[tuple, dict] = {}
     unplaced: dict[tuple, dict] = {}

@@ -389,7 +389,8 @@ def group_block(reply: dict) -> dict:
             answers[want] = a
     return {"purpose": reply.get("purpose", ""), "skip": reply.get("skip"),
             "phrases": reply.get("phrases", []), "nodes": nodes,
-            "combos": [{"phrases": c["phrases"], "set": c["set"]} for c in reply.get("combos") or []],
+            "combos": [{"phrases": c["phrases"], "node": c["node"], "set": c["set"]}
+                       for c in reply.get("combos") or []],
             "answers": answers, "intents": reply.get("intents", [])}
 
 
@@ -547,32 +548,48 @@ def write_cases(run: Runner, descriptions: dict, roles: dict, real: list[str]) -
     return cases
 
 
-def _fields(plan) -> set[tuple[str, str | None]]:
-    """(alias, value label) for each condition on the plan's own type."""
+def _fields(plan) -> set[tuple[str, str, str | None]]:
+    """(tile, alias, value label) for each condition on the plan's own type;
+    tile is the group of the OnTile it is in, else ""."""
     from .plan import DateRange, HasValue, LinkTo, Not, OnTile
     out = set()
-    todo = list(plan.where)
+    todo = [("", c) for c in plan.where]
     while todo:
-        c = todo.pop()
+        tile, c = todo.pop()
         while isinstance(c, Not):
             c = c.condition
         if isinstance(c, OnTile):
-            todo += c.conditions
+            todo += [(c.group, x) for x in c.conditions]
         elif isinstance(c, LinkTo) and c.relation:
-            out.add((c.relation.split("#")[0], None))
+            out.add((tile, c.relation.split("#")[0], None))
             if c.qualifier is not None:
-                out.add((c.qualifier.field, c.qualifier.label))
+                out.add((tile, c.qualifier.field, c.qualifier.label))
         elif isinstance(c, HasValue):
-            out.add((c.field, c.label))
+            out.add((tile, c.field, c.label))
         elif isinstance(c, DateRange):
-            out.add((c.field, None))
+            out.add((tile, c.field, None))
     return out
+
+
+def _judge_conditions(want: list[dict], fields) -> str:
+    """Each expected {"node", "value"?, "tile"?} in the plan: right; one missing
+    (broader than asked): partial; one there with another value or tile: dangerous."""
+    missing = False
+    for w in want:
+        here = [(t, label) for t, f, label in fields if f == w["node"]]
+        if not here:
+            missing = True
+        elif not any((w.get("value") is None or (label or "").lower() == w["value"].lower())
+                     and (w.get("tile") is None or t == w["tile"]) for t, label in here):
+            return "dangerous"
+    return "partial" if missing else "right"
 
 
 def judge_plan(case: dict, m, ends: dict[str, str]) -> str:
     """right / partial / dangerous / missed / refused for a whole interpretation:
     the plan must be of the case's model and use the expected node (either end of
-    a date) and qualifier. A plan with the right node and extra conditions counts."""
+    a date) and qualifier, or hold the expected conditions. A plan with the right
+    node and extra conditions counts."""
     answered = m.plan is not None and not m.refused
     x = case["expect"]
     if x is None:
@@ -582,11 +599,13 @@ def judge_plan(case: dict, m, ends: dict[str, str]) -> str:
     if m.plan.type != case["model"]:
         return "dangerous"
     fields = _fields(m.plan)
-    nodes = {f for f, _ in fields}
+    if "conditions" in x:
+        return _judge_conditions(x["conditions"], fields)
+    nodes = {f for _, f, _ in fields}
     if x["node"] not in nodes and ends.get(x["node"]) not in nodes:
         return "dangerous"
     want = ((x.get("qualifier") or {}).get("value") or "").lower()
-    if want and want not in {(label or "").lower() for _, label in fields}:
+    if want and want not in {(label or "").lower() for _, _, label in fields}:
         return "partial"
     return "right"
 

@@ -31,7 +31,7 @@ def load():
     for p in sorted((HER / "vocab").glob("*.json")):
         v = json.loads(p.read_text())
         vocab[v["model"]] = v["entries"]
-    cases = json.loads((HER / "cases.json").read_text())["cases"]
+    cases = [c for c in json.loads((HER / "cases.json").read_text())["cases"] if "phrase" in c]
     return models, vocab, cases
 
 
