@@ -95,7 +95,7 @@ data/vocabularies/*.json     the same as Arches/Alizarin collection JSON   → c
 - **Item ids.** They come from Alizarin, so they are the same ids that Rós Madair interns.
 - **Value hierarchy.** "Listed" covers "Grade II": each output expands a value to include every narrower item.
 - **Tiles.** Each tile's values are read with its ancestor tiles' values, so a link and a role split between a tile and its parent count as one entry; split across sibling tiles they don't.
-- **Skipped bundle entries.** `vocab.skipped` lists every qualified bundle entry that couldn't be used, and why (qualified dates and properties need tile-scoped conditions the plan can't express yet).
+- **Skipped combos.** `vocab.skipped` lists every combo (or v1 qualified entry) that couldn't be used, and why: a value not in its node's list, or a node off the tile.
 - **Alternative labels.** They are read from the SKOS, so "protected" finds Listed.
 - **Dates.** Each `date` node, named by its own name. Add words that pick it with `date_forms`.
 - **Relation synonyms.** Teach phrasings like "designed by" with `relation_forms`:
@@ -224,6 +224,16 @@ Arches often records *who did what* as one entry (a tile) holding a generic acto
 A qualified link walked backwards ("people who designed …") stays a `LinkTo` with `qualifier`, since its tile is on the other record; only Alizarin answers it.
 
 A qualifier value that isn't in its node's collection is counted in `skipped_qualified`, never guessed.
+
+### Group phrases: one tile, filled from the words around it
+
+A `ceist.vocab/2` bundle gives each nodegroup a `group` block (`ceist.bundle`): its own phrases, its nodes' roles, and **combos**, phrases that set values ("burnt down" → phase type Destruction, cause Fire). A v1 qualified entry is read as a combo of its node's group.
+
+- **Combo on a link** ("designed by" → actor, role Architect): a qualified relation, as above.
+- **Any other combo, or the group's own phrase**: the grounder keeps every group the phrase names, picks the one whose model the question names, and fills it from its clause (up to the next thing named, or "and", "which", …). A value fills it only from the group's own nodes ("fire" can't become "Fire Station"); a date fills its date node unless another word ("built") picked the date's field.
+- **Absorb gate.** A word left in the clause refuses the question ("couldn't place 'lightning'"); it never falls back to a text filter. A group phrase that names the group but nothing on it refuses too.
+- **The plan** gets one `OnTile(group, [values…, date])`; a single condition stands alone, since it holds on any tile. "which buildings were burnt down before 1950?" → "Find Buildings with one phase entry (whose phase cause is Fire and whose phase type is Destruction and whose phase date is before 1950)."
+- **With a matcher**, a leftover run is matched against the combos of the types named ("burned down" → "burnt down" on roots). Never against a group's own name: that would read the words as naming the group and nothing on it.
 
 CI runs this pipeline on the real Arches HER models: it clones arches-her, describes, assembles the committed vocabulary, and gates `ceist eval` on the blind questions (82/102 right, 3 dangerous, 91/102 right within one click). The flow for a new project is in [bench/ADAPTATION-FLOW.md](bench/ADAPTATION-FLOW.md).
 

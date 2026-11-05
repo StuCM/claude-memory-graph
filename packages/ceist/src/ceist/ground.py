@@ -1,17 +1,20 @@
 """Grounding: which words of a question name which parts of the vocabulary.
 
 Pipeline: shape → relations (longest phrase first, on the raw text, so
-"works on" keeps its stopword) → controlled values ("listed", "active") →
+"works on" keeps its stopword) → group phrases ("burnt down": a tile of a
+nodegroup) → controlled values ("listed", "active") →
 dates ("before 1900", with the word that picks the field: "built") → type
 nouns, modifiers, negators and hints → implied types (who → Person) → up to
-two named anchors (only a whole name or alias may bind; never a guess) → one
-leftover word as a text filter → coverage → wire the relations to their ends
-→ scope each negator ("not", "without", "non-") to the next thing named.
+two named anchors (only a whole name or alias may bind; never a guess) → each
+group phrase takes the values and date of its clause → one leftover word as a
+text filter → coverage → wire the relations to their ends → scope each
+negator ("not", "without", "non-") to the next thing named.
 
 With a matcher (ceist.matching.Chain), words the exact pass left over get a
 second chance before they become a text filter: a run of leftover words
 between two named things is matched against the relations that can join
-them, and one before a date against the date fields it could be. A
+them, one before a date against the date fields it could be, and any other
+against the group phrases of the types named. A
 confident match grounds like an exact one (the note says which layer
 decided); otherwise the closest items become suggestions ("did you mean …").
 
@@ -24,7 +27,7 @@ from dataclasses import dataclass, field
 
 from . import dates as _dates
 from .text import terms_pos
-from .vocabulary import DateField, Entity, Relation, Value, Vocabulary
+from .vocabulary import DateField, Entity, Group, Relation, Value, Vocabulary
 
 WH = {"what", "which", "who", "whom", "whose", "why", "when", "how", "where"}
 AUX = {"is", "are", "was", "were", "do", "does", "did", "has", "have", "had",
@@ -45,6 +48,7 @@ NEG = {"not", "no", "without", "never", "non", "isn't", "aren't", "wasn't", "wer
        "don't", "doesn't", "didn't", "hasn't", "haven't", "hadn't", "lacking"}
 DATE_WORDS = {"date", "dated", "dates", "dating"}   # shape, once a date is grounded
 NEG_REACH = 4             # a negator scopes over the next thing named within this many words
+CLAUSE_END = {"and", "or", "but", "which", "that", "who", "whose", "where", "while"}
 MAX_EDGES = 2
 MAX_VARS = 2
 MAX_ANCHORS = 2
@@ -104,6 +108,20 @@ class DateGround:
     hi: str | None
     fields: list[DateField]   # the field the words picked, else every candidate
     negated: bool = False
+    picked: float | None = None   # where the word that picked the field is
+
+
+@dataclass
+class GroupGround:
+    """A phrase naming one tile of a nodegroup, and what its clause says of it."""
+    phrase: str
+    pos: float
+    words: list[int]                                  # the phrase's word indices
+    candidates: list[tuple[Group, tuple[Value, ...]]]  # each group it names, with the values it sets
+    group: Group | None = None                        # the one chosen
+    values: list[Value] = field(default_factory=list)
+    date: DateGround | None = None
+    negated: bool = False
 
 
 @dataclass
@@ -114,6 +132,7 @@ class Grounding:
     edges: list[Edge] = field(default_factory=list)
     values: list[ValueMatch] = field(default_factory=list)
     dates: list[DateGround] = field(default_factory=list)
+    groups: list[GroupGround] = field(default_factory=list)
     recent: bool = False
     contains: str | None = None
     contains_negated: bool = False
@@ -258,6 +277,20 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
         sharing[form] = [r for f, r in forms if f == form]
     g.edges.sort(key=lambda e: e.pos)
 
+    # ── group phrases ("burnt down"): filled from their clause below
+    groups = list(getattr(vocab, "groups", lambda: [])())
+    by_form: dict[str, list] = {}
+    for grp in groups:
+        for phrase, preset in grp.forms:
+            if terms_pos(phrase):
+                by_form.setdefault(phrase, []).append((grp, preset))
+    for phrase, cands, m in _phrase_spans(raw, list(by_form.items()), taken):
+        at = [i for i, s, e, _w in words if s >= m.start() and e <= m.end()]
+        if consumed & set(at):                        # "how many": the question's shape
+            taken.remove((m.start(), m.end()))
+            continue
+        g.groups.append(GroupGround(phrase, consume_span(m.start(), m.end()), at, cands))
+
     # ── controlled values ("listed", "active")
     by_phrase: dict[str, list[Value]] = {}
     for v in vocab.values():
@@ -292,7 +325,8 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
                 pick = (max(before, key=lambda x: x[0]) if before
                         else min(picks, key=lambda x: x[0]) if picks else None)
                 fields = list(pick[1]) if pick else date_fields
-                g.dates.append(DateGround(dm.phrase, pos, dm.lo, dm.hi, fields))
+                g.dates.append(DateGround(dm.phrase, pos, dm.lo, dm.hi, fields,
+                                          picked=pick[0] if pick else None))
                 g.notes.append(f"'{dm.phrase}' → date {_dates.label(dm.lo, dm.hi)}"
                                + (f" ('{pick[2]}' → "
                                   f"{' / '.join(sorted({d.label for d in pick[1]}))})"
@@ -390,12 +424,13 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
     _fit_relations(g, relations, sharing)
 
     if matcher is not None and not g.about:
-        _match_leftovers(g, matcher, words, consumed, parts_of, relations)
+        _match_leftovers(g, matcher, words, consumed, parts_of, relations, groups)
+    held = _fill_groups(g, words, consumed, parts_of)
 
     # ── one leftover word → a text filter; more stay uncovered
     remaining = [(i, w) for i, _s, _e, w in words if i not in consumed and parts_of(w)]
     contains_pos = None
-    if len(remaining) == 1:
+    if len(remaining) == 1 and remaining[0][0] not in held:
         i, w = remaining[0]
         contains_pos = float(i)
         g.contains = sorted(parts_of(w))[0]
@@ -442,7 +477,8 @@ _SUBJECT_LEAD = re.compile(r"(^|\b(which|what|how many|show me|list|find|any|all
                            r"(\s+(the|any|all|of the))?\s*$", re.I)
 
 
-def _match_leftovers(g: Grounding, matcher, words, consumed, parts_of, relations) -> None:
+def _match_leftovers(g: Grounding, matcher, words, consumed, parts_of, relations,
+                     groups: list[Group]) -> None:
     """The second chance: leftover runs, matched by the configured chain
     against what the structure says they could be."""
     from .matching import Item
@@ -507,6 +543,73 @@ def _match_leftovers(g: Grounding, matcher, words, consumed, parts_of, relations
                                  "qualifier": o.payload.qualifier[1] if o.payload.qualifier
                                  else None, "end_node": None, "label": o.label}
                                 for o in res.options]})
+    # any other run: the combos of the types named, one item per tile it describes. Not
+    # a group's own name: a run near it would be read as naming the group and nothing on it
+    named = {n.type for n in g.vars()}
+    tiles: dict[tuple, list] = {}
+    for grp in groups:
+        if grp.model in named:
+            for phrase, preset in grp.forms:
+                if preset:
+                    tiles.setdefault((grp, preset), []).append(phrase)
+    if not tiles:
+        return
+    items = [Item((grp.model, grp.name, tuple(v.value for v in preset)), tuple(phrases),
+                  f"{phrases[0]} ({grp.name.replace('_', ' ')})", (grp, preset))
+             for (grp, preset), phrases in tiles.items()]
+    for run in _leftover_runs(words, consumed, parts_of):
+        phrase = " ".join(w[3] for w in run)
+        res = matcher.resolve(phrase, items, g.text)
+        g.notes += res.notes
+        if res.match:
+            g.groups.append(GroupGround(phrase, float(run[0][0]), [w[0] for w in run],
+                                        [res.match.item.payload]))
+            take(run)
+        elif res.options:
+            g.suggestions.append((phrase, [o.label for o in res.options]))
+
+
+def _fill_groups(g: Grounding, words, consumed: set[int], parts_of) -> set[int]:
+    """Each group phrase picks its group among the types named, then takes the
+    values (from its group's own nodes) and the date of its clause. Returns
+    the words that must not become a text filter: those left in a group's
+    clause, and a phrase that named a group but nothing on it — a group that
+    doesn't absorb its clause refuses rather than drops a word."""
+    named = {n.type for n in g.vars()}
+    held: set[int] = set()
+    for gm in list(g.groups):
+        cands = [c for c in gm.candidates if not named or c[0].model in named]
+        marks = [x.pos for x in (*g.edges, *g.nodes, *g.groups) if x is not gm]
+        marks += [i for i, _s, _e, w in words if w in CLAUSE_END]
+        start = gm.words[-1]
+        stop = min((m for m in marks if m > start), default=len(words))
+        if len(cands) == 1:
+            grp, preset = cands[0]
+            gm.group, gm.values = grp, list(preset)
+            for vm in [v for v in g.values if start < v.pos < stop]:
+                fit = [v for v in vm.candidates if v.field in grp.fields
+                       and (not v.owners or grp.model in v.owners)]
+                if len({v.field for v in fit}) == 1:
+                    gm.values.append(fit[0])
+                    g.values.remove(vm)
+            dm = next((d for d in g.dates if start < d.pos < stop
+                       and (d.picked is None or d.picked < gm.pos)), None)
+            if dm is not None and grp.date is not None:
+                gm.date = dm
+                g.dates.remove(dm)
+        elif len(cands) > 1:
+            g.suggestions.append((gm.phrase, [f"{grp.model} {grp.name.replace('_', ' ')}"
+                                              for grp, _ in cands]))
+        held.update(i for i in range(start + 1, int(stop)) if i not in consumed)
+        if gm.group is None or not (gm.values or gm.date):
+            g.groups.remove(gm)
+            consumed.difference_update(gm.words)
+            held.update(gm.words)
+            continue
+        g.notes.append(f"'{gm.phrase}' → one {gm.group.name} entry of {gm.group.model}: "
+                       + ", ".join([f"{v.field} = {v.label}" for v in gm.values]
+                                   + ([f"{gm.group.date.label} {gm.date.phrase}"] if gm.date else [])))
+    return held
 
 
 def _scope_negations(g: Grounding, negs: list[tuple[int, str]], contains_pos) -> None:
@@ -518,6 +621,7 @@ def _scope_negations(g: Grounding, negs: list[tuple[int, str]], contains_pos) ->
     items += [(e.pos, "edge", e) for e in g.edges]
     items += [(v.pos, "value", v) for v in g.values]
     items += [(d.pos, "date", d) for d in g.dates]
+    items += [(t.pos, "group", t) for t in g.groups]
     if contains_pos is not None:
         items.append((contains_pos, "contains", None))
     for n in g.vars():
@@ -543,7 +647,8 @@ def _scope_negations(g: Grounding, negs: list[tuple[int, str]], contains_pos) ->
         what.negated = True
         name = {"edge": lambda e: f"relation {e.relation}",
                 "value": lambda v: f"value '{v.phrase}'",
-                "date": lambda d: f"date '{d.phrase}'"}[kind](what)
+                "date": lambda d: f"date '{d.phrase}'",
+                "group": lambda t: f"the '{t.phrase}' entry"}[kind](what)
         g.notes.append(f"'{word}' negates {name}")
 
 

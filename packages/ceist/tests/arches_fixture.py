@@ -6,6 +6,10 @@ SKOS thesaurus with a narrower concept, construction date), and People.
     Grain Warehouse  Grade II   Leeds Dock  Isambard Brunel  1872   actors: Ada (Builder),
                                                                             Isambard (Architect)
     Boat Shed        Candidate  Salts Mill  Ada Lovelace     1903
+
+With `phases=True`, phases (type, cause and date on one tile each):
+    Clock Tower      Destruction by Fire 1940
+    Grain Warehouse  Destruction by Flood 1960 · Damage by Fire 1900
 """
 
 import json
@@ -55,6 +59,28 @@ ROLES = """<?xml version="1.0" encoding="UTF-8"?>
   </skos:Concept>
 </rdf:RDF>
 """
+
+
+def _list(name: str, labels: list[str]) -> str:
+    """A flat SKOS thesaurus."""
+    scheme = f"https://example.org/vocab/{name}"
+    concepts = "".join(f"""
+  <skos:Concept rdf:about="{scheme}/{label.lower()}">
+    <skos:inScheme rdf:resource="{scheme}"/>
+    <skos:prefLabel xml:lang="en">{label}</skos:prefLabel>
+  </skos:Concept>""" for label in labels)
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:skos="http://www.w3.org/2004/02/skos/core#">
+  <skos:ConceptScheme rdf:about="{scheme}">
+    <skos:prefLabel xml:lang="en">{name}</skos:prefLabel>
+  </skos:ConceptScheme>{concepts}
+</rdf:RDF>
+"""
+
+
+PHASES = _list("PhaseType", ["Damage", "Destruction", "Alteration"])
+CAUSES = _list("Cause", ["Fire", "Flood"])
 
 
 def _id(name: str) -> str:
@@ -110,16 +136,27 @@ def collection_ids(skos: str = SKOS):
     return cid, concepts, values
 
 
-def write(root: Path) -> dict:
+def write(root: Path, phases: bool = False) -> dict:
     cid, concepts, values = collection_ids()
     rid_, roles, role_values = collection_ids(ROLES)
     concepts.update(roles)
+    pid, phase_types, phase_values = collection_ids(PHASES)
+    kid, causes, cause_values = collection_ids(CAUSES)
+    concepts.update(phase_types)
+    concepts.update(causes)
     # an "associated actor" entry: a link and a role in ONE nodegroup (one tile each)
     assoc = _node(BUILDING, "associated_actor", "Associated actor", "semantic")
     actor = dict(_node(BUILDING, "actor", "Actor", "resource-instance",
                        {"graphs": [{"graphid": PERSON}]}), nodegroup_id=assoc["nodeid"])
     actor_role = dict(_node(BUILDING, "actor_role", "Role", "concept",
                             {"rdmCollection": rid_}), nodegroup_id=assoc["nodeid"])
+    # a phase entry: its type, cause and date on one tile
+    phase = _node(BUILDING, "phase", "Phase", "semantic")
+    phase_nodes = [dict(_node(BUILDING, alias, name, datatype, config), nodegroup_id=phase["nodeid"])
+                   for alias, name, datatype, config in (
+                       ("phase_type", "Phase type", "concept", {"rdmCollection": pid}),
+                       ("phase_cause", "Phase cause", "concept", {"rdmCollection": kid}),
+                       ("phase_date", "Phase date", "date", {"dateFormat": "YYYY-MM-DD"}))]
     graphs = {
         SITE: _graph(SITE, "Site", [_node(SITE, "name", "Name", "string")]),
         PERSON: _graph(PERSON, "Person", [_node(PERSON, "name", "Name", "string")]),
@@ -134,7 +171,9 @@ def write(root: Path) -> dict:
             _node(BUILDING, "construction_date", "Construction date", "date",
                   {"dateFormat": "YYYY-MM-DD"}),
             assoc,
-        ], nested={"associated_actor": [actor, actor_role]}),
+            *([phase] if phases else []),
+        ], nested={"associated_actor": [actor, actor_role],
+                   **({"phase": phase_nodes} if phases else {})}),
     }
     (root / "graphs").mkdir(parents=True)
     for gid, doc in graphs.items():
@@ -142,6 +181,9 @@ def write(root: Path) -> dict:
     (root / "vocabularies").mkdir()
     (root / "vocabularies" / "heritage.xml").write_text(SKOS)
     (root / "vocabularies" / "roles.xml").write_text(ROLES)
+    if phases:
+        (root / "vocabularies" / "phases.xml").write_text(PHASES)
+        (root / "vocabularies" / "causes.xml").write_text(CAUSES)
 
     node = {g: {n["alias"]: n["nodeid"] for n in doc["graph"][0]["nodes"]}
             for g, doc in graphs.items()}
@@ -172,6 +214,10 @@ def write(root: Path) -> dict:
     def link(key):
         return [{"resourceId": ids[key], "ontologyProperty": "", "inverseOntologyProperty": ""}]
 
+    def phase_of(kind, cause, when):
+        return [("phase", {"phase_type": phase_values[kind], "phase_cause": cause_values[cause],
+                           "phase_date": when})] if phases else []
+
     sites = [resource(SITE, "dock", "Leeds Dock", {"name": text("Leeds Dock")}),
              resource(SITE, "mill", "Salts Mill", {"name": text("Salts Mill")})]
     people = [resource(PERSON, "ada", "Ada Lovelace", {"name": text("Ada Lovelace")}),
@@ -181,7 +227,8 @@ def write(root: Path) -> dict:
             "name": text("Clock Tower"), "heritage_status": values["Listed"],
             "site": link("dock"), "architect": link("ada"), "construction_date": "1845-06-01"},
             entries=[("associated_actor", {"actor": link("ada"),
-                                           "actor_role": role_values["Architect"]})]),
+                                           "actor_role": role_values["Architect"]}),
+                     *phase_of("Destruction", "Fire", "1940-05-01")]),
         # Ada built it and Isambard designed it: "designed by Ada" must NOT match
         resource(BUILDING, "warehouse", "Grain Warehouse", {
             "name": text("Grain Warehouse"), "heritage_status": values["Grade II"],
@@ -190,7 +237,10 @@ def write(root: Path) -> dict:
             entries=[("associated_actor", {"actor": link("ada"),
                                            "actor_role": role_values["Builder"]}),
                      ("associated_actor", {"actor": link("isambard"),
-                                           "actor_role": role_values["Architect"]})]),
+                                           "actor_role": role_values["Architect"]}),
+                     # Destruction and Fire, but on different tiles
+                     *phase_of("Destruction", "Flood", "1960-01-01"),
+                     *phase_of("Damage", "Fire", "1900-01-01")]),
         resource(BUILDING, "shed", "Boat Shed", {
             "name": text("Boat Shed"), "heritage_status": values["Candidate"],
             "site": link("mill"), "architect": link("ada"), "construction_date": "1903-09-30"}),
