@@ -153,11 +153,13 @@ record yet. On the demo, Monument keeps 7 of its 38 nodegroups, and the bundle g
 
 ```
 ceist vocab pipeline <graphs dir> -o <out> [--reference <reference_data>] [--questions real.txt]
+                     [--seed <bundle | vocab dir | phrasings.json>]
                      [--llm-cmd CMD] [--model M] [--models A,B] [--config ceist.toml]
                      [--min-right N] [--max-dangerous N] [--jobs N]
 ```
 
-It runs describe → CRM roles → one analysis per nodegroup → a collision pass per model →
+It runs describe → CRM roles → one analysis per nodegroup → type words and link wording per
+model → a collision pass per model →
 questions → assemble → gate → coverage report, and exits 1 when the gate fails.
 `<out>` holds `descriptions/`, `vocab/` (split layout), `cases.json`, `bundle.json`,
 `report.md`, `collisions.json`, `audit.jsonl` and `cache/`.
@@ -205,19 +207,45 @@ questions → assemble → gate → coverage report, and exits 1 when the gate f
   [[ceist-group-grounding]] §2: `phrases`, `nodes` (role, end node), `combos` (`phrases`,
   `set`), `answers` (when/who/where, from the roles), plus `purpose`, `skip` and `intents`.
   Combos that set several values live only there, until 005 reads them.
+- **Units.** A `E58`/`P91` node gets the role `unit`. `check_group` rejects phrasings on a unit
+  (the first run gave "in grams" to the unit, so "weight in grams" answered with it): people
+  ask about the measured value, and a unit only describes it.
+- **Type words and link wording** (round two, 006). One more call per model
+  (`pipeline.name_model`) asks for the everyday nouns for its records ("stories", "tales" for
+  Tale) and, for each link to a model in the build, short phrasings for the pair it joins
+  ("in", "located in" for Monument→Site `named_location`), with reverse phrasings from the CRM
+  inverse. A link back to its own model gets no reverse phrasings, since the types can't tell
+  the direction. A type word that names another model is refused, and one two models claim is
+  dropped from both (`settle_type_words`). The words go in the manifest, then the bundle's
+  `extra_type_words`, which `ArchesVocabulary` reads. Its own `extra_type_words` argument wins.
+  The link phrasings join each link's entry in its group file.
+- **Seeds** (`--seed`, repeatable): phrasings already in use, as a bundle, a vocab directory,
+  or a JSON file shaped like `ArchesVocabulary`'s arguments (`extra_type_words`,
+  `relation_forms`, `date_forms`, the latter two keyed by alias in every model). Node seeds go
+  to the group call and link seeds and type words to the model call. The LLM may add to them
+  and list doubts, but it can't remove them: they stay in the vocabulary, and the collision
+  pass never strips one. The report lists the doubts. Qualified entries aren't seeds.
 - **Collisions.** `bundle.shared_phrases` (what `validate` warns about) goes back to the
   LLM once per model. It keeps each phrase on one entry, or leaves it on all of them as
-  deliberately ambiguous. The decisions are in `collisions.json`.
+  deliberately ambiguous. The decisions are in `collisions.json`. A phrase that only
+  unqualified links share, with no target model in common, isn't sent: the grounder picks
+  between them by the types a question names (`ground._fit_relations`), so "in" stays on
+  both `named_location` (→ Site) and `parent_monument_or_area` (→ Monument).
 - **Questions.** A separate prompt per model, given the description but never the
-  vocabulary, writes 8–12 cases. Two of them expect a refusal. `--questions` lines are
-  masked (`learn.mask`), and one call labels them; the case keeps the raw text locally.
+  vocabulary, writes 8–12 cases. Two of them expect a refusal. Each case says what the whole
+  question means, as `expect.conditions` (`{node, value?, tile?, link?}`, `link` being the
+  target model; empty for the type alone), besides the phrase and node the phrase level scores.
+  `--questions` lines are masked (`learn.mask`), and one call labels them, with conditions;
+  a label may name no phrase, and that case is scored at the planner level only. The case
+  keeps the raw text locally.
   `cases.json` is frozen: when it's already in `<out>`, it's reused. When a question call
   failed, the cases go to `cases.unfrozen.json` instead, so a rerun asks again.
 - **The gate.** `ceist eval` at the phrase level, plus every case through `interpret`
   (graphs and reference data loaded, no records). A plan is right when it's of the case's
-  model and uses the expected node (either end of a date) and qualifier value. It's
-  dangerous when it answers a case that expects a refusal, or answers with another type or
-  node. `--min-right` applies to the phrase level, and `--max-dangerous` to both levels. With
+  model and holds every expected condition (a date by either end), or, for a case without
+  conditions, uses the expected node and qualifier value. One missing is partial. It's
+  dangerous when it answers a case that expects a refusal, or answers with another type,
+  node, value, tile or link target. `--min-right` applies to the phrase level, and `--max-dangerous` to both levels. With
   no cases at all, the gate fails when either threshold is given, and warns otherwise.
 - **Against the hand-tuned vocabulary:** `bench/demo_compare.py <starches-demo>/ask <out>/bundle.json`
   runs the demo README's questions through the demo's `ask.answer` with both, and prints the

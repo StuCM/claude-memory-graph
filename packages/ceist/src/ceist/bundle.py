@@ -3,6 +3,7 @@ models, in one file built once, offline.
 
     {"format": "ceist.vocab/2",
      "built": {"graphs_sha256": "…", "models": 16, "entries": 1301, "phrasings": 7392, "groups": 2},
+     "extra_type_words": {"stories": "Tale", …},                          # optional
      "models": {
        "Monument": {
          "graphid": "…",
@@ -51,7 +52,7 @@ LAYOUT = "ceist.vocab-groups/1"
 MANIFEST = "manifest.json"
 DATE = {"date", "edtf"}
 ROLES = {"date", "actor", "place", "type", "cause", "name", "identifier", "description",
-         "measure", "link", "other"}
+         "measure", "unit", "link", "other"}
 
 
 def kind_of(node: dict) -> str:
@@ -206,12 +207,14 @@ def read_vocab(vocab_dir: str | Path) -> tuple[list[dict], list[str]]:
     files = sorted((p for p in root.glob("*.json") if p.name != MANIFEST), key=lambda p: p.stem)
     if not (root / MANIFEST).exists():
         return [dict({"groups": {}}, **json.loads(p.read_text())) for p in files], []
+    listed = json.loads((root / MANIFEST).read_text()).get("models") or {}
     out = []
     for d in sorted(p for p in root.iterdir() if p.is_dir()):
         groups = [json.loads(g.read_text()) for g in sorted(d.glob("*.json"), key=lambda p: p.stem)]
         if groups:
             out.append({"model": d.name, "entries": [e for g in groups for e in g["entries"]],
-                        "groups": {g["nodegroup"]: g["group"] for g in groups if g.get("group")}})
+                        "groups": {g["nodegroup"]: g["group"] for g in groups if g.get("group")},
+                        "type_words": (listed.get(d.name) or {}).get("type_words") or []})
     warnings = [f"{p.name} not read: {MANIFEST} says the split layout is read" for p in files]
     return out, warnings
 
@@ -221,13 +224,16 @@ def assemble(descriptions_dir: str | Path, vocab_dir: str | Path,
     """The bundle, plus (errors, warnings). A bundle with errors shouldn't ship.
     A model's entries are ordered by nodegroup, so both layouts give the same bundle."""
     descriptions = _descriptions(descriptions_dir)
-    models, errors = {}, []
+    models, errors, type_words = {}, [], {}
     vocab, warnings = read_vocab(vocab_dir)
     for v in vocab:
         d = descriptions.get(v["model"])
         if d is None:
             errors.append(f"{v['model']}: no description for model '{v['model']}'")
             continue
+        for w in v.get("type_words") or []:
+            if type_words.setdefault(w, v["model"]) != v["model"]:
+                errors.append(f"type word '{w}' names both {type_words[w]} and {v['model']}")
         err, warn = validate(d, v["entries"])
         errors += err + [e for a, b in v["groups"].items() for e in validate_group(d, a, b)]
         warnings += warn
@@ -253,6 +259,8 @@ def assemble(descriptions_dir: str | Path, vocab_dir: str | Path,
                                          for e in m["entries"]),
                         "groups": sum(len(m["groups"]) for m in models.values())},
              "models": models}
+    if type_words:
+        bundle["extra_type_words"] = type_words
     return bundle, errors, warnings
 
 
