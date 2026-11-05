@@ -18,7 +18,7 @@ jobs:
       - run: uv run pytest -q
 
   ceist:
-    name: ceist (Arches outputs, matching layers, HER acceptance gate)
+    name: ceist (Arches outputs, matching layers)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,21 +29,48 @@ jobs:
       # end-to-end tests skip without its bindings and emitter (a long Rust build).
       - run: uv venv && uv pip install "./packages/ceist[vectors,onnx,roots]" pytest
       - run: .venv/bin/python -m pytest -q packages/ceist/tests
-      # The project flow end to end on the real Arches HER models (HER 2.0, the
-      # Arches 8 models whose controlled values are controlled lists): read them
+
+  her:
+    name: HER ${{ matrix.her }} acceptance gate
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # pinned: a new arches-her commit changes the answers, so it comes in reviewed
+          - her: "2.0"         # Arches 8: controlled values are controlled lists
+            ref: 9f6a113f75a67fe7cdd04700669678076e360039   # dev/2.0.x
+          - her: "1.1"         # concept collections
+            ref: 0a21a4684a9cf74d3448020daa63ecc691ecc98d   # dev/1.1.x
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: archesproject/arches-her
+          ref: ${{ matrix.ref }}
+          path: arches-her
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv venv && uv pip install "./packages/ceist[vectors,onnx,roots]"
+      # The project flow end to end on the real Arches HER models: read them
       # through Alizarin, assemble the committed vocabulary into a bundle, and
       # gate on the blind acceptance questions with the shipping config.
-      - run: git clone --depth 1 -b dev/2.0.x https://github.com/archesproject/arches-her "$RUNNER_TEMP/arches-her"
       - name: HER controlled lists all load
-        run: .venv/bin/python packages/ceist/bench/her_lists.py "$RUNNER_TEMP/arches-her/arches_her/pkg"
+        run: .venv/bin/python packages/ceist/bench/her_lists.py arches-her/arches_her/pkg
       - name: HER acceptance gate
         run: |
-          P="$RUNNER_TEMP/arches-her/arches_her/pkg"
+          P=arches-her/arches_her/pkg
           .venv/bin/ceist vocab describe "$P/graphs/resource_models" "$RUNNER_TEMP/her-models" --reference "$P/reference_data"
           .venv/bin/ceist vocab assemble "$RUNNER_TEMP/her-models" packages/ceist/bench/her/vocab -o "$RUNNER_TEMP/her.bundle.json" --graphs "$P/graphs/resource_models"
           .venv/bin/ceist eval --bundle "$RUNNER_TEMP/her.bundle.json" --questions packages/ceist/bench/her/cases.json --config packages/ceist/bench/her/ceist.toml --min-right 80 --max-dangerous 3
+      # The planner, not just phrase → node: each question's plan (or refusal)
+      # as reviewed, so a condition nobody asked for fails here.
+      - name: HER planner answers
+        run: .venv/bin/python packages/ceist/bench/her_plans.py arches-her/arches_her/pkg "$RUNNER_TEMP/her.bundle.json" packages/ceist/bench/her/plans-${{ matrix.her }}.json
       # The same gate with bge-small in the vectors layer (weights from huggingface.co).
       - name: HER acceptance gate, bge-small
+        if: matrix.her == '2.0'
         run: |
           .venv/bin/ceist vectors fetch bge-small-en-v1.5
           .venv/bin/ceist vectors embed "$RUNNER_TEMP/her.bundle.json" --config packages/ceist/bench/her/ceist-bge.toml
