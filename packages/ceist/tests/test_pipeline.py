@@ -225,6 +225,20 @@ def test_the_gate_fails_on_too_few_right_or_any_dangerous(tmp_path, capsys):
     assert not (out / "descriptions" / "Person.json").exists()
 
 
+def test_the_gate_rejects_an_entry_for_a_node_its_model_lacks(tmp_path):
+    data, ref, cmd, _ = project(tmp_path)
+    out = tmp_path / "out"
+    stray = out / "vocab" / "Building" / "repository.json"     # left by a build of another model
+    stray.parent.mkdir(parents=True)
+    stray.write_text(json.dumps({"model": "Building", "nodegroup": "repository", "entries": [
+        {"phrases": ["at"], "kind": "link", "node": "repository_owner"}]}))
+    assert pipeline.run(data / "graphs", out, ref, llm_cmd=cmd, models=["Building"],
+                        log=lambda _: None) == 1
+    report = (out / "report.md").read_text()
+    assert "**failed: bundle: Building entry" in report
+    assert "(repository_owner): no node 'repository_owner'" in report
+
+
 def test_a_reply_that_fails_its_schema_is_asked_again_then_reported(tmp_path):
     canned = dict(CANNED, **{"group:heritage_status": {"purpose": "x", "nodes": {"nope": {}}}})
     data, ref, cmd, _ = project(tmp_path, canned)
