@@ -5,7 +5,8 @@ description = "Plain-English questions over a graph, without an LLM: question ->
 requires-python = ">=3.11"
 # Alizarin reads Arches data: graph shape, datatypes, tiles as trees, controlled
 # lists and thesauri (ceist.arches, ceist.alizarin, ceist vocab describe)
-dependencies = ["alizarin>=2.0.0b9,<3"]
+# 2.0.0a141 is newer than 2.0.0b9 (b9 plus 16 commits) but sorts below it
+dependencies = ["alizarin==2.0.0a141"]
 
 [project.optional-dependencies]
 # static word vectors for the "vectors" matching layer (ceist.vectors)

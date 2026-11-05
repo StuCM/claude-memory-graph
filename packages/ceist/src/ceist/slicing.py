@@ -16,7 +16,7 @@ import json
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from .arches import CONTROLLED_TYPES, LINK_TYPES, ArchesVocabulary, _graph_doc, read_resources
+from .arches import CONTROLLED_TYPES, LINK_TYPES, ArchesVocabulary, graph_doc, read_resources
 from .bundle import MANIFEST, nodegroups
 
 
@@ -29,7 +29,7 @@ class Usage:
         if reference_dir:
             from .arches_describe import load_rdm
             rdm = load_rdm(reference_dir)
-        self.vocab = ArchesVocabulary([_graph_doc(p) for p in sorted(Path(graphs_dir).glob("*.json"))],
+        self.vocab = ArchesVocabulary([graph_doc(p) for p in sorted(Path(graphs_dir).glob("*.json"))],
                                       rdm)
         self.records: Counter = Counter()
         self.tiles: Counter = Counter()                    # (model, nodegroup alias) → tiles

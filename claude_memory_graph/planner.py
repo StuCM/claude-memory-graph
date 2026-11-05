@@ -26,8 +26,7 @@ from .namespaces import GRAPH_CONCEPTS, GRAPH_LINKS
 from .ontology import CONCEPT_TYPES, RESOURCE_MODELS
 from .store import MemoryStore
 
-# ponytail: hardcoded thresholds; promote to gate config when the coverage
-# experiment yields real numbers to tune against.
+# below this a refusal is logged as low-coverage rather than uncovered
 COVERAGE_MIN = 0.6
 RECENT_LIMIT = 5
 ROW_LIMIT = 25
@@ -422,8 +421,7 @@ def answer(store: MemoryStore, question: str, max_rows: int = 8,
     understood ALL of it. No stray text filter, no "did you mean", no loose
     "linked somehow", no loosened retry, and at least one row: silence is
     better than a confident wrong answer injected as memory."""
-    meaning = interpret(MemoryVocabulary(store, cached=True), question, coverage,
-                        matcher=matcher())
+    meaning = interpret(MemoryVocabulary(store, cached=True), question, matcher=matcher())
     g = meaning.grounding
     if (meaning.statement or meaning.refused or meaning.direct is not None
             or meaning.plan is None or g.suggestions or g.loose or g.contains
@@ -439,7 +437,7 @@ def answer(store: MemoryStore, question: str, max_rows: int = 8,
 
 
 def handle(store: MemoryStore, text: str, explain: bool = False) -> str:
-    meaning = interpret(MemoryVocabulary(store), text, COVERAGE_MIN, matcher=matcher())
+    meaning = interpret(MemoryVocabulary(store), text, matcher=matcher())
     if meaning.statement:
         _log(text, None, "statement")
         return ("Statement-shaped — the ambient gate handles working prose. "
@@ -456,7 +454,8 @@ def handle(store: MemoryStore, text: str, explain: bool = False) -> str:
     prefix += _did_you_mean(g)
     if meaning.refused:
         outcome = ("refused" if g.refuse else
-                   "low-coverage" if g.coverage < COVERAGE_MIN else "no-subject")
+                   "low-coverage" if g.coverage < COVERAGE_MIN else
+                   "uncovered" if g.uncovered else "no-subject")
         _log(text, g, outcome)
         return prefix + _fallback(store, text, g, meaning.refused)
 
@@ -544,7 +543,7 @@ def asks_report() -> str:
                           f"→ memory_amend_relation (LLM-added) or edit base.ttl")
 
     gaps = Counter(t for e in entries
-                   if e.get("outcome") in ("low-coverage", "no-subject",
+                   if e.get("outcome") in ("low-coverage", "uncovered", "no-subject",
                                            "dropped-contains")
                    for t in e.get("uncovered", []))
     # a CONTAINS word in a dry ask is the failure's likeliest cause — it was

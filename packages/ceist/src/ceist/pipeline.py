@@ -590,12 +590,12 @@ def judge_plan(case: dict, m, ends: dict[str, str]) -> str:
 def planner_run(graphs_dir: Path, reference: Path | None, bundle: dict, cases: list[dict], cfg):
     """Every case through `interpret`, with no records loaded: (counts, rows)."""
     from . import config
-    from .arches import ArchesVocabulary, _graph_doc, load_reference_data
+    from .arches import ArchesVocabulary, graph_doc, load_reference_data
     from .arches_describe import reference_files
     from .narrate import narrate
     from .plan import interpret
     rdm, alts = load_reference_data(reference_files(reference)) if reference else (None, {})
-    vocab = ArchesVocabulary([_graph_doc(p) for p in sorted(graphs_dir.glob("*.json"))], rdm,
+    vocab = ArchesVocabulary([graph_doc(p) for p in sorted(graphs_dir.glob("*.json"))], rdm,
                              alt_labels=alts, bundle=bundle)
     chain = config.chain(cfg)
     ends = {e["node"]: e["end_node"] for m in bundle["models"].values() for e in m["entries"]

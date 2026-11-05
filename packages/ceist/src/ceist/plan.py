@@ -27,10 +27,7 @@ trust: the planner never guesses.
 from dataclasses import dataclass, field, replace
 
 from .ground import Edge, Grounding, Node, ground, is_question
-from .text import terms
 from .vocabulary import Entity, Value, Vocabulary
-
-COVERAGE_MIN = 0.6
 
 
 @dataclass
@@ -110,8 +107,7 @@ class Interpretation:
     statement: bool = False
 
 
-def interpret(vocab: Vocabulary, text: str, coverage_min: float = COVERAGE_MIN,
-              today=None, matcher=None) -> Interpretation:
+def interpret(vocab: Vocabulary, text: str, today=None, matcher=None) -> Interpretation:
     if not is_question(text):
         return Interpretation(Grounding(text=text), statement=True,
                               refused="statement-shaped, not a question")
@@ -124,15 +120,15 @@ def interpret(vocab: Vocabulary, text: str, coverage_min: float = COVERAGE_MIN,
         out.refused = (f"'{g.negation_unplaced}' — couldn't tell what it negates "
                        "(ignoring it would invert the answer)")
         return out
-    if g.coverage < coverage_min:
-        out.refused = f"grounding coverage {g.coverage:.0%} below {coverage_min:.0%}"
-        return out
     if g.uncovered:
         # words nothing placed would be dropped from the answer: a wider
         # question answered as if it were the one asked. Refuse, naming them.
         out.refused = (f"couldn't place {_quoted(g.uncovered)} — answering without "
                        f"{'it' if len(g.uncovered) == 1 else 'them'} would widen the question"
                        + _did_you_mean(g))
+        return out
+    if not g.coverage:
+        out.refused = "nothing in it names anything this vocabulary knows"
         return out
     # the anchor IS the answer: an entity-only question, or "why" landing on
     # the very record it asks about
@@ -263,14 +259,7 @@ def _attach_values(g: Grounding, plan: Plan) -> str:
                 p.where.append(Not(hv) if vm.negated else hv)
                 placed = True
                 break
-        if not placed and not terms(vm.phrase):
-            # a function word that happens to be a label ("in": the unit
-            # inch) can't be what constrains the question; coverage doesn't
-            # count it either
-            g.notes.append(f"'{vm.phrase}' is a value of "
-                           f"{', '.join(sorted({c.field for c in vm.candidates}))}, "
-                           "which nothing asked for has; ignored (not a content word)")
-        elif not placed:
+        if not placed:
             g.uncovered.append(vm.phrase)
             return (f"'{vm.phrase}' is a value of "
                     f"{', '.join(sorted({c.field for c in vm.candidates}))}, "

@@ -10,18 +10,16 @@ with its parent tile, never with a sibling.
 
 import json
 
+import alizarin
 import pytest
+from arches_fixture import _id, _node
 
-alizarin = pytest.importorskip("alizarin")
-
-from arches_fixture import _id, _node  # noqa: E402
-
-from ceist import HasValue, LinkTo, Plan, interpret, narrate  # noqa: E402
-from ceist.alizarin import Tiles, ask, evaluate  # noqa: E402
-from ceist.arches import ArchesVocabulary  # noqa: E402
-from ceist.arches_search import compile_checked, to_payload  # noqa: E402
-from ceist.plan import EntityRef  # noqa: E402
-from ceist.rosmadair import to_query  # noqa: E402
+from ceist import HasValue, LinkTo, Plan, interpret, narrate
+from ceist.alizarin import Tiles, ask, evaluate
+from ceist.arches import ArchesVocabulary
+from ceist.arches_search import compile_checked, to_payload
+from ceist.plan import EntityRef
+from ceist.rosmadair import to_query
 
 MONUMENT, PERSON = "5e000000-0000-4000-8000-0000000000c1", "5e000000-0000-4000-8000-0000000000c2"
 STATUS_LIST, PHASE_LIST = (str(_id(f"list/{n}")) for n in ("status", "phase"))
@@ -275,3 +273,23 @@ def test_describe_lists_a_small_controlled_lists_labels(data, tmp_path):
     assert nodes["heritage_status"]["datatype"] == "reference"
     assert set(nodes["heritage_status"]["values"]) == {"Listed", "Grade II", "Candidate"}
     assert set(nodes["phase_type"]["values"]) == {"Construction", "Destruction"}
+
+
+def test_a_controlled_lists_skos_altlabels_are_values(data, tmp_path):
+    # HER 2.0's lists carry altLabels, some a single letter ("S" for Statutory)
+    import shutil
+    root, _, S, _ = data
+    copy = tmp_path / "copy"
+    shutil.copytree(root, copy)
+    xml = copy / "vocabularies" / "status.xml"
+    listed = '<skos:prefLabel xml:lang="en">Listed</skos:prefLabel>'
+    xml.write_text(xml.read_text().replace(listed, listed
+        + '<skos:altLabel xml:lang="en">Protected</skos:altLabel>'
+        + '<skos:altLabel xml:lang="en">S</skos:altLabel>'))
+    v = ArchesVocabulary.from_data_dir(copy)
+    phrases = {(x.phrase, x.field): x.value for x in v.values()}
+    assert phrases[("protected", "heritage_status")] == S["Listed"][0]
+    assert narrate(interpret(v, "which protected monuments are there?").plan) == \
+        "Find Monuments whose heritage status is Listed."
+    m = interpret(v, "what's the monument's status, protected?")
+    assert [x.phrase for x in m.grounding.values] == ["protected"]

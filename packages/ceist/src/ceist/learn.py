@@ -25,11 +25,12 @@ A log line (JSONL, one per event):
 (null: nothing offered fitted, or they gave up).
 
 Privacy: the log is what reaches an LLM, so it never holds record data.
-`from_grounding` masks the question before it is written: the records it
-named become `<Type>`, quoted text `<text>`, other capitalised words
-`<Name>`, long numbers `<number>` (years stay: they are how dates are
-asked). A phrase that is itself a name is not logged at all: it is a
-record, not vocabulary. The `learn` prompt carries the masked items inline,
+`from_grounding` masks the question and the phrase before they are written:
+the records it named become `<Type>`, quoted text `<text>`, other
+capitalised words `<Name>`, long numbers `<number>` (years stay: they are
+how dates are asked). A phrase that is itself a name is not logged at all:
+it is a record, not vocabulary. A record name typed in lowercase that the
+grounding didn't name gets through. The `learn` prompt carries the masked items inline,
 so the LLM is never pointed at a file.
 """
 
@@ -38,6 +39,9 @@ import re
 import time
 from collections import defaultdict
 from pathlib import Path
+
+from .ground import AUX, IMPERATIVE, WH
+from .text import STOP
 
 PROPOSALS = "ceist.proposals/1"
 _WS = re.compile(r"\s+")
@@ -77,13 +81,21 @@ def record(path: str | Path, model: str, question: str, phrase: str, slot: str,
 _WORD = re.compile(r"[A-Za-z][\w'’-]*|\d[\d,.]*")
 _QUOTED = re.compile(r"\"[^\"]*\"|“[^”]*”|‘[^’]*’|(?<!\w)'[^']+'(?!\w)")
 _YEAR = re.compile(r"(1[0-9]|20)\d\d(s)?$")
+_TAG = re.compile(r"<[A-Za-z]+>")
+_COMMON = WH | AUX | IMPERATIVE | STOP     # a capitalised first word that names nothing
 
 
 def mask(question: str, grounding=None) -> str:
     """The question with record data taken out, for the learning log: the
-    records the grounding named → <Type>, quoted text → <text>, other
-    capitalised words (not the first) → <Name>, numbers other than years →
-    <number>. Values and dates the grounding placed are schema words, kept."""
+    records the grounding named → <Type> (in any case), quoted text → <text>,
+    other capitalised words → <Name> (the first only when it isn't a
+    question or function word), numbers other than years → <number>. Values
+    and dates the grounding placed are schema words, kept. A record name
+    typed in lowercase that the grounding didn't name is not caught."""
+    return _mask(question, grounding, at_start=True)
+
+
+def _mask(text: str, grounding, at_start: bool) -> str:
     keep = set()
     if grounding is not None:
         for v in getattr(grounding, "values", []) or []:
@@ -94,8 +106,8 @@ def mask(question: str, grounding=None) -> str:
     for a in getattr(grounding, "anchors", None) or []:
         for t in list(a.match_terms) + _WORD.findall(a.name or ""):
             anchor_terms[t.lower()] = a.type or "Record"
-    text = _QUOTED.sub("<text>", question)
-    out, first, prev, pos = [], True, None, 0
+    text = _QUOTED.sub("<text>", text)
+    out, first, prev, pos = [], at_start, None, 0
     for m in _WORD.finditer(text):
         w = m.group(0)
         lw = w.lower()
@@ -105,7 +117,8 @@ def mask(question: str, grounding=None) -> str:
             tag = f"<{anchor_terms[lw]}>"
         elif w[0].isdigit():
             tag = None if _YEAR.match(w) else "<number>"
-        elif w[0].isupper() and not first and lw not in keep and w != "I":
+        elif (w[0].isupper() and lw not in keep and w != "I"
+              and not (first and lw in _COMMON)):
             tag = "<Name>"
         else:
             tag = None
@@ -120,22 +133,31 @@ def mask(question: str, grounding=None) -> str:
     return "".join(out)
 
 
-def _is_name(phrase: str, question: str) -> bool:
-    """The phrase is written as a proper name in the question ("Victoria Dock")."""
+def _masked_phrase(phrase: str, question: str, grounding) -> str | None:
+    """The phrase as written in the question, masked as the question is;
+    None when it is all record data (a name is a record, not vocabulary)."""
     m = re.search(re.escape(phrase), question, re.I)
-    words = _WORD.findall(question[m.start():m.end()]) if m else []
-    return bool(words) and all(w[0].isupper() or w[0].isdigit() for w in words) and m.start() > 0
+    if m is None:
+        return phrase
+    written = question[m.start():m.end()]
+    masked = _mask(written, grounding, at_start=m.start() == 0)
+    if masked == written:
+        return phrase
+    if not _WORD.findall(_TAG.sub("", masked)):
+        return None
+    return masked
 
 
 def from_grounding(path: str | Path, question: str, grounding) -> int:
     """Log every phrase the planner couldn't place in a question (its
-    grounding's `unplaced`), with the question masked (`mask`); how many.
+    grounding's `unplaced`), question and phrase masked (`mask`); how many.
     Call it after `interpret`. Phrases that are names aren't logged."""
     masked, n = mask(question, grounding), 0
     for u in getattr(grounding, "unplaced", []) or []:
-        if _is_name(u["phrase"], question):
+        phrase = _masked_phrase(u["phrase"], question, grounding)
+        if phrase is None:
             continue
-        record(path, u.get("model", ""), masked, u["phrase"], u["slot"], u.get("options"))
+        record(path, u.get("model", ""), masked, phrase, u["slot"], u.get("options"))
         n += 1
     return n
 
@@ -282,13 +304,20 @@ def assign(props: dict, reply: str) -> tuple[int, list[str]]:
     "approve" is never touched: a person sets it."""
     from .bundle import parse_reply
     todo, done, errors = props.get("to_assign", []), 0, []
-    for a in parse_reply(reply):
-        i = a.get("i")
+    try:
+        items = parse_reply(reply)
+    except ValueError as e:
+        return 0, [f"the reply is not JSON: {e}"]
+    if not isinstance(items, list):
+        return 0, [f"the reply is a JSON {type(items).__name__}, not an array of items"]
+    for a in items:
+        i = a.get("i") if isinstance(a, dict) else None
         if not isinstance(i, int) or not 0 <= i < len(todo):
-            errors.append(f"no item {i!r}")
+            errors.append(f"no item {i!r}" if isinstance(a, dict) else f"{a!r} is not an item")
             continue
         u, value = todo[i], a.get("assign")
-        if value != "none" and not (isinstance(value, dict) and value.get("node") in u["candidates"]):
+        if value != "none" and not (isinstance(value, dict)
+                                    and value.get("node") in u.get("candidates", [])):
             errors.append(f"item {i} ('{u['phrase']}'): {value!r} is not one of its candidates")
             continue
         u["assign"] = value

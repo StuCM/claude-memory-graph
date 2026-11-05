@@ -178,3 +178,23 @@ def test_save_writes_a_reply_as_validated_vocab_files(tmp_path, capsys):
     bad.write_text(json.dumps({"Building": {"entries": [{"phrases": ["x"], "node": "nope"}]}}))
     written, errors, _ = bundle.save(bad.read_text(), p / "desc", tmp_path / "vocab3")
     assert written == [] and "no node 'nope'" in errors[0]
+
+
+def test_save_reports_a_malformed_reply_instead_of_crashing(tmp_path):
+    p = project(tmp_path)
+    out = tmp_path / "vocab2"
+    written, errors, _ = bundle.save(json.dumps([{"phrases": ["x"]}]), p / "desc", out)
+    assert written == [] and "not an object keyed by model" in errors[0]
+    written, errors, _ = bundle.save("not json", p / "desc", out)
+    assert written == [] and "not JSON" in errors[0]
+    reply = {"Building": {"entries": [
+        "height",
+        {"phrases": ["tall"], "node": "height", "end_node": "built_end"},
+        {"phrases": ["by"], "node": "actor", "qualifier": "Architect"},
+        {"phrases": ["when"], "node": "built_start", "end_node": ["built_end"]}]}}
+    written, errors, _ = bundle.save(json.dumps(reply), p / "desc", out)
+    assert written == []
+    assert errors == ["Building entry 0: not an object with a node",
+                      "Building entry 1 (height): end_node on a node that is not a date",
+                      "Building entry 2 (actor): qualifier 'Architect' is not {\"node\", \"value\"}",
+                      "Building entry 3 (built_start): end_node ['built_end'] is not a date of this model"]

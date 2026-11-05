@@ -6,17 +6,14 @@ import shutil
 import subprocess
 from datetime import date
 
+import arches_fixture as fx
 import pytest
 
-pytest.importorskip("alizarin")
-
-import arches_fixture as fx  # noqa: E402
-
-from ceist import DateRange, HasValue, LinkTo, Not, interpret, narrate  # noqa: E402
-from ceist.arches import ArchesVocabulary  # noqa: E402
-from ceist.arches_search import compile_checked, read_back as as_read_back, to_payload  # noqa: E402,E501
-from ceist.readback import check  # noqa: E402
-from ceist.rosmadair import Unsupported, compile_plan, read_back, to_query  # noqa: E402
+from ceist import DateRange, HasValue, LinkTo, Not, interpret, narrate
+from ceist.arches import ArchesVocabulary
+from ceist.arches_search import compile_checked, read_back as as_read_back, to_payload  # noqa: E501
+from ceist.readback import check
+from ceist.rosmadair import Unsupported, compile_plan, read_back, to_query
 
 
 @pytest.fixture(scope="module")
