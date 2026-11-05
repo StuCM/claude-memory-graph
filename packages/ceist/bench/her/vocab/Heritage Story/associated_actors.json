@@ -24,148 +24,6 @@
   },
   {
    "phrases": [
-    "author",
-    "written by",
-    "who wrote",
-    "who wrote it",
-    "storyteller",
-    "writer",
-    "authored by",
-    "told by",
-    "narrated by"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Author"
-   }
-  },
-  {
-   "phrases": [
-    "contributor",
-    "contributed by",
-    "contributors",
-    "who contributed"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Contributor"
-   }
-  },
-  {
-   "phrases": [
-    "historic figure",
-    "famous person",
-    "featured person",
-    "about whom",
-    "who is the story about",
-    "subject of the story",
-    "main character",
-    "historical figure"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Person of Historic Interest"
-   }
-  },
-  {
-   "phrases": [
-    "editor",
-    "edited by",
-    "editors"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Editor"
-   }
-  },
-  {
-   "phrases": [
-    "translated by",
-    "translator",
-    "who translated"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Translator"
-   }
-  },
-  {
-   "phrases": [
-    "illustrated by",
-    "illustrator",
-    "illustrations by"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Illustrator"
-   }
-  },
-  {
-   "phrases": [
-    "photographer",
-    "photos by",
-    "photographed by"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Photographer"
-   }
-  },
-  {
-   "phrases": [
-    "publisher",
-    "published by",
-    "who published"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Publisher"
-   }
-  },
-  {
-   "phrases": [
-    "researcher",
-    "researched by",
-    "research by"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Researcher"
-   }
-  },
-  {
-   "phrases": [
-    "curator",
-    "curated by",
-    "who curated"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Curator"
-   }
-  },
-  {
-   "phrases": [
     "association dates",
     "associated from",
     "period of association",
@@ -178,5 +36,148 @@
    "node": "associated_actor_start_date",
    "end_node": "associated_actor_end_date"
   }
- ]
+ ],
+ "group": {
+  "phrases": [],
+  "nodes": {
+   "actor": {
+    "role": "actor"
+   },
+   "role_type": {
+    "role": "type"
+   },
+   "associated_actor_start_date": {
+    "role": "date",
+    "end_node": "associated_actor_end_date"
+   }
+  },
+  "combos": [
+   {
+    "phrases": [
+     "author",
+     "written by",
+     "who wrote",
+     "who wrote it",
+     "storyteller",
+     "writer",
+     "authored by",
+     "told by",
+     "narrated by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Author"
+    }
+   },
+   {
+    "phrases": [
+     "contributor",
+     "contributed by",
+     "contributors",
+     "who contributed"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Contributor"
+    }
+   },
+   {
+    "phrases": [
+     "historic figure",
+     "famous person",
+     "featured person",
+     "about whom",
+     "who is the story about",
+     "subject of the story",
+     "main character",
+     "historical figure"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Person of Historic Interest"
+    }
+   },
+   {
+    "phrases": [
+     "editor",
+     "edited by",
+     "editors"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Editor"
+    }
+   },
+   {
+    "phrases": [
+     "translated by",
+     "translator",
+     "who translated"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Translator"
+    }
+   },
+   {
+    "phrases": [
+     "illustrated by",
+     "illustrator",
+     "illustrations by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Illustrator"
+    }
+   },
+   {
+    "phrases": [
+     "photographer",
+     "photos by",
+     "photographed by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Photographer"
+    }
+   },
+   {
+    "phrases": [
+     "publisher",
+     "published by",
+     "who published"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Publisher"
+    }
+   },
+   {
+    "phrases": [
+     "researcher",
+     "researched by",
+     "research by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Researcher"
+    }
+   },
+   {
+    "phrases": [
+     "curator",
+     "curated by",
+     "who curated"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Curator"
+    }
+   }
+  ],
+  "answers": {
+   "who": "actor",
+   "when": "associated_actor_start_date"
+  }
+ }
 }

@@ -31,368 +31,6 @@
   },
   {
    "phrases": [
-    "directed by",
-    "director",
-    "led by",
-    "site director",
-    "fieldwork director",
-    "who led it",
-    "who directed it",
-    "project director"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Director of Fieldwork"
-   }
-  },
-  {
-   "phrases": [
-    "excavated by",
-    "dug by",
-    "excavator",
-    "who excavated it",
-    "who dug it"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Excavator"
-   }
-  },
-  {
-   "phrases": [
-    "investigated by",
-    "field investigator",
-    "archaeologist",
-    "archaeological contractor",
-    "archaeological unit",
-    "carried out by",
-    "who carried it out",
-    "undertaken by",
-    "contractor"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Archaeological Field Investigator"
-   }
-  },
-  {
-   "phrases": [
-    "surveyed by",
-    "surveyor",
-    "who surveyed it"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Surveyor"
-   }
-  },
-  {
-   "phrases": [
-    "geophysics by",
-    "geophysical survey by",
-    "geophysical surveyor",
-    "geophysicist"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Geophysical Surveyor"
-   }
-  },
-  {
-   "phrases": [
-    "aerial survey by",
-    "aerial surveyor",
-    "flown by"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Aerial Surveyor"
-   }
-  },
-  {
-   "phrases": [
-    "aerial photo interpretation by",
-    "aerial photograph interpreter",
-    "air photo interpreter"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Aerial Photograph Interpreter"
-   }
-  },
-  {
-   "phrases": [
-    "funded by",
-    "paid for by",
-    "financed by",
-    "funder",
-    "funding body",
-    "who paid for it",
-    "grant from"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Funding Body/Financier"
-   }
-  },
-  {
-   "phrases": [
-    "client",
-    "commissioned by",
-    "on behalf of",
-    "who commissioned it"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Client"
-   }
-  },
-  {
-   "phrases": [
-    "developer",
-    "development by",
-    "for the developer"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Developer"
-   }
-  },
-  {
-   "phrases": [
-    "project manager",
-    "managed by",
-    "project management"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Project Manager"
-   }
-  },
-  {
-   "phrases": [
-    "supervised by",
-    "supervisor",
-    "site supervisor"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Supervisor"
-   }
-  },
-  {
-   "phrases": [
-    "recorded by",
-    "recorder"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Recorder"
-   }
-  },
-  {
-   "phrases": [
-    "photographed by",
-    "photographer"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Photographer"
-   }
-  },
-  {
-   "phrases": [
-    "found by",
-    "discovered by",
-    "finder",
-    "who found it"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Finder"
-   }
-  },
-  {
-   "phrases": [
-    "written by",
-    "report author",
-    "authored by",
-    "author",
-    "who wrote the report"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Author"
-   }
-  },
-  {
-   "phrases": [
-    "planning officer"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Planning Officer"
-   }
-  },
-  {
-   "phrases": [
-    "casework officer",
-    "case officer"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Casework Officer"
-   }
-  },
-  {
-   "phrases": [
-    "heritage protection advisor",
-    "inspector of ancient monuments"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Heritage Protection Advisor"
-   }
-  },
-  {
-   "phrases": [
-    "curator",
-    "curated by",
-    "monitored by"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Curator"
-   }
-  },
-  {
-   "phrases": [
-    "fieldwalked by",
-    "fieldwalker",
-    "field walker"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Field Walker"
-   }
-  },
-  {
-   "phrases": [
-    "dived by",
-    "diver",
-    "divers"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Diver"
-   }
-  },
-  {
-   "phrases": [
-    "inspected by",
-    "site inspector"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Site Inspector"
-   }
-  },
-  {
-   "phrases": [
-    "researched by",
-    "researcher"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Researcher"
-   }
-  },
-  {
-   "phrases": [
-    "sponsored by",
-    "sponsor"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Sponsor"
-   }
-  },
-  {
-   "phrases": [
-    "applicant",
-    "applied by"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Applicant"
-   }
-  },
-  {
-   "phrases": [
-    "illustrated by",
-    "illustrator"
-   ],
-   "kind": "link",
-   "node": "actor",
-   "qualifier": {
-    "node": "role_type",
-    "value": "Illustrator"
-   }
-  },
-  {
-   "phrases": [
     "role",
     "role type",
     "what role",
@@ -401,5 +39,320 @@
    "kind": "property",
    "node": "role_type"
   }
- ]
+ ],
+ "group": {
+  "phrases": [],
+  "nodes": {},
+  "combos": [
+   {
+    "phrases": [
+     "directed by",
+     "director",
+     "led by",
+     "site director",
+     "fieldwork director",
+     "who led it",
+     "who directed it",
+     "project director"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Director of Fieldwork"
+    }
+   },
+   {
+    "phrases": [
+     "excavated by",
+     "dug by",
+     "excavator",
+     "who excavated it",
+     "who dug it"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Excavator"
+    }
+   },
+   {
+    "phrases": [
+     "investigated by",
+     "field investigator",
+     "archaeologist",
+     "archaeological contractor",
+     "archaeological unit",
+     "carried out by",
+     "who carried it out",
+     "undertaken by",
+     "contractor"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Archaeological Field Investigator"
+    }
+   },
+   {
+    "phrases": [
+     "surveyed by",
+     "surveyor",
+     "who surveyed it"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Surveyor"
+    }
+   },
+   {
+    "phrases": [
+     "geophysics by",
+     "geophysical survey by",
+     "geophysical surveyor",
+     "geophysicist"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Geophysical Surveyor"
+    }
+   },
+   {
+    "phrases": [
+     "aerial survey by",
+     "aerial surveyor",
+     "flown by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Aerial Surveyor"
+    }
+   },
+   {
+    "phrases": [
+     "aerial photo interpretation by",
+     "aerial photograph interpreter",
+     "air photo interpreter"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Aerial Photograph Interpreter"
+    }
+   },
+   {
+    "phrases": [
+     "funded by",
+     "paid for by",
+     "financed by",
+     "funder",
+     "funding body",
+     "who paid for it",
+     "grant from"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Funding Body/Financier"
+    }
+   },
+   {
+    "phrases": [
+     "client",
+     "commissioned by",
+     "on behalf of",
+     "who commissioned it"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Client"
+    }
+   },
+   {
+    "phrases": [
+     "developer",
+     "development by",
+     "for the developer"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Developer"
+    }
+   },
+   {
+    "phrases": [
+     "project manager",
+     "managed by",
+     "project management"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Project Manager"
+    }
+   },
+   {
+    "phrases": [
+     "supervised by",
+     "supervisor",
+     "site supervisor"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Supervisor"
+    }
+   },
+   {
+    "phrases": [
+     "recorded by",
+     "recorder"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Recorder"
+    }
+   },
+   {
+    "phrases": [
+     "photographed by",
+     "photographer"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Photographer"
+    }
+   },
+   {
+    "phrases": [
+     "found by",
+     "discovered by",
+     "finder",
+     "who found it"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Finder"
+    }
+   },
+   {
+    "phrases": [
+     "written by",
+     "report author",
+     "authored by",
+     "author",
+     "who wrote the report"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Author"
+    }
+   },
+   {
+    "phrases": [
+     "planning officer"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Planning Officer"
+    }
+   },
+   {
+    "phrases": [
+     "casework officer",
+     "case officer"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Casework Officer"
+    }
+   },
+   {
+    "phrases": [
+     "heritage protection advisor",
+     "inspector of ancient monuments"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Heritage Protection Advisor"
+    }
+   },
+   {
+    "phrases": [
+     "curator",
+     "curated by",
+     "monitored by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Curator"
+    }
+   },
+   {
+    "phrases": [
+     "fieldwalked by",
+     "fieldwalker",
+     "field walker"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Field Walker"
+    }
+   },
+   {
+    "phrases": [
+     "dived by",
+     "diver",
+     "divers"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Diver"
+    }
+   },
+   {
+    "phrases": [
+     "inspected by",
+     "site inspector"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Site Inspector"
+    }
+   },
+   {
+    "phrases": [
+     "researched by",
+     "researcher"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Researcher"
+    }
+   },
+   {
+    "phrases": [
+     "sponsored by",
+     "sponsor"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Sponsor"
+    }
+   },
+   {
+    "phrases": [
+     "applicant",
+     "applied by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Applicant"
+    }
+   },
+   {
+    "phrases": [
+     "illustrated by",
+     "illustrator"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Illustrator"
+    }
+   }
+  ],
+  "answers": {}
+ }
 }

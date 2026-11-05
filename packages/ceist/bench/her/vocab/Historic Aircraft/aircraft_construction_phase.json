@@ -25,75 +25,6 @@
   },
   {
    "phrases": [
-    "altered",
-    "modified",
-    "modification",
-    "when was it modified",
-    "date altered",
-    "upgraded",
-    "refitted"
-   ],
-   "kind": "date",
-   "node": "start_date",
-   "end_node": "end_date",
-   "qualifier": {
-    "node": "construction_phase_type",
-    "value": "Alteration"
-   }
-  },
-  {
-   "phrases": [
-    "converted",
-    "conversion",
-    "when was it converted",
-    "date converted",
-    "adapted"
-   ],
-   "kind": "date",
-   "node": "start_date",
-   "end_node": "end_date",
-   "qualifier": {
-    "node": "construction_phase_type",
-    "value": "Conversion"
-   }
-  },
-  {
-   "phrases": [
-    "repaired",
-    "repairs",
-    "when was it repaired",
-    "date repaired",
-    "patched up",
-    "refurbished"
-   ],
-   "kind": "date",
-   "node": "start_date",
-   "end_node": "end_date",
-   "qualifier": {
-    "node": "construction_phase_type",
-    "value": "Repairs"
-   }
-  },
-  {
-   "phrases": [
-    "scrapped",
-    "broken up for scrap",
-    "dismantled",
-    "written off",
-    "struck off charge",
-    "when was it scrapped",
-    "date destroyed"
-   ],
-   "kind": "date",
-   "node": "start_date",
-   "end_node": "end_date",
-   "qualifier": {
-    "node": "construction_phase_type",
-    "value": "Destruction"
-   }
-  },
-  {
-   "phrases": [
     "display date",
     "approximate date",
     "date as written",
@@ -288,5 +219,69 @@
    "kind": "property",
    "node": "phase_evidence_type"
   }
- ]
+ ],
+ "group": {
+  "phrases": [],
+  "nodes": {},
+  "combos": [
+   {
+    "phrases": [
+     "altered",
+     "modified",
+     "modification",
+     "when was it modified",
+     "date altered",
+     "upgraded",
+     "refitted"
+    ],
+    "node": "start_date",
+    "set": {
+     "construction_phase_type": "Alteration"
+    }
+   },
+   {
+    "phrases": [
+     "converted",
+     "conversion",
+     "when was it converted",
+     "date converted",
+     "adapted"
+    ],
+    "node": "start_date",
+    "set": {
+     "construction_phase_type": "Conversion"
+    }
+   },
+   {
+    "phrases": [
+     "repaired",
+     "repairs",
+     "when was it repaired",
+     "date repaired",
+     "patched up",
+     "refurbished"
+    ],
+    "node": "start_date",
+    "set": {
+     "construction_phase_type": "Repairs"
+    }
+   },
+   {
+    "phrases": [
+     "scrapped",
+     "broken up for scrap",
+     "dismantled",
+     "written off",
+     "struck off charge",
+     "when was it scrapped",
+     "date destroyed"
+    ],
+    "node": "start_date",
+    "set": {
+     "construction_phase_type": "Destruction"
+    }
+   }
+  ],
+  "answers": {}
+ }
 }

@@ -19,20 +19,6 @@
   },
   {
    "phrases": [
-    "developer",
-    "developed by",
-    "who is the developer",
-    "development company"
-   ],
-   "kind": "link",
-   "node": "applicant",
-   "qualifier": {
-    "node": "applicant_role_type",
-    "value": "Developer"
-   }
-  },
-  {
-   "phrases": [
     "agent",
     "planning agent",
     "acting on behalf",
@@ -44,20 +30,6 @@
    ],
    "kind": "link",
    "node": "agent"
-  },
-  {
-   "phrases": [
-    "architect",
-    "architects",
-    "designed by",
-    "who is the architect"
-   ],
-   "kind": "link",
-   "node": "agent",
-   "qualifier": {
-    "node": "agent_role_type",
-    "value": "Architect"
-   }
   },
   {
    "phrases": [
@@ -126,5 +98,36 @@
    "kind": "property",
    "node": "consulting_contact"
   }
- ]
+ ],
+ "group": {
+  "phrases": [],
+  "nodes": {},
+  "combos": [
+   {
+    "phrases": [
+     "developer",
+     "developed by",
+     "who is the developer",
+     "development company"
+    ],
+    "node": "applicant",
+    "set": {
+     "applicant_role_type": "Developer"
+    }
+   },
+   {
+    "phrases": [
+     "architect",
+     "architects",
+     "designed by",
+     "who is the architect"
+    ],
+    "node": "agent",
+    "set": {
+     "agent_role_type": "Architect"
+    }
+   }
+  ],
+  "answers": {}
+ }
 }

@@ -118,5 +118,10 @@
  "Do the houses have big back gardens?": "refused",
  "Which old map was the characterisation drawn from?": "refused",
  "Which character areas date from before 1800?": "refused",
- "What's the average house price there?": "refused"
+ "What's the average house price there?": "refused",
+ "Which monuments were demolished before 1900?": "Find Monuments with one construction phases entry (whose construction phase type is Destruction and whose construction phase start date is before 1900).",
+ "Which monuments were restored after 1950?": "Find Monuments with one construction phases entry (whose construction phase type is Repairs and whose construction phase start date is after 1950).",
+ "Which monuments were altered in the 1960s?": "Find Monuments with one construction phases entry (whose construction phase type is Alteration and whose construction phase start date is in the 1960s).",
+ "Which monuments were destroyed by fire?": "refused",
+ "Which heritage stories are for children?": "Find Heritage Stories whose audience type is Children."
 }
