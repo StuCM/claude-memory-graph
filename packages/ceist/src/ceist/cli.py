@@ -8,7 +8,7 @@
     ceist vocab check <bundle.json> <graphs dir> [--vocab <vocab dir> --descriptions <dir>]
     ceist vocab slice <bundle.json | vocab dir> --data <business_data dir> --graphs <graphs dir> -o <out>
                       [--reference <reference_data dir>]   # only what the data uses; read locally
-    ceist vocab pipeline <graphs dir> -o <out dir> [--reference <dir>] [--questions real.txt]
+    ceist vocab pipeline <graphs dir> -o <out dir> [--reference <dir>] [--questions real.txt] [--seed S]
                          [--llm-cmd CMD] [--model M] [--models A,B] [--config ceist.toml]
                          [--min-right N] [--max-dangerous N] [--jobs N]   # LLM build → gate
     ceist vocab try <data dir> <questions.txt> --bundle <bundle.json> [--log learn.jsonl]   # how each reads
@@ -129,7 +129,7 @@ def _pipeline(a):
     from .pipeline import run
     return run(a.graphs, a.out, a.reference, a.questions, a.llm_cmd, a.model,
                a.models.split(",") if a.models else None, a.config, a.min_right, a.max_dangerous,
-               a.jobs)
+               a.jobs, seeds=a.seed)
 
 
 def _eval(a):
@@ -318,6 +318,9 @@ def main(argv=None):
     p.add_argument("-o", "--out", required=True)
     p.add_argument("--reference", help="reference_data: value labels for the descriptions")
     p.add_argument("--questions", help="real questions, one per line: masked, then added to the cases")
+    p.add_argument("--seed", action="append", help="phrasings already in use, which the LLM extends: "
+                                                   "a bundle, a vocab dir, or {extra_type_words, "
+                                                   "relation_forms, date_forms} JSON (repeatable)")
     p.add_argument("--llm-cmd", help="a command that reads a prompt on stdin and prints the reply "
                                      "(default: claude -p, no tools, over your subscription)")
     p.add_argument("--model", help="passed to claude -p")

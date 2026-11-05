@@ -23,8 +23,9 @@ What a question can name, from that:
   SKOS itself (Alizarin's SKOS reader keeps only preferred labels), matched
   to Alizarin's items by URI;
 - **a vocabulary bundle** (`bundle=`, built by `ceist vocab assemble`):
-  its link and date phrasings join the forms below, and its group blocks
-  name tiles ("burnt down" → a construction phase of type Destruction);
+  its link and date phrasings join the forms below, its type words join
+  `extra_type_words` (which win), and its group blocks name tiles
+  ("burnt down" → a construction phase of type Destruction);
 - **dates**: each date node, by its name, and by the words `date_forms`
   adds ("built" → construction date); a model's only date node is the one
   meant when no word picks;
@@ -161,7 +162,7 @@ class ArchesVocabulary:
             self.models[m.name] = m
         self.by_graph = {m.graph_id: m for m in self.models.values()}
         self.rdm = rdm_cache
-        self.extra_type_words = extra_type_words or {}
+        self.extra_type_words = dict(extra_type_words or {})
         # extra phrasings per node alias: {"architect": ["designed by"]}
         self.relation_forms = relation_forms or {}
         # words that pick a date node: {"construction_date": ["built", "constructed"]}
@@ -214,11 +215,14 @@ class ArchesVocabulary:
 
     def _absorb(self, bundle) -> None:
         """A vocabulary bundle's phrasings (ceist.bundle): unqualified link
-        entries become relation phrasings, date entries date phrasings.
-        Group blocks are kept for _load_groups; a v1 entry with a qualifier
-        is read as a combo of its node's group."""
+        entries become relation phrasings, date entries date phrasings, its
+        type words type words. Group blocks are kept for _load_groups; a v1
+        entry with a qualifier is read as a combo of its node's group."""
         from . import bundle as _bundle
         b = bundle if isinstance(bundle, dict) else _bundle.load(bundle)
+        for w, t in (b.get("extra_type_words") or {}).items():
+            if t in self.models:
+                self.extra_type_words.setdefault(w, t)
         for name, m in b["models"].items():
             if name not in self.models:
                 continue

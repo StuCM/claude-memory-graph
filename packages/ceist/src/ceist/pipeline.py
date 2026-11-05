@@ -1,12 +1,14 @@
 """`ceist vocab pipeline`: a graph's baseline vocabulary written by an LLM at
 build time, one nodegroup at a time, then measured.
 
-    describe → CRM roles → one analysis per nodegroup → a collision pass per model
-    → acceptance questions (a separate prompt) → assemble → gate → coverage report
+    describe → CRM roles → one analysis per nodegroup → type words and link wording
+    per model → a collision pass per model → acceptance questions (a separate
+    prompt) → assemble → gate → coverage report
 
 Out dir:
     descriptions/<Model>.json      ceist vocab describe
-    vocab/manifest.json, vocab/<Model>/<nodegroup>.json   entries + the "group" block
+    vocab/manifest.json, vocab/<Model>/<nodegroup>.json   entries + the "group" block;
+                                   each model's type words in the manifest
     cases.json                     the acceptance questions, frozen: kept if present
     bundle.json, report.md
     audit.jsonl                    every prompt sent, in full and hashed
@@ -15,6 +17,7 @@ Out dir:
 Privacy: the LLM sees the schema description (and the CRM roles derived from
 it), never a record. Real questions (`--questions`) are masked with `learn`'s
 rules before they are sent; the raw text stays in cases.json, on this machine.
+Seeds (`--seed`) are phrasings already in use: the LLM extends them, never deletes.
 The default LLM is Claude Code headless (`claude -p`) over the user's
 subscription, run with no tools from an empty temporary directory.
 """
@@ -30,8 +33,9 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from . import bundle as _bundle
+from .text import plurals
 
-PROMPT_VERSION = "1"
+PROMPT_VERSION = "2"
 INTENTS = ("filter", "list", "count", "when", "who", "where", "which kind")
 CLAUDE = ["claude", "-p", "--output-format", "json", "--tools", "", "--strict-mcp-config",
           "--setting-sources", "project", "--no-session-persistence",
@@ -46,7 +50,8 @@ ROLES = [
     ("place", {"E53", "E27"}, {"P53", "P7", "P89", "P55", "P156", "P161", "P74"}),
     ("name", {"E41", "E35", "E82"}, {"P1", "P102"}),
     ("identifier", {"E42"}, {"P48"}),
-    ("type", {"E55", "E57", "E56", "E58"}, {"P2", "P45", "P72", "P141", "P42", "P32", "P126"}),
+    ("unit", {"E58"}, {"P91"}),
+    ("type", {"E55", "E57", "E56"}, {"P2", "P45", "P72", "P141", "P42", "P32", "P126"}),
     ("description", {"E33", "E73", "E62"}, {"P3"}),
 ]
 CRM_PROPERTIES = {   # property: (forward label, inverse label)
@@ -58,7 +63,8 @@ CRM_PROPERTIES = {   # property: (forward label, inverse label)
     "P74": ("has current or former residence", "is current or former residence of"),
     "P75": ("possesses", "is possessed by"), "P89": ("falls within", "contains"),
     "P108": ("has produced", "was produced by"), "P126": ("employed", "was employed in"),
-    "P140": ("assigned attribute to", "was attributed by"),
+    "P129": ("is about", "is subject of"), "P140": ("assigned attribute to", "was attributed by"),
+    "P148": ("has component", "is component of"), "P67": ("refers to", "is referred to by"),
 }
 _CODE = re.compile(r"^([A-Z]+\d+[a-z]*)")
 
@@ -130,14 +136,15 @@ def outline(d: dict) -> dict:
     """A model at a glance: its nodegroups and their nodes, for context."""
     groups: dict[str, list] = {}
     for n in d["nodes"]:
-        groups.setdefault(n.get("nodegroup") or "", []).append(f"{n['alias']} ({n['datatype']})")
+        to = " → " + ", ".join(n["targets"]) if n.get("targets") else ""
+        groups.setdefault(n.get("nodegroup") or "", []).append(f"{n['alias']} ({n['datatype']}{to})")
     meta = d.get("nodegroups") or {}
     return {"model": d["name"], "about": d.get("description", ""),
             "groups": [{"group": g, "parent": (meta.get(g) or {}).get("parent"), "nodes": ns}
                        for g, ns in sorted(groups.items())]}
 
 
-def group_nodes(d: dict, group: str, roles: dict) -> list[dict]:
+def group_nodes(d: dict, group: str, roles: dict, seeds: dict | None = None) -> list[dict]:
     out = []
     for n in d["nodes"]:
         if n.get("nodegroup") != group:
@@ -145,6 +152,8 @@ def group_nodes(d: dict, group: str, roles: dict) -> list[dict]:
         x = {k: v for k, v in n.items() if k != "nodegroup"}
         if n["alias"] in roles:
             x["hint"] = roles[n["alias"]]
+        if (seeds or {}).get(n["alias"]):
+            x["seed"] = seeds[n["alias"]]
         out.append(x)
     return out
 
@@ -167,14 +176,15 @@ Reply with ONLY one JSON object:
 {{"purpose": "<one sentence: what this group records>",
  "skip": null | {{"reason": "<why nobody asks about it: record-keeping metadata, audit, …>"}},
  "phrases": ["<phrasings that name the group as a whole>", ...],
- "nodes": {{"<alias>": {{"role": "date|actor|place|type|name|identifier|description|measure|link|other",
+ "nodes": {{"<alias>": {{"role": "date|actor|place|type|name|identifier|description|measure|unit|link|other",
                        "phrases": ["<lowercase everyday phrasings for this node>", ...],
                        "end_node": "<alias>"}}}},     // dates only: the END date when this is the start
  "combos": [{{"phrases": [...], "node": "<alias the question means>",
              "set": {{"<alias>": "<a label from that node's values>"}}}}],
  "intents": [{{"intent": "filter|list|count|when|who|where|which kind",
               "with": ["<other group of this model>", ...],
-              "wordings": ["<a realistic question>", ...]}}]}}
+              "wordings": ["<a realistic question>", ...]}}],
+ "doubts": [{{"node": "<alias>", "phrase": "<a seed you think is wrong>", "why": "…"}}]}}
 
 Rules:
 - "nodes" keys are aliases of THIS group only. 3-15 phrases for each node people ask about; \
@@ -184,8 +194,37 @@ none for nodes nobody asks about by name.
 - An actor link with a role list, or an event with a type list: write combos for commonly asked \
 values (designed by → role Architect, demolished → phase type Demolition). Use only labels listed \
 in "values". A combo's "set" holds one or more values.
+- A unit node (role unit: grams, metres) only describes its measurement's value: give it no \
+phrases, since people ask about the value ("weight in grams" is a weight).
+- A node's "seed" lists phrasings already in use. They stay whatever you reply: add to them, \
+and list any you think wrong under "doubts" instead of leaving them out.
 - Metadata and audit groups: "skip" with the reason, and nothing else needed.
 - Intents: 2-6 for a group people ask about, each with 2-4 wordings; no record names in them.
+Check that your reply parses as JSON.
+
+INPUT:
+{payload}
+"""
+
+MODEL_PROMPT = """You name the types and links of the model "{model}" for an offline \
+search-vocabulary build over Arches heritage data. At question time only exact phrase lookup runs, \
+so the words people use must be written now. You see the schema only, never records.
+
+1. Type words: the everyday nouns for one {model} record, singular and plural ("stories", "tales" \
+for a model of tales; "places", "sites" for a model of sites). Not the model's own name, which is \
+known already, and never a word for one of the "other_models".
+2. Link wording: each link joins a {model} record ("from") to records of the "to" models, with \
+its CIDOC-CRM property. Give short phrasings for that pair as questions join them ("in", "located \
+in", "at" for a monument in a place; "part of", "belongs to" for a story in a larger story). Short \
+shared prepositions are fine: the search tells links apart by the types they join. "reverse" \
+reads the other way, from the CRM inverse ("contains"); only when "from" is not among "to".
+3. "seed_type_words" and each link's "seed" are words already in use. They stay whatever you \
+reply: add to them, and list any you think wrong under "doubts" instead of leaving them out.
+
+Reply with ONLY one JSON object:
+{{"type_words": ["<lowercase noun>", ...],
+ "links": {{"<alias>": {{"phrases": ["..."], "reverse": ["..."]}}}},
+ "doubts": [{{"node": "<alias, or null for a type word>", "phrase": "<seed>", "why": "…"}}]}}
 Check that your reply parses as JSON.
 
 INPUT:
@@ -204,6 +243,10 @@ INPUT:
 {payload}
 """
 
+CONDITIONS = """{{"node": "<alias>", "value": "<label from its values, when one is meant>", \
+"tile": "<its nodegroup, when conditions must hold on one record entry>", \
+"link": "<the model a link's record is, for a link>"}}"""
+
 QUESTIONS_PROMPT = """You write acceptance questions for a natural-language search over the \
 Arches model "{model}". You see its schema description only. You have NOT seen its vocabulary, \
 and must not guess phrasings to suit one: write what real people would ask.
@@ -211,15 +254,18 @@ and must not guess phrasings to suit one: write what real people would ask.
 Write 8-12 questions. Each names one phrase that picks a field of this model, and the field it \
 must reach; 2 of them should ask for something the model doesn't hold (expect null, so the \
 right answer is a refusal). Avoid record names (no people, places or titles): ask about types, \
-values, dates and roles.
+values, dates and roles. Say what the whole question means too: "conditions" lists every field \
+it constrains, which the answer must hold (empty when it asks for the type alone).
 
 Reply with ONLY one JSON object:
 {{"cases": [{{"q": "<question>", "phrase": "<the words in q that pick the field>",
              "slot": "date" | "property" | "link:<target model>",
              "intent": "filter|list|count|when|who|where|which kind",
              "expect": null | {{"node": "<alias>",
-                              "qualifier": {{"node": "<alias>", "value": "<label from its values>"}}}}}}]}}
-"qualifier" only when the meaning needs a value too (designed by → role Architect).
+                              "qualifier": {{"node": "<alias>", "value": "<label from its values>"}},
+                              "conditions": [""" + CONDITIONS + """, ...]}}}}]}}
+"qualifier" only when the meaning needs a value too (designed by → role Architect). In a \
+condition, "value", "tile" and "link" only when they apply.
 Check that your reply parses as JSON.
 
 INPUT:
@@ -230,13 +276,15 @@ LABEL_PROMPT = """You label real questions asked of a natural-language search ov
 so they can be used as acceptance questions. Names and numbers are masked (<Name>, <number>); \
 don't guess them. You see the models' outlines only.
 
-For each question, give the model it asks about, the phrase in it that picks a field, the slot, \
-and the field it must reach, or expect null when no field fits.
+For each question, give the model it asks about, the phrase in it that picks a field (null when \
+it names none), the slot, the field that phrase must reach, and the conditions the whole question \
+means (empty when it asks for the type alone); or expect null when the models can't answer it.
 
 Reply with ONLY a JSON array:
-[{{"i": <index>, "model": "<model>", "phrase": "<words from the question>",
-   "slot": "date" | "property" | "link:<target model>",
-   "expect": null | {{"node": "<alias>", "qualifier": {{"node": "<alias>", "value": "<label>"}}}}}}]
+[{{"i": <index>, "model": "<model>", "phrase": "<words from the question>" | null,
+   "slot": "date" | "property" | "link:<target model>" | null,
+   "expect": null | {{"node": "<alias>", "qualifier": {{"node": "<alias>", "value": "<label>"}},
+                     "conditions": [""" + CONDITIONS + """, ...]}}}}]
 Check that your reply parses as JSON.
 
 INPUT:
@@ -309,7 +357,7 @@ class Runner:
         return None
 
 
-def check_group(reply, d: dict, group: str) -> list[str]:
+def check_group(reply, d: dict, group: str, roles: dict | None = None) -> list[str]:
     """The schema of a nodegroup analysis, against the model's description."""
     if not isinstance(reply, dict):
         return ["the reply is not a JSON object"]
@@ -335,6 +383,9 @@ def check_group(reply, d: dict, group: str) -> list[str]:
         elif n.get("end_node") and _bundle.kind_of(nodes.get(n["end_node"]) or
                                                    {"datatype": ""}) != "date":
             errors.append(f"nodes.{a}: end_node '{n['end_node']}' is not a date of this model")
+        elif n.get("phrases") and "unit" in (n["role"], ((roles or {}).get(a) or {}).get("role")):
+            errors.append(f"nodes.{a}: a unit only describes its measurement's value; give it no "
+                          "phrases (\"weight in grams\" asks about the weight)")
     for i, c in enumerate(reply.get("combos") or []):
         if not (isinstance(c, dict) and _strings(c.get("phrases")) and c.get("phrases")
                 and c.get("node") in mine and isinstance(c.get("set"), dict) and c["set"]):
@@ -352,21 +403,33 @@ def check_group(reply, d: dict, group: str) -> list[str]:
             errors.append(f"intents[{i}]: needs an intent from {', '.join(INTENTS)} and wordings")
         elif any(w not in groups for w in t.get("with") or []):
             errors.append(f"intents[{i}]: 'with' names a group that isn't in the model")
-    return errors
+    return errors + _check_doubts(reply)
+
+
+def _check_doubts(reply: dict) -> list[str]:
+    doubts = reply.get("doubts") or []
+    if isinstance(doubts, list) and all(isinstance(x, dict) and isinstance(x.get("phrase"), str)
+                                        for x in doubts):
+        return []
+    return ['"doubts" must be a list of {"node", "phrase", "why"}']
 
 
 def _strings(x) -> bool:
     return isinstance(x, list) and all(isinstance(s, str) for s in x)
 
 
-def entries_of(reply: dict, d: dict) -> list[dict]:
+def entries_of(reply: dict, d: dict, seeds: dict | None = None) -> list[dict]:
     """The bundle entries a nodegroup analysis gives: one per node with
-    phrases, and one per single-value combo (a qualified entry)."""
+    phrases, and one per single-value combo (a qualified entry). A node's
+    seeds stay among its phrases, whatever the reply says."""
     kinds = {n["alias"]: _bundle.kind_of(n) for n in d["nodes"]}
+    nodes = reply.get("nodes") or {}
     out = []
-    for a, n in (reply.get("nodes") or {}).items():
-        if n.get("phrases"):
-            e = {"phrases": n["phrases"], "kind": kinds[a], "node": a}
+    for a in list(nodes) + [a for a in seeds or {} if a not in nodes]:
+        n = nodes.get(a) or {}
+        phrases = _union(n.get("phrases") or [], (seeds or {}).get(a) or [])
+        if phrases:
+            e = {"phrases": phrases, "kind": kinds[a], "node": a}
             if n.get("end_node"):
                 e["end_node"] = n["end_node"]
             out.append(e)
@@ -376,6 +439,10 @@ def entries_of(reply: dict, d: dict) -> list[dict]:
             out.append({"phrases": c["phrases"], "kind": kinds[c["node"]], "node": c["node"],
                         "qualifier": {"node": qn, "value": qv}})
     return out
+
+
+def _union(*lists) -> list[str]:
+    return list(dict.fromkeys(x for xs in lists for x in xs))
 
 
 def group_block(reply: dict) -> dict:
@@ -398,18 +465,21 @@ def _key(*parts: str) -> str:
     return hashlib.sha256("\0".join((PROMPT_VERSION,) + parts).encode()).hexdigest()
 
 
-def build_model(run: Runner, d: dict, roles: dict, vocab_dir: Path, jobs: int = 1) -> dict:
-    """One analysis per nodegroup, written to vocab/<Model>/<group>.json; {group: status}."""
+def build_model(run: Runner, d: dict, roles: dict, vocab_dir: Path, jobs: int = 1,
+                seeds: dict | None = None, doubts: list | None = None) -> dict:
+    """One analysis per nodegroup, written to vocab/<Model>/<group>.json; {group: status}.
+    `seeds` ({alias: phrases}) go to the LLM and stay; what it doubts goes to `doubts`."""
     ctx = outline(d)
     groups = sorted(d.get("nodegroups") or {})
+    seeds = seeds or {}
 
     def one(g):
-        payload = {"model": ctx, "group": g, "nodes": group_nodes(d, g, roles)}
+        payload = {"model": ctx, "group": g, "nodes": group_nodes(d, g, roles, seeds)}
         prompt = GROUP_PROMPT.format(model=d["name"],
                                      payload=json.dumps(payload, ensure_ascii=False, indent=1))
         key = _key("group", d["name"], g, json.dumps(payload["nodes"], sort_keys=True))
         what = {"kind": "group", "model": d["name"], "group": g}
-        return g, run.ask(key, prompt, lambda r: check_group(r, d, g), what), what
+        return g, run.ask(key, prompt, lambda r: check_group(r, d, g, roles), what), what
 
     status = {}
     model_dir = vocab_dir / d["name"]
@@ -419,7 +489,10 @@ def build_model(run: Runner, d: dict, roles: dict, vocab_dir: Path, jobs: int = 
             if reply is None:
                 status[g] = "failed: " + "; ".join(what.get("errors", [])[:3])
                 continue
-            entries = entries_of(reply, d)
+            mine = {n["alias"] for n in d["nodes"] if n.get("nodegroup") == g}
+            entries = entries_of(reply, d, {a: p for a, p in seeds.items() if a in mine})
+            if doubts is not None:
+                doubts += [dict(x, model=d["name"]) for x in reply.get("doubts") or []]
             errors, _ = _bundle.validate(d, entries)
             if errors:
                 status[g] = "failed: " + "; ".join(errors[:3])
@@ -431,14 +504,140 @@ def build_model(run: Runner, d: dict, roles: dict, vocab_dir: Path, jobs: int = 
     return status
 
 
-def resolve_collisions(run: Runner, d: dict, vocab_dir: Path) -> list[dict]:
+def base_type_words(d: dict) -> set[str]:
+    """The words `ArchesVocabulary.type_words` gives a model without help."""
+    words = set()
+    for name in (d["name"], (d.get("slug") or "").replace("_", " ")):
+        if name:
+            words |= plurals(name)
+    return words
+
+
+def links_of(d: dict, roles: dict, names: set[str], seeds: dict) -> list[dict]:
+    """The model's links to models in this build, each with the pair it joins."""
+    out = []
+    for n in d["nodes"]:
+        to = [t for t in n.get("targets") or [] if t in names]
+        if _bundle.kind_of(n) != "link" or not to:
+            continue
+        hint = roles.get(n["alias"]) or {}
+        x = {"alias": n["alias"], "name": n.get("label") or n["name"], "group": n.get("nodegroup"),
+             "from": d["name"], "to": to, "crm": hint.get("crm", ""), "reverse": hint.get("reverse", "")}
+        if seeds.get(n["alias"]):
+            x["seed"] = seeds[n["alias"]]
+        out.append(x)
+    return out
+
+
+def name_model(run: Runner, d: dict, roles: dict, descriptions: dict,
+               seeds: dict) -> tuple[list[str], dict[str, list[str]], list[dict]]:
+    """One call for the model's type words and its links' wording by the types
+    they join: (type words, {link alias: phrases}, doubts). Seeds stay."""
+    others = {n: x for n, x in descriptions.items() if n != d["name"]}
+    taken = set().union(*(base_type_words(x) for x in others.values()),
+                        *(seeds["types"].get(n, []) for n in others))
+    links = links_of(d, roles, set(descriptions), seeds["nodes"].get(d["name"], {}))
+    payload = {"model": d["name"], "about": d.get("description", ""), "other_models": sorted(others),
+               "seed_type_words": seeds["types"].get(d["name"], []), "links": links}
+
+    def check(r):
+        if not isinstance(r, dict):
+            return ["the reply is not a JSON object"]
+        if _strings(r.get("type_words", [])):
+            errors = [f"type word '{w}' names another model" for w in r.get("type_words", [])
+                      if w.strip().lower() in taken]
+        else:
+            errors = ['"type_words" must be a list of strings']
+        sent = {x["alias"] for x in links}
+        got = r.get("links", {})
+        if not isinstance(got, dict):
+            return errors + ['"links" must be an object keyed by alias']
+        for a, x in got.items():
+            if a not in sent:
+                errors.append(f"links: '{a}' is not one of the links given")
+            elif not (isinstance(x, dict) and _strings(x.get("phrases", []))
+                      and _strings(x.get("reverse", []))):
+                errors.append(f"links.{a}: needs lists of phrases and reverse")
+        return errors + _check_doubts(r)
+
+    prompt = MODEL_PROMPT.format(model=d["name"],
+                                 payload=json.dumps(payload, ensure_ascii=False, indent=1))
+    reply = run.ask(_key("model", d["name"], json.dumps(payload, sort_keys=True)), prompt, check,
+                    {"kind": "model", "model": d["name"]}) or {}
+    words = _union(seeds["types"].get(d["name"], []),
+                   [w.strip().lower() for w in reply.get("type_words", [])])
+    phrases = {}
+    for x in links:
+        said = reply.get("links", {}).get(x["alias"]) or {}
+        reverse = said.get("reverse", []) if d["name"] not in x["to"] else []   # same types: no direction
+        phrases[x["alias"]] = _union(x.get("seed", []), said.get("phrases", []), reverse)
+    return words, phrases, [dict(x, model=d["name"]) for x in reply.get("doubts") or []]
+
+
+def settle_type_words(words: dict[str, list[str]], seeds: dict) -> tuple[dict[str, list[str]], list[str]]:
+    """A type word two models claim names neither, unless it is one model's
+    seed; (each model's words, what was dropped and from which models)."""
+    claims: dict[str, set[str]] = {}
+    for m, ws in words.items():
+        for w in ws:
+            claims.setdefault(w, set()).add(m)
+    keep, dropped = {}, []
+    for w, ms in sorted(claims.items()):
+        seeded = {m for m in ms if w in seeds["types"].get(m, [])}
+        keep[w] = ms if len(ms) == 1 else seeded if len(seeded) == 1 else set()
+        if keep[w] != ms:
+            dropped.append(f"'{w}' ({', '.join(sorted(ms - keep[w]))})")
+    return {m: [w for w in ws if m in keep[w]] for m, ws in words.items()}, dropped
+
+
+def add_link_phrases(d: dict, vocab_dir: Path, phrases: dict[str, list[str]]) -> None:
+    """Each link's phrases joined to its unqualified entry in its group file."""
+    group_of = {n["alias"]: n.get("nodegroup") for n in d["nodes"]}
+    for a, ps in phrases.items():
+        if not ps:
+            continue
+        p = vocab_dir / d["name"] / f"{group_of[a]}.json"
+        f = (json.loads(p.read_text()) if p.exists()
+             else {"model": d["name"], "nodegroup": group_of[a], "entries": []})
+        e = next((e for e in f["entries"] if e["node"] == a and not e.get("qualifier")), None)
+        if e is None:
+            f["entries"].append({"phrases": ps, "kind": "link", "node": a})
+        else:
+            e["phrases"] = _union(e["phrases"], ps)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(f, indent=1, ensure_ascii=False) + "\n")
+
+
+def _apart(entries: list[dict], targets: dict) -> bool:
+    """Unqualified links whose targets don't overlap: the grounder picks
+    between them by the types a question names (ground._fit_relations)."""
+    if any(e["kind"] != "link" or e.get("qualifier") for e in entries):
+        return False
+    seen: set[str] = set()
+    for e in entries:
+        to = set(targets.get(e["node"]) or [])
+        if not to or to & seen:
+            return False
+        seen |= to
+    return True
+
+
+def resolve_collisions(run: Runner, d: dict, vocab_dir: Path, seeds: dict | None = None) -> list[dict]:
     """`validate`'s shared phrases for one model, back to the LLM: each is kept
-    by one entry, or left on all of them as deliberately ambiguous."""
+    by one entry, or left on all of them as deliberately ambiguous. Links that
+    join different types keep a shared phrase, and no entry loses a seed."""
     files = {p: json.loads(p.read_text()) for p in sorted((vocab_dir / d["name"]).glob("*.json"))}
     refs = [(p, e) for p, f in files.items() for e in f["entries"]]
-    shared = _bundle.shared_phrases([e for _, e in refs])
+    targets = {n["alias"]: n.get("targets") for n in d["nodes"]}
+    shared, done = {}, []
+    for ph, owners in sorted(_bundle.shared_phrases([e for _, e in refs]).items()):
+        if _apart([refs[i][1] for i in owners], targets):
+            done.append({"model": d["name"], "phrase": ph, "keep": "all: links joining different types"})
+        else:
+            shared[ph] = owners
     if not shared:
-        return []
+        return done
+    seeds = seeds or {}
     labels = {n["alias"]: n.get("label") or n["name"] for n in d["nodes"]}
     items = [{"phrase": ph, "entries": [{"i": i, "node": refs[i][1]["node"],
                                          "label": labels.get(refs[i][1]["node"]),
@@ -457,7 +656,6 @@ def resolve_collisions(run: Runner, d: dict, vocab_dir: Path) -> list[dict]:
                                      payload=json.dumps(items, ensure_ascii=False, indent=1))
     reply = run.ask(_key("collisions", hashlib.sha256(prompt.encode()).hexdigest()), prompt, check,
                     {"kind": "collisions", "model": d["name"]}) or []
-    done = []
     for r in reply:
         ph, keep = r.get("phrase"), r.get("keep")
         if ph not in shared:
@@ -467,8 +665,9 @@ def resolve_collisions(run: Runner, d: dict, vocab_dir: Path) -> list[dict]:
         if keep == "ambiguous":
             continue
         for i in shared[ph]:
-            if i != keep:
-                e = refs[i][1]
+            e = refs[i][1]
+            seeded = not e.get("qualifier") and ph in seeds.get(e["node"], [])
+            if i != keep and not seeded:
                 e["phrases"] = [x for x in e["phrases"] if x.strip().lower() != ph]
     for p, f in files.items():
         f["entries"] = [e for e in f["entries"] if e["phrases"]]
@@ -476,7 +675,8 @@ def resolve_collisions(run: Runner, d: dict, vocab_dir: Path) -> list[dict]:
     return done
 
 
-def _check_cases(cases, descriptions: dict, model: str | None = None, need_q: bool = True) -> list[str]:
+def _check_cases(cases, descriptions: dict, model: str | None = None, need_q: bool = True,
+                 need_phrase: bool = True) -> list[str]:
     errors = []
     for i, c in enumerate(cases):
         if not isinstance(c, dict):
@@ -492,20 +692,42 @@ def _check_cases(cases, descriptions: dict, model: str | None = None, need_q: bo
             errors.append(f"case {i}: needs \"expect\" (null when the answer is a refusal)")
         nodes = {n["alias"]: n for n in d["nodes"]}
         slot = c.get("slot") or ""
-        if not (isinstance(c.get("phrase"), str) and c["phrase"]
+        phrase = c.get("phrase")
+        if (need_phrase or phrase is not None) and not (
+                isinstance(phrase, str) and phrase
                 and (slot in ("date", "property") or slot.startswith("link:"))):
             errors.append(f"case {i}: needs a phrase and a slot of date, property or link:<Model>")
         x = c.get("expect")
         if x is None:
             continue
-        if not isinstance(x, dict) or x.get("node") not in nodes:
-            errors.append(f"case {i}: expect.node {x!r} is not a node of {d['name']}")
+        if not isinstance(x, dict):
+            errors.append(f"case {i}: expect {x!r} is not null or an object")
             continue
+        if (phrase or "node" in x) and x.get("node") not in nodes:
+            errors.append(f"case {i}: expect.node {x.get('node')!r} is not a node of {d['name']}")
         q = x.get("qualifier")
-        if q and (q.get("node") not in nodes or (isinstance(nodes[q["node"]].get("values"), list)
-                                                 and q.get("value") not in nodes[q["node"]]["values"])):
+        if q and (q.get("node") not in nodes or not _a_value(nodes[q["node"]], q.get("value"))):
             errors.append(f"case {i}: qualifier {q!r} is not a node and value of {d['name']}")
+        if not isinstance(x.get("conditions"), list):
+            errors.append(f"case {i}: expect needs \"conditions\", a list (empty for the type alone)")
+            continue
+        for w in x["conditions"]:
+            n = nodes.get(w.get("node")) if isinstance(w, dict) else None
+            if n is None:
+                errors.append(f"case {i}: condition {w!r} is not on a node of {d['name']}")
+            elif w.get("value") is not None and not _a_value(n, w["value"]):
+                errors.append(f"case {i}: '{w['value']}' is not a value of {w['node']}")
+            elif w.get("tile") is not None and w["tile"] not in (d.get("nodegroups") or {}):
+                errors.append(f"case {i}: tile '{w['tile']}' is not a nodegroup of {d['name']}")
+            elif w.get("link") is not None and w["link"] not in descriptions:
+                errors.append(f"case {i}: link '{w['link']}' is not a model")
     return errors
+
+
+def _a_value(node: dict, value) -> bool:
+    """A label of the node's values; any string when its list wasn't sent."""
+    values = node.get("values")
+    return isinstance(value, str) and (not isinstance(values, list) or not values or value in values)
 
 
 def write_cases(run: Runner, descriptions: dict, roles: dict, real: list[str]) -> list[dict]:
@@ -539,18 +761,19 @@ def write_cases(run: Runner, descriptions: dict, roles: dict, real: list[str]) -
             bad = [f"item {n}: no question {x.get('i') if isinstance(x, dict) else x!r}"
                    for n, x in enumerate(r) if not isinstance(x, dict)
                    or not isinstance(x.get("i"), int) or not 0 <= x["i"] < len(real)]
-            return bad + _check_cases(r, descriptions, need_q=False)
+            return bad + _check_cases(r, descriptions, need_q=False, need_phrase=False)
 
         for x in run.ask(_key("label", json.dumps(payload, sort_keys=True)), prompt, check,
                          {"kind": "label"}) or []:
-            cases.append({"model": x["model"], "q": real[x["i"]], "phrase": x["phrase"],
-                          "slot": x["slot"], "expect": x["expect"], "source": "real"})
+            c = {"model": x["model"], "q": real[x["i"]], "phrase": x.get("phrase"),
+                 "slot": x.get("slot"), "expect": x["expect"], "source": "real"}
+            cases.append({k: v for k, v in c.items() if v is not None or k == "expect"})
     return cases
 
 
-def _fields(plan) -> set[tuple[str, str, str | None]]:
-    """(tile, alias, value label) for each condition on the plan's own type;
-    tile is the group of the OnTile it is in, else ""."""
+def _fields(plan) -> set[tuple[str, str, str | None, str | None]]:
+    """(tile, alias, value label, link target type) for each condition on the
+    plan's own type; tile is the group of the OnTile it is in, else ""."""
     from .plan import DateRange, HasValue, LinkTo, Not, OnTile
     out = set()
     todo = [("", c) for c in plan.where]
@@ -561,35 +784,39 @@ def _fields(plan) -> set[tuple[str, str, str | None]]:
         if isinstance(c, OnTile):
             todo += [(c.group, x) for x in c.conditions]
         elif isinstance(c, LinkTo) and c.relation:
-            out.add((tile, c.relation.split("#")[0], None))
+            target = c.target.entity.type if hasattr(c.target, "entity") else c.target.type
+            out.add((tile, c.relation.split("#")[0], None, target))
             if c.qualifier is not None:
-                out.add((tile, c.qualifier.field, c.qualifier.label))
+                out.add((tile, c.qualifier.field, c.qualifier.label, None))
         elif isinstance(c, HasValue):
-            out.add((tile, c.field, c.label))
+            out.add((tile, c.field, c.label, None))
         elif isinstance(c, DateRange):
-            out.add((tile, c.field, None))
+            out.add((tile, c.field, None, None))
     return out
 
 
-def _judge_conditions(want: list[dict], fields) -> str:
-    """Each expected {"node", "value"?, "tile"?} in the plan: right; one missing
-    (broader than asked): partial; one there with another value or tile: dangerous."""
+def _judge_conditions(want: list[dict], fields, ends: dict[str, str]) -> str:
+    """Each expected {"node", "value"?, "tile"?, "link"?} in the plan (a date by
+    either end): right; one missing (broader than asked): partial; one there
+    with another value, tile or target type: dangerous."""
     missing = False
     for w in want:
-        here = [(t, label) for t, f, label in fields if f == w["node"]]
+        names = {w["node"], ends.get(w["node"])}
+        here = [(t, label, to) for t, f, label, to in fields if f in names]
         if not here:
             missing = True
         elif not any((w.get("value") is None or (label or "").lower() == w["value"].lower())
-                     and (w.get("tile") is None or t == w["tile"]) for t, label in here):
+                     and (w.get("tile") is None or t == w["tile"])
+                     and (w.get("link") is None or to == w["link"]) for t, label, to in here):
             return "dangerous"
     return "partial" if missing else "right"
 
 
 def judge_plan(case: dict, m, ends: dict[str, str]) -> str:
     """right / partial / dangerous / missed / refused for a whole interpretation:
-    the plan must be of the case's model and use the expected node (either end of
-    a date) and qualifier, or hold the expected conditions. A plan with the right
-    node and extra conditions counts."""
+    the plan must be of the case's model and hold the expected conditions, or,
+    without them, use the expected node (either end of a date) and qualifier.
+    A plan with the right node and extra conditions counts."""
     answered = m.plan is not None and not m.refused
     x = case["expect"]
     if x is None:
@@ -600,12 +827,12 @@ def judge_plan(case: dict, m, ends: dict[str, str]) -> str:
         return "dangerous"
     fields = _fields(m.plan)
     if "conditions" in x:
-        return _judge_conditions(x["conditions"], fields)
-    nodes = {f for _, f, _ in fields}
+        return _judge_conditions(x["conditions"], fields, ends)
+    nodes = {f for _, f, _, _ in fields}
     if x["node"] not in nodes and ends.get(x["node"]) not in nodes:
         return "dangerous"
     want = ((x.get("qualifier") or {}).get("value") or "").lower()
-    if want and want not in {(label or "").lower() for _, _, label in fields}:
+    if want and want not in {(label or "").lower() for _, _, label, _ in fields}:
         return "partial"
     return "right"
 
@@ -632,6 +859,55 @@ def planner_run(graphs_dir: Path, reference: Path | None, bundle: dict, cases: l
         rows.append({"q": c["q"], "outcome": outcome, "refused": m.refused,
                      "plan": narrate(m.plan) if m.plan is not None else None})
     return counts, rows
+
+
+def load_seeds(paths, descriptions: dict) -> tuple[dict, list[str]]:
+    """Phrasings already in use, which the LLM extends and never deletes:
+    {"types": {Model: [word]}, "nodes": {Model: {alias: [phrase]}}}, and warnings.
+    A seed is a bundle, a vocab directory, or a phrasings file in the shape of
+    `ArchesVocabulary`'s arguments: {"extra_type_words": {word: Model},
+    "relation_forms": {alias: [phrase]}, "date_forms": {alias: [phrase]}}, whose
+    forms go to that alias in every model. Qualified entries aren't seeds."""
+    seeds: dict = {"types": {}, "nodes": {}}
+    warnings = []
+    aliases = {m: {n["alias"] for n in d["nodes"]} for m, d in descriptions.items()}
+
+    def add(model, alias, phrases, src):
+        if alias not in aliases.get(model, ()):
+            warnings.append(f"{src}: no node '{alias}' in {model}; not seeded")
+            return
+        mine = seeds["nodes"].setdefault(model, {}).setdefault(alias, [])
+        mine[:] = _union(mine, [p.strip().lower() for p in phrases if p.strip()])
+
+    for path in map(Path, paths or []):
+        if path.is_dir():
+            doc = {"models": {v["model"]: v for v in _bundle.read_vocab(path)[0]}}
+        else:
+            doc = json.loads(path.read_text())
+        for w, model in (doc.get("extra_type_words") or {}).items():
+            if model in descriptions:
+                words = seeds["types"].setdefault(model, [])
+                words[:] = _union(words, [w.strip().lower()])
+            else:
+                warnings.append(f"{path}: type word '{w}' names {model}, not a model here")
+        for model, v in (doc.get("models") or {}).items():
+            if model not in descriptions:
+                warnings.append(f"{path}: {model} is not a model here; not seeded")
+                continue
+            for w in v.get("type_words") or []:
+                words = seeds["types"].setdefault(model, [])
+                words[:] = _union(words, [w.strip().lower()])
+            for e in v.get("entries") or []:
+                if not e.get("qualifier"):
+                    add(model, e["node"], e["phrases"], path)
+        for key in ("relation_forms", "date_forms"):
+            for alias, phrases in (doc.get(key) or {}).items():
+                owners = [m for m in descriptions if alias in aliases[m]]
+                if not owners:
+                    warnings.append(f"{path}: no model has a node '{alias}'; not seeded")
+                for m in owners:
+                    add(m, alias, phrases, path)
+    return seeds, warnings
 
 
 def coverage(descriptions: dict, vocab_dir: Path, status: dict) -> dict:
@@ -663,7 +939,7 @@ def coverage(descriptions: dict, vocab_dir: Path, status: dict) -> dict:
 
 
 def report(cov: dict, phrase, planner: tuple, gate: list[str], run: Runner,
-           warnings: list[str] = ()) -> str:
+           warnings: list[str] = (), types: dict | None = None, doubts: list = ()) -> str:
     from .evaluate import report as eval_report
     counts, rows = planner
     lines = ["# ceist vocab pipeline", "",
@@ -692,6 +968,13 @@ def report(cov: dict, phrase, planner: tuple, gate: list[str], run: Runner,
             lines.append(f"- {name}, groups with no phrasings and no reason: {', '.join(c['missed'])}")
         if c["nodes_missed"]:
             lines.append(f"- {name}, nodes missed: {', '.join(c['nodes_missed'])}")
+    if types:
+        lines += ["", "## Type words", ""] + [f"- {m}: {', '.join(ws) or '(none)'}"
+                                              for m, ws in sorted(types.items())]
+    if doubts:
+        lines += ["", "## Seeds the LLM doubts (kept)", ""] + [
+            f"- {x['model']}{'.' + x['node'] if x.get('node') else ''} '{x['phrase']}': "
+            f"{x.get('why', '')}" for x in doubts]
     if run.failures:
         lines += ["", "## Failed calls", ""] + [
             f"- {f['kind']} {f.get('model', '')}{'.' + f['group'] if f.get('group') else ''}: "
@@ -701,7 +984,7 @@ def report(cov: dict, phrase, planner: tuple, gate: list[str], run: Runner,
 
 def run(graphs: str | Path, out: str | Path, reference=None, questions=None, llm_cmd=None,
         model=None, models=None, config_path=None, min_right=None, max_dangerous=None,
-        jobs: int = 1, log=print) -> int:
+        jobs: int = 1, log=print, seeds=None) -> int:
     """The whole pipeline; 0 when the gate passes, 1 when it doesn't."""
     from . import config
     from .arches_describe import describe
@@ -725,17 +1008,29 @@ def run(graphs: str | Path, out: str | Path, reference=None, questions=None, llm
         name = g["name"].get("en") if isinstance(g["name"], dict) else g["name"]
         if name in descriptions:
             roles[name] = crm_roles(g)
+    seeded, warnings = load_seeds(seeds, descriptions)
     llm = Runner(out, llm_cmd, model)
-    status = {}
+    status, doubts, types = {}, [], {}
     for name, d in sorted(descriptions.items()):
-        status[name] = build_model(llm, d, roles[name], vocab_dir, jobs)
+        status[name] = build_model(llm, d, roles[name], vocab_dir, jobs,
+                                   seeded["nodes"].get(name), doubts)
         n = sum(1 for s in status[name].values() if s == "built")
         log(f"{name}: {n}/{len(status[name])} nodegroups built")
+    for name, d in sorted(descriptions.items()):
+        types[name], links, said = name_model(llm, d, roles[name], descriptions, seeded)
+        add_link_phrases(d, vocab_dir, links)
+        doubts += said
+    types, dropped = settle_type_words(types, seeded)
+    if dropped:
+        warnings.append("type words two models claimed, dropped: " + ", ".join(dropped))
     collisions = []
     for name, d in sorted(descriptions.items()):
-        collisions += resolve_collisions(llm, d, vocab_dir)
+        collisions += resolve_collisions(llm, d, vocab_dir, seeded["nodes"].get(name))
     (out / "collisions.json").write_text(json.dumps(collisions, indent=1, ensure_ascii=False) + "\n")
-    (vocab_dir / _bundle.MANIFEST).write_text(json.dumps(_bundle.manifest(descriptions), indent=1) + "\n")
+    manifest = _bundle.manifest(descriptions)
+    for name, words in types.items():
+        manifest["models"][name]["type_words"] = words
+    (vocab_dir / _bundle.MANIFEST).write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n")
 
     cases_path = out / "cases.json"
     if cases_path.exists():
@@ -757,7 +1052,6 @@ def run(graphs: str | Path, out: str | Path, reference=None, questions=None, llm
     phrase = evaluate(bundle_path, cases_path, cfg)
     planner = planner_run(graphs, Path(reference) if reference else None, b, cases, cfg)
     gate = [f"bundle: {e}" for e in errors]
-    warnings = []
     if not cases:
         if min_right is not None or max_dangerous is not None:
             gate.append("no acceptance cases")
@@ -769,7 +1063,8 @@ def run(graphs: str | Path, out: str | Path, reference=None, questions=None, llm
         for level, n in (("phrase", phrase.counts["dangerous"]), ("planner", planner[0]["dangerous"])):
             if n > max_dangerous:
                 gate.append(f"{level} dangerous {n} > {max_dangerous}")
-    text = report(coverage(descriptions, vocab_dir, status), phrase, planner, gate, llm, warnings)
+    text = report(coverage(descriptions, vocab_dir, status), phrase, planner, gate, llm, warnings,
+                  types, doubts)
     (out / "report.md").write_text(text)
     log(text)
     return 1 if gate else 0

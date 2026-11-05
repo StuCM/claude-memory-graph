@@ -22,6 +22,8 @@ elif prompt.startswith("You are checking"):
                                  "keep": next((e["i"] for e in it["entries"]
                                                if e["node"] == keep.get(it["phrase"])), "ambiguous")}
                                 for it in payload]
+elif prompt.startswith("You name the types"):
+    key, reply = "model:" + payload["model"], {"type_words": [], "links": {}}
 elif prompt.startswith("You write acceptance"):
     key, reply = "questions:" + payload["model"]["model"], {"cases": []}
 else:
@@ -53,13 +55,15 @@ CANNED = {
     "collisions": {"built": "construction_date"},
     "questions:Building": {"cases": [
         {"q": "which buildings were built before 1900?", "phrase": "built", "slot": "date",
-         "intent": "filter", "expect": {"node": "construction_date"}},
+         "intent": "filter", "expect": {"node": "construction_date",
+                                        "conditions": [{"node": "construction_date"}]}},
         {"q": "which buildings were put up after 1850?", "phrase": "put up", "slot": "date",
-         "intent": "filter", "expect": {"node": "construction_date"}},
+         "intent": "filter", "expect": {"node": "construction_date",
+                                        "conditions": [{"node": "construction_date"}]}},
         {"q": "which buildings were painted in 1900?", "phrase": "painted", "slot": "date",
          "intent": "filter", "expect": None}]},
     "label": [{"i": 0, "model": "Building", "phrase": "constructed", "slot": "date",
-               "expect": {"node": "construction_date"}}],
+               "expect": {"node": "construction_date", "conditions": [{"node": "construction_date"}]}}],
 }
 
 
@@ -178,7 +182,8 @@ def test_pipeline_builds_per_nodegroup_resolves_collisions_and_gates(tmp_path, c
 
     # privacy: the audit holds every prompt, and no record data
     audit = [json.loads(line) for line in (out / "audit.jsonl").read_text().splitlines()]
-    assert len(audit) == len(calls(tmp_path)) == 8 + 1 + 3 + 1   # groups, collisions, questions, label
+    assert len(audit) == len(calls(tmp_path)) == 8 + 3 + 1 + 3 + 1   # groups, models, collisions,
+                                                                    # questions, label
     sent = (out / "audit.jsonl").read_text()
     assert "construction_date" in sent and "did <Name> see constructed" in sent
     for secret in ["Ada", "Lovelace", "Isambard", "Clock Tower", "Grain Warehouse", "Boat Shed",
@@ -188,18 +193,18 @@ def test_pipeline_builds_per_nodegroup_resolves_collisions_and_gates(tmp_path, c
     # the cache: nothing is asked again; a changed nodegroup is asked again, alone
     assert main(["vocab", "pipeline", str(data / "graphs"), "-o", str(out), "--reference", str(ref),
                  "--llm-cmd", cmd]) == 0
-    assert len(calls(tmp_path)) == 13
+    assert len(calls(tmp_path)) == 16
     graph = data / "graphs" / f"{fx.BUILDING}.json"
     doc = json.loads(graph.read_text())
     next(n for n in doc["graph"][0]["nodes"] if n["alias"] == "construction_date")["name"] = "Built"
     graph.write_text(json.dumps(doc))
     assert main(["vocab", "pipeline", str(data / "graphs"), "-o", str(out), "--reference", str(ref),
                  "--llm-cmd", cmd]) == 0
-    assert calls(tmp_path)[13:] == ["group:construction_date", "collisions"]
+    assert calls(tmp_path)[16:] == ["group:construction_date", "collisions"]
     # another --model is another cache
     assert main(["vocab", "pipeline", str(data / "graphs"), "-o", str(out), "--reference", str(ref),
                  "--llm-cmd", cmd, "--model", "other"]) == 0
-    assert len(calls(tmp_path)) == 15 + 8 + 1
+    assert len(calls(tmp_path)) == 18 + 8 + 3 + 1
 
 
 def test_the_gate_fails_on_too_few_right_or_any_dangerous(tmp_path, capsys):
@@ -311,3 +316,197 @@ def test_judge_plan_checks_expected_conditions_and_their_tile():
     assert judged(OnTile("phase", [destroyed])) == "partial"          # the date dropped
     assert judged(destroyed, before) == "dangerous"                    # not on one tile
     assert judged(OnTile("phase", [HasValue("phase_type", "c-a", "Alteration"), before])) == "dangerous"
+
+
+def test_a_unit_only_describes_its_value():
+    crm = "http://www.cidoc-crm.org/cidoc-crm/"
+    graph = {"nodes": [{"nodeid": "dim", "alias": "dim", "datatype": "semantic",
+                        "ontologyclass": crm + "E54_Dimension"},
+                       {"nodeid": "unit", "alias": "unit", "datatype": "concept",
+                        "ontologyclass": crm + "E58_Measurement_Unit", "parentproperty": crm + "P91_has_unit"}],
+             "edges": [{"domainnode_id": "dim", "rangenode_id": "unit"}]}
+    roles = pipeline.crm_roles(graph)
+    assert roles["unit"]["role"] == "unit"
+    d = {"name": "Object", "nodegroups": {"dim": {}}, "nodes": [
+        {"alias": "unit", "datatype": "concept", "nodegroup": "dim"},
+        {"alias": "value", "datatype": "number", "nodegroup": "dim"}]}
+    reply = {"purpose": "size", "nodes": {"unit": {"role": "type", "phrases": ["in grams"]},
+                                          "value": {"role": "measure", "phrases": ["weight"]}}}
+    assert pipeline.check_group(reply, d, "dim") == []                  # nothing says it's a unit
+    errors = pipeline.check_group(reply, d, "dim", roles)
+    assert len(errors) == 1 and "nodes.unit: a unit only describes" in errors[0]
+    reply["nodes"]["unit"] = {"role": "unit", "phrases": ["in grams"]}
+    assert len(pipeline.check_group(reply, d, "dim")) == 1
+    reply["nodes"]["unit"]["phrases"] = []
+    assert pipeline.check_group(reply, d, "dim", roles) == []
+
+
+def test_type_words_and_link_wording_by_the_types_joined(tmp_path):
+    canned = dict(CANNED, **{
+        "model:Building": {"type_words": ["Edifices", "sheds"],
+                           "links": {"site": {"phrases": ["at"], "reverse": ["holds"]},
+                                     "architect": {"phrases": ["at", "by"]},
+                                     "actor": {"phrases": ["by"]}}},
+        "model:Site": {"type_words": ["sheds", "places"]},
+        "collisions": {"built": "construction_date", "by": "actor"}})
+    data, ref, cmd, _ = project(tmp_path, canned)
+    out = tmp_path / "out"
+    assert pipeline.run(data / "graphs", out, ref, llm_cmd=cmd, log=lambda _: None) == 0
+
+    audit = [json.loads(x) for x in (out / "audit.jsonl").read_text().splitlines()]
+    sent = next(a["prompt"] for a in audit if a["kind"] == "model" and a["model"] == "Building")
+    payload = json.loads(sent.split("INPUT:\n", 1)[1])
+    assert {x["alias"]: (x["from"], x["to"]) for x in payload["links"]} == {
+        "architect": ("Building", ["Person"]), "actor": ("Building", ["Person"]),
+        "site": ("Building", ["Site"])}
+    assert payload["other_models"] == ["Person", "Site"]
+
+    def phrases(group, node):
+        f = json.loads((out / "vocab" / "Building" / f"{group}.json").read_text())
+        return next(e["phrases"] for e in f["entries"] if e["node"] == node and not e.get("qualifier"))
+
+    # "at" joins a Building to a Site or to a Person: both keep it; "by" joins two links
+    # to a Person, so the collision pass settles it
+    assert phrases("site", "site") == ["at", "holds"]
+    assert phrases("architect", "architect") == ["architect", "at"]
+    assert phrases("associated_actor", "actor") == ["involved", "by"]
+    collisions = json.loads((out / "collisions.json").read_text())
+    assert {"model": "Building", "phrase": "at", "keep": "all: links joining different types"} in collisions
+    assert {"model": "Building", "phrase": "by", "keep": "associated_actor.actor"} in collisions
+
+    # a type word two models claim names neither
+    b = json.loads((out / "bundle.json").read_text())
+    assert b["extra_type_words"] == {"edifices": "Building", "places": "Site"}
+    report = (out / "report.md").read_text()
+    assert "type words two models claimed, dropped: 'sheds' (Building, Site)" in report
+    assert "- Building: edifices" in report
+
+    from ceist import config
+    counts, rows = pipeline.planner_run(
+        data / "graphs", ref, b,
+        [{"model": "Building", "q": "how many edifices are there?", "expect": {"conditions": []}},
+         {"model": "Site", "q": "which places are there?", "expect": {"conditions": []}}],
+        config.load(None))
+    assert counts["right"] == 2, rows
+
+
+def test_type_words_naming_another_model_are_refused_and_a_self_link_has_no_reverse(tmp_path):
+    reply = tmp_path / "reply.json"
+    script = tmp_path / "llm.py"
+    script.write_text(f"import sys\nsys.stdin.read()\nprint(open({str(reply)!r}).read())\n")
+    tale = {"name": "Tale", "nodes": [{"alias": "parent_story", "name": "Parent Story",
+                                       "datatype": "resource-instance", "targets": ["Tale"],
+                                       "nodegroup": "parent_story"}]}
+    descriptions = {"Tale": tale, "Figure": {"name": "Figure", "nodes": []}}
+    seeds = {"types": {}, "nodes": {}}
+    run = pipeline.Runner(tmp_path / "out", f"{sys.executable} {script}")
+    reply.write_text(json.dumps({"type_words": ["stories"],
+                                 "links": {"parent_story": {"phrases": ["part of"],
+                                                            "reverse": ["includes"]}}}))
+    words, links, _ = pipeline.name_model(run, tale, {}, descriptions, seeds)
+    assert words == ["stories"] and links == {"parent_story": ["part of"]}   # no direction to tell
+    reply.write_text(json.dumps({"type_words": ["figures"]}))
+    run = pipeline.Runner(tmp_path / "out2", f"{sys.executable} {script}")
+    assert pipeline.name_model(run, tale, {}, descriptions, seeds)[0] == []
+    assert run.failures[0]["errors"] == ["type word 'figures' names another model"]
+
+
+def test_seeds_are_extended_never_deleted(tmp_path):
+    canned = dict(CANNED, **{
+        "group:construction_date": dict(CANNED["group:construction_date"], doubts=[
+            {"node": "construction_date", "phrase": "raised", "why": "rare"}])})
+    data, ref, cmd, _ = project(tmp_path, canned)
+    seed = tmp_path / "seed.json"
+    seed.write_text(json.dumps({"extra_type_words": {"Edifice": "Building", "keep": "Castle"},
+                                "relation_forms": {"site": ["On"], "architect": ["built"], "nope": ["x"]},
+                                "date_forms": {"construction_date": ["raised"]}}))
+    out = tmp_path / "out"
+    assert main(["vocab", "pipeline", str(data / "graphs"), "-o", str(out), "--reference", str(ref),
+                 "--llm-cmd", cmd, "--seed", str(seed)]) == 0
+
+    audit = [json.loads(x) for x in (out / "audit.jsonl").read_text().splitlines()]
+    group = next(a["prompt"] for a in audit if a.get("group") == "construction_date")
+    node = json.loads(group.split("INPUT:\n", 1)[1])["nodes"][0]
+    assert node["seed"] == ["raised"]
+    model = json.loads(next(a["prompt"] for a in audit if a["kind"] == "model"
+                            and a["model"] == "Building").split("INPUT:\n", 1)[1])
+    assert model["seed_type_words"] == ["edifice"]
+    assert next(x for x in model["links"] if x["alias"] == "site")["seed"] == ["on"]
+
+    def phrases(group, node):
+        f = json.loads((out / "vocab" / "Building" / f"{group}.json").read_text())
+        return next(e["phrases"] for e in f["entries"] if e["node"] == node and not e.get("qualifier"))
+
+    # the LLM left "raised" out and doubted it: it stays, and the doubt is reported
+    assert phrases("construction_date", "construction_date") == ["built", "constructed", "put up", "raised"]
+    assert phrases("site", "site") == ["on"]
+    # the collision pass gives "built" to the construction date, but not the architect's seed
+    assert phrases("architect", "architect") == ["architect", "built"]
+    assert json.loads((out / "bundle.json").read_text())["extra_type_words"] == {"edifice": "Building"}
+    report = (out / "report.md").read_text()
+    assert "- Building.construction_date 'raised': rare" in report
+    assert "type word 'keep' names Castle, not a model here" in report
+    assert "no model has a node 'nope'; not seeded" in report
+
+
+def test_a_bundle_or_vocab_dir_is_a_seed(tmp_path):
+    descriptions = {"Building": {"name": "Building", "nodes": [{"alias": "site"}, {"alias": "actor"}]}}
+    bundle = tmp_path / "b.json"
+    bundle.write_text(json.dumps({"format": "ceist.vocab/2", "extra_type_words": {"edifices": "Building"},
+                                  "models": {"Building": {"entries": [
+                                      {"node": "site", "phrases": ["Sited At"]},
+                                      {"node": "actor", "phrases": ["designed by"],
+                                       "qualifier": {"node": "role", "value": "Architect"}}]},
+                                             "Castle": {"entries": []}}}))
+    seeds, warnings = pipeline.load_seeds([bundle], descriptions)
+    assert seeds == {"types": {"Building": ["edifices"]}, "nodes": {"Building": {"site": ["sited at"]}}}
+    assert warnings == [f"{bundle}: Castle is not a model here; not seeded"]
+    vocab = tmp_path / "vocab"
+    (vocab / "Building").mkdir(parents=True)
+    (vocab / "manifest.json").write_text(json.dumps({"models": {"Building": {"type_words": ["edifices"]}}}))
+    (vocab / "Building" / "site.json").write_text(json.dumps(
+        {"model": "Building", "nodegroup": "site", "entries": [{"node": "site", "phrases": ["at"]}]}))
+    assert pipeline.load_seeds([vocab], descriptions)[0] == {
+        "types": {"Building": ["edifices"]}, "nodes": {"Building": {"site": ["at"]}}}
+
+
+def test_cases_say_what_the_whole_question_means():
+    d = {"name": "Building", "nodegroups": {"phase": {}}, "nodes": [
+        {"alias": "phase_type", "datatype": "concept", "nodegroup": "phase", "values": ["Destruction"]},
+        {"alias": "site", "datatype": "resource-instance", "nodegroup": "site"}]}
+    descriptions = {"Building": d, "Site": {"name": "Site", "nodes": []}}
+    good = {"q": "which buildings were destroyed on a site?", "phrase": "destroyed", "slot": "property",
+            "expect": {"node": "phase_type", "conditions": [
+                {"node": "phase_type", "value": "Destruction", "tile": "phase"},
+                {"node": "site", "link": "Site"}]}}
+    assert pipeline._check_cases([good], descriptions, "Building") == []
+    bad = dict(good, expect={"node": "phase_type", "conditions": [
+        {"node": "phase_type", "value": "Razing"}, {"node": "phase_type", "tile": "nope"},
+        {"node": "site", "link": "Castle"}, {"node": "height"}]})
+    assert len(pipeline._check_cases([bad], descriptions, "Building")) == 4
+    assert pipeline._check_cases([dict(good, expect={"node": "phase_type"})], descriptions,
+                                 "Building") == ['case 0: expect needs "conditions", a list (empty '
+                                                 'for the type alone)']
+    # a labelled real question may pick no field
+    real = {"model": "Building", "phrase": None, "expect": {"conditions": []}}
+    assert pipeline._check_cases([real], descriptions, need_q=False, need_phrase=False) == []
+
+
+def test_judge_plan_checks_a_links_target_type_and_either_end_of_a_date():
+    from types import SimpleNamespace
+
+    from ceist.plan import DateRange, EntityRef, LinkTo, Plan
+    from ceist.vocabulary import Entity
+    dock = LinkTo("site", EntityRef(Entity("Site", "s", "Leeds Dock")), style="field")
+    to_site = {"model": "Building", "expect": {"conditions": [{"node": "site", "link": "Site"}]}}
+    to_person = {"model": "Building", "expect": {"conditions": [{"node": "site", "link": "Person"}]}}
+
+    def judged(case, *where, ends=None):
+        return pipeline.judge_plan(case, SimpleNamespace(plan=Plan("Building", list(where)),
+                                                         refused=""), ends or {})
+    assert judged(to_site, dock) == "right"
+    assert judged(to_person, dock) == "dangerous"
+    built = {"model": "Building", "expect": {"conditions": [{"node": "built_start"}]}}
+    assert judged(built, DateRange("built_end", "1900-01-01", None)) == "partial"
+    assert judged(built, DateRange("built_end", "1900-01-01", None),
+                  ends={"built_start": "built_end"}) == "right"
