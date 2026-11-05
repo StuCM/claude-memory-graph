@@ -4,6 +4,7 @@ import pytest
 
 from ceist import (Contains, Entity, EntityRef, HasValue, LinkTo, Plan, Relation, Value,
                    interpret, narrate, plurals, terms)
+from ceist.vocabulary import Group
 
 
 def entity(type_, id_, name):
@@ -305,6 +306,42 @@ def test_only_a_whole_name_binds_a_record():
                               frozenset({"county", "down"}), aliases=(frozenset({"dún"}),)))
     m = interpret(toy, "which buildings are on site County Down?")
     assert m.plan.where[0].target.entity.id == "s-down"
+
+
+class Counties(Toy):
+    """'county' is also a group phrase, a value and a relation phrase."""
+    records = Toy.records + [entity("Site", "s-down", "County Down")]
+    county = ""
+
+    def relations(self):
+        extra = [Relation("district", ("county",), frozenset({"Building"}),
+                          frozenset({"Site"}))] if self.county == "relation" else []
+        return Toy.relations(self) + extra
+
+    def values(self):
+        extra = [Value("county", "area_type", "c-county", "County",
+                       frozenset({"Building"}))] if self.county == "value" else []
+        return Toy.values(self) + extra
+
+    def groups(self):
+        return [Group("area", "Building", (("county", ()),))] if self.county == "group" else []
+
+
+@pytest.mark.parametrize("kind", ["group", "value", "relation"])
+def test_a_record_name_beats_a_shorter_phrase_inside_it(kind):
+    toy = Counties()
+    toy.county = kind
+    m = interpret(toy, "which buildings are on site County Down?")
+    assert [(c.relation, c.target.entity.id) for c in m.plan.where] == [("site", "s-down")]
+    assert m.grounding.coverage == 1.0
+
+
+def test_a_phrase_outside_the_record_name_still_grounds():
+    toy = Counties()
+    toy.county = "value"
+    m = interpret(toy, "which county buildings are on site County Down?")
+    assert [v.phrase for v in m.grounding.values] == ["county"]
+    assert m.grounding.anchor.entity.id == "s-down"
 
 
 def test_a_vocabulary_may_let_part_of_a_name_bind():
