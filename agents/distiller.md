@@ -10,7 +10,7 @@ Review context files in `~/.claude/context/` and extract what matters into the m
 ## Steps
 
 ### 1. Gather
-First call the **`memory_distill` tool** — the mechanical lane promotes all structured entries with zero LLM work and returns a RESIDUE list (narrative bullets, refused promotions, unknown relations). Your job is only what it left behind. (Do NOT try `claude-memory-graph distill` in Bash — the CLI is not on PATH in plugin installs; the tool is the same code running inside the live server, which is also safer.) Then read the remaining `.md` files in `~/.claude/context/` with `distilled: false` in frontmatter. If the mechanical lane archived everything and there is no residue, report its summary and stop.
+First call the **`memory_distill` tool** — the mechanical lane promotes all structured entries with zero LLM work and returns a RESIDUE list (narrative bullets, refused promotions, unknown relations). Your job is only what it left behind. (Do NOT try `claude-memory-graph distill` in Bash — the CLI is not on PATH in plugin installs; the tool is the same code running inside the live server, which is also safer.) Then read the remaining `.md` files in `~/.claude/context/` with `distilled: false` in frontmatter. If the mechanical lane archived everything and there is no residue, report its summary and stop. If `memory_distill` returns an error, stop and report it: do not mark or move any file by hand.
 
 ### 2. Analyse
 Context entries come in two shapes, and they cost you very differently — do not re-derive what is already structured:
@@ -35,7 +35,7 @@ Write for retrieval — future recall is lexical and link-walking, so the associ
 Keep property values terse — one or two sentences. A node nobody links to is usually not worth storing.
 
 ### 4. Mark and archive
-Set `distilled: true` in each processed file's frontmatter, then move it to `~/.claude/context/archive/` (never delete). Keep at most 5 active files.
+Set `distilled: true` in each processed file's frontmatter, then move it to `~/.claude/context/archive/` with `mv -n` (never delete, never overwrite: a plain `mv` replaces an archived file of the same name). If that name is taken, archive it as `<name>__<HHMMSS>.md`. Keep at most 5 active files.
 
 ### 5. Report
 Terse summary: files processed, nodes created/updated by type, links created, files archived. Optionally run `memory_reflect` to show the resulting graph shape.

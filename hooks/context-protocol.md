@@ -60,6 +60,6 @@ Facts with zero churn risk — an explicit user correction or stated preference 
 
 ## Lifecycle
 - Maximum 5 active context files in `~/.claude/context/`
-- Never delete context files — archive to `~/.claude/context/archive/`
+- Never delete context files — archive to `~/.claude/context/archive/` with `mv -n`, adding `__<HHMMSS>` to the name if it is taken
 - When creating a new file would exceed the limit, archive the oldest `distilled: true` file
 - Never archive a `distilled: false` file; if 3+ undistilled files have accumulated, suggest the user run `/memory-graph:distill`

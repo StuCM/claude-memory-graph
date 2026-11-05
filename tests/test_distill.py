@@ -378,3 +378,38 @@ def test_fresh_mixed_file_is_left_alone(store, tmp_path):
     f.write_text(MIXED)
     report = distill(store, directory=ctx, keep=True, retire_after_days=2)
     assert not report.split and f.read_text() == MIXED
+
+
+def test_archive_never_overwrites_within_the_same_second(tmp_path, monkeypatch):
+    """Two archives of one name in the same second: the second must not
+    replace the first suffixed copy (rename() silently would)."""
+    from datetime import datetime
+    from claude_memory_graph import distill as distill_mod
+
+    class Frozen(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime(2026, 11, 5, 16, 19, 52)
+    monkeypatch.setattr(distill_mod, "datetime", Frozen)
+
+    archive = tmp_path / "archive"
+    archive.mkdir()
+    (archive / "p__1.md").write_text("oldest")
+    (archive / "p__1__161952.md").write_text("older")
+    path = tmp_path / "p__1.md"
+    path.write_text("newest")
+
+    target = distill_mod._archive(path)
+    assert not path.exists()
+    assert target.read_text() == "newest"
+    assert (archive / "p__1.md").read_text() == "oldest"
+    assert (archive / "p__1__161952.md").read_text() == "older"
+
+
+def test_distiller_agent_archives_without_overwriting():
+    """The agent moves files by hand when the tool leaves them; a plain mv
+    replaced an archived copy of the same name and lost its entries."""
+    from pathlib import Path
+    text = (Path(__file__).parent.parent / "agents" / "distiller.md").read_text()
+    assert "mv -n" in text
+    assert "memory_distill` returns an error" in text
