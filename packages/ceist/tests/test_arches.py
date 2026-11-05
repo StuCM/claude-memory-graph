@@ -69,6 +69,35 @@ def test_backwards_link_is_refused_by_name(vocab):
         to_query(m.plan, vocab)
 
 
+def _classed(root, site_class="E53_Place"):
+    """The fixture with CIDOC-CRM classes, and an architect link that names no target model."""
+    fx.write(root)
+    crm = "http://www.cidoc-crm.org/cidoc-crm/"
+    roots = {fx.SITE: site_class, fx.PERSON: "E21_Person", fx.BUILDING: "E22_Human-Made_Object"}
+    for gid, cls in roots.items():
+        p = root / "graphs" / f"{gid}.json"
+        doc = json.loads(p.read_text())
+        for n in doc["graph"][0]["nodes"]:
+            if n["istopnode"] and cls:
+                n["ontologyclass"] = crm + cls
+            if n["alias"] == "architect":
+                n["config"], n["ontologyclass"] = {"graphs": []}, crm + "E39_Actor"
+        p.write_text(json.dumps(doc))
+    return ArchesVocabulary.from_data_dir(root)
+
+
+def test_a_link_naming_no_model_fits_by_its_cidoc_crm_class(tmp_path):
+    vocab = _classed(tmp_path / "classed")
+    m = interpret(vocab, "which buildings have the architect Leeds Dock?")
+    assert m.plan is None and "'architect' (architect) can't join Building and Site" in m.refused
+    m = interpret(vocab, "which buildings have the architect Ada Lovelace?")
+    assert narrate(m.plan) == "Find Buildings whose architect is Person 'Ada Lovelace'."
+    # a model with no class fits as before
+    unclassed = _classed(tmp_path / "unclassed", site_class=None)
+    m = interpret(unclassed, "which buildings have the architect Leeds Dock?")
+    assert narrate(m.plan) == "Find Buildings whose architect is Site 'Leeds Dock'."
+
+
 def test_narration(vocab):
     m = interpret(vocab, "which protected buildings are on site Leeds Dock?")
     assert narrate(m.plan) == ("Find Buildings whose site is Site 'Leeds Dock' "

@@ -42,6 +42,7 @@ from pathlib import Path
 
 import alizarin
 
+from . import crm
 from .index import NameIndex
 from .text import plurals
 from .vocabulary import DateField, Entity, Group, Relation, Value
@@ -161,6 +162,8 @@ class ArchesVocabulary:
             m = _model(g, language)
             self.models[m.name] = m
         self.by_graph = {m.graph_id: m for m in self.models.values()}
+        self._crm = {m.name: (crm.root_class(m.doc), crm.link_ranges(m.doc))
+                     for m in self.models.values()}
         self.rdm = rdm_cache
         self.extra_type_words = dict(extra_type_words or {})
         # extra phrasings per node alias: {"architect": ["designed by"]}
@@ -291,7 +294,7 @@ class ArchesVocabulary:
                 r = by_alias.setdefault(n["alias"], {"forms": set(), "domain": set(), "range": set(),
                                                     "ends": set()})
                 r["forms"] |= forms
-                r["ends"].add((m.name, targets))
+                r["ends"].add((m.name, targets or self._crm_targets(m.name, n["alias"])))
                 r["domain"].add(m.name)
                 r["range"] |= targets
         out = [Relation(alias, tuple(sorted(f for f in r["forms"] if f)), frozenset(r["domain"]),
@@ -343,7 +346,9 @@ class ArchesVocabulary:
                     self._qualified.append(Relation(
                         f"{anchor}#{label}", tuple(sorted({p.lower() for p in phrases})),
                         frozenset({model}), self._targets(n), style="field", path=anchor,
-                        qualifier=(a, found[0].value, label), group=self.group_of(model, anchor)))
+                        qualifier=(a, found[0].value, label), group=self.group_of(model, anchor),
+                        ends=frozenset({(model, self._targets(n)
+                                         or self._crm_targets(model, anchor))})))
                     continue
                 if n is not None and n.get("datatype") in DATE_TYPES:
                     date_nodes.add(anchor)
@@ -364,6 +369,15 @@ class ArchesVocabulary:
         return frozenset(self.by_graph[g["graphid"]].name
                          for g in (link.get("config") or {}).get("graphs") or []
                          if g.get("graphid") in self.by_graph)
+
+    def _crm_targets(self, model: str, alias: str) -> frozenset[str]:
+        """For a link that names no target models: the models whose root's CIDOC-CRM
+        class doesn't clash with the class it points at; empty (any) when that is unknown."""
+        cls = self._crm[model][1].get(alias)
+        if not cls:
+            return frozenset()
+        return frozenset(name for name, (root, _) in self._crm.items()
+                         if not crm.clash(cls, root))
 
     def values(self) -> list[Value]:
         """Every item of every controlled list (and legacy concept collection)

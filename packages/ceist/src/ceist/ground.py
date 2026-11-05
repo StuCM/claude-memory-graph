@@ -692,12 +692,15 @@ def _scope_negations(g: Grounding, negs: list[tuple[int, str]], contains_pos) ->
 
 def _fit_relations(g: Grounding, relations: dict[str, Relation],
                    sharing: dict[str, list[str]]) -> None:
-    """A shared phrase ("in": a tale's parent story, a monument's named
-    location) binds only a relation that can join two of the things named;
-    when none can it is set aside, so the anchor is linked loosely as if no
-    phrase were there. The word stays consumed: it was understood, as "at"
-    is. A phrase naming one relation is specific ("architect"): it keeps it,
-    and a type it implies but nobody named refuses later, in plan.py."""
+    """A phrase binds only a relation that can join two of the things named. A
+    shared phrase ("in": a tale's parent story, a monument's named location)
+    takes the one of its relations that can; when none can, or a bare
+    function word ("at") names one that can't, it is set aside, so the anchor
+    is linked loosely as if no phrase were there. The word stays consumed: it
+    was understood, as "at" is. A phrase with a content word naming one
+    relation is specific ("architect"): it keeps it when it can join two
+    things named (a type it implies but nobody named refuses later, in
+    plan.py), and refuses when it can't."""
     if len(g.nodes) < 2:
         return
     used = {e.relation for e in g.edges}
@@ -706,11 +709,14 @@ def _fit_relations(g: Grounding, relations: dict[str, Relation],
         return any(r.joins(a.type, b.type) for a in g.nodes for b in g.nodes if a is not b)
 
     for edge in list(g.edges):
-        if len(sharing.get(edge.form, [])) < 2 or fits(relations[edge.relation]):
+        if fits(relations[edge.relation]):
             continue
+        types = " and ".join(sorted({n.type for n in g.nodes}))
+        if len(sharing.get(edge.form, [])) < 2 and terms_pos(edge.form):
+            g.refuse = f"'{edge.form}' ({edge.relation}) can't join {types}"
+            return
         pick = next((r for r in sharing.get(edge.form, [])
                      if r not in used and fits(relations[r])), None)
-        types = " and ".join(sorted({n.type for n in g.nodes}))
         if pick is None:
             g.edges.remove(edge)
             g.notes.append(f"'{edge.form}' set aside: no relation it names joins {types}")
