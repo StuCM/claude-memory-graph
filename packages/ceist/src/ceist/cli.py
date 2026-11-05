@@ -8,6 +8,9 @@
     ceist vocab check <bundle.json> <graphs dir> [--vocab <vocab dir> --descriptions <dir>]
     ceist vocab slice <bundle.json | vocab dir> --data <business_data dir> --graphs <graphs dir> -o <out>
                       [--reference <reference_data dir>]   # only what the data uses; read locally
+    ceist vocab pipeline <graphs dir> -o <out dir> [--reference <dir>] [--questions real.txt]
+                         [--llm-cmd CMD] [--model M] [--models A,B] [--config ceist.toml]
+                         [--min-right N] [--max-dangerous N] [--jobs N]   # LLM build → gate
     ceist vocab try <data dir> <questions.txt> --bundle <bundle.json> [--log learn.jsonl]   # how each reads
     ceist vocab learn <learn.jsonl> --bundle <bundle.json> -o proposals.json [--exclude cases.json]
     ceist vocab assign <proposals.json> <reply.json>    # the LLM's reply to `learn` → "assign" fields
@@ -119,6 +122,13 @@ def _slice(a):
         print("values not checked: no --reference")
     print(f"{_size(src) // 1024} KB → {_size(out) // 1024} KB ({out})")
     return 0
+
+
+def _pipeline(a):
+    from .pipeline import run
+    return run(a.graphs, a.out, a.reference, a.questions, a.llm_cmd, a.model,
+               a.models.split(",") if a.models else None, a.config, a.min_right, a.max_dangerous,
+               a.jobs)
 
 
 def _eval(a):
@@ -301,6 +311,21 @@ def main(argv=None):
     p.add_argument("--reference", help="reference_data: to keep only the values the data holds")
     p.add_argument("-o", "--out", required=True)
     p.set_defaults(fn=_slice)
+
+    p = vocab.add_parser("pipeline", help="an LLM writes the vocabulary per nodegroup; then the gate")
+    p.add_argument("graphs", help="graphs/resource_models")
+    p.add_argument("-o", "--out", required=True)
+    p.add_argument("--reference", help="reference_data: value labels for the descriptions")
+    p.add_argument("--questions", help="real questions, one per line: masked, then added to the cases")
+    p.add_argument("--llm-cmd", help="a command that reads a prompt on stdin and prints the reply "
+                                     "(default: claude -p, no tools, over your subscription)")
+    p.add_argument("--model", help="passed to claude -p")
+    p.add_argument("--models", help="only these models, comma-separated")
+    p.add_argument("--config", help="the matching config the gate scores with")
+    p.add_argument("--min-right", type=int)
+    p.add_argument("--max-dangerous", type=int)
+    p.add_argument("--jobs", type=int, default=1, help="LLM calls at once")
+    p.set_defaults(fn=_pipeline)
 
     p = vocab.add_parser("try", help="real questions: how each reads; log what wasn't placed")
     p.add_argument("data_dir", help="graphs/ (and resources/, vocabularies/) as Alizarin reads them")
