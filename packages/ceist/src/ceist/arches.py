@@ -101,6 +101,15 @@ def load_reference_data(paths, language: str = "en"):
     return rdm, alts
 
 
+def read_resources(business_data_dir: str | Path) -> list[dict]:
+    """Every resource in an Arches business data export (business_data.resources)."""
+    out = []
+    for p in sorted(Path(business_data_dir).rglob("*.json")):
+        doc = json.loads(p.read_text())
+        out += (doc.get("business_data") or {}).get("resources", [])
+    return out
+
+
 @dataclass
 class Model:
     graph_id: str
@@ -197,10 +206,7 @@ class ArchesVocabulary:
     def from_data_dir(cls, data_dir: str | Path, language: str = "en", **kw) -> "ArchesVocabulary":
         root = Path(data_dir)
         graphs = [_graph_doc(p) for p in sorted((root / "graphs").glob("*.json"))]
-        resources = []
-        for p in sorted((root / "resources").rglob("*.json")):
-            doc = json.loads(p.read_text())
-            resources += (doc.get("business_data") or {}).get("resources", [])
+        resources = read_resources(root / "resources")
         vocab_dir = root / "vocabularies"
         files = (sorted(vocab_dir.glob("*.xml")) + sorted(vocab_dir.glob("*.json"))
                  if vocab_dir.is_dir() else [])
