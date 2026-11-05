@@ -209,15 +209,19 @@ A phrase picked as two different nodes is flagged as a conflict and waits for a 
 
 **What an LLM sees.** The build and learn prompts carry everything inline: the model descriptions (the schema: node names, datatypes, small value lists), or the proposals to assign. No paths, so an agent is never pointed into the project folder where the records live, and the reply comes back as JSON for `save` / `assign` to validate. The learning log is masked when it is written (`learn.mask`): the records a question named become `<Type>`, quoted text `<text>`, other capitalised words `<Name>`, numbers other than years `<number>`; a phrase that is itself a name isn't logged.
 
-### Qualified links: a link and a value on the same entry
+### Qualified links and `OnTile`: conditions on the same entry
 
-Arches often records *who did what* as one entry (a tile) holding a generic actor link and a role. So "designed by Ada" means **one entry** whose actor is Ada **and** whose role is Architect. Ada as builder on one entry plus somebody else's architect entry on the same record doesn't count. A bundle entry with a `qualifier` becomes a qualified link in the plan, read back as "whose actor is Person 'Ada Lovelace' (actor role: Architect)":
+Arches often records *who did what* as one entry (a tile) holding a generic actor link and a role. So "designed by Ada" means **one entry** whose actor is Ada **and** whose role is Architect. Ada as builder on one entry plus somebody else's architect entry on the same record doesn't count. A bundle entry with a `qualifier` becomes `OnTile(group, [link, value])` in the plan, read back as "with one associated actor entry (whose actor is Person 'Ada Lovelace' and whose actor role is Architect)".
+
+`OnTile` means one tile of the group, **read with its ancestor tiles**: a value on a parent tile counts, one on a sibling or child tile doesn't.
 
 | output | compiles to |
 | --- | --- |
-| Alizarin (in-process) | checks the link and the value within each tile |
-| Rós Madair | `{"on_tile": [<the link>, {"concept": …}]}`, its native same-tile predicate, so no workaround is needed |
-| Arches Search | a `TILE`-scoped group: the whole search when it's the only condition, otherwise a nested `TILE` group beside the other conditions. Reading the plugin's code suggests a nested `TILE` group may be evaluated per resource when the search has no relationship; that's written up to raise in [ARCHES-SEARCH.md](ARCHES-SEARCH.md). |
+| Alizarin (in-process) | evaluates the conditions on each tile of the group, with its ancestors' values |
+| Rós Madair | `{"on_tile": [<each condition>]}`, its native same-tile predicate. It reads one tile, so a condition on a parent tile is refused ([ROS-MADAIR.md](ROS-MADAIR.md) #7) |
+| Arches Search | a `TILE`-scoped group: the whole search when it's the only condition, otherwise a nested `TILE` group beside the other conditions. It reads one tile row and positive literal clauses only; anything else is refused ([ARCHES-SEARCH.md](ARCHES-SEARCH.md) #1, #2) |
+
+A qualified link walked backwards ("people who designed …") stays a `LinkTo` with `qualifier`, since its tile is on the other record; only Alizarin answers it.
 
 A qualifier value that isn't in its node's collection is counted in `skipped_qualified`, never guessed.
 
