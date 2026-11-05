@@ -187,7 +187,7 @@ def interpret(vocab: Vocabulary, text: str, today=None, matcher=None) -> Interpr
                           else Contains(g.contains))
     out.plan = plan
 
-    if loose_anchor:
+    if loose_anchor and getattr(vocab, "free_text", False):
         mention = _replace(plan, lambda c: Mention(g.anchor.match_terms)
                            if isinstance(c, LinkTo) and c.relation is None else c)
         out.relaxations.append(Relaxation(

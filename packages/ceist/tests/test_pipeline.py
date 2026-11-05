@@ -175,10 +175,9 @@ def test_pipeline_builds_per_nodegroup_resolves_collisions_and_gates(tmp_path, c
     assert ("Warning: one-word group phrases (each takes its word anywhere outside a record's "
             "name): Building construction_date: construction") in report
     assert "| 3/3 | 0 | **0** | 0 | 1/1 |" in report                     # phrase level
-    # planner level: the real question names a person with no record (missed), and the
-    # planner reads "painted in 1900" as a construction date plus a text mention
-    assert "| 2 | 0 | **1** | 1 | 0 |" in report
-    assert "- which buildings were painted in 1900? → Find Buildings whose construction date" in report
+    # planner level: the real question names a person with no record (missed), and
+    # "painted in 1900" is refused: no text mention stands in for "painted"
+    assert "| 2 | 0 | **0** | 1 | 1 |" in report
     assert "| Building | 6 | 4 | 2 | 0 | 0 | 7 | 2 | 0 |" in report
     assert "| Person | 1 | 0 | 1 | 0 | 0 | 1 | 1 | 0 |" in report
 

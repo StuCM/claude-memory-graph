@@ -94,8 +94,32 @@ def test_unplaced_words_refuse_instead_of_widening_the_answer():
     assert "couldn't place" in m.refused and "'damaged'" in m.refused and "'fire'" in m.refused
 
 
-def test_leftover_word_gets_a_relaxation_without_it():
+class FreeText(Toy):
+    free_text = True
+
+    def relations(self):
+        return super().relations() + [Relation("part_of", ("part of",), frozenset({"Building"}),
+                                               frozenset({"Building"}))]
+
+
+def test_an_unplaced_word_refuses_unless_the_vocabulary_has_free_text():
     m = interpret(Toy(), "which buildings on site Leeds Dock are wonky?")
+    assert m.plan is None and m.relaxations == []
+    assert "couldn't place 'wonky'" in m.refused
+    # a relation with nowhere to go: listing every Building instead widens it just the same
+    loose = interpret(FreeText(), "which buildings are part of?")
+    assert narrate(loose.plan) == "Find Buildings." and loose.grounding.loose == "'part of'"
+    strict = FreeText()
+    strict.free_text = False
+    m = interpret(strict, "which buildings are part of?")
+    assert m.plan is None and "cannot resolve both ends of relation part_of" in m.refused
+    # the end it couldn't find may be a word nothing placed ("in Down"): that is named
+    m = interpret(strict, "which buildings are part of wonkyville?")
+    assert m.plan is None and "couldn't place 'wonkyville'" in m.refused
+
+
+def test_leftover_word_gets_a_relaxation_without_it():
+    m = interpret(FreeText(), "which buildings on site Leeds Dock are wonky?")
     assert any(isinstance(c, Contains) and c.term == "wonky" for c in m.plan.where)
     relaxed = m.relaxations[-1]
     assert relaxed.drops == "wonky"
@@ -257,8 +281,7 @@ def chain():
 def test_leftover_relation_by_meaning():
     q = "which buildings were drawn by Ada Lovelace?"
     without = interpret(Toy(), q)
-    assert not any(isinstance(c, LinkTo) and c.relation == "architect"
-                   for c in without.plan.where)                  # a loose link, before
+    assert without.plan is None and "couldn't place 'drawn'" in without.refused
     m = interpret(Toy(), q, matcher=chain())
     (c,) = m.plan.where
     assert c.relation == "architect" and c.target.entity.id == "p-1"
@@ -441,4 +464,5 @@ def test_find_leading_a_question_is_the_command_not_a_value():
     m = interpret(Fleet(), "Find people with the surname Brunel")
     assert [v.phrase for v in m.grounding.values] == []
     assert "evidence_type" not in m.refused
-    assert m.direct is not None and m.direct.id == "p-brunel"
+    # "surname" is no field it knows: Brunel alone could be the wrong Brunel
+    assert m.direct is None and "couldn't place 'surname'" in m.refused

@@ -110,7 +110,10 @@ class Vocabulary(Protocol):
         """Records ranked by how well their names/text match `terms`, best
         first. Only candidates with a score above zero.
         A record binds only when the question holds its whole name or an
-        alias; a vocabulary with `partial_names = True` lets any name word bind."""
+        alias; a vocabulary with `partial_names = True` lets any name word bind.
+        One with `free_text = True` lets a word nothing places become a text
+        filter, and a relation it can't wire be dropped to list the type;
+        without it, both refuse."""
 
     def implied_types(self) -> dict[str, str]:
         """Question words that imply a type ("who" → "Person"). May be empty."""
