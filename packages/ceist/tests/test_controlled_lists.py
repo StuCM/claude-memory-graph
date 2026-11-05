@@ -14,7 +14,7 @@ import alizarin
 import pytest
 from arches_fixture import _id, _node
 
-from ceist import HasValue, LinkTo, Plan, interpret, narrate
+from ceist import HasValue, LinkTo, OnTile, Plan, interpret, narrate
 from ceist.alizarin import Tiles, ask, evaluate
 from ceist.arches import ArchesVocabulary
 from ceist.arches_search import compile_checked, to_payload
@@ -293,3 +293,69 @@ def test_a_controlled_lists_skos_altlabels_are_values(data, tmp_path):
         "Find Monuments whose heritage status is Listed."
     m = interpret(v, "what's the monument's status, protected?")
     assert [x.phrase for x in m.grounding.values] == ["protected"]
+
+
+# ── one entry, and the tiles above and below it ─────────────────────────────
+# OnTile means one tile of the group, read with its ancestor tiles. Here the
+# actor sits on a phase_actor tile, a child of the phase tile with the type.
+
+def _phase(vocab, ids, P, group):
+    ada = vocab.entity(ids["ada"])
+    return Plan("Monument", [OnTile(group, [
+        LinkTo("actor", EntityRef(ada), style="field"),
+        HasValue("phase_type", P["Destruction"][0], "Destruction")])])
+
+
+def test_an_entry_reads_its_parent_tile_not_a_sibling_or_child(vocab, data):
+    _, ids, _, P = data
+    assert vocab.tile_line("Monument", "actor") == ["phase_actor", "phases"]
+    tiles = Tiles(vocab)
+    # the actor's tile, with the phase above it: Old Mill (Ada destroyed it);
+    # not the Barn, whose Destruction phase and Ada's tile are siblings' children
+    assert evaluate(_phase(vocab, ids, P, "phase_actor"), tiles) == {ids["old"]}
+    # the phase tile alone doesn't hold the actor: that is on a tile below it
+    assert evaluate(_phase(vocab, ids, P, "phases"), tiles) == set()
+
+
+def test_one_tile_backends_refuse_a_condition_on_another_tile(vocab, data):
+    """Rós Madair's on_tile and Arches Search's TILE scope read one tile row:
+    a value on the parent tile is out of their reach, so they say so."""
+    from ceist.rosmadair import Unsupported
+    _, ids, _, P = data
+    plan = _phase(vocab, ids, P, "phase_actor")
+    with pytest.raises(Unsupported, match="'phase_type' is on a phases tile"):
+        to_query(plan, vocab)
+    with pytest.raises(Unsupported, match="'phase_type' is on a phases tile"):
+        to_payload(plan, vocab)
+
+
+@pytest.fixture(scope="module")
+def snapshot(data, tmp_path_factory):
+    import os
+    import subprocess
+    emit = os.environ.get("ROS_MADAIR_EMIT")
+    if not emit:
+        pytest.skip("needs ros-madair-emit (ROS_MADAIR_EMIT)")
+    out = tmp_path_factory.mktemp("cl-snapshot")
+    subprocess.run([emit, str(data[0]), str(out)], check=True, capture_output=True)
+    return out
+
+
+def test_ros_madair_on_tile_is_one_nodegroup(vocab, data, snapshot):
+    """Pins Rós Madair's own rule on a real snapshot: on_tile children must
+    share one nodegroup, so a parent tile's value can't join its child's."""
+    import ros_madair
+    _, ids, _, P = data
+    graph = ros_madair.Graph(json.dumps(vocab.model("Monument").doc))
+    reader = ros_madair.Reader(str(snapshot))
+
+    def resolve(where):
+        return set(reader.resolve(json.dumps({"model": MONUMENT, "measures": ["select_ids"],
+                                              "where": where}), graph))
+
+    actor = {"has_link": {"path": "actor", "target": ids["ada"]}}
+    destruction = {"concept": {"path": "phase_type", "op": "descendant_or_self_of",
+                               "value": P["Destruction"][0]}}
+    assert resolve({"on_tile": [actor]}) == {ids["old"], ids["new"], ids["barn"]}
+    with pytest.raises(Exception, match="share one nodegroup"):
+        resolve({"on_tile": [actor, destruction]})

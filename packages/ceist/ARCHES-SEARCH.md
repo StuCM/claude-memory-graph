@@ -22,7 +22,18 @@ The payload validator accepts this, and the UI can build it (`setScope` per grou
 - When the qualified link is the search's only condition, the whole group is `TILE`, which is the unambiguous path.
 - ceist's read-back already treats a nested group that has lost its tile scope as a *different* question.
 
-## 2. No search facets for the `concept` datatype
+## 2. A TILE group reads one tile row, and only its literal clauses
+
+**What the code appears to do** (`tile_scope_evaluator.py`, `compose_group_predicate`):
+- Each clause is matched on `tileid = OuterRef("tileid")`: the same tile row, with no parent or child tiles.
+- A clause with quantifier `NONE` becomes a resource-level predicate ("no tile anywhere has it"), not "this tile doesn't have it".
+- Child groups and non-literal clauses are skipped.
+
+**What ceist does:** an `OnTile` compiles to a TILE group only when every condition is on the group's own tile and is a positive literal clause (a link to a named record, a value, a date). A condition on a parent tile, a negated condition, or a link to a set of records inside the entry is refused by name. Read-back treats child groups under a TILE group as a different question.
+
+**Suggested fix:** let a TILE group optionally include the tile's ancestors, and apply `NONE` per tile inside a TILE group.
+
+## 3. No search facets for the `concept` datatype
 
 **Seen:** concept nodes are indexed (concept and value ids in `UUIDSearch`), but the migrations seed no `AdvancedSearchFacet` rows for `concept` / `concept-list`. Only `reference` (controlled lists) has `REFERENCES_ANY` / `DESCENDANT_OF` and the like.
 

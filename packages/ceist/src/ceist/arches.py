@@ -306,13 +306,18 @@ class ArchesVocabulary:
             if cid is None:
                 self.skipped.append(f"{said}: '{q['value']}' isn't a value of {q['node']}")
                 continue
+            if self.group_of(model, q["node"]) not in self.tile_line(model, e["node"]):
+                self.skipped.append(f"{said}: {q['node']} isn't on the link's tile or "
+                                    "a tile above it")
+                continue
             targets = frozenset(self.by_graph[g["graphid"]].name
                                 for g in (n.get("config") or {}).get("graphs") or []
                                 if g.get("graphid") in self.by_graph)
             self._qualified.append(Relation(
                 f"{e['node']}#{q['value']}", tuple(sorted({p.lower() for p in e["phrases"]})),
                 frozenset({model}), targets, style="field", path=e["node"],
-                qualifier=(q["node"], cid, q["value"])))
+                qualifier=(q["node"], cid, q["value"]),
+                group=self.group_of(model, e["node"])))
         return self._qualified
 
     def values(self) -> list[Value]:
@@ -441,6 +446,21 @@ class ArchesVocabulary:
                 continue
             out.append({"uri": it["uri"], "list_id": it["collection"],
                         "labels": [dict(lab, list_item_id=i) for lab in it["labels"]]})
+        return out
+
+    def group_of(self, type_name: str, alias: str) -> str:
+        """The alias of the nodegroup holding a node: what its tile is a tile of."""
+        line = self.tile_line(type_name, alias)
+        return line[0] if line else ""
+
+    def tile_line(self, type_name: str, alias: str) -> list[str]:
+        """The nodegroup holding a node, then each nodegroup above it (as aliases)."""
+        m = self.model(type_name)
+        groups = {n["nodeid"]: n["alias"] for n in m.nodes if n.get("nodeid")}
+        out, ng = [], (self.node(type_name, alias) or {}).get("nodegroup_id")
+        while ng:
+            out.append(groups.get(ng, ng))
+            ng = (m.nodegroups.get(ng) or {}).get("parent")
         return out
 
     def is_reference(self, type_name: str, alias: str) -> bool:

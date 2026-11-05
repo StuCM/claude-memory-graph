@@ -43,6 +43,29 @@ Run against the test fixture (`tests/arches_fixture.py`), current `main`:
    to `organization_name_use_type` as a plain property, which constrains
    nothing.
 
+## Findings: what "same tile" means for nested nodegroups (checked 2026-11-05)
+
+| Backend | Parent tile | Sibling tile | Child tile | Pinned by |
+|---|---|---|---|---|
+| Alizarin (`Tiles._walk`) | counts: each entry carries its ancestors' values | doesn't | doesn't, when the entry is scoped to its group | `test_an_entry_reads_its_parent_tile_not_a_sibling_or_child` |
+| Rós Madair `on_tile` (0.1.0a30) | `CompileError`: children must share one nodegroup | doesn't | `CompileError` | `test_ros_madair_on_tile_is_one_nodegroup` (real snapshot) |
+| Arches Search `scope: "TILE"` | doesn't: each clause is matched on `tileid = OuterRef("tileid")` | doesn't | doesn't; child groups under a TILE group aren't read | code reading only (`tile_scope_evaluator.py`); no running instance |
+
+Also in Arches Search, a `NONE` clause inside a TILE group becomes "no tile anywhere has it",
+not "this tile doesn't".
+
+**The plan's meaning:** `OnTile(group, conditions)` holds when one tile of `group`, read
+together with its ancestor tiles, meets every condition. Alizarin honours this. Rós Madair and
+Arches Search honour it when every condition is on the group's own nodegroup. Otherwise they
+raise `Unsupported` and name the condition (`rosmadair.one_tile`). Arches Search also refuses a negated
+condition, or a link to a set of records, inside the entry. A bundle qualifier whose node isn't
+on the link's tile or a tile above it is skipped at load. In the HER 2.0 and 1.1 models every
+qualified entry has its link and its value in one nodegroup (137 of 137).
+
+`LinkTo(…, qualifier)` now plans as `OnTile(<the link's nodegroup>, [link, value])`. The
+exception is a link walked backwards: its tile is on the other record, so it keeps the
+`qualifier` shim, and only Alizarin answers it.
+
 ## Design
 
 ### 0. Never drop a constraining phrase without saying so (do first, ships alone)
@@ -66,10 +89,8 @@ class OnTile:
   a `scope: "TILE"` group (`arches_search.py:126`). alizarin → per-entry
   evaluation (generalise `_entry_holds`).
 - **Nested nodegroups:** HER groups have child groups (a phase with child
-  actor or cause tiles). "Same tile" must mean the tile plus its
-  ancestor/descendant tiles. Check what `on_tile` and the TILE scope do with
-  parent/child tiles **before** relying on either. alizarin's `Tiles` must
-  record `parenttile_id`.
+  actor or cause tiles). "Same tile" means the tile plus its ancestor tiles
+  (see Findings above).
 - Readback (`read_back`) and `narrate` learn `OnTile` ("whose construction phase
   is Destruction, caused by Fire, after 1950").
 

@@ -9,7 +9,8 @@ from datetime import date
 import arches_fixture as fx
 import pytest
 
-from ceist import DateRange, HasValue, LinkTo, Not, interpret, narrate
+from ceist import DateRange, HasValue, LinkTo, Not, OnTile, Plan, interpret, narrate
+from ceist.plan import EntityRef
 from ceist.arches import ArchesVocabulary
 from ceist.arches_search import compile_checked, read_back as as_read_back, to_payload  # noqa: E501
 from ceist.readback import check
@@ -347,10 +348,13 @@ def roles(data):
 def test_qualified_link_is_planned(roles, data):
     m = interpret(roles, "which buildings were designed by Ada Lovelace?")
     (c,) = m.plan.where
-    assert c.relation == "actor" and c.target.entity.id == data[1]["ids"]["ada"]
-    assert c.qualifier == HasValue("actor_role", data[1]["concepts"]["Architect"], "Architect")
-    assert narrate(m.plan) == ("Find Buildings whose actor is Person 'Ada Lovelace' "
-                               "(actor role: Architect).")
+    assert c.group == "associated_actor"
+    link, role = c.conditions
+    assert link.relation == "actor" and link.target.entity.id == data[1]["ids"]["ada"]
+    assert link.qualifier is None
+    assert role == HasValue("actor_role", data[1]["concepts"]["Architect"], "Architect")
+    assert narrate(m.plan) == ("Find Buildings with one associated actor entry (whose actor "
+                               "is Person 'Ada Lovelace' and whose actor role is Architect).")
 
 
 @pytest.mark.parametrize("question, expect, absent", [
@@ -406,3 +410,101 @@ def test_qualified_link_to_arches_search_tile_scope(roles, data):
     tile["scope"] = "RESOURCE"
     from ceist.arches_search import read_back as as_rb
     assert not check(both.plan, as_rb(payload, roles, "REFERENCES_ANY")).ok
+
+
+# ── OnTile: conditions that hold on one tile ─────────────────────────────
+
+def _entry(vocab, data, who, role):
+    person = vocab.entity(data[1]["ids"][who])
+    return OnTile("associated_actor", [LinkTo("actor", EntityRef(person), style="field"),
+                                       HasValue("actor_role", data[1]["concepts"][role], role)])
+
+
+def _resolve(snapshot, vocab, query, type_name="Building"):
+    """The records of the type a query selects (a vacuous filter selects every record)."""
+    import ros_madair
+    graph = ros_madair.Graph(json.dumps(vocab.model(type_name).doc))
+    ids = ros_madair.Reader(str(snapshot)).resolve(json.dumps(query), graph)
+    return set(ids) & vocab.ids_of(type_name)
+
+
+def test_on_tile_compiles_on_every_backend_and_reads_back(roles, data):
+    from ceist.alizarin import Tiles, evaluate
+    ids = data[1]["ids"]
+    plan = Plan("Building", [_entry(roles, data, "ada", "Builder")])
+    assert evaluate(plan, Tiles(roles)) == {ids["warehouse"]}
+    compiled = compile_plan(plan, roles)
+    assert compiled.query["where"] == {"on_tile": [
+        {"has_link": {"path": "actor", "target": ids["ada"]}},
+        {"concept": {"path": "actor_role", "op": "descendant_or_self_of",
+                     "value": data[1]["concepts"]["Builder"]}}]}
+    assert read_back(compiled, roles) == plan
+    assert check(plan, read_back(compiled, roles)).ok
+    payload, verdict = compile_checked(plan, roles, concept_operator="REFERENCES_ANY")
+    assert verdict.ok and payload["scope"] == "TILE"
+    assert as_read_back(payload, roles, "REFERENCES_ANY") == plan
+    # a different value on the entry reads back as a different question
+    other = Plan("Building", [_entry(roles, data, "ada", "Architect")])
+    assert not check(other, read_back(compiled, roles)).ok
+
+
+def test_values_on_different_tiles_do_not_match(roles, data, snapshot):
+    """The Grain Warehouse has Ada (Builder) on one tile and an Architect on
+    another: one entry with both is not there."""
+    from ceist.alizarin import Tiles, evaluate
+    ids = data[1]["ids"]
+    plan = Plan("Building", [_entry(roles, data, "ada", "Architect")])
+    assert evaluate(plan, Tiles(roles)) == {ids["tower"]}
+    assert _resolve(snapshot, roles, to_query(plan, roles)) == {ids["tower"]}
+    # the same two conditions anywhere on the record match the warehouse too
+    loose = Plan("Building", plan.where[0].conditions)
+    assert evaluate(loose, Tiles(roles)) == {ids["tower"], ids["warehouse"]}
+    assert _resolve(snapshot, roles, to_query(loose, roles)) == {ids["tower"], ids["warehouse"]}
+
+
+@pytest.mark.parametrize("question", [
+    "which buildings were designed by Ada Lovelace?",
+    "which buildings were built by Ada Lovelace?",
+    "which buildings were designed by Isambard Brunel?",
+    "which listed buildings were designed by Ada Lovelace?",
+    "which buildings were not designed by Ada Lovelace?",
+    "which sites have buildings designed by Ada Lovelace?",
+])
+def test_qualified_links_answer_the_same_through_on_tile(roles, data, snapshot, question):
+    """The compatibility form (LinkTo.qualifier) and the OnTile the planner
+    now emits select the same records, on Alizarin and on a snapshot."""
+    from dataclasses import replace
+
+    from ceist.alizarin import Tiles, evaluate
+
+    def shim(plan):
+        where = []
+        for c in plan.where:
+            negated = isinstance(c, Not)
+            inner = c.condition if negated else c
+            if isinstance(inner, OnTile):
+                link, qual = inner.conditions
+                inner = replace(link, qualifier=qual)
+            elif isinstance(inner, LinkTo) and isinstance(inner.target, Plan):
+                inner = replace(inner, target=shim(inner.target))
+            where.append(Not(inner) if negated else inner)
+        return replace(plan, where=where)
+
+    plan = interpret(roles, question).plan
+    old = shim(plan)
+    assert old != plan
+    tiles = Tiles(roles)
+    assert evaluate(old, tiles) == evaluate(plan, tiles) != set()
+
+    def run(p):
+        compiled = compile_plan(p, roles)
+        ids = _resolve(snapshot, roles, compiled.query, p.type)
+        for m in compiled.minus:
+            ids -= _resolve(snapshot, roles, m, p.type)
+        return ids
+
+    if plan.type == "Site":          # walks "site" backwards: not for Rós Madair
+        with pytest.raises(Unsupported, match="backwards"):
+            run(plan)
+        return
+    assert run(old) == run(plan) == evaluate(plan, tiles)

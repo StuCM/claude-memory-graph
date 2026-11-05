@@ -33,6 +33,7 @@ class Relation:
     qualifier: tuple[str, str, str] | None = None   # (field, value, label) that must hold
                                                 # on the same record entry (tile) as the link:
                                                 # designed by → actor with role Architect
+    group: str = ""                             # the nodegroup that tile belongs to
     ends: frozenset[tuple[str, frozenset[str]]] = frozenset()   # (a type holding the link, the
                                                 # types it may target; empty = any), when
                                                 # domain × range is coarser than the truth

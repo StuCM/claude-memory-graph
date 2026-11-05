@@ -549,12 +549,16 @@ def write_cases(run: Runner, descriptions: dict, roles: dict, real: list[str]) -
 
 def _fields(plan) -> set[tuple[str, str | None]]:
     """(alias, value label) for each condition on the plan's own type."""
-    from .plan import DateRange, HasValue, LinkTo, Not
+    from .plan import DateRange, HasValue, LinkTo, Not, OnTile
     out = set()
-    for c in plan.where:
+    todo = list(plan.where)
+    while todo:
+        c = todo.pop()
         while isinstance(c, Not):
             c = c.condition
-        if isinstance(c, LinkTo) and c.relation:
+        if isinstance(c, OnTile):
+            todo += c.conditions
+        elif isinstance(c, LinkTo) and c.relation:
             out.add((c.relation.split("#")[0], None))
             if c.qualifier is not None:
                 out.add((c.qualifier.field, c.qualifier.label))

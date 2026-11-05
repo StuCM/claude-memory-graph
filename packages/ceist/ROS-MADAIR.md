@@ -65,6 +65,16 @@ For a loose link to one named record ("which site is Navan Fort at?"), `linked_f
 
 **To drop it:** have the emitter write the graphs into the snapshot, or have `Reader` load them.
 
+## 7. `on_tile` reads one tile, not the tiles above it (limitation)
+
+**Seen** (`ros-madair-compile`, `Expr::OnTile`): every child must resolve to one nodegroup, and the SQL reads one row of `tiles`. A child in a parent or child nodegroup is a `CompileError` ("on_tile children must share one nodegroup"). Pinned on a real snapshot in `tests/test_controlled_lists.py`.
+
+**Why it matters:** in Arches a child tile's meaning includes its parent's. HER phases carry child tiles, so "destroyed by Ada" is a Destruction type on the phase tile and Ada on a child tile of it.
+
+**What ceist does:** `OnTile` means one tile of the group read with its ancestor tiles. When a condition is on an ancestor tile, ceist refuses by name (`Unsupported`) before sending anything. Alizarin answers it.
+
+**Suggested fix:** let `on_tile` correlate a tile with its ancestors (join on `parenttile_id`), so a child's conditions can include its parent's values.
+
 ## Not workarounds: things ceist refuses because the substrate doesn't index them
 
 - Free-text conditions (the substrate indexes concepts, ranges, geometry and links, not text).
