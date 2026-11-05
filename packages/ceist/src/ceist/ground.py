@@ -5,7 +5,8 @@ Pipeline: shape → relations (longest phrase first, on the raw text, so
 nodegroup) → controlled values ("listed", "active") →
 dates ("before 1900", with the word that picks the field: "built") → type
 nouns, modifiers, negators and hints → implied types (who → Person) → up to
-two named anchors (only a whole name or alias may bind; never a guess) → each
+two named anchors (only a whole name or alias may bind; never a guess, and a
+shorter relation, group or value phrase inside one gives way to it) → each
 group phrase takes the values and date of its clause → one leftover word as a
 text filter → coverage → wire the relations to their ends → scope each
 negator ("not", "without", "non-") to the next thing named.
@@ -163,10 +164,14 @@ def is_question(text: str) -> bool:
                 or (words and (words[0] in WH or words[0] in AUX or words[0] in IMPERATIVE)))
 
 
-def _phrase_spans(raw: str, phrases: list[tuple[str, object]], taken: list[tuple[int, int]]):
-    """Longest phrase first; each match must not overlap an earlier one."""
+def _phrase_spans(raw: str, phrases: list[tuple[str, object]], taken: list[tuple[int, int]],
+                  names: list[tuple[int, int]] = ()):
+    """Longest phrase first; each match must not overlap an earlier one, nor
+    sit inside a longer record name (`names`)."""
     for phrase, payload in sorted(phrases, key=lambda x: -len(x[0])):
-        m = re.search(rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])", raw)
+        m = next((m for m in re.finditer(rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])", raw)
+                  if not any(s <= m.start() and m.end() <= e and m.end() - m.start() < e - s
+                             for s, e in names)), None)
         if not m or any(m.start() < e and m.end() > s for s, e in taken):
             continue
         taken.append((m.start(), m.end()))
@@ -175,6 +180,31 @@ def _phrase_spans(raw: str, phrases: list[tuple[str, object]], taken: list[tuple
 
 PREPS = {"by", "on", "in", "at", "to", "from", "with", "for", "of", "into", "under", "up",
          "down", "out", "off", "over", "about"}
+
+
+def _record_spans(vocab: Vocabulary, words, terms: set[str], parts_of) -> list[tuple[int, int]]:
+    """Where the question names a record in full ("County Down"): the character
+    span of each run of words that holds a whole name or alias."""
+    spans = set()
+    for _score, e in vocab.rank_entities(terms):
+        for name in (e.name_terms, *e.aliases):
+            if not name or not name <= terms:
+                continue
+            start, got = None, set()
+            for _i, s, end, w in words:
+                part = parts_of(w)
+                if not part:
+                    continue
+                if not part <= name:
+                    start = None
+                    continue
+                if start is None:
+                    start, got = s, set()
+                got |= part
+                if got == name:
+                    spans.add((start, end))
+                    start = None
+    return sorted(spans)
 
 
 def _leftover_runs(words, consumed, parts_of):
@@ -223,6 +253,8 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
                 first = i if first is None else first
         return float(first if first is not None else 0)
 
+    names = _record_spans(vocab, words, terms, parts_of)
+
     if words and (words[0][3] in WH or words[0][3] in AUX or words[0][3] in IMPERATIVE):
         if words[0][3] in WH:
             g.wh = words[0][3]
@@ -263,7 +295,7 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
              if re.search(rf"(?<![a-z0-9]){re.escape(w)}(?![a-z0-9])", raw)}
     forms = sorted(((f, r.name) for r in relations.values() for f in r.forms),
                    key=lambda x: not (relations[x[1]].domain | relations[x[1]].range) & named)
-    for form, rel, m in ([] if g.about else _phrase_spans(raw, forms, taken)):
+    for form, rel, m in ([] if g.about else _phrase_spans(raw, forms, taken, names)):
         if just_a_type(form) and (form.split()[0] in _LEAD_WORDS
                                   or _SUBJECT_LEAD.search(raw[:m.start()])):
             taken.remove((m.start(), m.end()))
@@ -284,7 +316,7 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
         for phrase, preset in grp.forms:
             if terms_pos(phrase):
                 by_form.setdefault(phrase, []).append((grp, preset))
-    for phrase, cands, m in _phrase_spans(raw, list(by_form.items()), taken):
+    for phrase, cands, m in _phrase_spans(raw, list(by_form.items()), taken, names):
         at = [i for i, s, e, _w in words if s >= m.start() and e <= m.end()]
         if consumed & set(at):                        # "how many": the question's shape
             taken.remove((m.start(), m.end()))
@@ -298,7 +330,7 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
         # a function word in every question
         if terms_pos(v.phrase):
             by_phrase.setdefault(v.phrase, []).append(v)
-    for phrase, cands, m in _phrase_spans(raw, list(by_phrase.items()), taken):
+    for phrase, cands, m in _phrase_spans(raw, list(by_phrase.items()), taken, names):
         g.values.append(ValueMatch(phrase, consume_span(m.start(), m.end()), cands))
         g.notes.append(f"'{phrase}' → value of "
                        + " / ".join(sorted({c.field for c in cands})))

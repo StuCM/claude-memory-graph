@@ -172,6 +172,8 @@ def test_pipeline_builds_per_nodegroup_resolves_collisions_and_gates(tmp_path, c
     assert cases[-1]["q"] == "which buildings did Ada Lovelace see constructed in 1872?"
     report = (out / "report.md").read_text()
     assert "**passed**" in report
+    assert ("Warning: one-word group phrases (each takes its word anywhere outside a record's "
+            "name): Building construction_date: construction") in report
     assert "| 3/3 | 0 | **0** | 0 | 1/1 |" in report                     # phrase level
     # planner level: the real question names a person with no record (missed), and the
     # planner reads "painted in 1900" as a construction date plus a text mention

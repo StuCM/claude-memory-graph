@@ -1,13 +1,16 @@
 ---
 id: 009
 slug: anchor-beats-short-phrase
-status: approved
+status: done
 branch: crew/009-anchor-beats-short-phrase
 model: opus
 env: laptop
-rounds: 0
+rounds: 1
 files:
   - packages/ceist/
+gate: pass
+gateSha: a120ac3b8f55d0ec085f10eb4413801dcade5114
+gateAt: 2026-11-05T14:41:33.095Z
 ---
 
 # A record name beats a shorter phrase inside it
@@ -33,4 +36,20 @@ Stu, 2026-11-05: "yep sounds good", to the recommendation of fixing this in grou
 
 ## Worker notes
 
+- `ground.py`: `_record_spans` finds each run of words holding a whole record name or alias (via `rank_entities`, `named_by` rule) before any phrase pass. `_phrase_spans` takes those spans for relations, group phrases and values, and skips an occurrence that sits inside a longer record name, trying the next occurrence. Equal length (a one-word record vs a one-word phrase) keeps today's order. Words in front of the name ("in", "on site") are outside the span and still ground.
+- `pipeline.py`: `one_word_group_phrases(bundle)`, reported as one `Warning:` line (each group's own phrases only; combo phrases such as "damaged" are deliberate and set values, so not listed).
+- Tests: `test_ceist.py` parametrised over group/value/relation "county" inside 'County Down' with "on site" in front (fails on the base code, 3/3), plus "county" outside the name still grounding as a value. `test_pipeline.py` asserts the warning.
+- **demo_compare, first live run bundle** (`/home/stuart/.cache/tmp-004/demo-run/bundle.json`): generated answered **14/26 before, 21/26 after** (21/26 the same as hand-tuned). The seven gained: County Down (×2: "in", "located in"), Antrim, Armagh, Tyrone, Fermanagh, Londonderry — each now `Site 'County …'`.
+- **Demo hand-tuned answers: none change.** All 26 README questions diffed base vs this branch: identical. (One base run showed "County Nowhere" without its did-you-mean and a rerun of the base with it; that is nondeterminism in the base, not this change.)
+- **HER plans** (`bench/her_plans.py`, local clones at the CI-pinned refs: 2.0 `9f6a113`, 1.1 `0a21a46`): 125/125 and 125/125 as reviewed. No re-pin needed.
+- **Memory graph**: `tests/test_planner.py` 33 passed. `memory_ask` changes only when a question holds a memory's whole multi-word name and a relation verb form or status word sits inside it; then the memory anchors instead of the shorter phrase.
+- Gate: root 520 passed, Ceist 201 passed.
+- Related, not fixed (different mechanisms): "what is related to Navan Fort?" grounds 'related to' as the `actor` relation in the generated bundle, then Rós Madair refuses walking it backwards; "How many stories have a translation?" grounds 'translation' as a relation with no second end, which falls back to listing the type ("could not place 'translation'; listing the type instead"), so it silently widens. That second one looks like a never-guess bug in the loose-listing fallback in `ground()` and worth its own task.
+
+## Graph writes proposed
+
+- Pattern (Ceist grounding): record names are found first and guard their words; a relation/group/value phrase strictly inside a longer whole record name gives way to it. Equal lengths keep the phrase. Applied in `_phrase_spans`, so hand-written and generated vocabularies behave the same.
+
 ## Review rounds
+
+- Round 1 (a120ac3): **PASS**. Minor, not blocking: a repeated name word ("county county down") widens the protected span, which can only over-protect and refuse; one extra `rank_entities` call per question.

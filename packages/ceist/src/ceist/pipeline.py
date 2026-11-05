@@ -938,6 +938,17 @@ def coverage(descriptions: dict, vocab_dir: Path, status: dict) -> dict:
     return out
 
 
+def one_word_group_phrases(b: dict) -> list[str]:
+    """Each group whose own phrases include a single word ("county"), as "Model group: words"."""
+    out = []
+    for model, d in sorted(b["models"].items()):
+        for name, grp in sorted((d.get("groups") or {}).items()):
+            words = [p for p in grp.get("phrases") or [] if len(p.split()) == 1]
+            if words:
+                out.append(f"{model} {name}: {', '.join(words)}")
+    return out
+
+
 def report(cov: dict, phrase, planner: tuple, gate: list[str], run: Runner,
            warnings: list[str] = (), types: dict | None = None, doubts: list = ()) -> str:
     from .evaluate import report as eval_report
@@ -1063,6 +1074,10 @@ def run(graphs: str | Path, out: str | Path, reference=None, questions=None, llm
         for level, n in (("phrase", phrase.counts["dangerous"]), ("planner", planner[0]["dangerous"])):
             if n > max_dangerous:
                 gate.append(f"{level} dangerous {n} > {max_dangerous}")
+    short = one_word_group_phrases(b)
+    if short:
+        warnings.append("one-word group phrases (each takes its word anywhere outside a "
+                        "record's name): " + "; ".join(short))
     text = report(coverage(descriptions, vocab_dir, status), phrase, planner, gate, llm, warnings,
                   types, doubts)
     (out / "report.md").write_text(text)
