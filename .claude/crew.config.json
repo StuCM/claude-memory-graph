@@ -1,0 +1,63 @@
+{
+  "$schema": "https://raw.githubusercontent.com/StuCM/pit-crew/main/schema/crew.config.schema.json",
+  "project": "claude-memory-graph",
+  "graphProject": "claude-memory-graph",
+  "baseBranch": "ceist-foundation",
+  "verify": "uv run pytest -q -p no:cacheprovider --deselect tests/test_search.py::test_search_finds_a_paraphrase_by_meaning && ROS_MADAIR_EMIT=/home/stuart/.cache/tmp-ask/ros-madair/target/release/ros-madair-emit .venv-ceist/bin/python -m pytest -q -p no:cacheprovider packages/ceist/tests",
+  "quickVerify": "ROS_MADAIR_EMIT=/home/stuart/.cache/tmp-ask/ros-madair/target/release/ros-madair-emit .venv-ceist/bin/python -m pytest -q -p no:cacheprovider packages/ceist/tests",
+  "prepare": [
+    "uv sync --locked -q",
+    "[ -x .venv-ceist/bin/python ] || (uv venv -q .venv-ceist && uv pip install -q -p .venv-ceist -e './packages/ceist[vectors,onnx,roots]' 'ros-madair==0.1.0a30' pytest)"
+  ],
+  "scopes": {
+    "fromDir": [
+      "packages",
+      "claude_memory_graph"
+    ],
+    "extra": [
+      "docs",
+      "ci",
+      "deps",
+      "crew"
+    ]
+  },
+  "commit": {
+    "types": [
+      "feat",
+      "fix",
+      "docs",
+      "refactor",
+      "perf",
+      "test",
+      "build",
+      "chore",
+      "revert",
+      "ceist",
+      "bench",
+      "gate",
+      "crew"
+    ],
+    "subjectMax": 72,
+    "bodyMaxLines": 4,
+    "requireScope": false,
+    "banned": [
+      "Co-Authored-By:",
+      "Generated with [Claude Code]",
+      "Claude-Session:"
+    ]
+  },
+  "comments": {
+    "warnAddedRatio": 0.25
+  },
+  "preCommit": [],
+  "environments": {
+    "laptop": {
+      "proves": [
+        "everything the test suites cover, incl. R\u00f3s Madair end-to-end on a local snapshot"
+      ],
+      "command": "uv run pytest -q -p no:cacheprovider --deselect tests/test_search.py::test_search_finds_a_paraphrase_by_meaning && ROS_MADAIR_EMIT=/home/stuart/.cache/tmp-ask/ros-madair/target/release/ros-madair-emit .venv-ceist/bin/python -m pytest -q -p no:cacheprovider packages/ceist/tests"
+    }
+  },
+  "deploy": null,
+  "plansDir": ".claude/plans"
+}

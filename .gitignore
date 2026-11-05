@@ -3,3 +3,4 @@ target/
 .claude/context/
 __pycache__/
 dist/
+.venv-ceist/
