@@ -6,7 +6,7 @@ import pytest
 
 from ceist import bundle, config
 from ceist.cli import main
-from ceist.evaluate import evaluate, items_for
+from ceist.evaluate import evaluate, items_for, judge
 from fakes import FakeEncoder
 
 DESC = {"name": "Building", "graphid": "g-b", "nodes": [
@@ -160,6 +160,18 @@ def test_assemble_and_stale(tmp_path):
                                                      ("gone_start", None, None)]
     assert [i.label for i in items_for(m, "link:Person")] == ["Actor (Architect)"]
     assert items_for(m, "link:Site") == []
+
+
+def test_a_value_the_case_sets_on_its_own_node_is_scored_as_its_qualifier():
+    # "scheduled": a combo setting designation type = Scheduled, the case saying so as a condition
+    scheduled = {"node": "designation_type",
+                 "conditions": [{"node": "designation_type", "value": "Scheduled"}]}
+    assert judge(scheduled, ("designation_type", "Scheduled", None)) == "right"
+    assert judge(scheduled, ("designation_type", "Listed", None)) == "dangerous"
+    assert judge(scheduled, ("designation_type", None, None)) == "partial"
+    assert judge(scheduled, ("protection_grade", "Scheduled", None)) == "dangerous"
+    assert judge({"node": "designation_type", "conditions": []},
+                 ("designation_type", "Scheduled", None)) == "dangerous"
 
 
 @pytest.mark.skipif(not FakeEncoder.ready(), reason="needs numpy")
