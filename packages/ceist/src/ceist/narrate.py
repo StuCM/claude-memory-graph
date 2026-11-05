@@ -2,7 +2,8 @@
 understood before trusting the answer. Every output shares it."""
 
 from .dates import label as date_label
-from .plan import Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, Not, Plan
+from .plan import (Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, Not, OnTile,
+                   Plan)
 
 
 def _plural(t: str) -> str:
@@ -72,6 +73,12 @@ def _condition(c, forms: bool, canonical: bool) -> str:
         return f"that {'do not ' if negated else ''}mention {' '.join(inner.terms)}"
     if isinstance(inner, Contains):
         return f"{neg}mentioning '{inner.term}'"
+    if isinstance(inner, OnTile):
+        parts = [_condition(x, forms, canonical) for x in inner.conditions]
+        if canonical:
+            parts.sort()
+        return (f"with {'no' if negated else 'one'} {_field(inner.group)} entry "
+                f"({' and '.join(parts)})")
     return f"{neg}({inner})"
 
 

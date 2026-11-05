@@ -4,8 +4,11 @@
     conditions:
       LinkTo(relation, EntityRef | Plan, direction)   linked to a record, or to
                                                       records matching a sub-plan —
-                                                      optionally with a qualifier that holds
-                                                      on the same entry (role Architect)
+                                                      (`qualifier`: a shim for OnTile,
+                                                      kept for a link walked backwards)
+      OnTile(group, [conditions])                     all hold on one tile of that nodegroup,
+                                                      read with its ancestor tiles: actor
+                                                      Ada with role Architect
       HasValue(field, value)                          a controlled value
       DateRange(field, lo, hi)                        a date in an inclusive range
       Mention(terms)                                  its text mentions these words
@@ -77,7 +80,18 @@ class Not:
     condition: "Condition"
 
 
-Condition = LinkTo | HasValue | DateRange | Mention | Contains | Not
+@dataclass
+class OnTile:
+    group: str                         # the nodegroup alias: one tile of it, with its ancestors
+    conditions: list["Condition"]
+
+
+Condition = LinkTo | HasValue | DateRange | Mention | Contains | Not | OnTile
+
+
+def as_tile(link: LinkTo, group: str) -> OnTile:
+    """A qualified link (the compatibility form) as the tile condition it means."""
+    return OnTile(group, [replace(link, qualifier=None), link.qualifier])
 
 
 @dataclass
@@ -225,15 +239,22 @@ def _build(g: Grounding, node: Node, via: Edge | None, path: tuple = ()) -> Plan
                 if edge.qualifier else None)
         link = LinkTo(edge.path or edge.relation, target, direction, form=edge.form,
                       style=edge.style, qualifier=qual)
+        if qual is not None and direction == "out":
+            # a link walked backwards keeps the shim: its tile is on the other record
+            link = as_tile(link, edge.group)
         plan.where.append(Not(link) if edge.negated else link)
     return plan
 
 
 def _plans(plan: Plan):
     yield plan
-    for c in plan.where:
+    todo = list(plan.where)
+    while todo:
+        c = todo.pop(0)
         c = c.condition if isinstance(c, Not) else c
-        if isinstance(c, LinkTo) and isinstance(c.target, Plan):
+        if isinstance(c, OnTile):
+            todo[:0] = c.conditions
+        elif isinstance(c, LinkTo) and isinstance(c.target, Plan):
             yield from _plans(c.target)
 
 
@@ -296,15 +317,21 @@ def _attach_dates(g: Grounding, plan: Plan) -> str:
 def _replace(plan: Plan, fn) -> Plan:
     where = []
     for c in plan.where:
-        if isinstance(c, LinkTo) and isinstance(c.target, Plan):
-            c = replace(c, target=_replace(c.target, fn))
-        elif (isinstance(c, Not) and isinstance(c.condition, LinkTo)
-              and isinstance(c.condition.target, Plan)):
-            c = Not(replace(c.condition, target=_replace(c.condition.target, fn)))
-        new = fn(c)
+        new = fn(_within(c, fn))
         if new is not None:
             where.append(new)
     return Plan(plan.type, where, plan.count, plan.recent, plan.wh)
+
+
+def _within(c, fn):
+    """`c`, with `fn` applied in each sub-plan it links to."""
+    if isinstance(c, Not):
+        return Not(_within(c.condition, fn))
+    if isinstance(c, OnTile):
+        return OnTile(c.group, [_within(x, fn) for x in c.conditions])
+    if isinstance(c, LinkTo) and isinstance(c.target, Plan):
+        return replace(c, target=_replace(c.target, fn))
+    return c
 
 
 def describe(value: Value) -> str:

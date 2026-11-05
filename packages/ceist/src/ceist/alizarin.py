@@ -19,13 +19,14 @@ Rós Madair (`ceist.rosmadair`) instead.
 
 import json
 from collections import defaultdict
+from dataclasses import replace
 
 import alizarin
 
 from . import dates
 from .narrate import narrate
-from .plan import (Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, Not, Plan,
-                   interpret)
+from .plan import (Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, Not, OnTile, Plan,
+                   as_tile, interpret)
 
 __all__ = ["Tiles", "ask", "evaluate"]
 
@@ -68,10 +69,10 @@ class Tiles:
         self.texts: dict[str, list[str]] = {}               # resource → text values
         self.out: dict[str, dict[str, set]] = {}            # resource → alias → linked ids
         self.into: dict[str, dict[str, set]] = defaultdict(lambda: defaultdict(set))
-        # resource → one entry per tile: its alias → values, with its ancestor
-        # tiles' values too (a condition split between a tile and its parent
-        # holds; one split across sibling tiles doesn't)
-        self.entries: dict[str, list[dict[str, list]]] = {}
+        # resource → one entry per tile: (its nodegroup id, its alias → values,
+        # with its ancestor tiles' values too: a condition split between a
+        # tile and its parent holds; one split across sibling tiles doesn't)
+        self.entries: dict[str, list[tuple[str, dict[str, list]]]] = {}
         for r in vocab.resources:
             ri = r.get("resourceinstance") or {}
             rid = ri.get("resourceinstanceid")
@@ -134,9 +135,10 @@ class Tiles:
         for a, vs in own.items():
             here[a] = here.get(a, []) + vs
         if group is not None:
-            entries.append(here)
+            entries.append((group, here))
         for alias, atoms in leaf_tiles:
-            entries.append(dict(here, **{alias: here.get(alias, []) + atoms}))
+            entries.append(((info.get(alias) or {}).get("nodegroup_id"),
+                            dict(here, **{alias: here.get(alias, []) + atoms})))
         for inst, sch, ng in subtiles:
             self._walk(inst, sch, info, ng, here, vals, entries)
 
@@ -159,15 +161,18 @@ def _date_keys(raw) -> list[int]:
     return out
 
 
-def _filter(c, hits: set[str], tiles: Tiles) -> set[str]:
+def _filter(c, hits: set[str], tiles: Tiles, type_name: str) -> set[str]:
     vocab = tiles.vocab
     if isinstance(c, Not):
-        return hits - _filter(c.condition, hits, tiles)
+        return hits - _filter(c.condition, hits, tiles, type_name)
     if isinstance(c, LinkTo) and c.qualifier is not None:
-        return _qualified_link(c, hits, tiles)
+        if c.direction == "in":
+            return _qualified_link(c, hits, tiles)
+        c = as_tile(c, vocab.group_of(type_name, c.relation))
+    if isinstance(c, OnTile):
+        return _on_tile(c, hits, tiles, type_name)
     if isinstance(c, LinkTo):
-        targets = ({c.target.entity.id} if isinstance(c.target, EntityRef)
-                   else evaluate(c.target, tiles))
+        targets = _targets(c, tiles)
         if c.relation is None:
             return {r for r in hits
                     if any(targets & ids for ids in tiles.out.get(r, {}).values())
@@ -175,20 +180,9 @@ def _filter(c, hits: set[str], tiles: Tiles) -> set[str]:
         side = tiles.into if c.direction == "in" else tiles.out
         return {r for r in hits if targets & side.get(r, {}).get(c.relation, set())}
     if isinstance(c, HasValue):
-        if c.kind == "concept":
-            wanted = {c.value, *vocab.descendants(c.value)}
-            return {r for r in hits
-                    if any(vocab.concept_of(v) in wanted
-                           for v in _atoms(tiles.values.get(r, {}).get(c.field, [])))}
-        return {r for r in hits
-                if c.value.lower() in " ".join(
-                    _strings(tiles.values.get(r, {}).get(c.field, []))).lower()}
+        return {r for r in hits if _value_holds(c, tiles.values.get(r, {}), vocab)}
     if isinstance(c, DateRange):
-        lo = dates.days(c.lo) if c.lo else -dates.OPEN
-        hi = dates.days(c.hi) if c.hi else dates.OPEN
-        return {r for r in hits
-                if any(lo <= k <= hi for raw in tiles.values.get(r, {}).get(c.field, [])
-                       for k in _date_keys(raw))}
+        return {r for r in hits if _date_holds(c, tiles.values.get(r, {}))}
     if isinstance(c, Mention):
         return {r for r in hits if all(t in tiles.text(r) for t in c.terms)}
     if isinstance(c, Contains):
@@ -196,36 +190,78 @@ def _filter(c, hits: set[str], tiles: Tiles) -> set[str]:
     return hits
 
 
-def _entry_holds(entry: dict, c: LinkTo, targets: set[str], vocab) -> bool:
-    """One tile carries both the link and the qualifier value."""
-    linked = {x for raw in entry.get(c.relation, []) for x in _links(raw)}
-    if not linked & targets:
-        return False
-    q = c.qualifier
-    wanted = {q.value, *vocab.descendants(q.value)}
-    return any(vocab.concept_of(v) in wanted for v in _atoms(entry.get(q.field, [])))
+def _targets(c: LinkTo, tiles: Tiles) -> set[str]:
+    return ({c.target.entity.id} if isinstance(c.target, EntityRef)
+            else evaluate(c.target, tiles))
+
+
+def _value_holds(c: HasValue, values: dict, vocab) -> bool:
+    if c.kind == "concept":
+        wanted = {c.value, *vocab.descendants(c.value)}
+        return any(vocab.concept_of(v) in wanted for v in _atoms(values.get(c.field, [])))
+    return c.value.lower() in " ".join(_strings(values.get(c.field, []))).lower()
+
+
+def _date_holds(c: DateRange, values: dict) -> bool:
+    lo = dates.days(c.lo) if c.lo else -dates.OPEN
+    hi = dates.days(c.hi) if c.hi else dates.OPEN
+    return any(lo <= k <= hi for raw in values.get(c.field, []) for k in _date_keys(raw))
+
+
+def _entry_holds(entry: dict, conditions: list, targets: dict, vocab) -> bool:
+    """Every condition holds on one entry; `targets` has each link's target ids."""
+    for c in conditions:
+        negated = isinstance(c, Not)
+        inner = c.condition if negated else c
+        if isinstance(inner, LinkTo):
+            linked = {x for raw in entry.get(inner.relation, []) for x in _links(raw)}
+            held = bool(linked & targets[id(inner)])
+        elif isinstance(inner, HasValue):
+            held = _value_holds(inner, entry, vocab)
+        elif isinstance(inner, DateRange):
+            held = _date_holds(inner, entry)
+        else:
+            raise TypeError(f"{inner!r} can't be evaluated on one entry")
+        if held == negated:
+            return False
+    return True
+
+
+def _on_tile(c: OnTile, hits: set[str], tiles: Tiles, type_name: str) -> set[str]:
+    """Records with one tile of the group whose values (with its ancestor
+    tiles') meet every condition: "designed by Ada" is a tile whose actor is
+    Ada and whose role is Architect — not Ada somewhere and an architect
+    somewhere else on the record."""
+    targets = {}
+    for x in c.conditions:
+        x = x.condition if isinstance(x, Not) else x
+        if isinstance(x, LinkTo):
+            if x.relation is None or x.direction != "out":
+                raise TypeError(f"{x!r} isn't a link one entry holds")
+            targets[id(x)] = _targets(x, tiles)
+    group = (tiles.vocab.node(type_name, c.group) or {}).get("nodegroup_id")
+    return {r for r in hits
+            if any(g == group and _entry_holds(e, c.conditions, targets, tiles.vocab)
+                   for g, e in tiles.entries.get(r, []))}
 
 
 def _qualified_link(c: LinkTo, hits: set[str], tiles: Tiles) -> set[str]:
-    """Linked AND qualified in the SAME entry: "designed by Ada" is a tile
-    whose actor is Ada and whose role is Architect — not Ada somewhere and an
-    architect somewhere else on the record."""
-    vocab = tiles.vocab
-    targets = ({c.target.entity.id} if isinstance(c.target, EntityRef)
-               else evaluate(c.target, tiles))
-    if c.direction == "in":                  # the entry lives on the other record
-        return {r for r in hits
-                if any(_entry_holds(e, c, {r}, vocab)
-                       for s in targets for e in tiles.entries.get(s, []))}
-    return {r for r in hits if any(_entry_holds(e, c, targets, vocab)
-                                   for e in tiles.entries.get(r, []))}
+    """A qualified link walked backwards: the entry is on the record at the
+    other end, and links to this one."""
+    link = replace(c, qualifier=None, direction="out")
+    found = set()
+    for s in _targets(c, tiles):
+        for _, e in tiles.entries.get(s, []):
+            found |= {r for r in hits - found
+                      if _entry_holds(e, [link, c.qualifier], {id(link): {r}}, tiles.vocab)}
+    return found
 
 
 def evaluate(plan: Plan, tiles: Tiles) -> set[str]:
     """The ids of the records a plan selects."""
     hits = tiles.of_type(plan.type)
     for c in plan.where:
-        hits = _filter(c, hits, tiles)
+        hits = _filter(c, hits, tiles, plan.type)
     return hits
 
 

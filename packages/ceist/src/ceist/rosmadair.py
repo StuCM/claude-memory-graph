@@ -13,8 +13,11 @@ Mapping (ros-madair-query's serde form; Rós Madair itself is unchanged):
     LinkTo(None, EntityRef, any)     {"backlink": {"target"}}   (linked to it, any field), and
                                      when it is the only condition, the record's own links
                                      read from its tiles (linked_from)
-    LinkTo(…, qualifier=HasValue)    {"on_tile": [<the link>, {"concept": …}]}   (one tile holds both:
-                                     "designed by Ada" = actor Ada with role Architect)
+    OnTile(group, [conditions])      {"on_tile": [<each condition>]}   (one tile holds them all:
+                                     "designed by Ada" = actor Ada with role Architect).
+                                     It reads one tile row, so a condition on a tile above
+                                     the group's is refused; so is a link by any field
+    LinkTo(…, qualifier=HasValue)    as the OnTile it means
     HasValue(concept)                {"concept": {"path", "op": "descendant_or_self_of", "value"}}
     DateRange(path, lo, hi)          {"range": {"path", "lo", "hi"}}   days since 1970, as
                                      Alizarin's quantize_date (the emitter's own encoding)
@@ -45,8 +48,8 @@ from dataclasses import dataclass, field
 
 from . import dates
 from .narrate import narrate
-from .plan import (Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, Not, Plan,
-                   interpret)
+from .plan import (Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, Not, OnTile,
+                   Plan, as_tile, interpret)
 from .readback import check
 
 DEFAULT_LIMIT = 1000
@@ -68,57 +71,83 @@ class Compiled:
 
 
 def _expr(plan: Plan, vocab) -> dict | None:
-    parts = []
-    for c in plan.where:
-        if isinstance(c, Not):
-            if isinstance(c.condition, LinkTo):
-                raise Unsupported(f"a negated link ('{c.condition.relation}') inside a hop: "
-                                  "Rós Madair can't negate a link, and only the top level "
-                                  "can be subtracted")
-            parts.append({"not": _expr(Plan(plan.type, [c.condition]), vocab)})
-        elif isinstance(c, LinkTo):
-            if c.relation is None:
-                if not isinstance(c.target, EntityRef):
-                    raise Unsupported("a loose link to a set of records")
-                parts.append({"backlink": {"target": c.target.entity.id}})
-            elif c.direction != "out":
-                raise Unsupported(
-                    f"walking '{c.relation}' backwards ({plan.type} records that another "
-                    f"record's {c.relation} points at): Rós Madair walks links forward; "
-                    f"ask from the other side")
-            else:
-                if isinstance(c.target, EntityRef):
-                    link = {"has_link": {"path": c.relation, "target": c.target.entity.id}}
-                else:
-                    inner = _expr(c.target, vocab) or {"all": []}
-                    link = {"on_link": {"path": c.relation,
-                                        "model": vocab.model(c.target.type).graph_id,
-                                        "where": inner}}
-                if c.qualifier is not None:
-                    # the same tile carries the link and the qualifier value
-                    q = c.qualifier
-                    link = {"on_tile": [link, {"concept": {
-                        "path": q.field, "op": "descendant_or_self_of", "value": q.value}}]}
-                parts.append(link)
-        elif isinstance(c, HasValue):
-            if c.kind != "concept":
-                raise Unsupported(f"the literal value {c.label}")
-            # controlled lists and legacy concepts alike: Rós Madair interns
-            # both through Alizarin's RDM cache (item ids). Not yet run against
-            # a snapshot with reference nodes — see ROS-MADAIR.md
-            parts.append({"concept": {"path": c.field, "op": "descendant_or_self_of",
-                                      "value": c.value}})
-        elif isinstance(c, DateRange):
-            parts.append({"range": {"path": c.field,
-                                    "lo": dates.days(c.lo) if c.lo else -dates.OPEN,
-                                    "hi": dates.days(c.hi) if c.hi else dates.OPEN}})
-        elif isinstance(c, (Mention, Contains)):
-            term = c.term if isinstance(c, Contains) else " ".join(c.terms)
-            raise Unsupported(f"a free-text condition ('{term}'): the substrate indexes "
-                              "concepts, ranges, geometry and links, not text")
+    parts = [_cond(c, plan.type, vocab) for c in plan.where]
     if not parts:
         return None
     return parts[0] if len(parts) == 1 else {"all": parts}
+
+
+def _cond(c, type_name: str, vocab, in_tile: bool = False) -> dict:
+    if isinstance(c, Not):
+        if isinstance(c.condition, (LinkTo, OnTile)) and not in_tile:
+            named = c.condition.group if isinstance(c.condition, OnTile) else c.condition.relation
+            raise Unsupported(f"a negated link ('{named}') inside a hop: "
+                              "Rós Madair can't negate a link, and only the top level "
+                              "can be subtracted")
+        return {"not": _cond(c.condition, type_name, vocab, in_tile)}
+    if isinstance(c, OnTile):
+        if in_tile:
+            raise Unsupported(f"a {c.group} entry inside another entry")
+        one_tile(c, type_name, vocab, "Rós Madair's on_tile")
+        return {"on_tile": [_cond(x, type_name, vocab, in_tile=True) for x in c.conditions]}
+    if isinstance(c, LinkTo):
+        if c.relation is None:
+            if not isinstance(c.target, EntityRef):
+                raise Unsupported("a loose link to a set of records")
+            if in_tile:
+                raise Unsupported("a link by any field, on one entry")
+            return {"backlink": {"target": c.target.entity.id}}
+        if c.direction != "out":
+            raise Unsupported(
+                f"walking '{c.relation}' backwards ({type_name} records that another "
+                f"record's {c.relation} points at): Rós Madair walks links forward; "
+                f"ask from the other side")
+        if c.qualifier is not None:
+            return _cond(as_tile(c, vocab.group_of(type_name, c.relation)), type_name, vocab,
+                         in_tile)
+        if isinstance(c.target, EntityRef):
+            return {"has_link": {"path": c.relation, "target": c.target.entity.id}}
+        inner = _expr(c.target, vocab) or {"all": []}
+        return {"on_link": {"path": c.relation, "model": vocab.model(c.target.type).graph_id,
+                            "where": inner}}
+    if isinstance(c, HasValue):
+        if c.kind != "concept":
+            raise Unsupported(f"the literal value {c.label}")
+        # controlled lists and legacy concepts alike: Rós Madair interns
+        # both through Alizarin's RDM cache (item ids). Not yet run against
+        # a snapshot with reference nodes — see ROS-MADAIR.md
+        return {"concept": {"path": c.field, "op": "descendant_or_self_of", "value": c.value}}
+    if isinstance(c, DateRange):
+        return {"range": {"path": c.field,
+                          "lo": dates.days(c.lo) if c.lo else -dates.OPEN,
+                          "hi": dates.days(c.hi) if c.hi else dates.OPEN}}
+    if isinstance(c, (Mention, Contains)):
+        term = c.term if isinstance(c, Contains) else " ".join(c.terms)
+        raise Unsupported(f"a free-text condition ('{term}'): the substrate indexes "
+                          "concepts, ranges, geometry and links, not text")
+    raise Unsupported(f"the condition {c!r}")
+
+
+def tile_fields(conditions) -> list[str]:
+    """The nodes an entry's conditions read."""
+    out = []
+    for c in conditions:
+        c = c.condition if isinstance(c, Not) else c
+        if isinstance(c, LinkTo) and c.relation:
+            out.append(c.relation)
+        elif isinstance(c, (HasValue, DateRange)):
+            out.append(c.field)
+    return out
+
+
+def one_tile(c: OnTile, type_name: str, vocab, reader: str) -> None:
+    """Raise Unsupported unless every condition is on the entry's own tile: a
+    backend that reads one tile row can't see the tiles above it."""
+    for f in tile_fields(c.conditions):
+        g = vocab.group_of(type_name, f)
+        if g != c.group:
+            raise Unsupported(f"'{f}' is on a {g} tile, not the {c.group} tile itself: "
+                              f"{reader} reads one tile, without the tiles above it")
 
 
 def _query(plan: Plan, vocab, measure: str, limit: int | None) -> dict:
@@ -135,7 +164,8 @@ def compile_plan(plan: Plan, vocab, limit: int | None = None) -> Compiled:
     """The query (and any queries to subtract) for a plan; raises Unsupported."""
     if plan.recent:
         raise Unsupported("'most recent': the substrate has no update-time column")
-    negated = [c for c in plan.where if isinstance(c, Not) and isinstance(c.condition, LinkTo)]
+    negated = [c for c in plan.where
+               if isinstance(c, Not) and isinstance(c.condition, (LinkTo, OnTile))]
     if not negated:
         return Compiled(_query(plan, vocab, "count_records" if plan.count else "select_ids",
                                None if plan.count else limit), count=plan.count)
@@ -181,12 +211,8 @@ def _conditions(expr: dict | None, type_name: str, vocab) -> list:
         return [LinkTo(None, EntityRef(e), "any")]
     if kind == "on_tile":
         parts = [c for e in body for c in _conditions(e, type_name, vocab)]
-        links = [c for c in parts if isinstance(c, LinkTo)]
-        quals = [c for c in parts if isinstance(c, HasValue)]
-        if len(links) == 1 and len(quals) == 1 and len(parts) == 2:
-            from dataclasses import replace
-            return [replace(links[0], qualifier=quals[0])]
-        return [f"on_tile {json.dumps(body)}"]       # read-back can't say it: a mismatch
+        first = next(iter(tile_fields(parts)), "")
+        return [OnTile(vocab.group_of(type_name, first) if first else "?", parts)]
     if kind == "concept":
         return [HasValue(body["path"], body["value"], vocab.concept_label(body["value"]))]
     if kind == "range":

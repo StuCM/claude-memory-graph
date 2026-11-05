@@ -274,3 +274,21 @@ def test_malformed_cases_are_rejected_not_cached_and_failed_calls_dont_stop_the_
                         min_right=0, log=lambda _: None) == 1
     assert "failed: no acceptance cases" in (out / "report.md").read_text()
     assert calls(tmp_path).count("questions:Building") == 4             # asked again, not cached
+
+
+def test_judge_plan_reads_inside_a_tile_condition():
+    from types import SimpleNamespace
+
+    from ceist.plan import EntityRef, HasValue, LinkTo, OnTile, Plan
+    from ceist.vocabulary import Entity
+    ada = Entity("Person", "ada", "Ada")
+    plan = Plan("Building", [OnTile("associated_actor", [
+        LinkTo("actor", EntityRef(ada), style="field"),
+        HasValue("actor_role", "c-architect", "Architect")])])
+    m = SimpleNamespace(plan=plan, refused="")
+    case = {"model": "Building", "expect": {"node": "actor",
+                                            "qualifier": {"node": "actor_role",
+                                                          "value": "Architect"}}}
+    assert pipeline.judge_plan(case, m, {}) == "right"
+    case["expect"]["qualifier"]["value"] = "Builder"
+    assert pipeline.judge_plan(case, m, {}) == "partial"

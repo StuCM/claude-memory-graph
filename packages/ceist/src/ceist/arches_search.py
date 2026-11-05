@@ -24,9 +24,12 @@ Mapping:
                                      LESS_THAN_OR_EQUALS [hi]   (ISO dates)
     Not(clause)                      the clause with quantifier NONE
     Not(link to a sub-plan)          the child group's traversal_quantifier NONE
-    LinkTo(…, qualifier)             a TILE-scoped group: the link clause and the value clause
-                                     must hold in one tile — the whole search when it's the
-                                     only condition, otherwise a nested group (ARCHES-SEARCH.md)
+    OnTile(group, [conditions])      a TILE-scoped group: its clauses must hold in one tile —
+                                     the whole search when it's the only condition, otherwise
+                                     a nested group (ARCHES-SEARCH.md). It reads one tile row:
+                                     a condition on a tile above the group's, a negated one,
+                                     or a link to a set of records inside it is refused
+    LinkTo(…, qualifier)             as the OnTile it means
 
 Arches Search walks relationships both ways, so — unlike Rós Madair — "sites
 that have buildings designed by Ada" compiles. What it can't say, the compiler
@@ -45,9 +48,10 @@ refuses by name (Unsupported):
 compiles and refuses if the payload reads back differently from the plan.
 """
 
-from .plan import Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, Not, Plan
+from .plan import (Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, Not, OnTile, Plan,
+                   as_tile)
 from .readback import Check, check
-from .rosmadair import Unsupported
+from .rosmadair import Unsupported, one_tile, tile_fields
 
 __all__ = ["Unsupported", "compile_checked", "read_back", "to_payload"]
 
@@ -75,7 +79,11 @@ def _group(plan: Plan, vocab, relationship: dict | None, concept_operator: str |
         negated = isinstance(c, Not)
         c = c.condition if negated else c
         if isinstance(c, LinkTo) and c.qualifier is not None:
-            tile = _tile_group(c, negated, vocab, slug, concept_operator)
+            if c.direction != "out":
+                raise Unsupported(f"'{c.relation}' with {c.qualifier.label}, walked backwards")
+            c = as_tile(c, vocab.group_of(plan.type, c.relation))
+        if isinstance(c, OnTile):
+            tile = _tile_group(c, negated, vocab, plan.type, slug, concept_operator)
             if len(plan.where) == 1 and relationship is None:
                 return tile              # the whole search is one entry: TILE at the top
             groups.append(tile)          # alongside other conditions: a nested TILE group
@@ -103,13 +111,7 @@ def _group(plan: Plan, vocab, relationship: dict | None, concept_operator: str |
         elif isinstance(c, HasValue):
             clauses.append(_value_clause(c, negated, vocab, plan.type, slug, concept_operator))
         elif isinstance(c, DateRange):
-            if c.lo and c.hi:
-                op, values = "BETWEEN", [c.lo, c.hi]
-            elif c.lo:
-                op, values = "GREATER_THAN_OR_EQUALS", [c.lo]
-            else:
-                op, values = "LESS_THAN_OR_EQUALS", [c.hi]
-            clauses.append(_clause(slug, c.field, op, values, negated))
+            clauses.append(_date_clause(slug, c, negated))
         elif isinstance(c, (Mention, Contains)):
             term = c.term if isinstance(c, Contains) else " ".join(c.terms)
             raise Unsupported(f"a free-text condition ('{term}'): use Arches Search's "
@@ -118,22 +120,42 @@ def _group(plan: Plan, vocab, relationship: dict | None, concept_operator: str |
             "groups": groups, "aggregations": [], "relationship": relationship}
 
 
-def _tile_group(c: LinkTo, negated: bool, vocab, slug: str, concept_operator) -> dict:
-    """A link with a qualifier ("actor Ada with role Architect") must hold in
-    one tile: a TILE-scoped group holding the link clause and the value clause.
-    On its own it is the whole search; alongside other conditions it nests
-    under the resource group (see ARCHES-SEARCH.md on how the plugin evaluates
-    a nested TILE group)."""
+def _tile_group(c: OnTile, negated: bool, vocab, type_name: str, slug: str,
+                concept_operator) -> dict:
+    """An entry ("actor Ada with role Architect"): a TILE-scoped group of
+    clauses that must hold in one tile. On its own it is the whole search;
+    alongside other conditions it nests under the resource group (see
+    ARCHES-SEARCH.md on how the plugin evaluates a nested TILE group)."""
     if negated:
-        raise Unsupported("a negated same-entry condition")
-    if not isinstance(c.target, EntityRef) or c.direction != "out":
-        raise Unsupported("a same-entry condition on a link to a set of records")
-    e, q = c.target.entity, c.qualifier
-    type_name = vocab.model_by_slug(slug).name
-    return {"graph_slug": slug, "scope": "TILE", "logic": "AND",
-            "clauses": [_clause(slug, c.relation, "REFERENCES_ANY", [[e.id]], False, e.name),
-                        _value_clause(q, False, vocab, type_name, slug, concept_operator)],
+        raise Unsupported(f"no {c.group} entry with these: Arches Search applies a "
+                          "negated clause to the whole record, not to one tile")
+    one_tile(c, type_name, vocab, "Arches Search's TILE scope")
+    clauses = []
+    for x in c.conditions:
+        if isinstance(x, LinkTo) and isinstance(x.target, EntityRef) and x.relation \
+                and x.direction == "out":
+            e = x.target.entity
+            clauses.append(_clause(slug, x.relation, "REFERENCES_ANY", [[e.id]], False, e.name))
+        elif isinstance(x, HasValue):
+            clauses.append(_value_clause(x, False, vocab, type_name, slug, concept_operator))
+        elif isinstance(x, DateRange):
+            clauses.append(_date_clause(slug, x, False))
+        else:
+            raise Unsupported(f"a negated condition, or a link to a set of records, on one "
+                              f"{c.group} entry: Arches Search's TILE scope reads positive "
+                              "literal clauses only")
+    return {"graph_slug": slug, "scope": "TILE", "logic": "AND", "clauses": clauses,
             "groups": [], "aggregations": [], "relationship": None}
+
+
+def _date_clause(slug: str, c: DateRange, negated: bool) -> dict:
+    if c.lo and c.hi:
+        op, values = "BETWEEN", [c.lo, c.hi]
+    elif c.lo:
+        op, values = "GREATER_THAN_OR_EQUALS", [c.lo]
+    else:
+        op, values = "LESS_THAN_OR_EQUALS", [c.hi]
+    return _clause(slug, c.field, op, values, negated)
 
 
 def _value_clause(c: HasValue, negated: bool, vocab, type_name: str, slug: str,
@@ -218,13 +240,10 @@ def _read_group(group: dict, vocab, concept_operator: str | None) -> Plan:
     if group["logic"] != "AND":
         where.append(f"logic {group['logic']}")
     if group.get("scope") == "TILE":
-        links = [c for c in where if isinstance(c, LinkTo)]
-        quals = [c for c in where if isinstance(c, HasValue)]
-        if len(links) == 1 and len(quals) == 1 and len(where) == 2:
-            from dataclasses import replace
-            where = [replace(links[0], qualifier=quals[0])]
-        else:
-            where.append("tile scope over more than one link and value")
+        if group["groups"]:
+            where.append("groups under a TILE group, which the plugin doesn't read")
+        first = next(iter(tile_fields(where)), "")
+        where = [OnTile(vocab.group_of(type_name, first) if first else "?", where)]
     return Plan(type_name, where)
 
 

@@ -80,11 +80,12 @@ class Edge:
     style: str = "verb"
     path: str = ""                                    # the backend's name for the link
     qualifier: tuple[str, str, str] | None = None     # (field, value, label) on the same tile
+    group: str = ""                                   # that tile's nodegroup
 
 
 def _edge(rel: Relation, pos: float, **kw) -> Edge:
     return Edge(rel.name, pos, style=rel.style, path=rel.path or rel.name,
-                qualifier=rel.qualifier, **kw)
+                qualifier=rel.qualifier, group=rel.group, **kw)
 
 
 @dataclass
