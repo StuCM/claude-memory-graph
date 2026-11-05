@@ -216,7 +216,23 @@ def test_negation_is_never_dropped(store):
     assert "couldn't tell what it negates" in out
 
 
-def test_did_you_mean_for_an_unplaced_verb(store):
+@pytest.fixture
+def meaning_layer(monkeypatch):
+    """A stand-in for the WordLlama layer, which has no wheel on every
+    platform: it ranks 'affects' as the near miss for 'influenced'."""
+    from ceist.matching import Chain, Exact, NoMatch
+
+    class Near:
+        name = "meaning"
+
+        def decide(self, phrase, items, context=""):
+            return NoMatch([(0.5, it) for it in items
+                            if phrase == "influenced" and it.key == "affects"], self.name)
+
+    monkeypatch.setattr(planner, "_matcher", Chain([Exact(), Near()]))
+
+
+def test_did_you_mean_for_an_unplaced_verb(store, meaning_layer):
     # "influenced" isn't a phrasing of any relation; the answer stays (loosely
     # linked), and memory_ask names the relations it might mean
     out = planner.handle(store, "Which decisions influenced quartz?")
@@ -232,6 +248,19 @@ def test_an_alias_identifies_a_record(store):
     assert "Stuart Marshall" in out.split("── answer ──")[1]
 
 
-def test_did_you_mean_says_how_to_teach_the_phrasing(store):
+def test_did_you_mean_says_how_to_teach_the_phrasing(store, meaning_layer):
     out = planner.handle(store, "Which decisions influenced quartz?")
     assert "memory_amend_relation add_verb_forms" in out
+
+
+def test_an_unplaced_word_refusal_is_logged_as_uncovered(store):
+    import json
+
+    from claude_memory_graph.hookcore import state_home
+    out = planner.handle(store, "Which decisions affect quartz deployments badly?")
+    assert "couldn't place 'badly', 'deployments'" in out
+    entry = json.loads((state_home() / "ask-decisions.jsonl").read_text().splitlines()[-1])
+    assert entry["outcome"] == "uncovered"
+    assert entry["uncovered"] == ["badly", "deployments"]
+    report = planner.asks_report()
+    assert "'badly' ×1" in report and "'deployments' ×1" in report
