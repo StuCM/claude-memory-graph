@@ -144,7 +144,7 @@ def test_record_never_breaks_a_search(tmp_path):
     blocked = tmp_path / "file"
     blocked.write_text("")
     learn.record(blocked / "learn.jsonl", "Building", "q", "p", "property")   # a file, not a folder
-    assert _bundle.FORMAT == "ceist.vocab/1"
+    assert _bundle.FORMAT == "ceist.vocab/2"
 
 
 def test_mask_takes_record_data_out_of_the_question():

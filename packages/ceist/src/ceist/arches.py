@@ -23,7 +23,8 @@ What a question can name, from that:
   SKOS itself (Alizarin's SKOS reader keeps only preferred labels), matched
   to Alizarin's items by URI;
 - **a vocabulary bundle** (`bundle=`, built by `ceist vocab assemble`):
-  its link and date phrasings join the forms below;
+  its link and date phrasings join the forms below, and its group blocks
+  name tiles ("burnt down" → a construction phase of type Destruction);
 - **dates**: each date node, by its name, and by the words `date_forms`
   adds ("built" → construction date); a model's only date node is the one
   meant when no word picks;
@@ -42,7 +43,7 @@ import alizarin
 
 from .index import NameIndex
 from .text import plurals
-from .vocabulary import DateField, Entity, Relation, Value
+from .vocabulary import DateField, Entity, Group, Relation, Value
 
 LINK_TYPES = {"resource-instance", "resource-instance-list"}
 REFERENCE_TYPES = {"reference"}                  # controlled lists: the primary kind
@@ -168,9 +169,10 @@ class ArchesVocabulary:
         # a bundle's phrasings, per (model, alias): HER reuses aliases such as
         # start_date and actor across models, each with its own meaning
         self._bundle_forms: dict[tuple[str, str], list[str]] = {}
-        self._pending_qualified: list[tuple[str, dict]] = []
+        self._blocks: dict[tuple[str, str], dict] = {}   # (model, nodegroup) → its group block
         self._qualified: list[Relation] | None = None
-        self.skipped: list[str] = []             # bundle entries not used, and why
+        self._groups: list[Group] = []
+        self.skipped: list[str] = []             # bundle combos not used, and why
         self.notes: list[str] = []               # what loading found worth saying
         if bundle is not None:
             self._absorb(bundle)
@@ -195,8 +197,7 @@ class ArchesVocabulary:
 
     @property
     def skipped_qualified(self) -> int:
-        if self._qualified is None:
-            self.relations()
+        self._load_groups()
         return len(self.skipped)
 
     # ── loading ───────────────────────────────────────────────────────────
@@ -214,23 +215,40 @@ class ArchesVocabulary:
     def _absorb(self, bundle) -> None:
         """A vocabulary bundle's phrasings (ceist.bundle): unqualified link
         entries become relation phrasings, date entries date phrasings.
-        Entries that carry a qualifier ("designed by" → actor + role
-        Architect) become qualified relations (relations()); one that can't
-        is listed in `skipped`, with the reason."""
+        Group blocks are kept for _load_groups; a v1 entry with a qualifier
+        is read as a combo of its node's group."""
         from . import bundle as _bundle
         b = bundle if isinstance(bundle, dict) else _bundle.load(bundle)
         for name, m in b["models"].items():
             if name not in self.models:
                 continue
+            for g, block in (m.get("groups") or {}).items():
+                mine = self._block(name, g)
+                mine["phrases"] += block.get("phrases", [])
+                mine["nodes"].update(block.get("nodes") or {})
+                for c in block.get("combos") or []:
+                    self._combo(mine, c)
             for e in m["entries"]:
-                if e.get("qualifier"):
-                    self._pending_qualified.append((name, e))
+                q = e.get("qualifier")
+                if q:
+                    self._combo(self._block(name, self.group_of(name, e["node"])), {"phrases": e["phrases"], "node": e["node"],
+                                                       "set": {q["node"]: q["value"]}})
                     continue
                 kind = (m["nodes"].get(e["node"]) or {}).get("kind")
                 if kind in ("link", "date"):
                     key = (name, e["node"])
                     self._bundle_forms[key] = list(dict.fromkeys(
                         self._bundle_forms.get(key, []) + e["phrases"]))
+
+    def _block(self, model: str, group: str) -> dict:
+        return self._blocks.setdefault((model, group), {"phrases": [], "nodes": {}, "combos": {}})
+
+    @staticmethod
+    def _combo(block: dict, c: dict) -> None:
+        """Add a combo; the same node and values from two places (a v1 entry
+        and its group's combo) are one combo with both sets of phrases."""
+        key = (c.get("node") or "", tuple(sorted((a, str(v)) for a, v in c["set"].items())))
+        block["combos"].setdefault(key, []).extend(c["phrases"])
 
     def _entity(self, r: dict) -> Entity | None:
         ri = r.get("resourceinstance") or {}
@@ -262,63 +280,86 @@ class ArchesVocabulary:
             for n in m.nodes:
                 if n.get("datatype") not in LINK_TYPES or not n.get("alias"):
                     continue
-                targets = {self.by_graph[g["graphid"]].name
-                           for g in (n.get("config") or {}).get("graphs") or []
-                           if g.get("graphid") in self.by_graph}
+                targets = self._targets(n)
                 forms = {str(n.get("name") or "").lower(), n["alias"].replace("_", " ").lower()}
                 forms |= {f.lower() for f in self.relation_forms.get(n["alias"], [])}
                 forms |= {f.lower() for f in self._bundle_forms.get((m.name, n["alias"]), [])}
                 r = by_alias.setdefault(n["alias"], {"forms": set(), "domain": set(), "range": set(),
                                                     "ends": set()})
                 r["forms"] |= forms
-                r["ends"].add((m.name, frozenset(targets)))
+                r["ends"].add((m.name, targets))
                 r["domain"].add(m.name)
                 r["range"] |= targets
         out = [Relation(alias, tuple(sorted(f for f in r["forms"] if f)), frozenset(r["domain"]),
                         frozenset(r["range"]), style="field", ends=frozenset(r["ends"]))
                for alias, r in by_alias.items()]
-        return out + self._qualified_relations()
+        self._load_groups()
+        return out + self._qualified
 
-    def _qualified_relations(self) -> list[Relation]:
-        """Bundle entries that need a value on the same entry as the link:
-        "designed by" → actor, with role type = Architect (its concept id)."""
+    def groups(self) -> list[Group]:
+        self._load_groups()
+        return self._groups
+
+    def _load_groups(self) -> None:
+        """The bundle's combos, read against the lists: one on a link
+        ("designed by" → actor, with role Architect) is a qualified relation,
+        any other names a tile of its group (Group), as do the group's own
+        phrases. A combo that can't be read is listed in `skipped`, with why."""
         if self._qualified is not None:
-            return self._qualified
+            return
         self._qualified = []
-        if not self._pending_qualified:
-            return self._qualified
-        concepts = {(v.field, v.label.lower()): v.value for v in self.values()}
-        for model, e in self._pending_qualified:
-            m = self.models[model]
-            n = next((x for x in m.nodes if x.get("alias") == e["node"]), None)
-            q = e["qualifier"]
-            cid = concepts.get((q["node"], str(q["value"]).lower()))
-            said = f"{model}: '{(e.get('phrases') or ['?'])[0]}' → {e['node']} + {q['node']} = {q['value']}"
-            if n is None:
-                self.skipped.append(f"{said}: no node '{e['node']}'")
-                continue
-            if n.get("datatype") not in LINK_TYPES:
-                # a qualified date or property needs a tile-scoped condition
-                # the plan can't express yet (docs/tasks/ceist-group-grounding.md)
-                self.skipped.append(f"{said}: qualified {n.get('datatype')} entries aren't "
-                                    "supported yet, only qualified links")
-                continue
-            if cid is None:
-                self.skipped.append(f"{said}: '{q['value']}' isn't a value of {q['node']}")
-                continue
-            if self.group_of(model, q["node"]) not in self.tile_line(model, e["node"]):
-                self.skipped.append(f"{said}: {q['node']} isn't on the link's tile or "
-                                    "a tile above it")
-                continue
-            targets = frozenset(self.by_graph[g["graphid"]].name
-                                for g in (n.get("config") or {}).get("graphs") or []
-                                if g.get("graphid") in self.by_graph)
-            self._qualified.append(Relation(
-                f"{e['node']}#{q['value']}", tuple(sorted({p.lower() for p in e["phrases"]})),
-                frozenset({model}), targets, style="field", path=e["node"],
-                qualifier=(q["node"], cid, q["value"]),
-                group=self.group_of(model, e["node"])))
-        return self._qualified
+        if not self._blocks:
+            return
+        values = {(o, v.field, v.label.lower()): v for v in self.values() for o in v.owners}
+        dates = {(d.field, o): d for d in self.date_fields() for o in d.owners}
+        for (model, g), block in self._blocks.items():
+            forms, fields, date_nodes = [], set(), set()
+            for (anchor, sets), phrases in block["combos"].items():
+                said = (f"{model}: '{phrases[0] if phrases else '?'}' → {anchor or g} + "
+                        + ", ".join(f"{a} = {v}" for a, v in sets))
+                n = self.node(model, anchor) if anchor else None
+                if anchor and n is None:
+                    self.skipped.append(f"{said}: no node '{anchor}'")
+                    continue
+                found, why = [], ""
+                for a, label in sets:
+                    v = values.get((model, a, label.lower()))
+                    if v is None:
+                        why = f"'{label}' isn't a value of {a}"
+                    elif self.group_of(model, a) not in self.tile_line(model, anchor or g):
+                        why = f"{a} isn't on the {'link' if anchor else g}'s tile or a tile above it"
+                    found.append(v)
+                if not why and n is not None and n.get("datatype") in LINK_TYPES and len(found) > 1:
+                    why = "a combo on a link sets one value"
+                if why:
+                    self.skipped.append(f"{said}: {why}")
+                    continue
+                if n is not None and n.get("datatype") in LINK_TYPES:
+                    (a, label), = sets
+                    self._qualified.append(Relation(
+                        f"{anchor}#{label}", tuple(sorted({p.lower() for p in phrases})),
+                        frozenset({model}), self._targets(n), style="field", path=anchor,
+                        qualifier=(a, found[0].value, label), group=self.group_of(model, anchor)))
+                    continue
+                if n is not None and n.get("datatype") in DATE_TYPES:
+                    date_nodes.add(anchor)
+                fields |= {v.field for v in found}
+                forms += [(p.lower(), tuple(found)) for p in phrases]
+            forms += [(p.lower(), ()) for p in block["phrases"]]
+            for a, role in block["nodes"].items():
+                kind = (self.node(model, a) or {}).get("datatype")
+                if role.get("role") == "date" and kind in DATE_TYPES:
+                    date_nodes.add(a)
+                elif kind in CONTROLLED_TYPES:
+                    fields.add(a)
+            if forms:
+                date = dates.get((next(iter(date_nodes)), model)) if len(date_nodes) == 1 else None
+                self._groups.append(Group(g, model, tuple(forms), frozenset(fields), date))
+
+    def _targets(self, link: dict) -> frozenset[str]:
+        return frozenset(self.by_graph[g["graphid"]].name
+                         for g in (link.get("config") or {}).get("graphs") or []
+                         if g.get("graphid") in self.by_graph)
 
     def values(self) -> list[Value]:
         """Every item of every controlled list (and legacy concept collection)

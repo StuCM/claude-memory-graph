@@ -7,6 +7,16 @@ A question file:
                 "phrase": "put up", "slot": "date" | "link:<Model>" | "property",
                 "expect": null | {"node": "<alias>", "qualifier": {"node", "value"}}}]}
 
+A case may instead say what the whole question means, as the conditions its
+plan must hold (`ceist.pipeline.judge_plan`, `bench/her_plans.py`); this
+phrase-level score skips it:
+
+    {"model": "Monument", "q": "which monuments were demolished before 1900?",
+     "expect": {"conditions": [{"node": "construction_phase_type", "value": "Destruction",
+                                "tile": "construction_phases"},
+                               {"node": "construction_phase_start_date",
+                                "tile": "construction_phases"}]}}
+
 Outcomes:
     right       the expected node (either end of a date's timespan) and qualifier
     partial     the right node, the qualifier missing (broader than asked)
@@ -35,9 +45,18 @@ def fits(node: dict, slot: str) -> bool:
 
 
 def items_for(model: dict, slot: str) -> list[Item]:
-    """The shortlist: the model's entries whose node fits the slot."""
+    """The shortlist: the model's entries whose node fits the slot, and its
+    groups' one-value combos on such a node (a qualified entry, in v2)."""
+    entries = list(model["entries"])
+    for block in (model.get("groups") or {}).values():
+        for c in block.get("combos") or []:
+            if c.get("node") and len(c["set"]) == 1:
+                (qn, q), = c["set"].items()
+                end = ((block.get("nodes") or {}).get(c["node"]) or {}).get("end_node")
+                entries.append({"phrases": c["phrases"], "node": c["node"], "end_node": end,
+                                "qualifier": {"node": qn, "value": q}})
     out = []
-    for e in model["entries"]:
+    for e in entries:
         n = model["nodes"].get(e["node"])
         if n is None or not fits(n, slot):
             continue
@@ -81,7 +100,7 @@ def evaluate(bundle_path, questions_path, cfg: _config.Config | None = None, enc
     threshold can be tuned on one half and reported on the other."""
     cfg = cfg or _config.load(None)
     b = _bundle.load(bundle_path)
-    cases = json.loads(Path(questions_path).read_text())["cases"]
+    cases = [c for c in json.loads(Path(questions_path).read_text())["cases"] if "phrase" in c]
     if half:
         cases = cases[0 if half == "even" else 1::2]
     chain = _config.chain(cfg, encoder=encoder)

@@ -1,8 +1,8 @@
 """The vocabulary bundle: everything question time needs about a project's
 models, in one file built once, offline.
 
-    {"format": "ceist.vocab/1",
-     "built": {"graphs_sha256": "…", "models": 16, "entries": 1301, "phrasings": 7392},
+    {"format": "ceist.vocab/2",
+     "built": {"graphs_sha256": "…", "models": 16, "entries": 1301, "phrasings": 7392, "groups": 2},
      "models": {
        "Monument": {
          "graphid": "…",
@@ -11,8 +11,16 @@ models, in one file built once, offline.
            {"phrases": ["built", "put up", …], "kind": "date",
             "node": "construction_phase_start_date",
             "end_node": "construction_phase_end_date",                     # dates: the event's other end
-            "qualifier": {"node": "role_type", "value": "Architect"}},     # when the meaning needs a value
-           …]}}}
+            "qualifier": {"node": "role_type", "value": "Architect"}},     # v1: read as a combo
+           …],
+         "groups": {"<nodegroup alias>": {                                # v2
+           "phrases": ["construction phase"],                             # name the group itself
+           "nodes": {"<alias>": {"role": "type|date|actor|…", "end_node": "<alias>"}},
+           "combos": [{"phrases": ["burnt down"], "node": "<alias meant, for a link or date>",
+                       "set": {"<alias>": "<value label>", …}}],
+           "answers": {"when": "<alias>", …}}}}}}
+
+A v1 bundle still loads.
 
 How it is made (`ceist vocab …`):
 
@@ -29,18 +37,21 @@ How it is made (`ceist vocab …`):
     slice      (ceist.slicing) cut a bundle down to what one dataset uses
 
 A vocabulary directory holds either layout; with a manifest.json it is read
-as the split one. A group file is {"model", "nodegroup", "entries"}; the key
-"group" is reserved for the group's own block (docs/tasks/ceist-group-grounding.md).
+as the split one. A group file is {"model", "nodegroup", "entries", "group"}: the
+group's own block (docs/tasks/ceist-group-grounding.md §2).
 """
 
 import hashlib
 import json
 from pathlib import Path
 
-FORMAT = "ceist.vocab/1"
+FORMAT = "ceist.vocab/2"
+READS = {"ceist.vocab/1", FORMAT}
 LAYOUT = "ceist.vocab-groups/1"
 MANIFEST = "manifest.json"
 DATE = {"date", "edtf"}
+ROLES = {"date", "actor", "place", "type", "cause", "name", "identifier", "description",
+         "measure", "link", "other"}
 
 
 def kind_of(node: dict) -> str:
@@ -106,6 +117,52 @@ def validate(description: dict, entries: list[dict]) -> tuple[list[str], list[st
     return errors, warnings
 
 
+def validate_group(description: dict, group: str, block: dict) -> list[str]:
+    """The errors in one nodegroup's block: every node on that tile, every
+    value in its node's list, every role known."""
+    nodes = {n["alias"]: n for n in description["nodes"]}
+    where = f"{description['name']}.{group}"
+    if group not in (description.get("nodegroups") or {group: None}):
+        return [f"{where}: no nodegroup '{group}'"]
+
+    def on_tile(a) -> bool:
+        return isinstance(a, str) and a in nodes and nodes[a].get("nodegroup", group) == group
+
+    errors = []
+    if not _strings(block.get("phrases", [])):
+        errors.append(f"{where}: phrases is not a list of strings")
+    for a, n in (block.get("nodes") or {}).items():
+        if not on_tile(a):
+            errors.append(f"{where}: '{a}' is not a node of this group")
+        elif not isinstance(n, dict) or n.get("role") not in ROLES:
+            errors.append(f"{where}.{a}: role {n.get('role') if isinstance(n, dict) else n!r} "
+                          f"is not one of {', '.join(sorted(ROLES))}")
+        elif n.get("end_node") and not (on_tile(n["end_node"])
+                                        and kind_of(nodes[n["end_node"]]) == "date"):
+            errors.append(f"{where}.{a}: end_node {n['end_node']!r} is not a date of this group")
+    for i, c in enumerate(block.get("combos") or []):
+        if not (isinstance(c, dict) and _strings(c.get("phrases")) and c["phrases"]
+                and isinstance(c.get("set"), dict) and c["set"]):
+            errors.append(f"{where} combo {i}: needs phrases and a non-empty set")
+            continue
+        if "node" in c and not on_tile(c["node"]):
+            errors.append(f"{where} combo {i}: node '{c['node']}' is not a node of this group")
+        for a, v in c["set"].items():
+            values = (nodes.get(a) or {}).get("values")
+            if not on_tile(a):
+                errors.append(f"{where} combo {i}: '{a}' is not a node of this group")
+            elif isinstance(values, list) and v not in values:
+                errors.append(f"{where} combo {i}: '{v}' is not a value of {a}")
+    for want, a in (block.get("answers") or {}).items():
+        if not on_tile(a):
+            errors.append(f"{where}: answers.{want} '{a}' is not a node of this group")
+    return errors
+
+
+def _strings(x) -> bool:
+    return isinstance(x, list) and all(isinstance(s, str) for s in x)
+
+
 def shared_phrases(entries: list[dict]) -> dict[str, list[int]]:
     """Each phrase that belongs to more than one entry, with those entries' indices."""
     owners: dict[str, list[int]] = {}
@@ -143,18 +200,18 @@ def _descriptions(descriptions_dir: str | Path) -> dict:
 
 
 def read_vocab(vocab_dir: str | Path) -> tuple[list[dict], list[str]]:
-    """Each model's {"model", "entries"} from either layout, plus warnings.
+    """Each model's {"model", "entries", "groups"} from either layout, plus warnings.
     Split layout: a model's entries in the order of its group files' names."""
     root = Path(vocab_dir)
     files = sorted((p for p in root.glob("*.json") if p.name != MANIFEST), key=lambda p: p.stem)
     if not (root / MANIFEST).exists():
-        return [json.loads(p.read_text()) for p in files], []
+        return [dict({"groups": {}}, **json.loads(p.read_text())) for p in files], []
     out = []
     for d in sorted(p for p in root.iterdir() if p.is_dir()):
-        groups = sorted(d.glob("*.json"), key=lambda p: p.stem)
+        groups = [json.loads(g.read_text()) for g in sorted(d.glob("*.json"), key=lambda p: p.stem)]
         if groups:
-            out.append({"model": d.name, "entries": [e for g in groups
-                                                     for e in json.loads(g.read_text())["entries"]]})
+            out.append({"model": d.name, "entries": [e for g in groups for e in g["entries"]],
+                        "groups": {g["nodegroup"]: g["group"] for g in groups if g.get("group")}})
     warnings = [f"{p.name} not read: {MANIFEST} says the split layout is read" for p in files]
     return out, warnings
 
@@ -172,7 +229,7 @@ def assemble(descriptions_dir: str | Path, vocab_dir: str | Path,
             errors.append(f"{v['model']}: no description for model '{v['model']}'")
             continue
         err, warn = validate(d, v["entries"])
-        errors += err
+        errors += err + [e for a, b in v["groups"].items() for e in validate_group(d, a, b)]
         warnings += warn
         group_of = {n["alias"]: n.get("nodegroup") or "" for n in d["nodes"]}
         models[v["model"]] = {
@@ -183,6 +240,7 @@ def assemble(descriptions_dir: str | Path, vocab_dir: str | Path,
                       for n in d["nodes"]},
             "entries": [dict(e, phrases=sorted({x.strip().lower() for x in e["phrases"] if x.strip()}))
                         for e in sorted(v["entries"], key=lambda e: group_of.get(e.get("node"), ""))],
+            "groups": {a: b for a, b in sorted(v["groups"].items()) if not b.get("skip")},
         }
     missing = sorted(set(descriptions) - set(models))
     if missing:
@@ -192,7 +250,8 @@ def assemble(descriptions_dir: str | Path, vocab_dir: str | Path,
                         "models": len(models),
                         "entries": sum(len(m["entries"]) for m in models.values()),
                         "phrasings": sum(len(e["phrases"]) for m in models.values()
-                                         for e in m["entries"])},
+                                         for e in m["entries"]),
+                        "groups": sum(len(m["groups"]) for m in models.values())},
              "models": models}
     return bundle, errors, warnings
 
@@ -229,14 +288,17 @@ def split(descriptions_dir: str | Path, vocab_dir: str | Path,
             by_group.setdefault(g, []).append(e)
         if None in by_group:
             continue
+        blocks = v.get("groups") or {}
         model_dir = out / v["model"]
         model_dir.mkdir(parents=True, exist_ok=True)
         for old in model_dir.glob("*.json"):
             old.unlink()
-        for g, entries in sorted(by_group.items()):
+        for g in sorted(by_group.keys() | blocks.keys()):
             path = model_dir / f"{g}.json"
-            path.write_text(json.dumps({"model": v["model"], "nodegroup": g, "entries": entries},
-                                       indent=1, ensure_ascii=False) + "\n")
+            f = {"model": v["model"], "nodegroup": g, "entries": by_group.get(g, [])}
+            if g in blocks:
+                f["group"] = blocks[g]
+            path.write_text(json.dumps(f, indent=1, ensure_ascii=False) + "\n")
             written.append(str(path))
         done[v["model"]] = d
     if done:
@@ -266,7 +328,7 @@ def stale_groups(vocab_dir: str | Path, descriptions_dir: str | Path) -> list[st
 
 def load(path: str | Path) -> dict:
     b = json.loads(Path(path).read_text())
-    if b.get("format") != FORMAT:
+    if b.get("format") not in READS:
         raise ValueError(f"{path}: not a {FORMAT} bundle")
     return b
 
