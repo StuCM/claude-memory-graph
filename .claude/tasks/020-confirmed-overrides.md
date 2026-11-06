@@ -1,7 +1,7 @@
 ---
 id: 020
 slug: confirmed-overrides
-status: approved
+status: done
 branch: crew/020-confirmed-overrides
 model: opus
 env: laptop
@@ -9,6 +9,10 @@ work: vocab-layers
 depends: [011]
 files:
   - packages/ceist/
+gate: pass
+gateSha: d92a5425682f3c5b0a94e57df3df54855d1e7adb
+gateAt: 2026-11-06T19:41:41.727Z
+rounds: 1
 ---
 
 # A client layer can override the base, but only when it says so
@@ -47,7 +51,18 @@ Stu, 2026-11-06: "there could be a chance that nodes are changed for a client so
 
 
 ## Worker notes
+- `packages/ceist/src/ceist/bundle.py`: client manifest `models.<name>.overrides: [{phrase, node, was}]` (`node` is the client's meaning, `was` the base's, both as `_said` prints them). A matching one is applied (`_forget` takes the phrase out of the base entries and group blocks) and reported "overridden (confirmed): …". A `was` that no longer matches reports "confirmation is stale (it was X); not applied". `_fit` drops a base entry whose node the client graph lacks, or holds as another kind, and reports it. `renamed: {old: new}` re-points base entries before that check; a rename whose `old` no base entry uses is reported stale.
+- `packages/ceist/tests/test_layers.py`: four new tests, each failing on the base code (checked). The unconfirmed case sits inside the confirmed test ('erected' beside confirmed 'put up'); a standalone one can't fail on base, since that behaviour already existed.
+- **Spec gap, decided:** "datatype differs" is checked as kind (date/link/property via `kind_of`), as the base stores only `kind`. Group blocks and combos aren't node-checked (the spec says "base entry").
+- **017 was wrong about the demo graph:** its Monument graph *has* `county_value` (string), but no Monument holds a value for it, so the missing-node rule doesn't free 'county'. The demo layer confirms it instead: `overrides: [{phrase: county, node: named_location, was: county_value}]`, and 'county', 'counties' are added to Monument `named_location`. 'features' is left unconfirmed (still "not applied").
+- On the demo, the new rule also reports 40 base entries dropped for missing nodes, plus Monument 'period' etc. (base kind link, demo `cultural_period` is concept-list → property). The bank isn't affected by any of them.
+- **Copy to the demo:** `packages/ceist/bench/demo/vocab/manifest.json` and `packages/ceist/bench/demo/vocab/Monument/named_locations.json` -> `starches-demo/ask/vocab/`.
+- **Bank** (a mirror of the demo at /home/stuart/.cache/tmp-020/demo/ask: symlinked data, snapshot, static, a copy of ask.py, the worktree vocab, CEIST_BASE=worktree base, demo venv python): before answer/right 64, answer/refused 1, refuse/right 7, answer-later refused 15. After: answer/right 66, answer/refused 1, refuse/right 7, answer-later refused 13, exit 0. "which county has the most raths?" gives County Down 687 and now expects an answer, count 1. "list scheduled monuments by county" gives six counties, Antrim 530 the most, count 6. Two "county nowhere" refusals changed wording but still refuse.
+- **HER plans / memory_ask:** `layered` isn't used by the HER gate or `bench/her_plans.py` (only by pipeline `--layer` and the demo), so there are no plan diffs; `her_plans.py` was not run. No change for `memory_ask`. Gate passes: root 558, ceist 248.
 
 ## Graph writes proposed
+- Decision: a client vocabulary layer overrides a base phrase only when its manifest confirms it with `{phrase, node, was}`. `was` pins the base meaning, so a later base change makes the confirmation stale instead of carrying it over. A base entry whose node the client graph lacks, or types differently, is dropped and reported.
+- Pattern: a node can exist in a client graph and still be empty (demo Monument `county_value`), so the missing-node rule won't free its phrases. Confirm an override instead.
 
 ## Review rounds
+- Round 1: PASS. Noted, not findings: group blocks aren't node-checked; on the demo, `_fit` drops 40 base entries and Monument 'period', with no bank regression.
