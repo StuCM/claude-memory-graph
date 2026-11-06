@@ -753,13 +753,13 @@
   },
   {
    "q": "show all monuments whose name starts with Cat",
-   "expect": "answer-later",
-   "count": null,
-   "note": "name matching",
-   "status": "refused-should-answer",
-   "understood": null,
-   "got": null,
-   "refused": "couldn't place 'cat', 'name', 'starts', 'whose' — answering without them would widen the question; did you mean early christian (construction phases) or 15th century (construction phases) or early christian/medieval (construction phases) for 'whose name starts with cat'?"
+   "expect": "answer",
+   "count": 3,
+   "note": "name matching; by hand: 3 Monument names in vocab.names start with 'cat' (Catherwood'S Fort, Cat'S Causeway, Cathedral Hill)",
+   "status": "right",
+   "understood": "Find Monuments whose name starts with 'Cat'.",
+   "got": 3,
+   "refused": null
   },
   {
    "q": "which monuments have more than one construction phase?",
