@@ -11,7 +11,14 @@
   },
   "Monument": {
    "graphid": "062f4e2c-8c06-55d6-9547-f87f2fffffa8",
-   "base": "076f9381-7b00-11e9-8d6b-80000b44d1d9"
+   "base": "076f9381-7b00-11e9-8d6b-80000b44d1d9",
+   "overrides": [
+    {
+     "phrase": "county",
+     "node": "named_location",
+     "was": "county_value"
+    }
+   ]
   },
   "Object": {
    "graphid": "f3ac947a-ca1e-54e0-a155-a27f02ba50da",

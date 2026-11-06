@@ -43,7 +43,7 @@ group's own block (docs/tasks/ceist-group-grounding.md §2).
 
 In layers (`layered`): a base per graph, `vocabularies/base/<graph id>/` (split
 by nodegroup, from the schema alone), and a client layer the site owns that may
-only add to it.
+only add to it, unless its manifest confirms an override or a renamed node.
 """
 
 import hashlib
@@ -237,7 +237,10 @@ def layered(graphs: list[dict], base_dir: str | Path, client_dir: str | Path | N
     nodegroup) plus an optional client layer (a vocabulary directory keyed by model
     name; its manifest's "base" names the base graph id when the client's differs).
     The client only adds: each phrase, role, answer or type word that would change
-    the base's is left out and listed in the merge report returned with the bundle."""
+    the base's is left out and listed in the merge report returned with the bundle,
+    unless the manifest confirms it ("overrides": [{phrase, node, was}]). A base entry
+    whose node the client's graph lacks or holds as another kind is dropped and
+    reported; "renamed": {old: new} carries the base phrases over to a renamed node."""
     client = {v["model"]: v for v in read_vocab(client_dir)[0]} if client_dir is not None else {}
     listed = (_manifest(Path(client_dir)).get("models") or {}) if client_dir is not None else {}
     models, report, type_words = {}, [], {}
@@ -249,14 +252,15 @@ def layered(graphs: list[dict], base_dir: str | Path, client_dir: str | Path | N
         base = _model_dir(Path(base_dir) / gid) or {"entries": [], "groups": {}}
         for w in _manifest(Path(base_dir) / gid).get("type_words") or []:
             type_words[w] = name
-        models[name] = {"graphid": g["graphid"],
-                        "nodes": {n["alias"]: {"kind": kind_of(n)} for n in g["nodes"] if n.get("alias")},
-                        "entries": list(base["entries"]),
+        nodes = {n["alias"]: {"kind": kind_of(n)} for n in g["nodes"] if n.get("alias")}
+        entries, dropped = _fit(name, base["entries"], nodes, (listed.get(name) or {}).get("renamed") or {})
+        report += dropped
+        models[name] = {"graphid": g["graphid"], "nodes": nodes, "entries": entries,
                         "groups": {a: _block(b) for a, b in base["groups"].items()}}
     for name, model in models.items():
         mine = client.get(name) or {}
         if mine:
-            report += _add_client(name, model, mine)
+            report += _add_client(name, model, mine, (listed.get(name) or {}).get("overrides") or [])
         for w in (listed.get(name) or mine).get("type_words") or []:
             if type_words.setdefault(w, name) != name:
                 report.append(f"type word '{w}' names {type_words[w]} already, {name} in the client; "
@@ -265,6 +269,27 @@ def layered(graphs: list[dict], base_dir: str | Path, client_dir: str | Path | N
     if type_words:
         bundle["extra_type_words"] = type_words
     return bundle, report
+
+
+def _fit(name: str, entries: list[dict], nodes: dict, renamed: dict) -> tuple[list[dict], list[str]]:
+    """The base entries this client's graph can hold, after its renames; the report for the rest."""
+    used = {e["node"] for e in entries}
+    report = [f"{name}: node {old} renamed (confirmed) to {new}" if old in used else
+              f"{name}: rename of {old} to {new} is stale, the base has no phrase for {old}; not applied"
+              for old, new in renamed.items()]
+    out = []
+    for e in entries:
+        node = renamed.get(e["node"], e["node"])
+        phrases = ", ".join(f"'{p}'" for p in e["phrases"])
+        if node not in nodes:
+            report.append(f"{name}: base phrase {phrases} targets node {node}, which this client's graph lacks; "
+                          "dropped")
+        elif nodes[node]["kind"] != e["kind"]:
+            report.append(f"{name}: base phrase {phrases} targets node {node}, which this client's graph has as "
+                          f"{nodes[node]['kind']}; dropped")
+        else:
+            out.append(dict(e, node=node))
+    return out, report
 
 
 def _manifest(d: Path) -> dict:
@@ -300,20 +325,31 @@ def _combo_meaning(group: str, c: dict) -> tuple:
     return ("combo", group, c.get("node"), json.dumps(c["set"], sort_keys=True))
 
 
-def _add_client(name: str, model: dict, client: dict) -> list[str]:
+def _add_client(name: str, model: dict, client: dict, overrides: list[dict]) -> list[str]:
     """Add a client layer's entries and group blocks to one model of the bundle;
-    the merge report for what it would have changed."""
+    the merge report for what it would have changed, or changed as confirmed."""
     base, report = _meanings(model), []
 
     def new(phrases: list[str], meaning: tuple) -> list[str]:
         kept = []
         for p in phrases:
-            was = base.get(p.strip().lower(), meaning)
+            key = p.strip().lower()
+            was = base.get(key, meaning)
             if was == meaning:
                 kept.append(p)
+                continue
+            clash = f"'{p}' means {_said(was)} in the base, {_said(meaning)} in the client"
+            confirmed = next((o for o in overrides if o["phrase"].strip().lower() == key
+                              and o["node"] == _said(meaning)), None)
+            if confirmed is None:
+                report.append(f"{name}: {clash}; not applied")
+            elif confirmed["was"] != _said(was):
+                report.append(f"{name}: {clash}; confirmation is stale (it was {confirmed['was']}); not applied")
             else:
-                report.append(f"{name}: '{p}' means {_said(was)} in the base, {_said(meaning)} "
-                              "in the client; not applied")
+                report.append(f"{name}: overridden (confirmed): {clash}")
+                _forget(model, key)
+                base[key] = meaning
+                kept.append(p)
         return kept
 
     for e in client["entries"]:
@@ -333,6 +369,17 @@ def _add_client(name: str, model: dict, client: dict) -> list[str]:
             if phrases:
                 mine["combos"].append(dict(c, phrases=phrases))
     return report
+
+
+def _forget(model: dict, phrase: str) -> None:
+    """Take a phrase out of a model's entries and group blocks."""
+    def other(phrases: list[str]) -> list[str]:
+        return [p for p in phrases if p.strip().lower() != phrase]
+
+    model["entries"] = [dict(e, phrases=other(e["phrases"])) for e in model["entries"] if other(e["phrases"])]
+    for b in model["groups"].values():
+        b["phrases"] = other(b["phrases"])
+        b["combos"] = [dict(c, phrases=other(c["phrases"])) for c in b["combos"] if other(c["phrases"])]
 
 
 def _said(meaning: tuple) -> str:

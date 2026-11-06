@@ -100,3 +100,56 @@ def test_a_client_names_the_base_graph_when_its_own_id_differs(data, tmp_path):
     bundle, _ = layered(graphs(data), base(tmp_path, gid="her-building"), c)
     assert bundle["models"]["Building"]["graphid"] == fx.BUILDING
     assert bundle["models"]["Building"]["entries"][0]["node"] == "construction_date"
+
+
+def test_a_confirmed_override_is_applied_and_reported_and_only_it(data, tmp_path):
+    c = client(tmp_path, {"architect": {"entries": [{"phrases": ["put up", "erected"], "kind": "link",
+                                                     "node": "architect"}]}},
+               {"Building": {"overrides": [{"phrase": "put up", "node": "architect",
+                                            "was": "construction_date"}]}})
+    bundle, report = layered(graphs(data), base(tmp_path), c)
+    assert report == ["Building: overridden (confirmed): 'put up' means construction_date in the base, "
+                      "architect in the client",
+                      "Building: 'erected' means construction_date in the base, architect in the client; "
+                      "not applied"]
+    assert [(e["node"], e["phrases"]) for e in bundle["models"]["Building"]["entries"]] == [
+        ("construction_date", ["erected"]), ("architect", ["put up"])]
+    m = interpret(ArchesVocabulary.from_data_dir(data[0], bundle=bundle),
+                  "which buildings were put up by Ada Lovelace?")
+    assert m.plan.where[0].relation == "architect"
+
+
+def test_a_stale_confirmation_is_reported_and_not_applied(data, tmp_path):
+    c = client(tmp_path, {"architect": {"entries": [{"phrases": ["put up"], "kind": "link", "node": "architect"}]}},
+               {"Building": {"overrides": [{"phrase": "put up", "node": "architect", "was": "phase_date"}]}})
+    bundle, report = layered(graphs(data), base(tmp_path), c)
+    assert report == ["Building: 'put up' means construction_date in the base, architect in the client; "
+                      "confirmation is stale (it was phase_date); not applied"]
+    assert bundle["models"]["Building"]["entries"][0]["phrases"] == ["put up", "erected"]
+
+
+def test_a_base_entry_the_client_graph_cannot_hold_is_dropped_and_reported(data, tmp_path):
+    b = base(tmp_path)
+    (b / fx.BUILDING / "location.json").write_text(json.dumps({"model": "HER Building", "nodegroup": "location",
+                                                              "entries": [
+        {"phrases": ["county"], "kind": "property", "node": "county_value"},
+        {"phrases": ["designed by"], "kind": "property", "node": "architect"},
+        {"phrases": ["listed as"], "kind": "property", "node": "heritage_status"}]}))
+    bundle, report = layered(graphs(data), b)
+    assert report == ["Building: base phrase 'county' targets node county_value, which this client's graph lacks; "
+                      "dropped",
+                      "Building: base phrase 'designed by' targets node architect, which this client's graph has "
+                      "as link; dropped"]
+    assert [e["node"] for e in bundle["models"]["Building"]["entries"]] == ["construction_date", "heritage_status"]
+
+
+def test_a_confirmed_rename_carries_the_base_phrases_over(data, tmp_path):
+    built = [dict(g, nodes=[dict(n, alias="built_on") if n.get("alias") == "construction_date" else n
+                            for n in g["nodes"]]) for g in graphs(data)]
+    c = client(tmp_path, {}, {"Building": {"renamed": {"construction_date": "built_on", "storeys": "floors"}}})
+    bundle, report = layered(built, base(tmp_path), c)
+    assert report == ["Building: node construction_date renamed (confirmed) to built_on",
+                      "Building: rename of storeys to floors is stale, the base has no phrase for storeys; "
+                      "not applied"]
+    assert bundle["models"]["Building"]["entries"][0] == {"phrases": ["put up", "erected"], "kind": "date",
+                                                          "node": "built_on"}

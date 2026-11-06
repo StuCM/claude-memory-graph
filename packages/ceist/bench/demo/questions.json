@@ -579,7 +579,7 @@
    "status": "right",
    "understood": null,
    "got": null,
-   "refused": "couldn't place 'county', 'nowhere' — answering without them would widen the question; did you mean uncertain (construction phases) or medieval/late medieval (construction phases) or medieval (construction phases) for 'county nowhere'?"
+   "refused": "out of grammar (cannot resolve both ends of relation named_location)"
   },
   {
    "q": "which medieval raths are in County Nowhere?",
@@ -589,7 +589,7 @@
    "status": "right",
    "understood": null,
    "got": null,
-   "refused": "couldn't place 'county', 'nowhere' — answering without them would widen the question"
+   "refused": "couldn't place 'nowhere' — answering without it would widen the question"
   },
   {
    "q": "how many monuments are in Down?",
@@ -723,23 +723,23 @@
   },
   {
    "q": "which county has the most raths?",
-   "expect": "answer-later",
-   "count": null,
-   "note": "group-by / superlative; grammar done (017), but 'county' is county_value in the HER base, so the demo layer can't map it to named_location. 'which named location has the most raths?' answers County Down, 687 (checked against 'how many raths are in County Down?')",
-   "status": "refused-should-answer",
-   "understood": null,
-   "got": null,
-   "refused": "couldn't place 'county', 'most' — answering without them would widen the question"
+   "expect": "answer",
+   "count": 1,
+   "note": "group-by (017); the demo layer confirms 'county' as named_location (020). County Down, 687, as 'how many raths are in County Down?'",
+   "status": "right",
+   "understood": "Count Monuments whose monument type is Rath, by named location: the one with the most.",
+   "got": 1,
+   "refused": null
   },
   {
    "q": "list scheduled monuments by county",
-   "expect": "answer-later",
-   "count": null,
-   "note": "group-by; grammar done (017), but 'county' is county_value in the HER base, so the demo layer can't map it to named_location. 'which named location has the most raths?' answers County Down, 687 (checked against 'how many raths are in County Down?')",
-   "status": "refused-should-answer",
-   "understood": null,
-   "got": null,
-   "refused": "couldn't place 'county' — answering without it would widen the question; did you mean neolithic (construction phases) or mesolithic/neolithic (construction phases) or medieval (construction phases) for 'county'?"
+   "expect": "answer",
+   "count": 6,
+   "note": "group-by (017); the demo layer confirms 'county' as named_location (020). Six counties, County Antrim 530 the most",
+   "status": "right",
+   "understood": "Count Monuments whose designation or protection type is Scheduled, by named location.",
+   "got": 6,
+   "refused": null
   },
   {
    "q": "which monuments are near Armagh?",
