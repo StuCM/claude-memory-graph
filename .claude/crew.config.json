@@ -7,7 +7,7 @@
   "quickVerify": "ROS_MADAIR_EMIT=/home/stuart/.cache/tmp-ask/ros-madair/target/release/ros-madair-emit .venv-ceist/bin/python -m pytest -q -p no:cacheprovider packages/ceist/tests",
   "prepare": [
     "uv sync --locked -q",
-    "[ -x .venv-ceist/bin/python ] || (uv venv -q .venv-ceist && uv pip install -q -p .venv-ceist -e './packages/ceist[vectors,onnx,roots]' 'ros-madair==0.1.0a30' pytest)"
+    "[ -x .venv-ceist/bin/python ] || (uv venv -q .venv-ceist && uv pip install -q -p .venv-ceist -e './packages/ceist[vectors,onnx,roots]' '/home/stuart/.cache/tmp-ask/wheels/ros_madair-0.1.0a33-cp39-abi3-manylinux_2_39_x86_64.whl' pytest)"
   ],
   "scopes": {
     "fromDir": [
