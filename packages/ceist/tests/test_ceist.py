@@ -537,3 +537,38 @@ def test_a_value_two_models_hold_asks_which_instead_of_answering():
     m = interpret(Ages(), "how many ruins are there?")
     assert m.plan is None
     assert m.refused == "no queryable subject; did you mean Building or Site for 'ruins'?"
+
+
+class Shapes(Toy):
+    """'in' shared by two links with known ends; a period link that can't say what it points at."""
+    records = Toy.records + [entity("Site", "s-weir", "Lock or Weir")]
+
+    def relations(self):
+        return [Relation("site", ("in",), frozenset({"Building"}), frozenset({"Site"})),
+                Relation("parent_site", ("in",), frozenset({"Site"}), frozenset({"Site"})),
+                Relation("period", ("what period", "period"), frozenset({"Site"}),
+                         ends=frozenset({("Site", frozenset())}))]
+
+
+def test_or_refuses_rather_than_reading_as_and():
+    m = interpret(Toy(), "which listed or candidate buildings are there?")
+    assert m.plan is None and "'or' isn't supported yet; ask one at a time" in m.refused
+    m = interpret(Shapes(), "which buildings are in Lock or Weir?")
+    assert narrate(m.plan) == "Find Buildings that in Site 'Lock or Weir'."
+
+
+def test_a_named_records_own_detail_refuses_not_a_plan_using_it_as_a_value():
+    m = interpret(Shapes(), "what period is Clock Tower?")
+    assert m.plan is None
+    assert "asks for the period of Building 'Clock Tower' itself" in m.refused
+
+
+def test_a_record_of_the_type_asked_for_is_not_where_a_link_points():
+    # was the record itself, as a direct match: Find Building 'Clock Tower'
+    m = interpret(Shapes(), "which buildings are in Clock Tower?")
+    assert m.direct is None and m.plan is None
+    assert "Building 'Clock Tower' isn't a Site, which 'in' points at" in m.refused
+    m = interpret(Shapes(), "what is in Clock Tower?")
+    assert m.plan is None and "Building 'Clock Tower' isn't a Site" in m.refused
+    m = interpret(Shapes(), "which buildings are in Leeds Dock?")
+    assert narrate(m.plan) == "Find Buildings that in Site 'Leeds Dock'."

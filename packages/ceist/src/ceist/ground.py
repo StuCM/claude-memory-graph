@@ -64,6 +64,7 @@ class Node:
     var: str = ""             # variable name (vars)
     entity: Entity | None = None
     match_terms: list[str] = field(default_factory=list)
+    implicit: bool = False    # a var only a relation's end implied, not named
 
     # conveniences for backends that address anchors directly
     @property
@@ -484,11 +485,19 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
     g.coverage = len(covered & terms) / len(terms) if terms else 0.0
     g.uncovered = sorted(terms - covered)
 
+    # a plan is a conjunction: "raths or cairns" would be read as "raths and cairns"
+    if any(w == "or" and i not in consumed and not any(s <= ws and we <= e for s, e in names)
+           for i, ws, we, w in words):
+        g.refuse = "'or' isn't supported yet; ask one at a time"
+        return g
+
     # ── grammar caps + wiring the relations to their ends
     if len(g.edges) > MAX_EDGES:
         g.refuse = f"{len(g.edges)} relations — the grammar caps at {MAX_EDGES}"
         return g
     _assign_edges(g, relations, seen)
+    if not g.refuse:
+        _check_anchors(g, relations)
     if (g.refuse.startswith("cannot resolve") and g.anchor is None
             and any(n.kind == "var" for n in g.nodes)):
         if free_text:
@@ -747,12 +756,52 @@ def _fit_relations(g: Grounding, relations: dict[str, Relation],
         pick = next((r for r in sharing.get(edge.form, [])
                      if r not in used and fits(relations[r])), None)
         if pick is None:
+            # "which monuments are in Belfast", with Belfast a Monument: set aside,
+            # the anchor would be answered as itself, ignoring what "in" asked for
+            same = next((a for a in g.anchors for v in g.vars() if a.type == v.type), None)
+            if same is not None:
+                g.refuse = _wrong_end(same, edge.form, {
+                    t for r in sharing.get(edge.form, [edge.relation])
+                    for t in _targets(relations[r])})
+                return
             g.edges.remove(edge)
             g.notes.append(f"'{edge.form}' set aside: no relation it names joins {types}")
             continue
         used.add(pick)
         g.edges[g.edges.index(edge)] = _edge(relations[pick], edge.pos, form=edge.form)
         g.notes.append(f"'{edge.form}' → relation {pick} instead: it joins {types}")
+
+
+def _targets(rel: Relation, source: str | None = None) -> set[str]:
+    """The types `rel` can point at (from `source`, if given); empty when unknown."""
+    if not rel.ends:
+        return set(rel.range)
+    return {t for m, ts in rel.ends if source in (None, m) for t in ts}
+
+
+def _wrong_end(anchor: Node, form: str, targets: set[str]) -> str:
+    what = f"a {' or '.join(sorted(targets))}, which" if targets else "a record"
+    return f"{anchor.type} '{anchor.name}' isn't {what} '{form}' points at"
+
+
+def _check_anchors(g: Grounding, relations: dict[str, Relation]) -> None:
+    """A named record must be one its link can point at: "what is in Navan
+    Fort", a Monument where 'in' points at Sites, would match nothing real.
+    Where the link can't say what it points at and only the link implied the
+    subject ("what period is Navan Fort"), the question asks for the record's
+    own detail, and a plan would use the record as that detail's value."""
+    for e in g.edges:
+        rel = relations.get(e.relation)
+        if rel is None or e.target is None or e.target.kind != "anchor":
+            continue
+        a = e.target
+        if not rel.joins(e.source.type, a.type):
+            g.refuse = _wrong_end(a, e.form, _targets(rel, e.source.type))
+            return
+        if e.source.implicit and not _targets(rel, e.source.type):
+            g.refuse = (f"asks for the {rel.name.replace('_', ' ')} of {a.type} '{a.name}' itself; "
+                        "a named record's own details can't be answered yet")
+            return
 
 
 def _imply_join(g: Grounding, relations: dict[str, Relation]) -> None:
@@ -812,7 +861,7 @@ def _assign_edges(g: Grounding, relations: dict[str, Relation], seen: dict) -> N
                     # type-fitting candidate is its OTHER end is misgrounded
                     existing = seen[t]
                     return existing if existing is not present else None
-                cand = Node("var", t, edge.pos + 0.5, var=f"?v{len(seen)}")
+                cand = Node("var", t, edge.pos + 0.5, var=f"?v{len(seen)}", implicit=True)
                 seen[t] = cand
                 g.nodes.append(cand)
                 g.notes.append(f"relation {edge.relation} → implicit {t} variable {cand.var}")
