@@ -1,0 +1,18 @@
+{
+ "model": "Activity",
+ "nodegroup": "digital_files",
+ "entries": [
+  {
+   "phrases": [
+    "digital files",
+    "documents",
+    "attachments",
+    "files",
+    "pdf",
+    "report file"
+   ],
+   "kind": "link",
+   "node": "digital_files"
+  }
+ ]
+}

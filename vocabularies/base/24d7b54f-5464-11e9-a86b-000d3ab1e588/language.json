@@ -1,0 +1,17 @@
+{
+ "model": "Bibliographic Source",
+ "nodegroup": "language",
+ "entries": [
+  {
+   "phrases": [
+    "language",
+    "written in",
+    "what language",
+    "in which language",
+    "language of publication"
+   ],
+   "kind": "property",
+   "node": "language"
+  }
+ ]
+}

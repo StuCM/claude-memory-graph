@@ -1,0 +1,22 @@
+{
+ "model": "Bibliographic Source",
+ "nodegroup": "journal_or_serial",
+ "entries": [
+  {
+   "phrases": [
+    "journal",
+    "series",
+    "serial",
+    "periodical",
+    "part of series",
+    "magazine",
+    "which journal",
+    "published in journal",
+    "journal title",
+    "in the series"
+   ],
+   "kind": "link",
+   "node": "journal_or_serial"
+  }
+ ]
+}

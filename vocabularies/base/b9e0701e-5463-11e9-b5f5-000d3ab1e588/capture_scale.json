@@ -1,0 +1,15 @@
+{
+ "model": "Activity",
+ "nodegroup": "capture_scale",
+ "entries": [
+  {
+   "phrases": [
+    "capture scale",
+    "map scale",
+    "digitised at scale"
+   ],
+   "kind": "property",
+   "node": "capture_scale"
+  }
+ ]
+}

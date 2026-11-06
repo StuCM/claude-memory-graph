@@ -1,0 +1,16 @@
+{
+ "model": "Area",
+ "nodegroup": "capture_scale",
+ "entries": [
+  {
+   "phrases": [
+    "capture scale",
+    "map scale",
+    "scale of mapping",
+    "digitised scale"
+   ],
+   "kind": "property",
+   "node": "capture_scale"
+  }
+ ]
+}

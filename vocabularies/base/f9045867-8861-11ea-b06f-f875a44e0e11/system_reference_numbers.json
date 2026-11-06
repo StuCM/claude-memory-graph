@@ -1,0 +1,39 @@
+{
+ "model": "Period",
+ "nodegroup": "system_reference_numbers",
+ "entries": [
+  {
+   "phrases": [
+    "reference number",
+    "record number",
+    "her number",
+    "primary reference",
+    "id number",
+    "prn",
+    "sites and monuments record number"
+   ],
+   "kind": "property",
+   "node": "primary_reference_number"
+  },
+  {
+   "phrases": [
+    "legacy id",
+    "old reference",
+    "previous reference number",
+    "former id",
+    "legacy reference"
+   ],
+   "kind": "property",
+   "node": "legacy_id"
+  },
+  {
+   "phrases": [
+    "uuid",
+    "resource id",
+    "system id"
+   ],
+   "kind": "property",
+   "node": "resourceid"
+  }
+ ]
+}

@@ -1,0 +1,413 @@
+{
+ "model": "Monument",
+ "nodegroup": "associated_actors",
+ "entries": [
+  {
+   "phrases": [
+    "association dates",
+    "associated from",
+    "period of association",
+    "when were they associated",
+    "association start",
+    "involvement dates",
+    "dates of involvement"
+   ],
+   "kind": "date",
+   "node": "associated_actor_start_date",
+   "end_node": "associated_actor_end_date"
+  },
+  {
+   "phrases": [
+    "associated with",
+    "involved",
+    "who was involved",
+    "people",
+    "people involved",
+    "organisations",
+    "organizations",
+    "associated people",
+    "associated organisations",
+    "connected with",
+    "linked to",
+    "related people",
+    "who",
+    "persons",
+    "people associated"
+   ],
+   "kind": "link",
+   "node": "actor"
+  }
+ ],
+ "group": {
+  "phrases": [],
+  "nodes": {
+   "actor": {
+    "role": "actor"
+   },
+   "role_type": {
+    "role": "type"
+   },
+   "associated_actor_start_date": {
+    "role": "date",
+    "end_node": "associated_actor_end_date"
+   }
+  },
+  "combos": [
+   {
+    "phrases": [
+     "designed by",
+     "architect",
+     "who designed",
+     "who designed it",
+     "architects",
+     "design by architect",
+     "architectural design by",
+     "whose design"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Architect"
+    }
+   },
+   {
+    "phrases": [
+     "designer",
+     "designers",
+     "design by",
+     "designed it"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Designer"
+    }
+   },
+   {
+    "phrases": [
+     "built by",
+     "constructed by",
+     "builder",
+     "builders",
+     "who built",
+     "who built it",
+     "erected by",
+     "contractor",
+     "building contractor",
+     "who constructed"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Builder"
+    }
+   },
+   {
+    "phrases": [
+     "engineer",
+     "engineered by",
+     "engineers",
+     "civil engineer",
+     "structural engineer"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Engineer"
+    }
+   },
+   {
+    "phrases": [
+     "excavated by",
+     "excavator",
+     "who excavated",
+     "dug by",
+     "excavators",
+     "excavating archaeologist",
+     "archaeologist"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Excavator"
+    }
+   },
+   {
+    "phrases": [
+     "director of excavations",
+     "dig director",
+     "directed the excavation",
+     "fieldwork director",
+     "excavation directed by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Director of Fieldwork"
+    }
+   },
+   {
+    "phrases": [
+     "owned by",
+     "owner",
+     "owners",
+     "who owns",
+     "who owned",
+     "proprietor",
+     "belonged to",
+     "landowner"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Owner"
+    }
+   },
+   {
+    "phrases": [
+     "patron",
+     "commissioned by",
+     "who commissioned",
+     "benefactor",
+     "founded by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Patron"
+    }
+   },
+   {
+    "phrases": [
+     "client",
+     "built for",
+     "made for",
+     "for whom"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Client"
+    }
+   },
+   {
+    "phrases": [
+     "funded by",
+     "financed by",
+     "paid for by",
+     "financier",
+     "funder",
+     "funding body",
+     "who paid for"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Funding Body/Financier"
+    }
+   },
+   {
+    "phrases": [
+     "sponsor",
+     "sponsored by",
+     "sponsors"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Sponsor"
+    }
+   },
+   {
+    "phrases": [
+     "developer",
+     "developed by",
+     "property developer",
+     "speculative builder"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Developer"
+    }
+   },
+   {
+    "phrases": [
+     "artist",
+     "artwork by",
+     "by the artist"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Artist"
+    }
+   },
+   {
+    "phrases": [
+     "sculptor",
+     "sculpted by",
+     "carved by",
+     "sculpture by",
+     "who sculpted"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Sculptor"
+    }
+   },
+   {
+    "phrases": [
+     "stonemason",
+     "mason",
+     "masons",
+     "masonry by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Stonemason"
+    }
+   },
+   {
+    "phrases": [
+     "craftsman",
+     "craftsperson",
+     "craftsmen",
+     "made by",
+     "crafted by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Craftsperson"
+    }
+   },
+   {
+    "phrases": [
+     "landscape gardener",
+     "landscaped by",
+     "gardens laid out by",
+     "garden designer",
+     "landscape designer",
+     "laid out by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Landscape Gardener"
+    }
+   },
+   {
+    "phrases": [
+     "interior designer",
+     "interiors by",
+     "interior design by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Interior Designer"
+    }
+   },
+   {
+    "phrases": [
+     "painter",
+     "painted by",
+     "murals by",
+     "decorated by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Painter"
+    }
+   },
+   {
+    "phrases": [
+     "stained glass by",
+     "stained glass maker",
+     "glazier",
+     "window by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Stained Glass Worker"
+    }
+   },
+   {
+    "phrases": [
+     "manufacturer",
+     "manufactured by",
+     "made by the firm",
+     "maker",
+     "foundry"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Manufacturer"
+    }
+   },
+   {
+    "phrases": [
+     "surveyor",
+     "surveyed by",
+     "who surveyed"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Surveyor"
+    }
+   },
+   {
+    "phrases": [
+     "photographer",
+     "photographed by",
+     "who photographed"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Photographer"
+    }
+   },
+   {
+    "phrases": [
+     "found by",
+     "discovered by",
+     "finder",
+     "who found",
+     "who discovered"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Finder"
+    }
+   },
+   {
+    "phrases": [
+     "famous person",
+     "historic figure",
+     "famous resident",
+     "lived here",
+     "notable person",
+     "famous people",
+     "person of historic interest",
+     "who lived there"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Person of Historic Interest"
+    }
+   },
+   {
+    "phrases": [
+     "antiquarian",
+     "recorded by antiquarian",
+     "antiquarians",
+     "antiquarian account"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Antiquarian"
+    }
+   },
+   {
+    "phrases": [
+     "recorded by",
+     "recorder",
+     "who recorded"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Recorder"
+    }
+   }
+  ],
+  "answers": {
+   "who": "actor",
+   "when": "associated_actor_start_date"
+  }
+ }
+}

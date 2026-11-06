@@ -1,0 +1,17 @@
+{
+ "model": "Consultation",
+ "nodegroup": "contested_heritage_assignment",
+ "entries": [
+  {
+   "phrases": [
+    "contested heritage",
+    "contested",
+    "controversial",
+    "disputed heritage",
+    "is it contested"
+   ],
+   "kind": "property",
+   "node": "contested_heritage"
+  }
+ ]
+}

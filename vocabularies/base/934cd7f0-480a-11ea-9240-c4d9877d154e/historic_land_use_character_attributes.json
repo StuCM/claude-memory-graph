@@ -1,0 +1,75 @@
+{
+ "model": "Historic Landscape Characterization",
+ "nodegroup": "historic_land_use_character_attributes",
+ "entries": [
+  {
+   "phrases": [
+    "average height",
+    "how tall",
+    "height",
+    "number of storeys",
+    "storeys",
+    "stories",
+    "how many floors",
+    "building height",
+    "how high",
+    "floors",
+    "tall buildings",
+    "storey height",
+    "high-rise",
+    "low-rise"
+   ],
+   "kind": "property",
+   "node": "average_height"
+  },
+  {
+   "phrases": [
+    "gardens",
+    "rear gardens",
+    "back gardens",
+    "garden size",
+    "do houses have gardens",
+    "communal gardens",
+    "size of gardens",
+    "back garden",
+    "garden"
+   ],
+   "kind": "property",
+   "node": "rear_gardens"
+  },
+  {
+   "phrases": [
+    "street frontage",
+    "frontage",
+    "set back",
+    "setback",
+    "building line",
+    "distance from the street",
+    "set back from road",
+    "front gardens"
+   ],
+   "kind": "property",
+   "node": "street_frontage"
+  },
+  {
+   "phrases": [
+    "street pattern",
+    "street layout",
+    "road layout",
+    "layout",
+    "grid pattern",
+    "street plan",
+    "morphology",
+    "urban form",
+    "plan form",
+    "road pattern",
+    "cul-de-sac",
+    "grid-iron",
+    "street network",
+    "town plan"
+   ],
+   "kind": "property",
+   "node": "street_pattern"
+  }
+ ]
+}

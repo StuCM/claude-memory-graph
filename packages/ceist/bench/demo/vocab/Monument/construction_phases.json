@@ -1,0 +1,274 @@
+{
+ "model": "Monument",
+ "nodegroup": "construction_phases",
+ "entries": [],
+ "group": {
+  "phrases": [],
+  "nodes": {
+   "monument_type": {
+    "role": "type"
+   },
+   "cultural_period": {
+    "role": "other"
+   }
+  },
+  "combos": [
+   {
+    "phrases": [
+     "uncertain"
+    ],
+    "set": {
+     "cultural_period": "Uncertain"
+    }
+   },
+   {
+    "phrases": [
+     "early christian"
+    ],
+    "set": {
+     "cultural_period": "Early Christian"
+    }
+   },
+   {
+    "phrases": [
+     "prehistoric"
+    ],
+    "set": {
+     "cultural_period": "Prehistoric"
+    }
+   },
+   {
+    "phrases": [
+     "post-medieval"
+    ],
+    "set": {
+     "cultural_period": "Post-Medieval"
+    }
+   },
+   {
+    "phrases": [
+     "modern"
+    ],
+    "set": {
+     "cultural_period": "Modern"
+    }
+   },
+   {
+    "phrases": [
+     "bronze age"
+    ],
+    "set": {
+     "cultural_period": "Bronze Age"
+    }
+   },
+   {
+    "phrases": [
+     "medieval"
+    ],
+    "set": {
+     "cultural_period": "Medieval"
+    }
+   },
+   {
+    "phrases": [
+     "neolithic"
+    ],
+    "set": {
+     "cultural_period": "Neolithic"
+    }
+   },
+   {
+    "phrases": [
+     "medieval/late medieval"
+    ],
+    "set": {
+     "cultural_period": "Medieval/Late Medieval"
+    }
+   },
+   {
+    "phrases": [
+     "late medieval"
+    ],
+    "set": {
+     "cultural_period": "Late Medieval"
+    }
+   },
+   {
+    "phrases": [
+     "early medieval"
+    ],
+    "set": {
+     "cultural_period": "Early Medieval"
+    }
+   },
+   {
+    "phrases": [
+     "mesolithic"
+    ],
+    "set": {
+     "cultural_period": "Mesolithic"
+    }
+   },
+   {
+    "phrases": [
+     "neolithic/bronze age"
+    ],
+    "set": {
+     "cultural_period": "Neolithic/Bronze Age"
+    }
+   },
+   {
+    "phrases": [
+     "iron age"
+    ],
+    "set": {
+     "cultural_period": "Iron Age"
+    }
+   },
+   {
+    "phrases": [
+     "early christian/medieval"
+    ],
+    "set": {
+     "cultural_period": "Early Christian/Medieval"
+    }
+   },
+   {
+    "phrases": [
+     "late bronze age"
+    ],
+    "set": {
+     "cultural_period": "Late Bronze Age"
+    }
+   },
+   {
+    "phrases": [
+     "early bronze age"
+    ],
+    "set": {
+     "cultural_period": "Early Bronze Age"
+    }
+   },
+   {
+    "phrases": [
+     "middle bronze age"
+    ],
+    "set": {
+     "cultural_period": "Middle Bronze Age"
+    }
+   },
+   {
+    "phrases": [
+     "mesolithic/neolithic"
+    ],
+    "set": {
+     "cultural_period": "Mesolithic/Neolithic"
+    }
+   },
+   {
+    "phrases": [
+     "late neolithic"
+    ],
+    "set": {
+     "cultural_period": "Late Neolithic"
+    }
+   },
+   {
+    "phrases": [
+     "early neolithic"
+    ],
+    "set": {
+     "cultural_period": "Early Neolithic"
+    }
+   },
+   {
+    "phrases": [
+     "late bronze age/iron age"
+    ],
+    "set": {
+     "cultural_period": "Late Bronze Age/Iron Age"
+    }
+   },
+   {
+    "phrases": [
+     "12th century"
+    ],
+    "set": {
+     "cultural_period": "12th Century"
+    }
+   },
+   {
+    "phrases": [
+     "13th century"
+    ],
+    "set": {
+     "cultural_period": "13th Century"
+    }
+   },
+   {
+    "phrases": [
+     "14th century"
+    ],
+    "set": {
+     "cultural_period": "14th Century"
+    }
+   },
+   {
+    "phrases": [
+     "15th century"
+    ],
+    "set": {
+     "cultural_period": "15th Century"
+    }
+   },
+   {
+    "phrases": [
+     "16th century"
+    ],
+    "set": {
+     "cultural_period": "16th Century"
+    }
+   },
+   {
+    "phrases": [
+     "17th century"
+    ],
+    "set": {
+     "cultural_period": "17th Century"
+    }
+   },
+   {
+    "phrases": [
+     "18th century"
+    ],
+    "set": {
+     "cultural_period": "18th Century"
+    }
+   },
+   {
+    "phrases": [
+     "18th/19th century"
+    ],
+    "set": {
+     "cultural_period": "18th/19th Century"
+    }
+   },
+   {
+    "phrases": [
+     "19th century"
+    ],
+    "set": {
+     "cultural_period": "19th Century"
+    }
+   },
+   {
+    "phrases": [
+     "20th century"
+    ],
+    "set": {
+     "cultural_period": "20th Century"
+    }
+   }
+  ]
+ }
+}

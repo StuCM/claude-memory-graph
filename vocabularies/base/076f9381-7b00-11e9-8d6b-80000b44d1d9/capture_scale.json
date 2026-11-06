@@ -1,0 +1,16 @@
+{
+ "model": "Monument",
+ "nodegroup": "capture_scale",
+ "entries": [
+  {
+   "phrases": [
+    "capture scale",
+    "map scale",
+    "digitised at scale",
+    "digitizing scale"
+   ],
+   "kind": "property",
+   "node": "capture_scale"
+  }
+ ]
+}

@@ -1,0 +1,27 @@
+{
+ "model": "Area",
+ "nodegroup": "spatial_record_compilation",
+ "entries": [
+  {
+   "phrases": [
+    "spatial record compiled",
+    "mapping compiled",
+    "date of compilation",
+    "when was it mapped",
+    "geometry compiled"
+   ],
+   "kind": "date",
+   "node": "compilation_start_date",
+   "end_node": "compilation_end_date"
+  },
+  {
+   "phrases": [
+    "compiler",
+    "compiled by",
+    "who compiled the mapping"
+   ],
+   "kind": "property",
+   "node": "compiler_name"
+  }
+ ]
+}

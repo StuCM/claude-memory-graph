@@ -1,0 +1,96 @@
+{
+ "model": "Consultation",
+ "nodegroup": "communications",
+ "entries": [
+  {
+   "phrases": [
+    "communication date",
+    "contacted",
+    "emailed",
+    "phoned",
+    "rang",
+    "wrote to",
+    "date of correspondence",
+    "when were they contacted",
+    "date of email",
+    "date of phone call",
+    "telephoned",
+    "corresponded"
+   ],
+   "kind": "date",
+   "node": "date",
+   "end_node": "end_date_n1"
+  },
+  {
+   "phrases": [
+    "communication type",
+    "how were they contacted",
+    "email or phone",
+    "contact method",
+    "type of communication",
+    "method of communication"
+   ],
+   "kind": "property",
+   "node": "communication_type"
+  },
+  {
+   "phrases": [
+    "communication notes",
+    "what was discussed",
+    "notes of communication",
+    "conversation notes",
+    "call notes",
+    "meeting notes"
+   ],
+   "kind": "property",
+   "node": "communication_description"
+  },
+  {
+   "phrases": [
+    "subject",
+    "email subject",
+    "topic",
+    "subject of communication",
+    "regarding",
+    "re"
+   ],
+   "kind": "property",
+   "node": "subject"
+  },
+  {
+   "phrases": [
+    "follow on actions",
+    "follow up",
+    "follow-up",
+    "next steps",
+    "follow up actions",
+    "actions arising"
+   ],
+   "kind": "property",
+   "node": "follow_on_actions_n1"
+  },
+  {
+   "phrases": [
+    "communication file",
+    "email attachment",
+    "communication attachment",
+    "correspondence file"
+   ],
+   "kind": "link",
+   "node": "digital_file_s_"
+  },
+  {
+   "phrases": [
+    "participants",
+    "who was contacted",
+    "communication participants",
+    "spoke to",
+    "who was spoken to",
+    "who was in the conversation",
+    "contacted person"
+   ],
+   "kind": "link",
+   "node": "attendees_n1"
+  }
+ ]
+}

@@ -1,0 +1,37 @@
+{
+ "format": "ceist.vocab-groups/1",
+ "models": {
+  "Figure": {
+   "graphid": "f040289b-a5d8-52bc-8c2a-64386d1261e0",
+   "base": "22477f01-1a44-11e9-b0a9-000d3ab1e588"
+  },
+  "Group": {
+   "graphid": "b5fdcf4a-7436-521b-9b11-3483f8de754e",
+   "base": "d4a88461-5463-11e9-90d9-000d3ab1e588"
+  },
+  "Monument": {
+   "graphid": "062f4e2c-8c06-55d6-9547-f87f2fffffa8",
+   "base": "076f9381-7b00-11e9-8d6b-80000b44d1d9"
+  },
+  "Object": {
+   "graphid": "f3ac947a-ca1e-54e0-a155-a27f02ba50da",
+   "base": "343cc20c-2c5a-11e8-90fa-0242ac120005"
+  },
+  "Site": {
+   "graphid": "f20bd6f7-04b3-5bf9-9661-971d42a88f0b",
+   "base": "78b32d8c-b6f2-11ea-af42-f875a44e0e11",
+   "type_words": [
+    "place",
+    "places"
+   ]
+  },
+  "Tale": {
+   "graphid": "7e22e3d9-0237-5b6e-a397-190fa54d6d2d",
+   "base": "0add0e11-99aa-11ea-9ab8-f875a44e0e11",
+   "type_words": [
+    "story",
+    "stories"
+   ]
+  }
+ }
+}

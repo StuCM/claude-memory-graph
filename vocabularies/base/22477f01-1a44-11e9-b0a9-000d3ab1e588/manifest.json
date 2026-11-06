@@ -1,0 +1,97 @@
+{
+ "format": "ceist.vocab-groups/1",
+ "model": "Person",
+ "graphid": "22477f01-1a44-11e9-b0a9-000d3ab1e588",
+ "nodegroups": {
+  "associated_activities": {
+   "id": "25b3afc7-186c-11eb-a50d-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "8fa85375e53f19420fde49dc7c2e1b5da27ede599b30559c3f242164a53bdd27"
+  },
+  "associated_actors": {
+   "id": "bdec691d-186c-11eb-b4fe-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "d7122caadef38b5c85998a0ce3e1776a1fbe4fb092266ddee9bf674d6a1a884b"
+  },
+  "associated_consultations": {
+   "id": "e79122a9-51ab-11eb-8ab6-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "1850a4a73daca15a5e642fedcb4caf3c28ca2947b5cea035b29fd58cb5dddf57"
+  },
+  "associated_monuments_areas_and_artefacts": {
+   "id": "f1b9925f-186c-11eb-bd95-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "f58741c9011876c21166a048b8146852ba4ae192ea10d421028323bd4ac27397"
+  },
+  "audit_metadata": {
+   "id": "32e81677-effd-11eb-bef3-a87eeabdefba",
+   "parent": null,
+   "description_sha256": "4026d3442363584b40a473d741241af04f511a2d16078772bab0df7248b46bc0"
+  },
+  "bibliographic_source_citation": {
+   "id": "5c229489-effd-11eb-b9c5-a87eeabdefba",
+   "parent": null,
+   "description_sha256": "c2b0e66bb3fae3ee78babc4a9241bd53ecf58334f1388df775b19cb95ff4501d"
+  },
+  "birth": {
+   "id": "fed4c6c1-1fe5-11e9-bbdc-000d3ab1e588",
+   "parent": null,
+   "description_sha256": "df37239ae5f8100b708c003a6ad1f296f8c149b096384a9478be7079f70c86e7"
+  },
+  "contact_details": {
+   "id": "2547c12f-9505-11ea-a507-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "448d9974bf0fcbd9d3eff9bbdd1d031b7b5d328083331ff5e7e53c45f272dab8"
+  },
+  "currency": {
+   "id": "bfc983c0-a3df-11e9-a84a-00224800b26d",
+   "parent": null,
+   "description_sha256": "a75937bebe2c6222da22fe91d02945decf7ce6a5bb92a107e1357354a7875293"
+  },
+  "death": {
+   "id": "06f3a241-1fe6-11e9-86f4-000d3ab1e588",
+   "parent": null,
+   "description_sha256": "446768edf45f53a945c3022b4c013fe1995049598fc58264e5d2f33ebf3e21c1"
+  },
+  "descriptions": {
+   "id": "554b62c7-9504-11ea-8510-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "7578a1a2f5f17c88b20e8e27980ae641ced247e38dc60e7c645e9e951b477c85"
+  },
+  "digital_file_s_": {
+   "id": "486d0abb-8563-11ea-ad73-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "adb0c629457619a4d477cf2c94f5f36712e610efdf3645c3ccf367e44f4004a3"
+  },
+  "external_cross_references": {
+   "id": "094f1e47-effa-11eb-aa2f-a87eeabdefba",
+   "parent": null,
+   "description_sha256": "3284b555d0502e08de7e3b11fb9c4023e54187a0d5fb5019c6b4477019169ffa"
+  },
+  "images": {
+   "id": "84bb5171-1ac3-11eb-b702-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "b3c8cfd5ee52bf445ded1c147c96c9bb6446b99d04f37a076273e5841b2d1002"
+  },
+  "location_data": {
+   "id": "5f93048e-80a9-11ea-b0da-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "ee19114d106c050295bb39acd76cdcc56067567546ff3a8a6e96666f8315576b"
+  },
+  "name": {
+   "id": "4110f741-1a44-11e9-885e-000d3ab1e588",
+   "parent": null,
+   "description_sha256": "2b00ed584e663d1f88543dea275464b8a93f4b2975aabf796922853cae590f33"
+  },
+  "resource_model_type": {
+   "id": "f245f43f-9aa5-11ea-b2c5-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "9f8713aaf287f9114a813b50809eafe7b550b5bcfb68712a4e664dc213efd972"
+  },
+  "system_reference_numbers": {
+   "id": "9718d23f-950e-11ea-b421-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "cbe39420f1ae501284a6a480952e8063e8685e1c870a4e5ef7631a262abfa053"
+  }
+ }
+}

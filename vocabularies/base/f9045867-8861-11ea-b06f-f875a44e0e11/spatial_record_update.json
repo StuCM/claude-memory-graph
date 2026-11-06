@@ -1,0 +1,17 @@
+{
+ "model": "Period",
+ "nodegroup": "spatial_record_update",
+ "entries": [
+  {
+   "phrases": [
+    "spatial record updated",
+    "geometry updated",
+    "map record last updated",
+    "location last updated"
+   ],
+   "kind": "date",
+   "node": "update_start_date",
+   "end_node": "update_end_date"
+  }
+ ]
+}

@@ -1,0 +1,23 @@
+{
+ "model": "Heritage Story",
+ "nodegroup": "digital_file_s_",
+ "entries": [
+  {
+   "phrases": [
+    "media",
+    "files",
+    "audio",
+    "video",
+    "documents",
+    "attachments",
+    "podcast",
+    "recording",
+    "digital files",
+    "multimedia",
+    "downloads"
+   ],
+   "kind": "link",
+   "node": "digital_file_s_"
+  }
+ ]
+}

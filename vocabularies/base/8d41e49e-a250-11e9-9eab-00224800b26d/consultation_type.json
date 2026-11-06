@@ -1,0 +1,20 @@
+{
+ "model": "Consultation",
+ "nodegroup": "consultation_type",
+ "entries": [
+  {
+   "phrases": [
+    "consultation type",
+    "type of consultation",
+    "pre-application",
+    "pre app",
+    "post-application",
+    "condition application",
+    "stage of application",
+    "kind of consultation"
+   ],
+   "kind": "property",
+   "node": "consultation_type"
+  }
+ ]
+}

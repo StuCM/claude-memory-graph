@@ -1,0 +1,21 @@
+{
+ "model": "Area",
+ "nodegroup": "location_descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "location",
+    "where is it",
+    "location description",
+    "whereabouts",
+    "situated",
+    "where",
+    "how to find it",
+    "setting",
+    "position"
+   ],
+   "kind": "property",
+   "node": "location_description"
+  }
+ ]
+}

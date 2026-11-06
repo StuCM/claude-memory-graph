@@ -1,0 +1,22 @@
+{
+ "model": "Bibliographic Source",
+ "nodegroup": "bibliographic_source_type",
+ "entries": [
+  {
+   "phrases": [
+    "type",
+    "source type",
+    "type of publication",
+    "document type",
+    "what kind of source",
+    "publication type",
+    "kind of source",
+    "what type",
+    "format",
+    "category"
+   ],
+   "kind": "property",
+   "node": "bibliographic_source_type"
+  }
+ ]
+}

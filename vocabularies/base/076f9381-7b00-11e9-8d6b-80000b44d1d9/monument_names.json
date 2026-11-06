@@ -1,0 +1,25 @@
+{
+ "model": "Monument",
+ "nodegroup": "monument_names",
+ "entries": [
+  {
+   "phrases": [
+    "name",
+    "called",
+    "what is it called",
+    "monument name",
+    "site name",
+    "known as",
+    "named",
+    "title",
+    "building name",
+    "what is its name",
+    "names",
+    "alternative name",
+    "former name"
+   ],
+   "kind": "property",
+   "node": "monument_name"
+  }
+ ]
+}

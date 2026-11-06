@@ -1,0 +1,42 @@
+{
+ "model": "Application Area",
+ "nodegroup": "system_reference_numbers",
+ "entries": [
+  {
+   "phrases": [
+    "reference number",
+    "record number",
+    "her number",
+    "her reference",
+    "record id",
+    "id number",
+    "primary reference",
+    "application area number"
+   ],
+   "kind": "property",
+   "node": "primary_reference_number"
+  },
+  {
+   "phrases": [
+    "legacy id",
+    "legacy reference",
+    "old reference",
+    "former id",
+    "previous reference number",
+    "old record number"
+   ],
+   "kind": "property",
+   "node": "legacy_id"
+  },
+  {
+   "phrases": [
+    "uuid",
+    "resource id",
+    "system id",
+    "unique identifier"
+   ],
+   "kind": "property",
+   "node": "resourceid"
+  }
+ ]
+}

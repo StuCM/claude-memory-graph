@@ -1,0 +1,23 @@
+{
+ "model": "Application Area",
+ "nodegroup": "associated_monuments_areas_and_artefacts",
+ "entries": [
+  {
+   "phrases": [
+    "heritage assets",
+    "affected monuments",
+    "archaeological sites",
+    "related monuments",
+    "monuments within",
+    "associated monuments",
+    "artefacts",
+    "related sites",
+    "historic sites",
+    "heritage assets affected",
+    "wrecks"
+   ],
+   "kind": "link",
+   "node": "associated_monuments_areas_and_artefacts"
+  }
+ ]
+}

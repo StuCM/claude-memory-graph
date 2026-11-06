@@ -1,0 +1,17 @@
+{
+ "model": "Maritime Vessel",
+ "nodegroup": "associated_consultations",
+ "entries": [
+  {
+   "phrases": [
+    "consultations",
+    "planning consultations",
+    "planning applications",
+    "casework",
+    "development consultations"
+   ],
+   "kind": "link",
+   "node": "associated_consultations"
+  }
+ ]
+}

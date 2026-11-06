@@ -1,0 +1,20 @@
+{
+ "model": "Application Area",
+ "nodegroup": "references",
+ "entries": [
+  {
+   "phrases": [
+    "planning reference",
+    "application number",
+    "planning application number",
+    "reference",
+    "case reference",
+    "planning ref",
+    "council reference",
+    "application reference"
+   ],
+   "kind": "property",
+   "node": "reference_number"
+  }
+ ]
+}

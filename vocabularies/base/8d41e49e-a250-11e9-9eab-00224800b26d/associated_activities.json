@@ -1,0 +1,20 @@
+{
+ "model": "Consultation",
+ "nodegroup": "associated_activities",
+ "entries": [
+  {
+   "phrases": [
+    "related activities",
+    "fieldwork",
+    "excavations",
+    "investigations",
+    "archaeological work carried out",
+    "associated activities",
+    "events",
+    "surveys carried out"
+   ],
+   "kind": "link",
+   "node": "associated_activities"
+  }
+ ]
+}

@@ -1,0 +1,36 @@
+{
+ "model": "Application Area",
+ "nodegroup": "spatial_record_authorization",
+ "entries": [
+  {
+   "phrases": [
+    "spatial record authorised",
+    "spatial record authorized",
+    "date of authorisation",
+    "mapping authorised",
+    "geometry authorised"
+   ],
+   "kind": "date",
+   "node": "date_of_authorization",
+   "end_node": "authorization_end_date"
+  },
+  {
+   "phrases": [
+    "authorisation status",
+    "authorization status",
+    "is the mapping authorised"
+   ],
+   "kind": "property",
+   "node": "authorization_type"
+  },
+  {
+   "phrases": [
+    "spatial record authorised by",
+    "mapping authorised by",
+    "who authorised the mapping"
+   ],
+   "kind": "property",
+   "node": "authorizer_name"
+  }
+ ]
+}

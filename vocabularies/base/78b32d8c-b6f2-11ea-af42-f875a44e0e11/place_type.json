@@ -1,0 +1,19 @@
+{
+ "model": "Place",
+ "nodegroup": "place_type",
+ "entries": [
+  {
+   "phrases": [
+    "place type",
+    "type of place",
+    "what kind of place",
+    "kind of place",
+    "type",
+    "named location or address",
+    "what type"
+   ],
+   "kind": "property",
+   "node": "place_type"
+  }
+ ]
+}

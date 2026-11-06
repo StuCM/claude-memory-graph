@@ -1,0 +1,64 @@
+{
+ "model": "Monument",
+ "nodegroup": "land_use_classification_assignment",
+ "entries": [
+  {
+   "phrases": [
+    "land use assessed",
+    "land use assessment date",
+    "date of land use assessment"
+   ],
+   "kind": "date",
+   "node": "land_use_assessment_start_date",
+   "end_node": "land_use_assessment_end_date"
+  },
+  {
+   "phrases": [
+    "geology",
+    "underlying geology",
+    "bedrock",
+    "rock type",
+    "solid geology",
+    "geological",
+    "what geology"
+   ],
+   "kind": "property",
+   "node": "geology"
+  },
+  {
+   "phrases": [
+    "subsoil",
+    "sub-soil",
+    "soil",
+    "soil type",
+    "what soil"
+   ],
+   "kind": "property",
+   "node": "sub_soil"
+  },
+  {
+   "phrases": [
+    "land use",
+    "current land use",
+    "land use classification",
+    "what is the land used for",
+    "cultivated",
+    "ploughed",
+    "under plough",
+    "pasture",
+    "land cover"
+   ],
+   "kind": "property",
+   "node": "land_use_classification"
+  },
+  {
+   "phrases": [
+    "land use notes",
+    "land use note",
+    "notes on land use"
+   ],
+   "kind": "property",
+   "node": "land_use_notes_value"
+  }
+ ]
+}

@@ -1,0 +1,18 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "national_grid_references",
+ "entries": [
+  {
+   "phrases": [
+    "grid reference",
+    "ngr",
+    "os grid reference",
+    "national grid reference",
+    "grid ref",
+    "os reference"
+   ],
+   "kind": "property",
+   "node": "national_grid_reference"
+  }
+ ]
+}

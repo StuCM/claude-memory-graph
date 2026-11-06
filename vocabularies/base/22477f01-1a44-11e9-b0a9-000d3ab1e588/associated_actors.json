@@ -1,0 +1,142 @@
+{
+ "model": "Person",
+ "nodegroup": "associated_actors",
+ "entries": [
+  {
+   "phrases": [
+    "association dates",
+    "associated from",
+    "period of association",
+    "when were they associated",
+    "association start",
+    "involvement dates",
+    "dates of involvement"
+   ],
+   "kind": "date",
+   "node": "associated_actor_start_date",
+   "end_node": "associated_actor_end_date"
+  },
+  {
+   "phrases": [
+    "associated with",
+    "associates",
+    "associated people",
+    "associated organisations",
+    "associated organizations",
+    "connected with",
+    "linked to",
+    "related people",
+    "worked with",
+    "colleagues",
+    "network",
+    "relationships",
+    "people connected",
+    "organisations",
+    "organizations",
+    "contacts",
+    "involved with"
+   ],
+   "kind": "link",
+   "node": "actor"
+  }
+ ],
+ "group": {
+  "phrases": [],
+  "nodes": {},
+  "combos": [
+   {
+    "phrases": [
+     "worked for",
+     "employed by",
+     "employer",
+     "employee of",
+     "job at",
+     "employment"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Employee"
+    }
+   },
+   {
+    "phrases": [
+     "patron",
+     "patron of",
+     "patronage",
+     "benefactor"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Patron"
+    }
+   },
+   {
+    "phrases": [
+     "client",
+     "clients",
+     "client of"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Client"
+    }
+   },
+   {
+    "phrases": [
+     "architect",
+     "architects",
+     "architect for"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Architect"
+    }
+   },
+   {
+    "phrases": [
+     "builder",
+     "builders",
+     "building firm"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Builder"
+    }
+   },
+   {
+    "phrases": [
+     "owner",
+     "owned",
+     "owner of"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Owner"
+    }
+   },
+   {
+    "phrases": [
+     "contributor",
+     "contributed to",
+     "collaborator"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Contributor"
+    }
+   },
+   {
+    "phrases": [
+     "sponsor",
+     "sponsored by",
+     "funded by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Sponsor"
+    }
+   }
+  ],
+  "answers": {}
+ }
+}

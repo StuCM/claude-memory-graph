@@ -1,0 +1,247 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "associated_actors",
+ "entries": [
+  {
+   "phrases": [
+    "associated with",
+    "involved",
+    "people",
+    "organisations",
+    "organizations",
+    "who was involved",
+    "connected to",
+    "associated people",
+    "associated person",
+    "linked person",
+    "related people",
+    "who is connected"
+   ],
+   "kind": "link",
+   "node": "actor"
+  },
+  {
+   "phrases": [
+    "role",
+    "what role",
+    "their role",
+    "role in",
+    "in what capacity"
+   ],
+   "kind": "property",
+   "node": "role_type"
+  },
+  {
+   "phrases": [
+    "association dates",
+    "when were they associated",
+    "date of association",
+    "association period",
+    "associated from"
+   ],
+   "kind": "date",
+   "node": "associated_actor_start_date",
+   "end_node": "associated_actor_end_date"
+  }
+ ],
+ "group": {
+  "phrases": [],
+  "nodes": {},
+  "combos": [
+   {
+    "phrases": [
+     "owned by",
+     "owner",
+     "who owned it",
+     "owners",
+     "belonged to",
+     "operated by",
+     "operator"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Owner"
+    }
+   },
+   {
+    "phrases": [
+     "designed by",
+     "designer",
+     "who designed it",
+     "design by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Designer"
+    }
+   },
+   {
+    "phrases": [
+     "engineer",
+     "engineered by",
+     "engineers"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Engineer"
+    }
+   },
+   {
+    "phrases": [
+     "found by",
+     "discovered by",
+     "finder",
+     "who found it",
+     "who discovered it",
+     "discoverer"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Finder"
+    }
+   },
+   {
+    "phrases": [
+     "excavated by",
+     "excavator",
+     "dug up by",
+     "who excavated it",
+     "who dug it up"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Excavator"
+    }
+   },
+   {
+    "phrases": [
+     "salvaged by",
+     "salvager",
+     "recovered by",
+     "who recovered it",
+     "who salvaged it"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Salvager"
+    }
+   },
+   {
+    "phrases": [
+     "dived by",
+     "diver",
+     "divers",
+     "who dived on it"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Diver"
+    }
+   },
+   {
+    "phrases": [
+     "photographed by",
+     "photographer",
+     "who photographed it"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Photographer"
+    }
+   },
+   {
+    "phrases": [
+     "surveyed by",
+     "surveyor",
+     "who surveyed it"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Surveyor"
+    }
+   },
+   {
+    "phrases": [
+     "recorded by",
+     "recorder",
+     "who recorded it"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Recorder"
+    }
+   },
+   {
+    "phrases": [
+     "researched by",
+     "researcher",
+     "who researched it"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Researcher"
+    }
+   },
+   {
+    "phrases": [
+     "donated by",
+     "donor",
+     "who donated it",
+     "gifted by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Donor"
+    }
+   },
+   {
+    "phrases": [
+     "famous person",
+     "person of historic interest",
+     "notable person",
+     "historic figure",
+     "famous people"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Person of Historic Interest"
+    }
+   },
+   {
+    "phrases": [
+     "funded by",
+     "funder",
+     "financed by",
+     "paid for by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Funding Body/Financier"
+    }
+   },
+   {
+    "phrases": [
+     "sponsored by",
+     "sponsor",
+     "sponsors"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Sponsor"
+    }
+   },
+   {
+    "phrases": [
+     "curator",
+     "curated by",
+     "who curated it"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Curator"
+    }
+   }
+  ],
+  "answers": {}
+ }
+}

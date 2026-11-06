@@ -1,0 +1,98 @@
+{
+ "model": "Maritime Vessel",
+ "nodegroup": "designation_and_protection_assignment",
+ "entries": [
+  {
+   "phrases": [
+    "designated",
+    "date designated",
+    "designation date",
+    "when was it protected",
+    "protected since",
+    "date of designation",
+    "when was it designated",
+    "protected in"
+   ],
+   "kind": "date",
+   "node": "designation_start_date",
+   "end_node": "designation_end_date"
+  },
+  {
+   "phrases": [
+    "designation amended",
+    "amendment date",
+    "designation amendment",
+    "when was the designation amended"
+   ],
+   "kind": "date",
+   "node": "designation_amendment_date"
+  },
+  {
+   "phrases": [
+    "designation",
+    "protection",
+    "protection status",
+    "designated as",
+    "protected wreck",
+    "legal protection",
+    "statutory protection",
+    "heritage protection",
+    "is it protected",
+    "scheduled monument",
+    "listed"
+   ],
+   "kind": "property",
+   "node": "designation_or_protection_type"
+  },
+  {
+   "phrases": [
+    "grade",
+    "listing grade",
+    "what grade",
+    "listed grade",
+    "grade ii"
+   ],
+   "kind": "property",
+   "node": "grade"
+  },
+  {
+   "phrases": [
+    "designation name",
+    "list entry name",
+    "protected as"
+   ],
+   "kind": "property",
+   "node": "designation_name"
+  },
+  {
+   "phrases": [
+    "at risk",
+    "heritage at risk",
+    "risk status",
+    "in danger",
+    "threatened",
+    "on the at risk register"
+   ],
+   "kind": "property",
+   "node": "risk_status"
+  },
+  {
+   "phrases": [
+    "local list criteria",
+    "why locally listed",
+    "local heritage criteria"
+   ],
+   "kind": "property",
+   "node": "local_heritage_list_criteria_type"
+  },
+  {
+   "phrases": [
+    "list entry link",
+    "designation link",
+    "designation url"
+   ],
+   "kind": "property",
+   "node": "reference_url"
+  }
+ ]
+}

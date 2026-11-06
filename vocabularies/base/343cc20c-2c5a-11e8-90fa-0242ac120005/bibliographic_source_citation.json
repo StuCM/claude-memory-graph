@@ -1,0 +1,58 @@
+{
+ "model": "Artefact",
+ "nodegroup": "bibliographic_source_citation",
+ "entries": [
+  {
+   "phrases": [
+    "sources",
+    "bibliography",
+    "references",
+    "published in",
+    "literature",
+    "cited in",
+    "publications",
+    "further reading",
+    "reports on"
+   ],
+   "kind": "link",
+   "node": "bibliographic_source_citation"
+  },
+  {
+   "phrases": [
+    "page",
+    "pages",
+    "page number",
+    "page reference"
+   ],
+   "kind": "property",
+   "node": "page_s_"
+  },
+  {
+   "phrases": [
+    "figures",
+    "figure number",
+    "figs"
+   ],
+   "kind": "property",
+   "node": "figs_"
+  },
+  {
+   "phrases": [
+    "plates",
+    "plate number",
+    "plate"
+   ],
+   "kind": "property",
+   "node": "plate_s_"
+  },
+  {
+   "phrases": [
+    "source comment",
+    "citation comment",
+    "note on source"
+   ],
+   "kind": "property",
+   "node": "comment"
+  }
+ ]
+}

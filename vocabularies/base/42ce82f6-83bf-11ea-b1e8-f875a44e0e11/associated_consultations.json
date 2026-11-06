@@ -1,0 +1,21 @@
+{
+ "model": "Application Area",
+ "nodegroup": "associated_consultations",
+ "entries": [
+  {
+   "phrases": [
+    "consultations",
+    "planning consultations",
+    "consultation",
+    "planning applications",
+    "planning cases",
+    "applications",
+    "associated consultations",
+    "which consultations",
+    "related consultations"
+   ],
+   "kind": "link",
+   "node": "associated_consultations"
+  }
+ ]
+}

@@ -1,0 +1,81 @@
+{
+ "model": "Person",
+ "nodegroup": "name",
+ "entries": [
+  {
+   "phrases": [
+    "name",
+    "full name",
+    "called",
+    "what is his name",
+    "what is her name",
+    "person name",
+    "who is",
+    "known as",
+    "named",
+    "whose name"
+   ],
+   "kind": "property",
+   "node": "full_name"
+  },
+  {
+   "phrases": [
+    "first name",
+    "forename",
+    "forenames",
+    "given name",
+    "christian name",
+    "first names"
+   ],
+   "kind": "property",
+   "node": "forename"
+  },
+  {
+   "phrases": [
+    "surname",
+    "last name",
+    "family name",
+    "second name"
+   ],
+   "kind": "property",
+   "node": "surname"
+  },
+  {
+   "phrases": [
+    "initials",
+    "initial",
+    "middle initial"
+   ],
+   "kind": "property",
+   "node": "initial_s_"
+  },
+  {
+   "phrases": [
+    "epithet",
+    "nickname",
+    "byname",
+    "sobriquet",
+    "also called"
+   ],
+   "kind": "property",
+   "node": "epithet"
+  },
+  {
+   "phrases": [
+    "title",
+    "honorific",
+    "rank",
+    "peerage",
+    "style",
+    "sir",
+    "lord",
+    "lady",
+    "dr",
+    "rev",
+    "styled as"
+   ],
+   "kind": "property",
+   "node": "title"
+  }
+ ]
+}

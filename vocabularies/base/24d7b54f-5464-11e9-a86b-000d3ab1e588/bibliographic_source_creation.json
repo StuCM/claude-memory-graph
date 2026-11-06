@@ -1,0 +1,69 @@
+{
+ "model": "Bibliographic Source",
+ "nodegroup": "bibliographic_source_creation",
+ "entries": [
+  {
+   "phrases": [
+    "author",
+    "written by",
+    "who wrote it",
+    "authored by",
+    "writer",
+    "authors",
+    "who is the author",
+    "by author"
+   ],
+   "kind": "property",
+   "node": "author_name"
+  },
+  {
+   "phrases": [
+    "editor",
+    "edited by",
+    "who edited it",
+    "editors"
+   ],
+   "kind": "property",
+   "node": "editor_name"
+  },
+  {
+   "phrases": [
+    "contributor",
+    "contributed by",
+    "contributors",
+    "who contributed"
+   ],
+   "kind": "property",
+   "node": "contributor_name"
+  },
+  {
+   "phrases": [
+    "contribution type",
+    "role of contributor",
+    "contributor role",
+    "type of contribution"
+   ],
+   "kind": "property",
+   "node": "contribution_type"
+  },
+  {
+   "phrases": [
+    "authorship type",
+    "author role",
+    "type of authorship"
+   ],
+   "kind": "property",
+   "node": "authorship_type"
+  },
+  {
+   "phrases": [
+    "statement of responsibility",
+    "responsibility",
+    "credits",
+    "responsible for"
+   ],
+   "kind": "property",
+   "node": "statement_of_responsibility"
+  }
+ ]
+}

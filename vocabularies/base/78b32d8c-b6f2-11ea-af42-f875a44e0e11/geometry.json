@@ -1,0 +1,34 @@
+{
+ "model": "Place",
+ "nodegroup": "geometry",
+ "entries": [
+  {
+   "phrases": [
+    "coordinates",
+    "map",
+    "on the map",
+    "geometry",
+    "boundary",
+    "footprint",
+    "extent",
+    "map location",
+    "gps",
+    "latitude and longitude",
+    "polygon",
+    "mapped"
+   ],
+   "kind": "property",
+   "node": "geospatial_coordinates"
+  },
+  {
+   "phrases": [
+    "feature shape",
+    "shape",
+    "point or polygon",
+    "geometry type"
+   ],
+   "kind": "property",
+   "node": "feature_shape"
+  }
+ ]
+}

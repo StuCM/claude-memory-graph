@@ -1,0 +1,135 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "aircraft_dimensions",
+ "entries": [
+  {
+   "phrases": [
+    "dimensions",
+    "size",
+    "measurements",
+    "how big",
+    "dimension",
+    "measurement",
+    "how large"
+   ],
+   "kind": "property",
+   "node": "dimension_value"
+  },
+  {
+   "phrases": [
+    "unit",
+    "units",
+    "unit of measurement",
+    "in metres or feet"
+   ],
+   "kind": "property",
+   "node": "dimension_measurement_unit"
+  }
+ ],
+ "group": {
+  "phrases": [],
+  "nodes": {},
+  "combos": [
+   {
+    "phrases": [
+     "length",
+     "how long",
+     "long",
+     "overall length",
+     "fuselage length"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Length"
+    }
+   },
+   {
+    "phrases": [
+     "wingspan",
+     "wing span",
+     "span",
+     "how wide are the wings",
+     "width of wings"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Wingspan"
+    }
+   },
+   {
+    "phrases": [
+     "height",
+     "how tall",
+     "how high",
+     "tall",
+     "high"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Height"
+    }
+   },
+   {
+    "phrases": [
+     "weight",
+     "how heavy",
+     "weighs",
+     "heavy",
+     "mass",
+     "how much does it weigh"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Weight"
+    }
+   },
+   {
+    "phrases": [
+     "breadth",
+     "width",
+     "how wide",
+     "wide",
+     "beam"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Breadth"
+    }
+   },
+   {
+    "phrases": [
+     "depth",
+     "how deep",
+     "deep"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Depth"
+    }
+   },
+   {
+    "phrases": [
+     "tonnage",
+     "tons",
+     "tonnes"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Tonnage"
+    }
+   },
+   {
+    "phrases": [
+     "volume",
+     "capacity",
+     "cubic"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Volume"
+    }
+   }
+  ],
+  "answers": {}
+ }
+}

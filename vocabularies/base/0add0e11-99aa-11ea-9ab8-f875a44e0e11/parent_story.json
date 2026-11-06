@@ -1,0 +1,22 @@
+{
+ "model": "Heritage Story",
+ "nodegroup": "parent_story",
+ "entries": [
+  {
+   "phrases": [
+    "part of",
+    "parent story",
+    "series",
+    "part of a larger story",
+    "main story",
+    "chapter of",
+    "broader story",
+    "belongs to",
+    "larger narrative",
+    "story collection"
+   ],
+   "kind": "link",
+   "node": "parent_story"
+  }
+ ]
+}

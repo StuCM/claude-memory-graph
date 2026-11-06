@@ -1,0 +1,17 @@
+{
+ "model": "Bibliographic Source",
+ "nodegroup": "page_references",
+ "entries": [
+  {
+   "phrases": [
+    "page reference",
+    "page numbers",
+    "on page",
+    "pages cited",
+    "page"
+   ],
+   "kind": "property",
+   "node": "page_s_"
+  }
+ ]
+}

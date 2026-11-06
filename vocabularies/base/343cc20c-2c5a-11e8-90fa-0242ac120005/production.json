@@ -1,0 +1,149 @@
+{
+ "model": "Artefact",
+ "nodegroup": "production",
+ "entries": [
+  {
+   "phrases": [
+    "made",
+    "produced",
+    "manufactured",
+    "when was it made",
+    "production date",
+    "date of manufacture",
+    "date made",
+    "year made",
+    "dates from",
+    "how old",
+    "made in",
+    "crafted",
+    "created",
+    "fashioned",
+    "when was it produced",
+    "date of production",
+    "age of object"
+   ],
+   "kind": "date",
+   "node": "from_date",
+   "end_node": "to_date"
+  },
+  {
+   "phrases": [
+    "made by",
+    "maker",
+    "manufacturer",
+    "produced by",
+    "who made it",
+    "manufactured by",
+    "workshop",
+    "craftsman",
+    "producer",
+    "crafted by",
+    "potter"
+   ],
+   "kind": "link",
+   "node": "producer"
+  },
+  {
+   "phrases": [
+    "period",
+    "era",
+    "what period",
+    "which period",
+    "cultural period",
+    "historic period",
+    "epoch",
+    "date period",
+    "what era",
+    "dates to",
+    "age"
+   ],
+   "kind": "link",
+   "node": "cultural_period"
+  },
+  {
+   "phrases": [
+    "type",
+    "object type",
+    "artefact type",
+    "artifact type",
+    "kind of object",
+    "what kind",
+    "classification",
+    "category",
+    "what sort of object",
+    "what type",
+    "find type",
+    "object category"
+   ],
+   "kind": "property",
+   "node": "artefact_type"
+  },
+  {
+   "phrases": [
+    "material",
+    "made of",
+    "what is it made of",
+    "made from",
+    "composition",
+    "what material",
+    "material type",
+    "metal",
+    "constructed from"
+   ],
+   "kind": "property",
+   "node": "material"
+  },
+  {
+   "phrases": [
+    "production method",
+    "method of manufacture",
+    "how was it made",
+    "manufacturing method",
+    "method of production",
+    "cast or forged"
+   ],
+   "kind": "property",
+   "node": "production_method"
+  },
+  {
+   "phrases": [
+    "production technique",
+    "technique",
+    "manufacturing technique",
+    "craft technique",
+    "technique used"
+   ],
+   "kind": "property",
+   "node": "production_technique"
+  },
+  {
+   "phrases": [
+    "certainty",
+    "confidence",
+    "how certain",
+    "confidence of identification",
+    "how sure"
+   ],
+   "kind": "property",
+   "node": "phase_certainty"
+  },
+  {
+   "phrases": [
+    "production notes",
+    "classification description",
+    "production description"
+   ],
+   "kind": "property",
+   "node": "phase_description"
+  },
+  {
+   "phrases": [
+    "evidence type",
+    "type of evidence",
+    "form of evidence"
+   ],
+   "kind": "property",
+   "node": "phase_evidence_type"
+  }
+ ]
+}

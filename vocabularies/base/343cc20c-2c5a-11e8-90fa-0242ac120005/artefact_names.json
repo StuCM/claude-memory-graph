@@ -1,0 +1,20 @@
+{
+ "model": "Artefact",
+ "nodegroup": "artefact_names",
+ "entries": [
+  {
+   "phrases": [
+    "name",
+    "called",
+    "object name",
+    "artefact name",
+    "artifact name",
+    "known as",
+    "title",
+    "what is it called"
+   ],
+   "kind": "property",
+   "node": "artefact_name"
+  }
+ ]
+}

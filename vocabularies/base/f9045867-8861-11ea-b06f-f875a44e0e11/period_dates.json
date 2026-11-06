@@ -1,0 +1,61 @@
+{
+ "model": "Period",
+ "nodegroup": "period_dates",
+ "entries": [
+  {
+   "phrases": [
+    "dates",
+    "date range",
+    "when was it",
+    "span",
+    "time span",
+    "from when to when",
+    "how long ago",
+    "when",
+    "period dates",
+    "covering",
+    "duration",
+    "how long did it last",
+    "what years",
+    "between which dates",
+    "chronology"
+   ],
+   "kind": "date",
+   "node": "earliest_possible_start_date",
+   "end_node": "latest_possible_end_date"
+  },
+  {
+   "phrases": [
+    "began",
+    "start",
+    "start date",
+    "beginning",
+    "when did it start",
+    "when did it begin",
+    "starting",
+    "onset",
+    "earliest start",
+    "commenced"
+   ],
+   "kind": "date",
+   "node": "earliest_possible_start_date",
+   "end_node": "latest_possible_start_date"
+  },
+  {
+   "phrases": [
+    "ended",
+    "end",
+    "end date",
+    "when did it end",
+    "finished",
+    "close of",
+    "came to an end",
+    "latest end",
+    "concluded"
+   ],
+   "kind": "date",
+   "node": "earliest_possible_end_date",
+   "end_node": "latest_possible_end_date"
+  }
+ ]
+}

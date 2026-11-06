@@ -1,0 +1,20 @@
+{
+ "model": "Application Area",
+ "nodegroup": "digital_file_s_",
+ "entries": [
+  {
+   "phrases": [
+    "files",
+    "documents",
+    "attachments",
+    "digital files",
+    "associated files",
+    "reports",
+    "plans",
+    "drawings"
+   ],
+   "kind": "link",
+   "node": "digital_file_s_"
+  }
+ ]
+}

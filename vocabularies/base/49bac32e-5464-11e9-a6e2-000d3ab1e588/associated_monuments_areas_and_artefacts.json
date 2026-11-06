@@ -1,0 +1,19 @@
+{
+ "model": "Maritime Vessel",
+ "nodegroup": "associated_monuments_areas_and_artefacts",
+ "entries": [
+  {
+   "phrases": [
+    "related monuments",
+    "associated sites",
+    "related wrecks",
+    "associated artefacts",
+    "linked heritage assets",
+    "related vessels",
+    "associated monuments"
+   ],
+   "kind": "link",
+   "node": "monument_area_or_artefact"
+  }
+ ]
+}

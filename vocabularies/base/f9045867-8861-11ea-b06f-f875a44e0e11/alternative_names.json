@@ -1,0 +1,42 @@
+{
+ "model": "Period",
+ "nodegroup": "alternative_names",
+ "entries": [
+  {
+   "phrases": [
+    "name used",
+    "name in use from",
+    "when was the name used",
+    "name usage dates",
+    "alternative name dates"
+   ],
+   "kind": "date",
+   "node": "alternative_name_use_period_earliest_date",
+   "end_node": "alternative_name_use_period_latest_date"
+  },
+  {
+   "phrases": [
+    "name used by",
+    "who uses this name",
+    "alternative name used by",
+    "name coined by"
+   ],
+   "kind": "link",
+   "node": "alternative_name_used_by"
+  },
+  {
+   "phrases": [
+    "alternative name",
+    "also known as",
+    "aka",
+    "other names",
+    "synonym",
+    "alias",
+    "otherwise known as",
+    "alternate name"
+   ],
+   "kind": "property",
+   "node": "alternative_name"
+  }
+ ]
+}

@@ -1,0 +1,19 @@
+{
+ "model": "Monument",
+ "nodegroup": "associated_consultations",
+ "entries": [
+  {
+   "phrases": [
+    "consultations",
+    "planning applications",
+    "planning application",
+    "planning consultation",
+    "casework",
+    "planning history",
+    "development proposals"
+   ],
+   "kind": "link",
+   "node": "associated_consultations"
+  }
+ ]
+}

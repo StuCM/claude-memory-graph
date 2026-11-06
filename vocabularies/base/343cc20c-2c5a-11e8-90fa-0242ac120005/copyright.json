@@ -1,0 +1,37 @@
+{
+ "model": "Artefact",
+ "nodegroup": "copyright",
+ "entries": [
+  {
+   "phrases": [
+    "copyright holder",
+    "copyright owner",
+    "who owns the copyright",
+    "rights holder"
+   ],
+   "kind": "link",
+   "node": "copyright_holder"
+  },
+  {
+   "phrases": [
+    "copyright",
+    "licence",
+    "license",
+    "rights",
+    "copyright status",
+    "reuse rights"
+   ],
+   "kind": "property",
+   "node": "copyright_type"
+  },
+  {
+   "phrases": [
+    "copyright note",
+    "copyright notes",
+    "credit line"
+   ],
+   "kind": "property",
+   "node": "copyright_note_text"
+  }
+ ]
+}

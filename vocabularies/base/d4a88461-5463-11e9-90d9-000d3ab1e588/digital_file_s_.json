@@ -1,0 +1,16 @@
+{
+ "model": "Organization",
+ "nodegroup": "digital_file_s_",
+ "entries": [
+  {
+   "phrases": [
+    "digital files",
+    "documents",
+    "attachments",
+    "files"
+   ],
+   "kind": "link",
+   "node": "digital_file_s_"
+  }
+ ]
+}

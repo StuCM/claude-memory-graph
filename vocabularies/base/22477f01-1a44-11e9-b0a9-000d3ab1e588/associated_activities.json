@@ -1,0 +1,20 @@
+{
+ "model": "Person",
+ "nodegroup": "associated_activities",
+ "entries": [
+  {
+   "phrases": [
+    "activities",
+    "associated activities",
+    "events",
+    "investigations",
+    "fieldwork",
+    "excavations",
+    "surveys",
+    "took part in"
+   ],
+   "kind": "link",
+   "node": "associated_activities"
+  }
+ ]
+}

@@ -1,0 +1,147 @@
+{
+ "model": "Historic Landscape Characterization",
+ "nodegroup": "hlc_phase",
+ "entries": [
+  {
+   "phrases": [
+    "date",
+    "when",
+    "dated",
+    "phase date",
+    "date range",
+    "originated",
+    "origin",
+    "laid out",
+    "developed",
+    "established",
+    "formed",
+    "came into being",
+    "how old",
+    "age",
+    "dates from",
+    "when did it develop",
+    "when was it laid out",
+    "dating",
+    "when was it established"
+   ],
+   "kind": "date",
+   "node": "hlc_phase_start_date",
+   "end_node": "hlc_phase_end_date"
+  },
+  {
+   "phrases": [
+    "display date",
+    "date text",
+    "approximate date"
+   ],
+   "kind": "property",
+   "node": "hlc_phase_display_date"
+  },
+  {
+   "phrases": [
+    "broad type",
+    "broad character",
+    "broad class",
+    "broad category",
+    "general category",
+    "category",
+    "broad classification",
+    "general type",
+    "broad character type",
+    "high level type"
+   ],
+   "kind": "property",
+   "node": "broad_type"
+  },
+  {
+   "phrases": [
+    "hlc type",
+    "character type",
+    "landscape type",
+    "type",
+    "what type",
+    "land use type",
+    "what kind of landscape",
+    "classification",
+    "historic land use",
+    "landscape character",
+    "townscape type",
+    "kind of area",
+    "what kind of area",
+    "character type classification",
+    "land use"
+   ],
+   "kind": "property",
+   "node": "hlc_type"
+  },
+  {
+   "phrases": [
+    "period",
+    "historic period",
+    "era",
+    "which period",
+    "what period",
+    "time period",
+    "of what period",
+    "cultural period",
+    "archaeological period"
+   ],
+   "kind": "link",
+   "node": "period"
+  },
+  {
+   "phrases": [
+    "confidence of interpretation",
+    "how certain is the interpretation",
+    "interpretation certainty",
+    "certainty",
+    "how sure",
+    "confidence in classification",
+    "confidence"
+   ],
+   "kind": "property",
+   "node": "confidence_of_interpretation"
+  },
+  {
+   "phrases": [
+    "dating confidence",
+    "confidence of dating",
+    "how sure is the date",
+    "how certain is the date",
+    "date certainty",
+    "reliability of date"
+   ],
+   "kind": "property",
+   "node": "confidence_of_dating"
+  },
+  {
+   "phrases": [
+    "historic map",
+    "historic maps",
+    "old map",
+    "map source",
+    "which map",
+    "based on map",
+    "map evidence",
+    "ordnance survey map",
+    "tithe map",
+    "early map",
+    "first edition os",
+    "cartographic source",
+    "source map"
+   ],
+   "kind": "link",
+   "node": "historic_map"
+  },
+  {
+   "phrases": [
+    "phase description",
+    "phase notes",
+    "phase summary",
+    "description of phase"
+   ],
+   "kind": "property",
+   "node": "hlc_phase_description"
+  }
+ ]
+}

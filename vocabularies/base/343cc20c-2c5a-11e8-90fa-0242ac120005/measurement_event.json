@@ -1,0 +1,128 @@
+{
+ "model": "Artefact",
+ "nodegroup": "measurement_event",
+ "entries": [
+  {
+   "phrases": [
+    "dimensions",
+    "size",
+    "measurements",
+    "how big",
+    "measurement",
+    "measurement value",
+    "measures",
+    "how large"
+   ],
+   "kind": "property",
+   "node": "dimension_value"
+  },
+  {
+   "phrases": [
+    "unit",
+    "measurement unit",
+    "units",
+    "measured in"
+   ],
+   "kind": "property",
+   "node": "dimension_measurement_unit"
+  }
+ ],
+ "group": {
+  "phrases": [],
+  "nodes": {},
+  "combos": [
+   {
+    "phrases": [
+     "height",
+     "how tall",
+     "tall",
+     "high",
+     "how high"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Height"
+    }
+   },
+   {
+    "phrases": [
+     "length",
+     "how long",
+     "long",
+     "longest dimension"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Length"
+    }
+   },
+   {
+    "phrases": [
+     "breadth",
+     "width",
+     "how wide",
+     "wide",
+     "across"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Breadth"
+    }
+   },
+   {
+    "phrases": [
+     "depth",
+     "how deep",
+     "deep",
+     "thickness",
+     "how thick",
+     "thick"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Depth"
+    }
+   },
+   {
+    "phrases": [
+     "weight",
+     "how heavy",
+     "weighs",
+     "heavy",
+     "mass",
+     "how much does it weigh"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Weight"
+    }
+   },
+   {
+    "phrases": [
+     "quantity",
+     "how many",
+     "number of items",
+     "count",
+     "number of objects",
+     "how many pieces"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Quantity"
+    }
+   },
+   {
+    "phrases": [
+     "volume",
+     "capacity",
+     "how much does it hold"
+    ],
+    "node": "dimension_value",
+    "set": {
+     "dimension_type": "Volume"
+    }
+   }
+  ],
+  "answers": {}
+ }
+}

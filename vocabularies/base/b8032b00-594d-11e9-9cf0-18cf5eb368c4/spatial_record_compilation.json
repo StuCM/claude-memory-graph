@@ -1,0 +1,28 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "spatial_record_compilation",
+ "entries": [
+  {
+   "phrases": [
+    "spatial record compiled",
+    "date of compilation",
+    "mapping compiled",
+    "geometry compiled",
+    "when was it mapped"
+   ],
+   "kind": "date",
+   "node": "compilation_start_date",
+   "end_node": "compilation_end_date"
+  },
+  {
+   "phrases": [
+    "spatial record compiled by",
+    "mapped by",
+    "who mapped it",
+    "who digitised it"
+   ],
+   "kind": "property",
+   "node": "compiler_name"
+  }
+ ]
+}

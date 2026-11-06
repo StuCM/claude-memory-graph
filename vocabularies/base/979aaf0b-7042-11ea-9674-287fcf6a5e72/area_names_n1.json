@@ -1,0 +1,20 @@
+{
+ "model": "Area",
+ "nodegroup": "area_names_n1",
+ "entries": [
+  {
+   "phrases": [
+    "name",
+    "called",
+    "area name",
+    "what is it called",
+    "known as",
+    "name of site",
+    "site name",
+    "title"
+   ],
+   "kind": "property",
+   "node": "area_name_n1"
+  }
+ ]
+}

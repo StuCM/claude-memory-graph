@@ -1,0 +1,123 @@
+{
+ "model": "Area",
+ "nodegroup": "designation_and_protection_assignment",
+ "entries": [
+  {
+   "phrases": [
+    "when was it listed",
+    "when was it scheduled",
+    "when was it designated",
+    "date listed",
+    "date scheduled",
+    "date of designation",
+    "designated in",
+    "listed in",
+    "scheduled in",
+    "protected since",
+    "listed since",
+    "designation date"
+   ],
+   "kind": "date",
+   "node": "designation_start_date",
+   "end_node": "designation_end_date"
+  },
+  {
+   "phrases": [
+    "designation amended",
+    "listing amended",
+    "amendment date",
+    "when was the listing amended",
+    "list entry amended"
+   ],
+   "kind": "date",
+   "node": "designation_amendment_date"
+  },
+  {
+   "phrases": [
+    "designation document",
+    "listing document",
+    "list entry document",
+    "designation files"
+   ],
+   "kind": "link",
+   "node": "digital_file_s__n1"
+  },
+  {
+   "phrases": [
+    "designation",
+    "protection",
+    "protected",
+    "legal protection",
+    "designation type",
+    "is it listed",
+    "is it scheduled",
+    "heritage status",
+    "statutory protection",
+    "listed status",
+    "protection status",
+    "is it protected",
+    "designated status"
+   ],
+   "kind": "property",
+   "node": "designation_or_protection_type"
+  },
+  {
+   "phrases": [
+    "grade",
+    "listing grade",
+    "what grade",
+    "graded",
+    "grade of listing",
+    "listed grade"
+   ],
+   "kind": "property",
+   "node": "grade"
+  },
+  {
+   "phrases": [
+    "designation name",
+    "list entry name",
+    "listing name",
+    "name on the list"
+   ],
+   "kind": "property",
+   "node": "designation_name"
+  },
+  {
+   "phrases": [
+    "at risk",
+    "heritage at risk",
+    "risk status",
+    "endangered",
+    "threatened",
+    "is it at risk",
+    "risk register",
+    "vulnerable"
+   ],
+   "kind": "property",
+   "node": "risk_status"
+  },
+  {
+   "phrases": [
+    "local list criteria",
+    "local heritage criteria",
+    "why locally listed",
+    "significance criteria",
+    "local listing criteria",
+    "reason for local listing"
+   ],
+   "kind": "property",
+   "node": "local_heritage_list_criteria_type"
+  },
+  {
+   "phrases": [
+    "designation link",
+    "list entry link",
+    "listing url",
+    "designation url"
+   ],
+   "kind": "property",
+   "node": "reference_url"
+  }
+ ]
+}

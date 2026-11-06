@@ -1,0 +1,20 @@
+{
+ "model": "Monument",
+ "nodegroup": "digital_file_s__n1",
+ "entries": [
+  {
+   "phrases": [
+    "digital files",
+    "files",
+    "documents",
+    "attachments",
+    "scans",
+    "reports",
+    "pdf",
+    "downloads"
+   ],
+   "kind": "link",
+   "node": "digital_file_s__n1"
+  }
+ ]
+}

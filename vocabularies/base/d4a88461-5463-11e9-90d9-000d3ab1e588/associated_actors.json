@@ -1,0 +1,24 @@
+{
+ "model": "Organization",
+ "nodegroup": "associated_actors",
+ "entries": [
+  {
+   "phrases": [
+    "associated people",
+    "members",
+    "staff",
+    "partners",
+    "associated organisations",
+    "people involved",
+    "linked to",
+    "affiliated with",
+    "employees",
+    "who worked there",
+    "related organisations",
+    "connected people"
+   ],
+   "kind": "link",
+   "node": "associated_actors"
+  }
+ ]
+}

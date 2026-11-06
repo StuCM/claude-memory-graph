@@ -1,0 +1,20 @@
+{
+ "model": "Consultation",
+ "nodegroup": "development_type",
+ "entries": [
+  {
+   "phrases": [
+    "development type",
+    "type of development",
+    "what is being built",
+    "what kind of development",
+    "kind of development",
+    "development",
+    "works type",
+    "nature of development"
+   ],
+   "kind": "property",
+   "node": "development_type"
+  }
+ ]
+}

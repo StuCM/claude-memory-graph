@@ -1,0 +1,287 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "aircraft_construction_phase",
+ "entries": [
+  {
+   "phrases": [
+    "built",
+    "constructed",
+    "manufactured",
+    "produced",
+    "assembled",
+    "when was it built",
+    "when was it made",
+    "year built",
+    "build date",
+    "date of manufacture",
+    "construction date",
+    "when manufactured",
+    "rolled off the production line",
+    "made in"
+   ],
+   "kind": "date",
+   "node": "start_date",
+   "end_node": "end_date"
+  },
+  {
+   "phrases": [
+    "display date",
+    "approximate date",
+    "date as written",
+    "circa date"
+   ],
+   "kind": "property",
+   "node": "display_date"
+  },
+  {
+   "phrases": [
+    "phase type",
+    "construction phase",
+    "type of phase",
+    "construction history"
+   ],
+   "kind": "property",
+   "node": "construction_phase_type"
+  },
+  {
+   "phrases": [
+    "manufacturer",
+    "made by",
+    "built by",
+    "maker",
+    "who made it",
+    "who built it",
+    "who manufactured it",
+    "aircraft manufacturer",
+    "which company built it",
+    "constructor",
+    "builder"
+   ],
+   "kind": "property",
+   "node": "manufacturer"
+  },
+  {
+   "phrases": [
+    "place of manufacture",
+    "where was it built",
+    "where was it made",
+    "factory",
+    "built where",
+    "manufactured where",
+    "which factory",
+    "production site"
+   ],
+   "kind": "property",
+   "node": "place_of_manufacture"
+  },
+  {
+   "phrases": [
+    "material",
+    "materials",
+    "made of",
+    "what is it made of",
+    "construction material",
+    "built from",
+    "what material",
+    "airframe material",
+    "fabric or metal"
+   ],
+   "kind": "property",
+   "node": "main_construction_material"
+  },
+  {
+   "phrases": [
+    "construction technique",
+    "how was it built",
+    "building technique",
+    "manufacturing technique",
+    "technique"
+   ],
+   "kind": "property",
+   "node": "construction_technique"
+  },
+  {
+   "phrases": [
+    "construction method",
+    "production method",
+    "method of construction",
+    "riveted or welded",
+    "how was it assembled"
+   ],
+   "kind": "property",
+   "node": "construction_method"
+  },
+  {
+   "phrases": [
+    "period",
+    "era",
+    "what period",
+    "which period",
+    "historic period",
+    "date period",
+    "what era",
+    "from which era"
+   ],
+   "kind": "link",
+   "node": "period"
+  },
+  {
+   "phrases": [
+    "aircraft type",
+    "type",
+    "type of aircraft",
+    "what kind of aircraft",
+    "what type of plane",
+    "kind of plane",
+    "aircraft model",
+    "model",
+    "what aircraft",
+    "plane type",
+    "make and model"
+   ],
+   "kind": "property",
+   "node": "aircraft_type"
+  },
+  {
+   "phrases": [
+    "aircraft form",
+    "form",
+    "configuration",
+    "monoplane or biplane",
+    "airframe type",
+    "shape of aircraft",
+    "wing configuration"
+   ],
+   "kind": "property",
+   "node": "aircraft_form"
+  },
+  {
+   "phrases": [
+    "function",
+    "aircraft function",
+    "purpose",
+    "used for",
+    "what was it used for",
+    "role of the aircraft",
+    "military role",
+    "what did it do",
+    "use"
+   ],
+   "kind": "property",
+   "node": "aircraft_function"
+  },
+  {
+   "phrases": [
+    "mark",
+    "aircraft mark",
+    "mk",
+    "mark number",
+    "which mark",
+    "variant",
+    "sub-type",
+    "version"
+   ],
+   "kind": "property",
+   "node": "aircraft_mark"
+  },
+  {
+   "phrases": [
+    "certainty",
+    "how certain",
+    "confidence",
+    "is it certain",
+    "identification certainty",
+    "probable or possible"
+   ],
+   "kind": "property",
+   "node": "phase_certainty"
+  },
+  {
+   "phrases": [
+    "phase description",
+    "construction notes",
+    "classification notes",
+    "construction phase description"
+   ],
+   "kind": "property",
+   "node": "phase_description"
+  },
+  {
+   "phrases": [
+    "evidence",
+    "evidence type",
+    "what survives",
+    "remains",
+    "surviving remains",
+    "what evidence",
+    "type of evidence"
+   ],
+   "kind": "property",
+   "node": "phase_evidence_type"
+  }
+ ],
+ "group": {
+  "phrases": [],
+  "nodes": {},
+  "combos": [
+   {
+    "phrases": [
+     "altered",
+     "modified",
+     "modification",
+     "when was it modified",
+     "date altered",
+     "upgraded",
+     "refitted"
+    ],
+    "node": "start_date",
+    "set": {
+     "construction_phase_type": "Alteration"
+    }
+   },
+   {
+    "phrases": [
+     "converted",
+     "conversion",
+     "when was it converted",
+     "date converted",
+     "adapted"
+    ],
+    "node": "start_date",
+    "set": {
+     "construction_phase_type": "Conversion"
+    }
+   },
+   {
+    "phrases": [
+     "repaired",
+     "repairs",
+     "when was it repaired",
+     "date repaired",
+     "patched up",
+     "refurbished"
+    ],
+    "node": "start_date",
+    "set": {
+     "construction_phase_type": "Repairs"
+    }
+   },
+   {
+    "phrases": [
+     "scrapped",
+     "broken up for scrap",
+     "dismantled",
+     "written off",
+     "struck off charge",
+     "when was it scrapped",
+     "date destroyed"
+    ],
+    "node": "start_date",
+    "set": {
+     "construction_phase_type": "Destruction"
+    }
+   }
+  ],
+  "answers": {}
+ }
+}

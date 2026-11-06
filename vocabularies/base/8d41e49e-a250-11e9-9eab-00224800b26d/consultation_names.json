@@ -1,0 +1,20 @@
+{
+ "model": "Consultation",
+ "nodegroup": "consultation_names",
+ "entries": [
+  {
+   "phrases": [
+    "name",
+    "title",
+    "consultation name",
+    "called",
+    "what is it called",
+    "consultation title",
+    "case name",
+    "known as"
+   ],
+   "kind": "property",
+   "node": "consultation_name"
+  }
+ ]
+}

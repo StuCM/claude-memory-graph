@@ -1,0 +1,16 @@
+{
+ "model": "Historic Landscape Characterization",
+ "nodegroup": "spatial_metadata_descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "spatial notes",
+    "mapping notes",
+    "geometry notes",
+    "spatial metadata"
+   ],
+   "kind": "property",
+   "node": "spatial_metadata_notes"
+  }
+ ]
+}

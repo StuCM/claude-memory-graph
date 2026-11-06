@@ -1,0 +1,50 @@
+{
+ "model": "Digital Object",
+ "nodegroup": "creation",
+ "entries": [
+  {
+   "phrases": [
+    "created",
+    "made",
+    "taken",
+    "date taken",
+    "when was it taken",
+    "creation date",
+    "when was it created",
+    "when was it made",
+    "produced",
+    "photographed",
+    "scanned",
+    "date of creation",
+    "dated",
+    "when was the photo taken",
+    "drawn",
+    "written"
+   ],
+   "kind": "date",
+   "node": "start_date",
+   "end_node": "end_date"
+  },
+  {
+   "phrases": [
+    "creator",
+    "created by",
+    "made by",
+    "taken by",
+    "author",
+    "photographer",
+    "who took it",
+    "who made it",
+    "who created it",
+    "produced by",
+    "authored by",
+    "who wrote it",
+    "drawn by",
+    "written by",
+    "photographed by"
+   ],
+   "kind": "link",
+   "node": "creator"
+  }
+ ]
+}

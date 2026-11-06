@@ -40,6 +40,10 @@ How it is made (`ceist vocab …`):
 A vocabulary directory holds either layout; with a manifest.json it is read
 as the split one. A group file is {"model", "nodegroup", "entries", "group"}: the
 group's own block (docs/tasks/ceist-group-grounding.md §2).
+
+In layers (`layered`): a base per graph, `vocabularies/base/<graph id>/` (split
+by nodegroup, from the schema alone), and a client layer the site owns that may
+only add to it.
 """
 
 import hashlib
@@ -210,13 +214,129 @@ def read_vocab(vocab_dir: str | Path) -> tuple[list[dict], list[str]]:
     listed = json.loads((root / MANIFEST).read_text()).get("models") or {}
     out = []
     for d in sorted(p for p in root.iterdir() if p.is_dir()):
-        groups = [json.loads(g.read_text()) for g in sorted(d.glob("*.json"), key=lambda p: p.stem)]
-        if groups:
-            out.append({"model": d.name, "entries": [e for g in groups for e in g["entries"]],
-                        "groups": {g["nodegroup"]: g["group"] for g in groups if g.get("group")},
-                        "type_words": (listed.get(d.name) or {}).get("type_words") or []})
+        v = _model_dir(d)
+        if v:
+            out.append(dict(v, type_words=(listed.get(d.name) or {}).get("type_words") or []))
     warnings = [f"{p.name} not read: {MANIFEST} says the split layout is read" for p in files]
     return out, warnings
+
+
+def _model_dir(d: Path) -> dict | None:
+    """One model's group files, as {"model": <folder name>, "entries", "groups"}."""
+    groups = [json.loads(g.read_text()) for g in sorted(d.glob("*.json"), key=lambda p: p.stem)
+              if g.name != MANIFEST]
+    if not groups:
+        return None
+    return {"model": d.name, "entries": [e for g in groups for e in g["entries"]],
+            "groups": {g["nodegroup"]: g["group"] for g in groups if g.get("group")}}
+
+
+def layered(graphs: list[dict], base_dir: str | Path, client_dir: str | Path | None = None,
+            language: str = "en") -> tuple[dict, list[str]]:
+    """A bundle for these graphs from the base layer (base_dir/<graph id>/, split by
+    nodegroup) plus an optional client layer (a vocabulary directory keyed by model
+    name; its manifest's "base" names the base graph id when the client's differs).
+    The client only adds: each phrase, role, answer or type word that would change
+    the base's is left out and listed in the merge report returned with the bundle."""
+    client = {v["model"]: v for v in read_vocab(client_dir)[0]} if client_dir is not None else {}
+    listed = (_manifest(Path(client_dir)).get("models") or {}) if client_dir is not None else {}
+    models, report, type_words = {}, [], {}
+    for g in graphs:
+        name = g.get("name") or g["graphid"]
+        if isinstance(name, dict):
+            name = name.get(language) or next(iter(name.values()))
+        gid = (listed.get(name) or {}).get("base") or g["graphid"]
+        base = _model_dir(Path(base_dir) / gid) or {"entries": [], "groups": {}}
+        for w in _manifest(Path(base_dir) / gid).get("type_words") or []:
+            type_words[w] = name
+        models[name] = {"graphid": g["graphid"],
+                        "nodes": {n["alias"]: {"kind": kind_of(n)} for n in g["nodes"] if n.get("alias")},
+                        "entries": list(base["entries"]),
+                        "groups": {a: _block(b) for a, b in base["groups"].items()}}
+    for name, model in models.items():
+        mine = client.get(name) or {}
+        if mine:
+            report += _add_client(name, model, mine)
+        for w in (listed.get(name) or mine).get("type_words") or []:
+            if type_words.setdefault(w, name) != name:
+                report.append(f"type word '{w}' names {type_words[w]} already, {name} in the client; "
+                              "not applied")
+    bundle = {"format": FORMAT, "models": models}
+    if type_words:
+        bundle["extra_type_words"] = type_words
+    return bundle, report
+
+
+def _manifest(d: Path) -> dict:
+    return json.loads((d / MANIFEST).read_text()) if (d / MANIFEST).exists() else {}
+
+
+def _block(b: dict) -> dict:
+    """A copy of a group block with every part present, for adding to."""
+    return dict(b, phrases=list(b.get("phrases") or []), nodes=dict(b.get("nodes") or {}),
+                combos=list(b.get("combos") or []), answers=dict(b.get("answers") or {}))
+
+
+def _meanings(model: dict) -> dict[str, tuple]:
+    """Each phrase of a model's entries and group blocks, with what it means."""
+    out = {}
+    for e in model["entries"]:
+        for p in e["phrases"]:
+            out.setdefault(p.strip().lower(), _entry_meaning(e))
+    for a, b in model["groups"].items():
+        for p in b["phrases"]:
+            out.setdefault(p.strip().lower(), ("group", a))
+        for c in b["combos"]:
+            for p in c["phrases"]:
+                out.setdefault(p.strip().lower(), _combo_meaning(a, c))
+    return out
+
+
+def _entry_meaning(e: dict) -> tuple:
+    return ("entry", e["node"], json.dumps(e.get("qualifier"), sort_keys=True))
+
+
+def _combo_meaning(group: str, c: dict) -> tuple:
+    return ("combo", group, c.get("node"), json.dumps(c["set"], sort_keys=True))
+
+
+def _add_client(name: str, model: dict, client: dict) -> list[str]:
+    """Add a client layer's entries and group blocks to one model of the bundle;
+    the merge report for what it would have changed."""
+    base, report = _meanings(model), []
+
+    def new(phrases: list[str], meaning: tuple) -> list[str]:
+        kept = []
+        for p in phrases:
+            was = base.get(p.strip().lower(), meaning)
+            if was == meaning:
+                kept.append(p)
+            else:
+                report.append(f"{name}: '{p}' means {_said(was)} in the base, {_said(meaning)} "
+                              "in the client; not applied")
+        return kept
+
+    for e in client["entries"]:
+        phrases = new(e["phrases"], _entry_meaning(e))
+        if phrases:
+            model["entries"].append(dict(e, phrases=phrases))
+    for a, b in client["groups"].items():
+        mine = model["groups"].setdefault(a, _block({}))
+        mine["phrases"] += new(b.get("phrases") or [], ("group", a))
+        for part in ("nodes", "answers"):
+            for k, v in (b.get(part) or {}).items():
+                if mine[part].setdefault(k, v) != v:
+                    report.append(f"{name}.{a}: {part} {k} is {mine[part][k]} in the base, "
+                                  f"{v} in the client; not applied")
+        for c in b.get("combos") or []:
+            phrases = new(c["phrases"], _combo_meaning(a, c))
+            if phrases:
+                mine["combos"].append(dict(c, phrases=phrases))
+    return report
+
+
+def _said(meaning: tuple) -> str:
+    return " ".join(str(x) for x in meaning[1:] if x not in (None, "null"))
 
 
 def assemble(descriptions_dir: str | Path, vocab_dir: str | Path,

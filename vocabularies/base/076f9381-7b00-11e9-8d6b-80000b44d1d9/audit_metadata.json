@@ -1,0 +1,78 @@
+{
+ "model": "Monument",
+ "nodegroup": "audit_metadata",
+ "entries": [
+  {
+   "phrases": [
+    "record created",
+    "date record created",
+    "record creation date",
+    "when was the record created",
+    "added to the record",
+    "added to the database",
+    "entered into the her"
+   ],
+   "kind": "date",
+   "node": "creation_date",
+   "end_node": "creation_end_date"
+  },
+  {
+   "phrases": [
+    "last updated",
+    "record updated",
+    "last modified",
+    "last edited",
+    "date of last update",
+    "when was the record updated",
+    "most recent update",
+    "recently updated"
+   ],
+   "kind": "date",
+   "node": "date_of_last_update",
+   "end_node": "update_end_date"
+  },
+  {
+   "phrases": [
+    "record created by",
+    "who created the record",
+    "record author",
+    "entered by"
+   ],
+   "kind": "property",
+   "node": "creator_name"
+  },
+  {
+   "phrases": [
+    "last updated by",
+    "who updated the record",
+    "record edited by",
+    "updated by"
+   ],
+   "kind": "property",
+   "node": "updater_name"
+  },
+  {
+   "phrases": [
+    "audit note",
+    "audit notes",
+    "record notes",
+    "editorial note"
+   ],
+   "kind": "property",
+   "node": "audit_note"
+  },
+  {
+   "phrases": [
+    "validation",
+    "validation status",
+    "record checked",
+    "quality check",
+    "needs work",
+    "record status",
+    "checked ok"
+   ],
+   "kind": "property",
+   "node": "validation"
+  }
+ ]
+}

@@ -1,0 +1,22 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "associated_monuments_areas_and_artefacts",
+ "entries": [
+  {
+   "phrases": [
+    "related monuments",
+    "associated sites",
+    "linked monuments",
+    "related artefacts",
+    "associated areas",
+    "associated monuments",
+    "related sites",
+    "related wrecks",
+    "related aircraft",
+    "linked records"
+   ],
+   "kind": "link",
+   "node": "associated_monument_area_or_artefact"
+  }
+ ]
+}

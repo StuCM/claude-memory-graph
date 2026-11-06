@@ -1,0 +1,102 @@
+{
+ "model": "Artefact",
+ "nodegroup": "addresses",
+ "entries": [
+  {
+   "phrases": [
+    "address",
+    "full address",
+    "street address",
+    "what is the address",
+    "postal address"
+   ],
+   "kind": "property",
+   "node": "full_address"
+  },
+  {
+   "phrases": [
+    "postcode",
+    "post code",
+    "zip code",
+    "postal code",
+    "what postcode"
+   ],
+   "kind": "property",
+   "node": "postcode_value"
+  },
+  {
+   "phrases": [
+    "town",
+    "city",
+    "which town",
+    "which city",
+    "town or city",
+    "in what town"
+   ],
+   "kind": "property",
+   "node": "town_or_city_value"
+  },
+  {
+   "phrases": [
+    "street",
+    "road",
+    "which street",
+    "street name",
+    "what road",
+    "lane"
+   ],
+   "kind": "property",
+   "node": "street_value"
+  },
+  {
+   "phrases": [
+    "locality",
+    "village",
+    "neighbourhood",
+    "hamlet",
+    "suburb",
+    "which village"
+   ],
+   "kind": "property",
+   "node": "locality_value"
+  },
+  {
+   "phrases": [
+    "county",
+    "shire",
+    "which county",
+    "in what county"
+   ],
+   "kind": "property",
+   "node": "county_value"
+  },
+  {
+   "phrases": [
+    "building name",
+    "name of building",
+    "house name"
+   ],
+   "kind": "property",
+   "node": "building_name_value"
+  },
+  {
+   "phrases": [
+    "house number",
+    "building number",
+    "street number",
+    "number on the street"
+   ],
+   "kind": "property",
+   "node": "building_number_value"
+  },
+  {
+   "phrases": [
+    "sub-street",
+    "sub street",
+    "minor street"
+   ],
+   "kind": "property",
+   "node": "sub_street_value"
+  }
+ ]
+}

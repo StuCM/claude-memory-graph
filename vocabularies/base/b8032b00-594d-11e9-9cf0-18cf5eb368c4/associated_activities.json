@@ -1,0 +1,21 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "associated_activities",
+ "entries": [
+  {
+   "phrases": [
+    "activities",
+    "related activities",
+    "investigations",
+    "fieldwork",
+    "excavations",
+    "surveys",
+    "associated activities",
+    "archaeological work",
+    "recovery operation"
+   ],
+   "kind": "link",
+   "node": "associated_activities"
+  }
+ ]
+}

@@ -1,0 +1,71 @@
+{
+ "model": "Heritage Story",
+ "nodegroup": "bibliographic_source_citation",
+ "entries": [
+  {
+   "phrases": [
+    "sources",
+    "source",
+    "references",
+    "bibliography",
+    "publications",
+    "cited in",
+    "books",
+    "literature",
+    "further reading",
+    "written about in",
+    "documentary sources",
+    "published in"
+   ],
+   "kind": "link",
+   "node": "bibliographic_source_citation"
+  },
+  {
+   "phrases": [
+    "page",
+    "pages",
+    "page number",
+    "page numbers"
+   ],
+   "kind": "property",
+   "node": "page_s_"
+  },
+  {
+   "phrases": [
+    "figure",
+    "figures",
+    "figs",
+    "fig number"
+   ],
+   "kind": "property",
+   "node": "figs_"
+  },
+  {
+   "phrases": [
+    "plate",
+    "plates",
+    "plate number"
+   ],
+   "kind": "property",
+   "node": "plate_s_"
+  },
+  {
+   "phrases": [
+    "source comment",
+    "citation note",
+    "citation comment"
+   ],
+   "kind": "property",
+   "node": "comment"
+  },
+  {
+   "phrases": [
+    "source number",
+    "citation number",
+    "source reference number"
+   ],
+   "kind": "property",
+   "node": "source_number_value"
+  }
+ ]
+}

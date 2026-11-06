@@ -1,0 +1,22 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "description",
+    "describe",
+    "about",
+    "summary",
+    "details",
+    "history",
+    "tell me about",
+    "information",
+    "background",
+    "story"
+   ],
+   "kind": "property",
+   "node": "description"
+  }
+ ]
+}

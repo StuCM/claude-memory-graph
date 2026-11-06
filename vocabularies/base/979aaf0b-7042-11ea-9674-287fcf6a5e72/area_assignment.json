@@ -1,0 +1,67 @@
+{
+ "model": "Area",
+ "nodegroup": "area_assignment",
+ "entries": [
+  {
+   "phrases": [
+    "area status date",
+    "status since",
+    "status assigned",
+    "when was the status given"
+   ],
+   "kind": "date",
+   "node": "area_status_start_date",
+   "end_node": "area_status_end_date"
+  },
+  {
+   "phrases": [
+    "area status",
+    "status",
+    "land status",
+    "special area status",
+    "status of the area"
+   ],
+   "kind": "property",
+   "node": "area_status"
+  },
+  {
+   "phrases": [
+    "land ownership",
+    "ownership",
+    "ownership type",
+    "owned land"
+   ],
+   "kind": "property",
+   "node": "ownership"
+  },
+  {
+   "phrases": [
+    "shine form",
+    "form of survival",
+    "above ground features",
+    "below ground features",
+    "shine feature form"
+   ],
+   "kind": "property",
+   "node": "shine_form"
+  },
+  {
+   "phrases": [
+    "shine significance",
+    "shine",
+    "significance"
+   ],
+   "kind": "property",
+   "node": "shine_significance"
+  },
+  {
+   "phrases": [
+    "area reference",
+    "area assignment reference",
+    "area reference value"
+   ],
+   "kind": "property",
+   "node": "area_reference_value"
+  }
+ ]
+}

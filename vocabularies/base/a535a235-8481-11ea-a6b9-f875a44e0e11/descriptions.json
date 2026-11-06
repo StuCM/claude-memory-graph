@@ -1,0 +1,22 @@
+{
+ "model": "Digital Object",
+ "nodegroup": "descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "description",
+    "about",
+    "summary",
+    "details",
+    "describe",
+    "what does it show",
+    "what is it",
+    "tell me about",
+    "contents",
+    "what is in it"
+   ],
+   "kind": "property",
+   "node": "description"
+  }
+ ]
+}

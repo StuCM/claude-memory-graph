@@ -1,0 +1,73 @@
+{
+ "model": "Activity",
+ "nodegroup": "audit_metadata",
+ "entries": [
+  {
+   "phrases": [
+    "record created",
+    "date record created",
+    "when was the record created",
+    "record creation date",
+    "added to the record",
+    "first recorded on the database"
+   ],
+   "kind": "date",
+   "node": "creation_date",
+   "end_node": "creation_end_date"
+  },
+  {
+   "phrases": [
+    "last updated",
+    "record updated",
+    "last modified",
+    "date of last update",
+    "when was the record updated",
+    "record last edited"
+   ],
+   "kind": "date",
+   "node": "date_of_last_update",
+   "end_node": "update_end_date"
+  },
+  {
+   "phrases": [
+    "record created by",
+    "record creator",
+    "who created the record",
+    "who entered the record"
+   ],
+   "kind": "property",
+   "node": "creator_name"
+  },
+  {
+   "phrases": [
+    "audit note",
+    "record notes",
+    "audit notes",
+    "record keeping note"
+   ],
+   "kind": "property",
+   "node": "audit_note"
+  },
+  {
+   "phrases": [
+    "validation",
+    "validation status",
+    "record checked",
+    "checked ok",
+    "needs work",
+    "possible duplicate"
+   ],
+   "kind": "property",
+   "node": "validation"
+  },
+  {
+   "phrases": [
+    "updated by",
+    "who last updated the record",
+    "record updater"
+   ],
+   "kind": "property",
+   "node": "updater_name"
+  }
+ ]
+}

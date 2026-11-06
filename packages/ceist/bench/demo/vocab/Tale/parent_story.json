@@ -1,0 +1,15 @@
+{
+ "model": "Tale",
+ "nodegroup": "parent_story",
+ "entries": [
+  {
+   "phrases": [
+    "come from",
+    "comes from",
+    "in"
+   ],
+   "kind": "link",
+   "node": "parent_story"
+  }
+ ]
+}

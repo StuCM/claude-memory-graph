@@ -1,0 +1,30 @@
+{
+ "model": "Period",
+ "nodegroup": "period_descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "description",
+    "summary",
+    "about",
+    "characteristics",
+    "what was it like",
+    "history",
+    "overview",
+    "tell me about",
+    "definition",
+    "describe"
+   ],
+   "kind": "property",
+   "node": "period_description"
+  },
+  {
+   "phrases": [
+    "description language",
+    "language"
+   ],
+   "kind": "property",
+   "node": "period_description_language_type"
+  }
+ ]
+}

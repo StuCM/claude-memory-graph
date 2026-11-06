@@ -1,0 +1,24 @@
+{
+ "model": "Historic Landscape Characterization",
+ "nodegroup": "descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "description",
+    "summary",
+    "about",
+    "character description",
+    "what is it like",
+    "overview",
+    "details",
+    "describe",
+    "tell me about",
+    "history",
+    "character",
+    "information"
+   ],
+   "kind": "property",
+   "node": "description"
+  }
+ ]
+}

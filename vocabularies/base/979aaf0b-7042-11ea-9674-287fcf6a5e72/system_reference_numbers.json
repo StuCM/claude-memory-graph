@@ -1,0 +1,41 @@
+{
+ "model": "Area",
+ "nodegroup": "system_reference_numbers",
+ "entries": [
+  {
+   "phrases": [
+    "reference number",
+    "record number",
+    "her number",
+    "smr number",
+    "id number",
+    "primary reference",
+    "record id",
+    "her reference"
+   ],
+   "kind": "property",
+   "node": "primary_reference_number"
+  },
+  {
+   "phrases": [
+    "legacy id",
+    "old reference",
+    "previous id",
+    "former reference number",
+    "legacy reference"
+   ],
+   "kind": "property",
+   "node": "legacy_id"
+  },
+  {
+   "phrases": [
+    "uuid",
+    "resource id",
+    "system id",
+    "unique identifier"
+   ],
+   "kind": "property",
+   "node": "resourceid"
+  }
+ ]
+}

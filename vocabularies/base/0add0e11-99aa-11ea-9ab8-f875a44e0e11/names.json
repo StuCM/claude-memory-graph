@@ -1,0 +1,21 @@
+{
+ "model": "Heritage Story",
+ "nodegroup": "names",
+ "entries": [
+  {
+   "phrases": [
+    "name",
+    "title",
+    "story title",
+    "what is the story called",
+    "called",
+    "story name",
+    "headline",
+    "named",
+    "titled"
+   ],
+   "kind": "property",
+   "node": "name"
+  }
+ ]
+}
