@@ -14,6 +14,13 @@ Out dir:
     audit.jsonl                    every prompt sent, in full and hashed
     cache/<key>.json               replies, by nodegroup description and prompt version
 
+Layers (`--layer`, see bundle.layered):
+    base   the schema's vocabulary into <base>/<graph id>/ (group files and a manifest),
+           extending what is there; written only when the gate passes. No real questions.
+    data   a client layer into <client>/<Model>/<nodegroup>.json from the client's
+           reference data and masked questions: each list's value variants and combos,
+           its labels sent in batches of BATCH, and the field phrasings the questions use.
+
 Privacy: the LLM sees the schema description (and the CRM roles derived from
 it), never a record. Real questions (`--questions`) are masked with `learn`'s
 rules before they are sent; the raw text stays in cases.json, on this machine.
@@ -24,6 +31,7 @@ subscription, run with no tools from an empty temporary directory.
 
 import hashlib
 import json
+import math
 import shlex
 import subprocess
 import tempfile
@@ -36,6 +44,8 @@ from .crm import crm_roles
 from .text import plurals
 
 PROMPT_VERSION = "2"
+BATCH = 100
+LAYER_MODELS = {"base": "opus", "data": "sonnet"}
 INTENTS = ("filter", "list", "count", "when", "who", "where", "which kind")
 CLAUDE = ["claude", "-p", "--output-format", "json", "--tools", "", "--strict-mcp-config",
           "--setting-sources", "project", "--no-session-persistence",
@@ -200,6 +210,47 @@ Reply with ONLY a JSON array:
    "slot": "date" | "property" | "link:<target model>" | null,
    "expect": null | {{"node": "<alias>", "qualifier": {{"node": "<alias>", "value": "<label>"}},
                      "conditions": [""" + CONDITIONS + """, ...]}}}}]
+Check that your reply parses as JSON.
+
+INPUT:
+{payload}
+"""
+
+VALUE_PROMPT = """You extend one site's search vocabulary over the Arches model "{model}" with the \
+words its users say for the values of one field. At question time only exact phrase lookup runs, \
+so the variants must be written now. You see the field and a batch of its list's labels, never \
+records. The site's real questions are given with names and numbers masked.
+
+1. "values": for labels in "labels" that people say differently, their everyday variants: \
+plurals, short forms, synonyms ("forts" for Fort, "portal tombs" for Portal Tomb). Only labels \
+from this batch, and only variants that name that value alone.
+2. "combos": common phrasings that set this field together with other fields of its record entry \
+("medieval raths": cultural_period Medieval and monument_type Rath). Every combo sets this field; \
+use only labels from "labels" and from "others".
+3. "seed" lists variants already in use. They stay whatever you reply: add to them, and list any \
+you think wrong under "doubts" instead of leaving them out.
+
+Reply with ONLY one JSON object:
+{{"values": {{"<label>": ["<lowercase variant>", ...]}},
+ "combos": [{{"phrases": ["..."], "set": {{"<alias>": "<label>"}}}}],
+ "doubts": [{{"node": "<alias>", "phrase": "<seed>", "why": "…"}}]}}
+Check that your reply parses as JSON.
+
+INPUT:
+{payload}
+"""
+
+PHRASE_PROMPT = """You extend one site's search vocabulary over the Arches model "{model}" with \
+the words its users say for its fields. At question time only exact phrase lookup runs. You see \
+the model's outline and the site's real questions, with names and numbers masked; never records.
+
+Give phrasings the questions use for a field of this model that its name doesn't already say \
+("tells of" for a story's actor). Only aliases from the outline. "seed" lists phrasings already in \
+use: they stay whatever you reply; list any you think wrong under "doubts".
+
+Reply with ONLY one JSON object:
+{{"phrases": {{"<alias>": ["<lowercase phrasing>", ...]}},
+ "doubts": [{{"node": "<alias>", "phrase": "<seed>", "why": "…"}}]}}
 Check that your reply parses as JSON.
 
 INPUT:
@@ -908,15 +959,246 @@ def report(cov: dict, phrase, planner: tuple, gate: list[str], run: Runner,
     return "\n".join(lines) + "\n"
 
 
+def merge_group(old: dict, new: dict) -> dict:
+    """`new` group file with every phrase and combo `old` had: a layer only grows."""
+    entries: dict[tuple, dict] = {}
+    for e in old.get("entries", []) + new.get("entries", []):
+        k = (e["node"], json.dumps(e.get("qualifier"), sort_keys=True))
+        entries[k] = dict(e, phrases=_union(entries[k]["phrases"], e["phrases"])) if k in entries else e
+    out = {**old, **new, "entries": list(entries.values())}
+    ob, nb = old.get("group"), new.get("group")
+    if ob and nb:
+        combos: dict[tuple, dict] = {}
+        for c in ob.get("combos", []) + nb.get("combos", []):
+            k = (c.get("node"), json.dumps(c["set"], sort_keys=True))
+            combos[k] = dict(c, phrases=_union(combos[k]["phrases"], c["phrases"])) if k in combos else c
+        out["group"] = {**ob, **nb, "phrases": _union(ob.get("phrases", []), nb.get("phrases", [])),
+                        "combos": list(combos.values())}
+    return out
+
+
+def _write_group(path: Path, new: dict) -> None:
+    old = json.loads(path.read_text()) if path.exists() else {}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(merge_group(old, new), indent=1, ensure_ascii=False) + "\n")
+
+
+def base_seed(descriptions: dict, base: Path, out: Path) -> Path:
+    """The base layer's phrasings for these models, as a seed file in `out`."""
+    models = {}
+    for name, d in descriptions.items():
+        v = _bundle._model_dir(base / d["graphid"])
+        if v:
+            words = _bundle._manifest(base / d["graphid"]).get("type_words") or []
+            models[name] = {"entries": v["entries"], "type_words": words}
+    path = out / "base-seed.json"
+    path.write_text(json.dumps({"models": models}, indent=1, ensure_ascii=False) + "\n")
+    return path
+
+
+def write_base(descriptions: dict, vocab_dir: Path, manifest: dict, base: Path) -> None:
+    """Each model's group files into base/<graph id>/, merged with what is there."""
+    for name, d in sorted(descriptions.items()):
+        dest = base / d["graphid"]
+        for p in sorted((vocab_dir / name).glob("*.json")):
+            _write_group(dest / p.name, json.loads(p.read_text()))
+        mine = manifest["models"][name]
+        listed = {"format": _bundle.LAYOUT, "model": name, **mine}
+        words = _union(_bundle._manifest(dest).get("type_words") or [], mine.get("type_words") or [])
+        if words:
+            listed["type_words"] = words
+        (dest / _bundle.MANIFEST).write_text(json.dumps(listed, indent=1, ensure_ascii=False) + "\n")
+
+
+def check_values(reply, node: dict, labels: list[str], others: dict[str, list[str]]) -> list[str]:
+    """The schema of a value-variants reply, against the labels sent."""
+    if not isinstance(reply, dict):
+        return ["the reply is not a JSON object"]
+    errors = []
+    values = reply.get("values", {})
+    if not isinstance(values, dict):
+        errors.append('"values" must be an object keyed by label')
+        values = {}
+    for label, vs in values.items():
+        if label not in labels:
+            errors.append(f"values: '{label}' is not one of the labels given")
+        elif not _strings(vs):
+            errors.append(f"values.{label}: needs a list of phrases")
+    for i, c in enumerate(reply.get("combos") or []):
+        if not (isinstance(c, dict) and _strings(c.get("phrases")) and c.get("phrases")
+                and isinstance(c.get("set"), dict) and node["alias"] in c["set"]):
+            errors.append(f"combos[{i}]: needs phrases and a set that holds {node['alias']}")
+            continue
+        for a, v in c["set"].items():
+            known = labels if a == node["alias"] else others.get(a)
+            if known is None:
+                errors.append(f"combos[{i}]: '{a}' is not one of the fields given")
+            elif v not in known:
+                errors.append(f"combos[{i}]: '{v}' is not a value of {a} given")
+    return errors + _check_doubts(reply)
+
+
+def _lower(phrases: list[str]) -> list[str]:
+    return _union([p.strip().lower() for p in phrases if p.strip()])
+
+
+def value_variants(run: Runner, d: dict, client_files: dict, masked: list[str],
+                   jobs: int = 1, doubts: list | None = None) -> dict[str, list[dict]]:
+    """Each listed field's labels to the LLM in batches, for their variants and
+    combos: {nodegroup: [combo]}. A label's seeds (the client's one-value
+    combos) go with it and stay."""
+    seeds: dict[tuple, list[str]] = {}
+    for f in client_files.values():
+        for c in (f.get("group") or {}).get("combos") or []:
+            if len(c["set"]) == 1 and not c.get("node"):
+                (a, v), = c["set"].items()
+                seeds[(a, v)] = _union(seeds.get((a, v), []), c["phrases"])
+    group_of = {n["alias"]: n.get("nodegroup") for n in d["nodes"]}
+    small = {n["alias"]: n["values"] for n in d["nodes"]
+             if isinstance(n.get("values"), list) and len(n["values"]) <= BATCH}
+    jobs_ = []
+    for n in d["nodes"]:
+        labels = n.get("values")
+        if not isinstance(labels, list):
+            continue
+        others = {a: v for a, v in small.items()
+                  if a != n["alias"] and group_of[a] == n.get("nodegroup")}
+        for i in range(0, len(labels), BATCH):
+            batch = labels[i:i + BATCH]
+            field = {k: n[k] for k in ("alias", "name", "label", "card", "crm") if n.get(k)}
+            jobs_.append((n, batch, {"model": d["name"], "about": d.get("description", ""),
+                                     "node": field, "labels": batch, "others": others,
+                                     "seed": {v: seeds[(n["alias"], v)] for v in batch
+                                              if (n["alias"], v) in seeds},
+                                     "questions": masked}))
+
+    def one(job):
+        n, batch, payload = job
+        prompt = VALUE_PROMPT.format(model=d["name"],
+                                     payload=json.dumps(payload, ensure_ascii=False, indent=1))
+        key = _key("values", d["name"], json.dumps(payload, sort_keys=True))
+        what = {"kind": "values", "model": d["name"], "node": n["alias"], "labels": len(batch)}
+        return n, payload, run.ask(key, prompt,
+                                   lambda r: check_values(r, n, batch, payload["others"]), what)
+
+    out: dict[str, list[dict]] = {}
+    with ThreadPoolExecutor(max(jobs, 1)) as pool:
+        for n, payload, reply in pool.map(one, jobs_):
+            combos = out.setdefault(n.get("nodegroup") or "", [])
+            for v in payload["labels"]:
+                said = (reply or {}).get("values", {}).get(v) or []
+                phrases = [p for p in _lower(payload["seed"].get(v, []) + said) if p != v.lower()]
+                if phrases:
+                    combos.append({"phrases": phrases, "set": {n["alias"]: v}})
+            for c in (reply or {}).get("combos") or []:
+                combos.append({"phrases": _lower(c["phrases"]), "set": c["set"]})
+            if doubts is not None:
+                doubts += [dict(x, model=d["name"]) for x in (reply or {}).get("doubts") or []]
+    return out
+
+
+def field_phrases(run: Runner, d: dict, client_files: dict, masked: list[str],
+                  doubts: list | None = None) -> dict[str, list[str]]:
+    """The phrasings the masked questions use for this model's fields: {alias: phrases}.
+    The client's own entries are the seed, and stay."""
+    seed: dict[str, list[str]] = {}
+    for f in client_files.values():
+        for e in f.get("entries") or []:
+            if not e.get("qualifier"):
+                seed[e["node"]] = _union(seed.get(e["node"], []), e["phrases"])
+    aliases = {n["alias"] for n in d["nodes"]}
+
+    def check(r):
+        if not isinstance(r, dict) or not isinstance(r.get("phrases", {}), dict):
+            return ['the reply must be an object with "phrases" keyed by alias']
+        return [f"phrases: '{a}' is not a node of {d['name']}" if a not in aliases
+                else f"phrases.{a}: needs a list of phrasings"
+                for a, ps in r.get("phrases", {}).items() if a not in aliases or not _strings(ps)
+                ] + _check_doubts(r)
+
+    payload = {"model": outline(d), "seed": seed, "questions": masked}
+    prompt = PHRASE_PROMPT.format(model=d["name"], payload=json.dumps(payload, ensure_ascii=False, indent=1))
+    reply = run.ask(_key("phrases", d["name"], json.dumps(payload, sort_keys=True)), prompt, check,
+                    {"kind": "phrases", "model": d["name"]}) or {}
+    if doubts is not None:
+        doubts += [dict(x, model=d["name"]) for x in reply.get("doubts") or []]
+    said = reply.get("phrases") or {}
+    return {a: _lower(seed.get(a, []) + said.get(a, [])) for a in list(seed) + list(said)}
+
+
+def run_data(graphs: Path, out: Path, client: Path, reference=None, questions=None, llm_cmd=None,
+             model=None, models=None, base=None, jobs: int = 1, log=print) -> int:
+    """The data layer into `client`; 0 when every call answered, else 1."""
+    from .arches import graph_doc
+    from .arches_describe import describe
+    from .learn import mask
+    descriptions = describe(graphs, out / "descriptions", reference, small=math.inf)
+    if models:
+        unknown = set(models) - set(descriptions)
+        if unknown:
+            raise ValueError(f"no such model: {', '.join(sorted(unknown))}")
+        descriptions = {k: v for k, v in descriptions.items() if k in models}
+    masked = ([mask(q.strip()) for q in Path(questions).read_text().splitlines()
+               if q.strip() and not q.lstrip().startswith("#")] if questions else [])
+    llm = Runner(out, llm_cmd, model)
+    doubts: list[dict] = []
+    lines = ["# ceist vocab pipeline --layer data", ""]
+    for name, d in sorted(descriptions.items()):
+        files = {p.stem: json.loads(p.read_text()) for p in sorted((client / name).glob("*.json"))}
+        combos = value_variants(llm, d, files, masked, jobs, doubts)
+        phrases = field_phrases(llm, d, files, masked, doubts) if masked else {}
+        group_of = {n["alias"]: n.get("nodegroup") or "" for n in d["nodes"]}
+        kinds = {n["alias"]: _bundle.kind_of(n) for n in d["nodes"]}
+        for g in sorted(set(combos) | {group_of[a] for a in phrases}):
+            entries = [{"phrases": ps, "kind": kinds[a], "node": a} for a, ps in phrases.items()
+                       if ps and group_of[a] == g]
+            new = {"model": name, "nodegroup": g, "entries": entries}
+            if combos.get(g):
+                new["group"] = {"phrases": [], "nodes": {}, "combos": combos[g]}
+            if entries or combos.get(g):
+                _write_group(client / name / f"{g}.json", new)
+        lines.append(f"- {name}: {sum(len(c) for c in combos.values())} value combos, "
+                     f"{sum(1 for ps in phrases.values() if ps)} fields with phrasings")
+    listed = _bundle._manifest(client)
+    listed.setdefault("format", _bundle.LAYOUT)
+    for name, d in descriptions.items():
+        listed.setdefault("models", {}).setdefault(name, {"graphid": d["graphid"]})
+    (client / _bundle.MANIFEST).write_text(json.dumps(listed, indent=1, ensure_ascii=False) + "\n")
+    lines += ["", f"LLM calls: {llm.calls} ({llm.hits} answered from the cache)."]
+    if base is not None:
+        _, merge = _bundle.layered([graph_doc(p) for p in sorted(graphs.glob("*.json"))], base, client)
+        lines += ["", "## Merge report (not applied)", ""] + [f"- {x}" for x in merge or ["(none)"]]
+    if doubts:
+        lines += ["", "## Seeds the LLM doubts (kept)", ""] + [
+            f"- {x['model']}.{x.get('node')} '{x['phrase']}': {x.get('why', '')}" for x in doubts]
+    if llm.failures:
+        lines += ["", "## Failed calls", ""] + [
+            f"- {f['kind']} {f['model']}{'.' + f['node'] if f.get('node') else ''}: "
+            + "; ".join(f["errors"][:3]) for f in llm.failures]
+    text = "\n".join(lines) + "\n"
+    (out / "report.md").write_text(text)
+    log(text)
+    return 1 if llm.failures else 0
+
+
 def run(graphs: str | Path, out: str | Path, reference=None, questions=None, llm_cmd=None,
         model=None, models=None, config_path=None, min_right=None, max_dangerous=None,
-        jobs: int = 1, log=print, seeds=None) -> int:
+        jobs: int = 1, log=print, seeds=None, layer=None, base=None, client=None) -> int:
     """The whole pipeline; 0 when the gate passes, 1 when it doesn't."""
     from . import config
     from .arches_describe import describe
     from .evaluate import evaluate
     graphs, out = Path(graphs), Path(out)
     out.mkdir(parents=True, exist_ok=True)
+    if layer and not (llm_cmd or model):
+        model = LAYER_MODELS[layer]
+    if layer == "data":
+        if client is None:
+            raise ValueError("--layer data needs --client, the client layer's folder")
+        return run_data(graphs, out, Path(client), reference, questions, llm_cmd, model, models,
+                        Path(base) if base else None, jobs, log)
+    if layer == "base" and (base is None or questions):
+        raise ValueError("--layer base needs --base, and takes no --questions: they are the client's")
     desc_dir, vocab_dir = out / "descriptions", out / "vocab"
     descriptions = describe(graphs, desc_dir, reference)
     if models:
@@ -934,6 +1216,8 @@ def run(graphs: str | Path, out: str | Path, reference=None, questions=None, llm
         name = g["name"].get("en") if isinstance(g["name"], dict) else g["name"]
         if name in descriptions:
             roles[name] = crm_roles(g)
+    if layer == "base":
+        seeds = list(seeds or []) + [base_seed(descriptions, Path(base), out)]
     seeded, warnings = load_seeds(seeds, descriptions)
     llm = Runner(out, llm_cmd, model)
     status, doubts, types = {}, [], {}
@@ -997,4 +1281,7 @@ def run(graphs: str | Path, out: str | Path, reference=None, questions=None, llm
                   types, doubts)
     (out / "report.md").write_text(text)
     log(text)
+    if layer == "base" and not gate:
+        write_base(descriptions, vocab_dir, manifest, Path(base))
+        log(f"base layer written to {base}")
     return 1 if gate else 0

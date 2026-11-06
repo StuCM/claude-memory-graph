@@ -4,6 +4,8 @@ import json
 import shutil
 import sys
 
+import pytest
+
 import arches_fixture as fx
 from ceist import pipeline
 from ceist.cli import main
@@ -24,6 +26,10 @@ elif prompt.startswith("You are checking"):
                                 for it in payload]
 elif prompt.startswith("You name the types"):
     key, reply = "model:" + payload["model"], {"type_words": [], "links": {}}
+elif prompt.startswith("You extend") and "labels" in payload:
+    key, reply = "values:" + payload["node"]["alias"] + ":" + payload["labels"][0], {"values": {}}
+elif prompt.startswith("You extend"):
+    key, reply = "phrases:" + payload["model"]["model"], {"phrases": {}}
 elif prompt.startswith("You write acceptance"):
     key, reply = "questions:" + payload["model"]["model"], {"cases": []}
 else:
@@ -525,3 +531,152 @@ def test_judge_plan_checks_a_links_target_type_and_either_end_of_a_date():
     assert judged(built, DateRange("built_end", "1900-01-01", None)) == "partial"
     assert judged(built, DateRange("built_end", "1900-01-01", None),
                   ends={"built_start": "built_end"}) == "right"
+
+
+def _tree(root) -> dict:
+    return {str(p.relative_to(root)): p.read_bytes() for p in sorted(root.rglob("*")) if p.is_file()}
+
+
+def test_the_base_layer_writes_schema_entries_by_graph_id_and_keeps_what_is_there(tmp_path, monkeypatch):
+    from ceist import arches_describe
+    from ceist.arches import graph_doc
+    from ceist.bundle import layered
+    monkeypatch.setattr(arches_describe, "SMALL", 2)    # heritage status (3 labels) is a long list
+    data, ref, cmd, ids = project(tmp_path)
+    base, client = tmp_path / "base", tmp_path / "client"
+    (base / fx.BUILDING).mkdir(parents=True)
+    (base / fx.BUILDING / "manifest.json").write_text(json.dumps({"type_words": ["edifices"]}))
+    (base / fx.BUILDING / "architect.json").write_text(json.dumps(
+        {"model": "Building", "nodegroup": "architect",
+         "entries": [{"phrases": ["designer"], "kind": "link", "node": "architect"}],
+         "group": {"purpose": "", "phrases": [], "nodes": {}, "answers": {}, "intents": [],
+                   "combos": [{"phrases": ["drawn by"], "node": "architect", "set": {}}]}}))
+    (client / "Building").mkdir(parents=True)
+    (client / "Building" / "site.json").write_text(json.dumps(
+        {"model": "Building", "nodegroup": "site", "entries": [{"phrases": ["near"], "kind": "link",
+                                                               "node": "site"}]}))
+    before = _tree(client)
+    out = tmp_path / "out"
+    assert main(["vocab", "pipeline", str(data / "graphs"), "-o", str(out), "--reference", str(ref),
+                 "--llm-cmd", cmd, "--layer", "base", "--base", str(base)]) == 0
+
+    assert sorted(p.name for p in base.iterdir()) == sorted([fx.SITE, fx.BUILDING, fx.PERSON])
+    assert _tree(client) == before
+    manifest = json.loads((base / fx.BUILDING / "manifest.json").read_text())
+    assert (manifest["model"], manifest["graphid"], manifest["type_words"]) == ("Building", fx.BUILDING,
+                                                                              ["edifices"])
+    assert "associated_actor" in manifest["nodegroups"]
+    actor = json.loads((base / fx.BUILDING / "associated_actor.json").read_text())
+    assert {"phrases": ["designed by"], "kind": "link", "node": "actor",
+            "qualifier": {"node": "actor_role", "value": "Architect"}} in actor["entries"]
+    # what the base had stays: the seeded phrase and a combo the LLM didn't give
+    architect = json.loads((base / fx.BUILDING / "architect.json").read_text())
+    assert architect["entries"][0]["phrases"] == ["designer", "architect"]
+    assert architect["group"]["combos"] == [{"phrases": ["drawn by"], "node": "architect", "set": {}}]
+
+    # the long list went as a count: none of its labels went out or came back
+    sent = "".join(json.loads(x)["prompt"] for x in (out / "audit.jsonl").read_text().splitlines())
+    assert '"values_count": 3' in sent
+    written = "".join(p.read_text() for p in base.rglob("*.json"))
+    for label in ["Candidate", "Grade II", "Listed"]:
+        assert label not in sent and label not in written, label
+    for secret in ["Ada", "Lovelace", "Clock Tower", "Boat Shed", *ids["ids"].values()]:
+        assert secret not in sent, secret
+
+    bundle, report = layered([graph_doc(p) for p in sorted((data / "graphs").glob("*.json"))], base)
+    assert any(e["phrases"] == ["designed by"] for e in bundle["models"]["Building"]["entries"])
+    assert bundle["extra_type_words"] == {"edifices": "Building"}
+
+    real = tmp_path / "real.txt"
+    real.write_text("which buildings did Ada build?\n")
+    with pytest.raises(ValueError, match="no --questions"):
+        pipeline.run(data / "graphs", out, ref, real, llm_cmd=cmd, layer="base", base=base)
+
+
+def test_a_failed_gate_writes_no_base_layer(tmp_path):
+    data, ref, cmd, _ = project(tmp_path)
+    base = tmp_path / "base"
+    assert pipeline.run(data / "graphs", tmp_path / "out", ref, llm_cmd=cmd, min_right=99,
+                        layer="base", base=base, log=lambda _: None) == 1
+    assert not base.exists()
+
+
+def test_the_data_layer_batches_labels_and_writes_only_client_entries(tmp_path, monkeypatch):
+    from ceist import config
+    from ceist.arches import ArchesVocabulary, graph_doc
+    from ceist.bundle import layered
+    from ceist.narrate import narrate
+    from ceist.plan import interpret
+    monkeypatch.setattr(pipeline, "BATCH", 2)
+    canned = {
+        "values:heritage_status:Candidate": {"values": {"Candidate": ["hopefuls", "candidate"]}},
+        "values:heritage_status:Listed": {"values": {"Listed": ["listed buildings"]}},
+        "values:actor_role:Architect": {"values": {"Engineer": ["engineers"]}},
+        "phrases:Building": {"phrases": {"architect": ["drew up"]},
+                             "doubts": [{"node": "site", "phrase": "near", "why": "vague"}]}}
+    data, ref, cmd, ids = project(tmp_path, canned)
+    base, client = tmp_path / "base", tmp_path / "client"
+    (base / fx.BUILDING).mkdir(parents=True)
+    (base / fx.BUILDING / "site.json").write_text(json.dumps(
+        {"model": "Building", "nodegroup": "site",
+         "entries": [{"phrases": ["shortlisted"], "kind": "link", "node": "site"}]}))
+    (client / "Building").mkdir(parents=True)
+    (client / "manifest.json").write_text(json.dumps({"models": {"Building": {"base": fx.BUILDING}}}))
+    (client / "Building" / "heritage_status.json").write_text(json.dumps(
+        {"model": "Building", "nodegroup": "heritage_status", "entries": [],
+         "group": {"phrases": [], "nodes": {}, "combos": [
+             {"phrases": ["shortlisted"], "set": {"heritage_status": "Candidate"}}]}}))
+    (client / "Building" / "site.json").write_text(json.dumps(
+        {"model": "Building", "nodegroup": "site", "entries": [{"phrases": ["near"], "kind": "link",
+                                                               "node": "site"}]}))
+    base_before = _tree(base)
+    real = tmp_path / "real.txt"
+    real.write_text("which candidate buildings did Ada Lovelace design?\nwhat did Isambard Brunel draw up?\n")
+    out = tmp_path / "out"
+    assert main(["vocab", "pipeline", str(data / "graphs"), "-o", str(out), "--reference", str(ref),
+                 "--questions", str(real), "--llm-cmd", cmd, "--layer", "data", "--client", str(client),
+                 "--base", str(base)]) == 1                     # the Architect batch failed twice
+
+    # three labels in batches of two; the roles list in one; the questions once per model
+    assert sorted(calls(tmp_path)) == sorted(
+        ["values:heritage_status:Candidate", "values:heritage_status:Listed"]
+        + ["values:actor_role:Architect"] * 2 + ["phrases:Building", "phrases:Person", "phrases:Site"])
+    audit = [json.loads(x) for x in (out / "audit.jsonl").read_text().splitlines()]
+    batches = [json.JSONDecoder().raw_decode(a["prompt"].split("INPUT:\n", 1)[1])[0]
+               for a in audit if a["kind"] == "values"]
+    assert [b["labels"] for b in batches if b["node"]["alias"] == "actor_role"] == [["Architect", "Builder"]] * 2
+    assert [b["labels"] for b in batches if b["node"]["alias"] == "heritage_status"] == [
+        ["Candidate", "Grade II"], ["Listed"]]
+    candidate = next(b for b in batches if b["labels"][0] == "Candidate")
+    assert candidate["seed"] == {"Candidate": ["shortlisted"]}
+    assert set(candidate) == {"model", "about", "node", "labels", "others", "seed", "questions"}
+
+    # privacy: labels and masked questions go out, never a record
+    sent = (out / "audit.jsonl").read_text()
+    assert "which candidate buildings did <Name> design?" in sent
+    for secret in ["Ada", "Lovelace", "Isambard", "Brunel", "Clock Tower", "Grain Warehouse",
+                   "Leeds Dock", "1845-06-01", *ids["ids"].values()]:
+        assert secret not in sent, secret
+
+    # only the client folder changed: value combos and field phrasings; seeds kept
+    assert _tree(base) == base_before
+    status = json.loads((client / "Building" / "heritage_status.json").read_text())
+    assert status["entries"] == []
+    assert status["group"]["combos"] == [
+        {"phrases": ["shortlisted", "hopefuls"], "set": {"heritage_status": "Candidate"}},
+        {"phrases": ["listed buildings"], "set": {"heritage_status": "Listed"}}]
+    architect = json.loads((client / "Building" / "architect.json").read_text())
+    assert architect["entries"] == [{"phrases": ["drew up"], "kind": "link", "node": "architect"}]
+    site = json.loads((client / "Building" / "site.json").read_text())
+    assert site["entries"] == [{"phrases": ["near"], "kind": "link", "node": "site"}]
+    assert json.loads((client / "manifest.json").read_text())["models"]["Building"] == {"base": fx.BUILDING}
+    report = (out / "report.md").read_text()
+    assert "- Building: 'shortlisted' means site in the base, heritage_status" in report
+    assert "- Building.site 'near': vague" in report
+    assert "'Engineer' is not one of the labels given" in report
+
+    # the layer reads back: a value variant grounds to its value
+    bundle, _ = layered([graph_doc(p) for p in sorted((data / "graphs").glob("*.json"))], base, client)
+    vocab = ArchesVocabulary.from_data_dir(data, bundle=bundle)
+    m = interpret(vocab, "how many hopefuls are there?", matcher=config.chain(config.load(None)))
+    assert narrate(m.plan) == "Count Buildings whose heritage status is Candidate."
