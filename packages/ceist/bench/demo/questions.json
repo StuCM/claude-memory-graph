@@ -606,30 +606,30 @@
    "expect": "refuse",
    "count": null,
    "note": "WRONG today: matches the monument named Belfast; no Belfast Site",
-   "status": "wrong",
-   "understood": "Monument 'Belfast, Belfast'",
-   "got": 1,
-   "refused": null
+   "status": "right",
+   "understood": null,
+   "got": null,
+   "refused": "out of grammar (Monument 'Belfast, Belfast' isn't a Site or Tale, which 'in' points at)"
   },
   {
    "q": "which raths or cairns are in County Down?",
    "expect": "answer-later",
    "count": null,
    "note": "WRONG today: or read as and -> 0; needs or support, refuse until then",
-   "status": "wrong",
-   "understood": "Find Monuments whose named location is Site 'County Down' and whose monument type is Cairn and whose monument type is Rath.",
-   "got": 0,
-   "refused": null
+   "status": "refused-should-answer",
+   "understood": null,
+   "got": null,
+   "refused": "out of grammar ('or' isn't supported yet; ask one at a time)"
   },
   {
    "q": "what period is Navan Fort?",
    "expect": "answer-later",
    "count": null,
    "note": "WRONG today: nonsense plan -> 0; single-record attribute question",
-   "status": "wrong",
-   "understood": "Find Objects whose cultural period is Monument 'Navan Fort, Navan'.",
-   "got": 0,
-   "refused": null
+   "status": "refused-should-answer",
+   "understood": null,
+   "got": null,
+   "refused": "out of grammar (asks for the cultural period of Monument 'Navan Fort, Navan' itself; a named record's own details can't be answered yet)"
   },
   {
    "q": "what type of monument is Navan Fort?",
@@ -719,7 +719,7 @@
    "status": "refused-should-answer",
    "understood": null,
    "got": null,
-   "refused": "couldn't place 'down' — answering without it would widen the question; did you mean uncertain (construction phases) or modern (construction phases) or medieval/late medieval (construction phases) for 'down'?"
+   "refused": "out of grammar ('or' isn't supported yet; ask one at a time)"
   },
   {
    "q": "which county has the most raths?",
@@ -769,7 +769,7 @@
    "status": "refused-should-answer",
    "understood": null,
    "got": null,
-   "refused": "couldn't place 'construction', 'more', 'phase' — answering without them would widen the question; did you mean modern (construction phases) or post-medieval (construction phases) or medieval/late medieval (construction phases) for 'more than one construction phase'?"
+   "refused": "couldn't place 'construction', 'more', 'phase' — answering without them would widen the question; did you mean modern (construction phases) or post-medieval (construction phases) or 20th century (construction phases) for 'more'?"
   },
   {
    "q": "how many tales does Medb appear in?",
