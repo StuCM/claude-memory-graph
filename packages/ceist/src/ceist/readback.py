@@ -11,7 +11,7 @@ on a mismatch, and `explain` shows both readings side by side.
 from dataclasses import dataclass
 
 from .narrate import narrate
-from .plan import Plan
+from .plan import Detail, Plan
 
 
 @dataclass
@@ -29,6 +29,6 @@ class Check:
         return out
 
 
-def check(meant: Plan, said: Plan) -> Check:
+def check(meant: Plan | Detail, said: Plan | Detail) -> Check:
     a, b = narrate(meant, canonical=True), narrate(said, canonical=True)
     return Check(a == b, a, b, narrate(said))

@@ -623,23 +623,23 @@
   },
   {
    "q": "what period is Navan Fort?",
-   "expect": "answer-later",
-   "count": null,
-   "note": "WRONG today: nonsense plan -> 0; single-record attribute question",
-   "status": "refused-should-answer",
-   "understood": null,
-   "got": null,
-   "refused": "out of grammar (asks for the cultural period of Monument 'Navan Fort, Navan' itself; a named record's own details can't be answered yet)"
+   "expect": "answer",
+   "count": 1,
+   "note": "record detail (016): cultural period Neolithic, Prehistoric, Iron Age, Bronze Age, checked against monument.json",
+   "status": "right",
+   "understood": "Show the cultural period of Monument 'Navan Fort, Navan'.",
+   "got": 1,
+   "refused": null
   },
   {
    "q": "what type of monument is Navan Fort?",
-   "expect": "answer-later",
-   "count": null,
-   "note": "single-record attribute question",
-   "status": "refused-should-answer",
-   "understood": null,
-   "got": null,
-   "refused": "couldn't place 'type' — answering without it would widen the question; did you mean medieval/late medieval (construction phases) or modern (construction phases) or post-medieval (construction phases) for 'type of'?"
+   "expect": "answer",
+   "count": 1,
+   "note": "record detail (016): monument type Settlement, Ritual Site, checked against monument.json",
+   "status": "right",
+   "understood": "Show the monument type of Monument 'Navan Fort, Navan'.",
+   "got": 1,
+   "refused": null
   },
   {
    "q": "which tales have figures associated with Conchobar mac Nessa?",

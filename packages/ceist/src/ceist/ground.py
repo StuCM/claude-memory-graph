@@ -146,6 +146,8 @@ class Grounding:
     coverage: float = 0.0
     uncovered: list[str] = field(default_factory=list)
     refuse: str = ""          # out-of-grammar reason
+    field_of: Edge | None = None   # a link to a named record that can't say what it
+                                   # points at: the record's own field may be meant
     count: bool = False       # "how many …"
     loose: str = ""           # relation phrases dropped to list a type
     about: bool = False       # "what do we know about X"
@@ -787,9 +789,8 @@ def _wrong_end(anchor: Node, form: str, targets: set[str]) -> str:
 def _check_anchors(g: Grounding, relations: dict[str, Relation]) -> None:
     """A named record must be one its link can point at: "what is in Navan
     Fort", a Monument where 'in' points at Sites, would match nothing real.
-    Where the link can't say what it points at and only the link implied the
-    subject ("what period is Navan Fort"), the question asks for the record's
-    own detail, and a plan would use the record as that detail's value."""
+    Where the link can't say what it points at, the record's own field may be
+    meant ("what period is Navan Fort"): `field_of`, which plan.py settles."""
     for e in g.edges:
         rel = relations.get(e.relation)
         if rel is None or e.target is None or e.target.kind != "anchor":
@@ -798,10 +799,8 @@ def _check_anchors(g: Grounding, relations: dict[str, Relation]) -> None:
         if not rel.joins(e.source.type, a.type):
             g.refuse = _wrong_end(a, e.form, _targets(rel, e.source.type))
             return
-        if e.source.implicit and not _targets(rel, e.source.type):
-            g.refuse = (f"asks for the {rel.name.replace('_', ' ')} of {a.type} '{a.name}' itself; "
-                        "a named record's own details can't be answered yet")
-            return
+        if not _targets(rel, e.source.type):
+            g.field_of = e
 
 
 def _imply_join(g: Grounding, relations: dict[str, Relation]) -> None:

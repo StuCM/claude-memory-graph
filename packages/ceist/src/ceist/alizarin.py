@@ -28,7 +28,7 @@ from .narrate import narrate
 from .plan import (Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, Not, OnTile, Plan,
                    as_tile, interpret)
 
-__all__ = ["Tiles", "ask", "evaluate"]
+__all__ = ["RecordTiles", "Tiles", "ask", "evaluate"]
 
 
 def _strings(value) -> list[str]:
@@ -56,6 +56,18 @@ def _atoms(value) -> list:
     if isinstance(value, list):
         return [a for v in value for a in _atoms(v)]
     return [] if value is None else [value]
+
+
+class RecordTiles:
+    """Each record's own tiles from the business data, served as Rós Madair's
+    reader serves them (resource_tiles)."""
+
+    def __init__(self, vocab):
+        self.by_id = {r["resourceinstance"]["resourceinstanceid"]: r.get("tiles") or []
+                      for r in vocab.resources}
+
+    def resource_tiles(self, rid: str) -> str:
+        return json.dumps(self.by_id.get(rid, []))
 
 
 class Tiles:
@@ -278,6 +290,13 @@ def ask(text: str, vocab, explain: bool = False, limit: int = 25, tiles: Tiles |
     if meaning.direct is not None:
         e = meaning.direct
         return "\n".join(lines + [f"(direct match) {e.type} '{e.name}' ({e.id})"])
+    if meaning.detail is not None:
+        from .rosmadair import compile_detail, detail_lines, read_detail
+        q = compile_detail(meaning.detail, vocab)
+        if explain:
+            lines += ["── understood ──", "  " + narrate(meaning.detail)]
+        return "\n".join(lines + detail_lines(meaning.detail,
+                                               read_detail(RecordTiles(vocab), q, vocab)))
     tiles = tiles or Tiles(vocab)
     for plan, note in [(meaning.plan, "")] + [(r.plan, r.note) for r in meaning.relaxations]:
         if explain:

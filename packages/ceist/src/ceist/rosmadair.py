@@ -28,6 +28,9 @@ Mapping (ros-madair-query's serde form; Rós Madair itself is unchanged):
                                      refuses `not` over a link (it is chunk-coarse)
     count / list                     measures ["count_records"] / ["select_ids"]
 
+    Detail(record, fields)           {"record", "nodes"}: the record's own tiles, read for
+                                     those nodes (reader.resource_tiles), not a query
+
 A query with nothing that ties it to the model — no filter, or only a
 `backlink` or `on_backlink` (whose link may point at other models too) — is
 answered by resolving and keeping the model's own records: Rós Madair
@@ -51,8 +54,8 @@ from dataclasses import dataclass, field
 
 from . import dates
 from .narrate import narrate
-from .plan import (Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, Not, OnTile,
-                   Plan, as_tile, interpret)
+from .plan import (Contains, DateRange, Detail, EntityRef, HasValue, LinkTo, Mention, Not,
+                   OnTile, Plan, as_tile, interpret)
 from .readback import check
 
 DEFAULT_LIMIT = 1000
@@ -239,6 +242,58 @@ def read_back(compiled: Compiled, vocab) -> Plan:
     return Plan(type_name, where, count="count_records" in q["measures"] or compiled.count)
 
 
+# ── one record's own fields ──────────────────────────────────────────────
+
+def compile_detail(d: Detail, vocab) -> dict:
+    return {"record": d.entity.id,
+            "nodes": [vocab.node(d.entity.type, f)["nodeid"] for f, _label in d.fields]}
+
+
+def read_back_detail(q: dict, vocab) -> Detail:
+    e = vocab.entity(q["record"])
+    nodes = {n["nodeid"]: n for n in vocab.model(e.type).nodes}
+    return Detail(e, [(nodes[i]["alias"], str(nodes[i].get("name") or nodes[i]["alias"]).lower())
+                      for i in q["nodes"]])
+
+
+def _shown(value, datatype: str, vocab) -> list[str]:
+    """A tile value as it reads: a concept by its label, a link by the linked record's name."""
+    from .alizarin import _atoms, _links
+    from .arches import CONTROLLED_TYPES, LINK_TYPES
+    if datatype in LINK_TYPES:
+        return [vocab.names.get(t, t) for t in _links(value) if t]
+    out = []
+    for v in _atoms(value):
+        if datatype in CONTROLLED_TYPES:
+            out.append(vocab.concept_label(vocab.concept_of(v) or v))
+        elif isinstance(v, dict):         # a localised string
+            text = v.get(vocab.language) or next(iter(v.values()), "")
+            out.append(str(text.get("value", "") if isinstance(text, dict) else text))
+        else:
+            out.append(str(v))
+    return [x for x in out if x]
+
+
+def read_detail(reader, q: dict, vocab) -> list[tuple[str, list[str]]]:
+    """Each field the compiled detail names, with the values the record's tiles hold."""
+    d = read_back_detail(q, vocab)
+    nodes = {n["nodeid"]: n for n in vocab.model(d.entity.type).nodes}
+    found: dict[str, list[str]] = {i: [] for i in q["nodes"]}
+    for tile in json.loads(reader.resource_tiles(q["record"])):
+        for node, value in (tile.get("data") or {}).items():
+            if node in found:
+                found[node] += [v for v in _shown(value, nodes[node].get("datatype"), vocab)
+                                if v not in found[node]]
+    return [(label, found[i]) for i, (_f, label) in zip(q["nodes"], d.fields)]
+
+
+def detail_lines(d: Detail, fields: list[tuple[str, list[str]]]) -> list[str]:
+    """"Monument 'Navan Fort, Navan': cultural period Iron Age, Prehistoric"."""
+    e = d.entity
+    return [f"{e.type} '{e.name}': " + "; ".join(
+        f"{label} {', '.join(vs)}" if vs else f"no {label} recorded" for label, vs in fields)]
+
+
 # ── the runner ───────────────────────────────────────────────────────────
 
 def linked_from(reader, plan: Plan, vocab) -> set[str]:
@@ -314,6 +369,16 @@ def ask(text: str, vocab, snapshot_dir: str, explain: bool = False, limit: int =
         return "\n".join(lines + [f"(direct match) {e.type} '{e.name}' ({e.id})"])
 
     reader = ros_madair.Reader(snapshot_dir)
+    if meaning.detail is not None:
+        q = compile_detail(meaning.detail, vocab)
+        verdict = check(meaning.detail, read_back_detail(q, vocab))
+        if explain:
+            lines += ["── understood ──", "  " + narrate(meaning.detail), "── query ──",
+                      "  " + json.dumps(q)] + verdict.lines()
+        if not verdict.ok:
+            return "\n".join(lines + ["(not run: the compiled query reads back differently "
+                                      "from the question)"])
+        return "\n".join(lines + detail_lines(meaning.detail, read_detail(reader, q, vocab)))
     graphs = {}
 
     def graph_for(type_name: str):

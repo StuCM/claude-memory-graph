@@ -474,6 +474,13 @@ class ArchesVocabulary:
     def node(self, type_name: str, alias: str) -> dict | None:
         return next((n for n in self.model(type_name).nodes if n.get("alias") == alias), None)
 
+    def fields(self, type_name: str) -> list[tuple[str, str]]:
+        """A model's own fields, as (alias, name in lowercase): what a question
+        about one record may ask for."""
+        return [(n["alias"], str(n.get("name") or n["alias"]).lower())
+                for n in self.model(type_name).nodes
+                if n.get("alias") and n.get("datatype") != "semantic"]
+
     def date_label(self, type_name: str, alias: str) -> str:
         n = self.node(type_name, alias) or {}
         return str(n.get("name") or alias).lower()

@@ -30,6 +30,7 @@ trust: the planner never guesses.
 from dataclasses import dataclass, field, replace
 
 from .ground import Edge, Grounding, Node, ground, is_question
+from .text import terms
 from .vocabulary import Entity, Value, Vocabulary
 
 
@@ -104,6 +105,13 @@ class Plan:
 
 
 @dataclass
+class Detail:
+    """One named record's own fields: "what period is Navan Fort?"."""
+    entity: Entity
+    fields: list[tuple[str, str]]      # (the backend's name, how it reads)
+
+
+@dataclass
 class Relaxation:
     plan: Plan
     note: str                          # shown when this relaxation answers
@@ -117,6 +125,7 @@ class Interpretation:
     plan: Plan | None = None
     relaxations: list[Relaxation] = field(default_factory=list)
     direct: Entity | None = None       # the question is about this record itself
+    detail: Detail | None = None       # the question asks for that record's own fields
     refused: str = ""                  # why no plan: statement, out of grammar, thin grounding
     statement: bool = False
 
@@ -133,6 +142,13 @@ def interpret(vocab: Vocabulary, text: str, today=None, matcher=None) -> Interpr
     if g.negation_unplaced:
         out.refused = (f"'{g.negation_unplaced}' — couldn't tell what it negates "
                        "(ignoring it would invert the answer)")
+        return out
+    detail = _detail(vocab, g)
+    if isinstance(detail, str):
+        out.refused = detail
+        return out
+    if detail is not None:
+        out.detail = detail
         return out
     if g.uncovered:
         # words nothing placed would be dropped from the answer: a wider
@@ -198,6 +214,54 @@ def interpret(vocab: Vocabulary, text: str, today=None, matcher=None) -> Interpr
                 if loose_anchor else f"(ignored '{g.contains}' — it matched nothing)")
         out.relaxations.append(Relaxation(without, note, drops=g.contains))
     return out
+
+
+def _detail(vocab: Vocabulary, g: Grounding) -> "Detail | str | None":
+    """A question naming one record and some of its own fields: the Detail, a
+    refusal (with "did you mean" when the words fit several fields), or None
+    when the question isn't one. Only a question that would otherwise refuse
+    becomes one: a link that can't point at the record ("what period is Navan
+    Fort", `field_of`), or words nothing placed beside the record's own type
+    ("what type of monument is Navan Fort")."""
+    fields = getattr(vocab, "fields", None)
+    e = g.field_of
+    if e is not None:
+        a = e.target
+        own = next(((f, label) for f, label in (fields(a.type) if fields else [])
+                    if f == e.path), None)
+        if not e.source.implicit:
+            if own is None:
+                return None
+            # "what objects have period Navan Fort": Navan Fort's own period, or a link to it
+            return (f"'{e.form}' could be {a.type} '{a.name}''s own {own[1]}, or a link to it "
+                    f"from the {e.source.type} records asked for; the link can't say what it "
+                    "points at, so it isn't guessed")
+        asks = f"out of grammar (asks for the {e.relation.replace('_', ' ')} of {a.type} '{a.name}' itself"
+        if own is None:
+            return f"{asks}, which isn't a field a {a.type} has)"
+        if (e.negated or g.uncovered or len(g.edges) > 1 or len(g.anchors) > 1
+                or g.values or g.dates or g.groups or g.contains):
+            return f"{asks}, and more besides; ask for the field alone)"
+        return Detail(a.entity, [own])
+    a = g.anchor
+    if (fields is None or not g.uncovered or len(g.anchors) != 1 or g.edges or g.values
+            or g.dates or g.groups or g.contains or g.count
+            or any(n.type != a.type for n in g.vars())):
+        return None
+    words = set(terms(g.text)) - set(a.match_terms)
+    named = [(f, label) for f, label in fields(a.type)
+             if words in (set(terms(label)), set(terms(f.replace("_", " "))))]
+    if len(named) == 1:
+        g.suggestions = []            # for the words the field just placed
+        return Detail(a.entity, named)
+    near = named or [(f, label) for f, label in fields(a.type) if words <= set(terms(label))]
+    if not near:
+        return None
+    phrase = " ".join(w for w in dict.fromkeys(terms(g.text)) if w in words)
+    labels = sorted({label for _f, label in near}, key=lambda x: (len(x), x))
+    g.suggestions = [(phrase, labels[:6])]
+    return (f"'{phrase}' could be any of {len(labels)} fields of {a.type} '{a.name}'"
+            + _did_you_mean(g))
 
 
 def _linked(g: Grounding, node: Node) -> bool:

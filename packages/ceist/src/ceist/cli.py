@@ -174,9 +174,9 @@ def _try(a):
     read = unplaced = 0
     for q in lines:
         m = interpret(vocab, q, matcher=chain)
-        if m.plan is not None and not m.refused:
+        if (m.plan or m.detail) and not m.refused:
             read += 1
-            print(f"✓ {q}\n    {narrate(m.plan)}")
+            print(f"✓ {q}\n    {narrate(m.plan or m.detail)}")
         else:
             print(f"✗ {q}\n    ({m.refused or 'not understood'})")
         for phrase, options in m.grounding.suggestions:

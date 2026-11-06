@@ -9,7 +9,7 @@ from datetime import date
 import arches_fixture as fx
 import pytest
 
-from ceist import DateRange, HasValue, LinkTo, Not, OnTile, Plan, interpret, narrate
+from ceist import DateRange, Detail, HasValue, LinkTo, Not, OnTile, Plan, interpret, narrate
 from ceist.plan import EntityRef
 from ceist.arches import ArchesVocabulary
 from ceist.arches_search import compile_checked, read_back as as_read_back, to_payload  # noqa: E501
@@ -285,6 +285,24 @@ def test_arches_search_readback_catches_a_wrong_payload(vocab):
     assert not check(m.plan, said).ok
 
 
+def test_a_named_records_own_fields_read_from_its_tiles(vocab, data):
+    from ceist.alizarin import RecordTiles, ask
+    from ceist.rosmadair import compile_detail, detail_lines, read_back_detail, read_detail
+    assert ask("what is the heritage status of Clock Tower?", vocab) == (
+        "Building 'Clock Tower': heritage status Listed")
+    tower = vocab.entity(data[1]["ids"]["tower"])
+    d = Detail(tower, [("site", "site"), ("construction_date", "construction date")])
+    q = compile_detail(d, vocab)
+    assert check(d, read_back_detail(q, vocab)).ok
+    tiles = RecordTiles(vocab)
+    assert read_detail(tiles, q, vocab) == [("site", ["Leeds Dock"]),
+                                            ("construction date", ["1845-06-01"])]
+    tiles.by_id[tower.id] = [t for t in tiles.by_id[tower.id]
+                             if q["nodes"][0] not in t["data"]]
+    assert detail_lines(d, read_detail(tiles, q, vocab)) == [
+        "Building 'Clock Tower': no site recorded; construction date 1845-06-01"]
+
+
 # ── end to end over a real Rós Madair snapshot (needs the Rust tools) ──────
 
 def _tools():
@@ -363,6 +381,13 @@ def test_end_to_end_reads_a_named_records_own_links(vocab, snapshot):
     from ceist.rosmadair import ask
     out = ask("which sites is the Clock Tower at?", vocab, str(snapshot))
     assert "Site 'Leeds Dock'" in out and "Salts Mill" not in out, out
+
+
+def test_end_to_end_a_named_records_own_field(vocab, snapshot):
+    from ceist.rosmadair import ask
+    out = ask("what heritage status is Clock Tower?", vocab, str(snapshot), explain=True)
+    assert "Show the heritage status of Building 'Clock Tower'." in out and "✓ matches" in out
+    assert out.endswith("Building 'Clock Tower': heritage status Listed"), out
 
 
 def test_end_to_end_refuses_a_query_that_reads_back_wrong(vocab, snapshot, monkeypatch):
