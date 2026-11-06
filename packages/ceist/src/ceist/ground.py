@@ -146,6 +146,26 @@ class GroupGround:
 
 
 @dataclass
+class NameGround:
+    """A record-name condition the question spells out: "whose name starts with Cat"."""
+    term: str                 # as typed
+    mode: str                 # "prefix" | "word"
+    pos: float
+    negated: bool = False
+
+
+# the only free text a question may hold, and only in this slot
+_WORD = r"(['\"]?)([a-z0-9][a-z0-9'-]*?)\1(?![a-z0-9'-])"
+NAME_RES = [
+    ("prefix", re.compile(r"(?<![a-z0-9])(?:whose\s+|with\s+(?:an?|the)\s+)?names?\s+"
+                          r"(?:starts?|starting|begins?|beginning)\s+with\s+" + _WORD)),
+    ("word", re.compile(r"(?<![a-z0-9])" + _WORD + r"\s+in\s+(?:the|their|its)\s+names?"
+                        r"(?![a-z0-9])")),
+    ("word", re.compile(r"(?<![a-z0-9])called\s+" + _WORD)),
+]
+
+
+@dataclass
 class Grounding:
     text: str = ""
     wh: str = ""
@@ -158,6 +178,7 @@ class Grounding:
     recent: bool = False
     contains: str | None = None
     contains_negated: bool = False
+    name: NameGround | None = None
     negation_unplaced: str = ""   # a negator with nothing after it to negate
     subject: Node | None = None
     anchor: Node | None = None            # the first named record
@@ -296,6 +317,8 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
         g.about = True
         consumed.update(i for i, s, _e, _w in words if s < about.end())
         g.notes.append("'… about X' → X itself")
+    if getattr(vocab, "name_match", False) and not about:
+        _name_match(g, text, raw, consume_span, taken)
 
     groups = list(getattr(vocab, "groups", lambda: [])())
     by_form: dict[str, list] = {}
@@ -679,6 +702,21 @@ def _match_leftovers(g: Grounding, matcher, words, consumed, parts_of, relations
             g.suggestions.append((phrase, [o.label for o in res.options]))
 
 
+def _name_match(g: Grounding, text: str, raw: str, consume_span, taken) -> None:
+    """"whose name starts with Cat", "fort in the name", "called Lismahon": one
+    word matched against record names, its words consumed so nothing else grounds them."""
+    for mode, rx in NAME_RES:
+        m = rx.search(raw)
+        if m is None:
+            continue
+        term = text[m.start(2):m.end(2)]
+        g.name = NameGround(term, mode, consume_span(m.start(), m.end()))
+        taken.append((m.start(), m.end()))
+        g.notes.append(f"'{m.group()}' → name {'starts with' if mode == 'prefix' else 'has the word'}"
+                       f" '{term}'")
+        return
+
+
 def _imply_model(g: Grounding, add_var, raw: str, words) -> None:
     """No type named ("how many raths are there?"): values that only one model
     holds name it. Values two models hold refuse with "did you mean" each."""
@@ -754,6 +792,8 @@ def _scope_negations(g: Grounding, negs: list[tuple[int, str]], contains_pos) ->
     items += [(t.pos, "group", t) for t in g.groups]
     if g.near is not None:
         items.append((g.near.pos, "near", g.near))
+    if g.name is not None:
+        items.append((g.name.pos, "name", g.name))
     if contains_pos is not None:
         items.append((contains_pos, "contains", None))
     for n in g.vars():
@@ -781,7 +821,8 @@ def _scope_negations(g: Grounding, negs: list[tuple[int, str]], contains_pos) ->
                 "value": lambda v: f"value '{v.phrase}'",
                 "date": lambda d: f"date '{d.phrase}'",
                 "group": lambda t: f"the '{t.phrase}' entry",
-                "near": lambda n: f"'{n.phrase}'"}[kind](what)
+                "near": lambda n: f"'{n.phrase}'",
+                "name": lambda n: f"the name match '{n.term}'"}[kind](what)
         g.notes.append(f"'{word}' negates {name}")
 
 

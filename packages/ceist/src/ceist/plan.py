@@ -15,6 +15,8 @@
       Contains(term)                                  its text contains this word
       Near(record, km, field)                         its location (field) lies within km of
                                                       the named record's
+      NameMatch(term, mode)                           its name starts with this ("prefix"),
+                                                      or has this word ("word")
       Not(condition)                                  the condition does not hold
       AnyOf([conditions])                             at least one holds: a value of one
                                                       field, or a link to one record, of
@@ -36,6 +38,7 @@ link). And it refuses — with the reason — when the grounding is too thin to
 trust: the planner never guesses.
 """
 
+import re
 from dataclasses import dataclass, field, replace
 
 from .ground import Edge, Grounding, Node, ground, is_question
@@ -94,6 +97,18 @@ class Near:
 
 
 @dataclass
+class NameMatch:
+    term: str
+    mode: str = "word"                # "prefix" | "word"; case-insensitive either way
+
+    def holds(self, name: str) -> bool:
+        low, term = name.lower(), self.term.lower()
+        if self.mode == "prefix":
+            return low.startswith(term)
+        return term in re.findall(r"[a-z0-9][a-z0-9'-]*", low)
+
+
+@dataclass
 class Not:
     condition: "Condition"
 
@@ -109,7 +124,8 @@ class AnyOf:
     conditions: list["Condition"]
 
 
-Condition = LinkTo | HasValue | DateRange | Mention | Contains | Near | Not | OnTile | AnyOf
+Condition = (LinkTo | HasValue | DateRange | Mention | Contains | NameMatch | Near | Not | OnTile
+             | AnyOf)
 
 
 @dataclass
@@ -241,6 +257,8 @@ def interpret(vocab: Vocabulary, text: str, today=None, matcher=None) -> Interpr
         return out
     if loose_anchor:
         plan.where.append(LinkTo(None, EntityRef(g.anchor.entity), "any"))
+    if g.name is not None:
+        _attach_name(g, plan)
     if g.contains:
         plan.where.append(Not(Contains(g.contains)) if g.contains_negated
                           else Contains(g.contains))
@@ -283,12 +301,12 @@ def _detail(vocab: Vocabulary, g: Grounding) -> "Detail | str | None":
         if own is None:
             return f"{asks}, which isn't a field a {a.type} has)"
         if (e.negated or g.uncovered or len(g.edges) > 1 or len(g.anchors) > 1
-                or g.values or g.dates or g.groups or g.contains):
+                or g.values or g.dates or g.groups or g.contains or g.name):
             return f"{asks}, and more besides; ask for the field alone)"
         return Detail(a.entity, [own])
     a = g.anchor
     if (fields is None or not g.uncovered or len(g.anchors) != 1 or g.edges or g.values
-            or g.dates or g.groups or g.contains or g.count
+            or g.dates or g.groups or g.contains or g.name or g.count
             or any(n.type != a.type for n in g.vars())):
         return None
     words = set(terms(g.text)) - set(a.match_terms)
@@ -425,6 +443,16 @@ def _attach_values(g: Grounding, plan: Plan) -> str:
                     f"{', '.join(sorted({c.field for c in vm.candidates}))}, "
                     "which nothing asked for has")
     return ""
+
+
+def _attach_name(g: Grounding, plan: Plan) -> None:
+    """The name match joins the plan of the type named just before it, else the subject's."""
+    n = g.name
+    before = [v for v in g.vars() if v.pos < n.pos]
+    t = max(before, key=lambda v: v.pos).type if before else plan.type
+    p = next((p for p in _plans(plan) if p.type == t), plan)
+    c = NameMatch(n.term, n.mode)
+    p.where.append(Not(c) if n.negated else c)
 
 
 def _attach_dates(g: Grounding, plan: Plan) -> str:

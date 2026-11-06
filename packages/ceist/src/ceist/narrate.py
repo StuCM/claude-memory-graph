@@ -4,7 +4,7 @@ understood before trusting the answer. Every output shares it."""
 from .dates import label as date_label
 from .ground import MILE_KM
 from .plan import (AnyOf, Contains, DateRange, Detail, EntityRef, HasValue, LinkTo, Mention,
-                   Near, Not, OnTile, Plan)
+                   NameMatch, Near, Not, OnTile, Plan)
 
 
 def _plural(t: str) -> str:
@@ -74,6 +74,10 @@ def _condition(c, forms: bool, canonical: bool) -> str:
         return f"that {'do not ' if negated else ''}mention {' '.join(inner.terms)}"
     if isinstance(inner, Contains):
         return f"{neg}mentioning '{inner.term}'"
+    if isinstance(inner, NameMatch):
+        if inner.mode == "prefix":
+            return f"whose name {'does not start' if negated else 'starts'} with '{inner.term}'"
+        return f"whose name {'does not have' if negated else 'has'} the word '{inner.term}'"
     if isinstance(inner, AnyOf):
         return _any_of(inner, forms, canonical, negated)
     if isinstance(inner, Near):

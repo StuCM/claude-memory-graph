@@ -116,7 +116,9 @@ class Vocabulary(Protocol):
         without it, both refuse. `any_of = True` lets "or" join two values of
         one field or two records, and `group_by = True` lets "by <link>" and
         "which <link> has the most" count per linked record: set them only
-        where every backend the vocabulary feeds compiles AnyOf and GroupBy."""
+        where every backend the vocabulary feeds compiles AnyOf and GroupBy.
+        `name_match = True` lets "whose name starts with X", "X in the name"
+        and "called X" match record names (NameMatch), on the same terms."""
 
     def implied_types(self) -> dict[str, str]:
         """Question words that imply a type ("who" → "Person"). May be empty."""

@@ -148,7 +148,42 @@ CASES_OR = [
 ]
 
 
-@pytest.mark.parametrize("question, expect, absent", CASES + CASES_DATES_NOT + CASES_OR + [
+# a record's name: Clock Tower and Grain Warehouse on Leeds Dock, Boat Shed on Salts Mill
+CASES_NAMES = [
+    ("show all buildings whose name starts with gr", ["Grain Warehouse"],
+     ["Clock Tower", "Boat Shed"]),
+    ("which buildings have TOWER in the name?", ["Clock Tower"], ["Grain Warehouse", "Boat Shed"]),
+    ("which buildings are called Shed?", ["Boat Shed"], ["Clock Tower", "Grain Warehouse"]),
+    ("how many buildings on site Leeds Dock are called Shed?", ["0 Building records"], []),
+    ("which buildings on site Leeds Dock don't have tower in the name?", ["Grain Warehouse"],
+     ["Clock Tower", "Boat Shed"]),
+]
+
+
+def test_name_matching(vocab):
+    m = interpret(vocab, "show all buildings whose name starts with Gr")
+    assert narrate(m.plan) == "Find Buildings whose name starts with 'Gr'."
+    with pytest.raises(Unsupported, match="free-text"):
+        to_payload(m.plan, vocab)
+    m = interpret(vocab, "which listed buildings on site Leeds Dock are called 'Clock'?")
+    assert narrate(m.plan) == ("Find Buildings whose site is Site 'Leeds Dock' and whose "
+                               "heritage status is Listed and whose name has the word 'Clock'.")
+    compiled = compile_plan(m.plan, vocab, 25)
+    assert "limit" not in compiled.query and len(compiled.names) == 1
+    assert check(m.plan, read_back(compiled, vocab)).ok
+    # the slot takes one word; any other unknown word still refuses
+    m = interpret(vocab, "which buildings have tower?")
+    assert m.plan is None and "couldn't place 'tower'" in m.refused
+    m = interpret(vocab, "which buildings are called Clock Tower?")
+    assert m.plan is None and "couldn't place 'tower'" in m.refused
+    m = interpret(vocab, "which sites have buildings called Shed?")
+    assert narrate(m.plan) == ("Find Sites that are the site of any Building whose name has "
+                               "the word 'Shed'.")
+    with pytest.raises(Unsupported, match="name match"):
+        compile_plan(m.plan, vocab)
+
+
+@pytest.mark.parametrize("question, expect, absent", CASES + CASES_DATES_NOT + CASES_OR + CASES_NAMES + [
     ("which sites have no buildings designed by Isambard Brunel?", ["Salts Mill"],
      ["Leeds Dock"]),
     ("which sites have buildings designed by Isambard Brunel?", ["Leeds Dock"], ["Salts Mill"]),
@@ -333,7 +368,8 @@ def snapshot(data, tmp_path_factory):
     return out
 
 
-@pytest.mark.parametrize("question, expect, absent", CASES + CASES_DATES_NOT + CASES_OR)
+@pytest.mark.parametrize("question, expect, absent",
+                         CASES + CASES_DATES_NOT + CASES_OR + CASES_NAMES)
 def test_end_to_end(vocab, snapshot, question, expect, absent):
     from ceist.rosmadair import ask
     out = ask(question, vocab, str(snapshot))
@@ -740,6 +776,20 @@ def test_end_to_end_near(places, tmp_path_factory):
     assert said == "- Building 'Grain Warehouse'", said
     counted = ask("how many buildings are within 10 km of Clock Tower?", vocab, str(out))
     assert counted == "2 Building records", counted
+    named = ask("which buildings within 10 km of Clock Tower are called Shed?", vocab, str(out))
+    assert named == "- Building 'Boat Shed'", named
+
+
+def test_near_and_a_name_match_both_hold(places):
+    from ceist.alizarin import ask
+    _root, vocab, _meta = places
+    plan = interpret(vocab, "which buildings near Clock Tower have shed in the name?").plan
+    assert narrate(plan) == ("Find Buildings within 5 km of Building 'Clock Tower' and whose "
+                             "name has the word 'shed'.")
+    compiled = compile_plan(plan, vocab)
+    assert compiled.near and compiled.names and check(plan, read_back(compiled, vocab)).ok
+    assert "Boat Shed" not in ask("which buildings near Clock Tower have shed in the name?", vocab)
+    assert "Boat Shed" in ask("which buildings within 10 km of Clock Tower are called Shed?", vocab)
 
 
 def test_near_with_a_group_by_refuses(places):

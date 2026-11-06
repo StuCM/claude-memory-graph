@@ -48,8 +48,8 @@ refuses by name (Unsupported):
 compiles and refuses if the payload reads back differently from the plan.
 """
 
-from .plan import (AnyOf, Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, Not, OnTile,
-                   Plan, as_tile)
+from .plan import (AnyOf, Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, NameMatch,
+                   Not, OnTile, Plan, as_tile)
 from .readback import Check, check
 from .rosmadair import Unsupported, one_tile, tile_fields
 
@@ -115,8 +115,8 @@ def _group(plan: Plan, vocab, relationship: dict | None, concept_operator: str |
             clauses.append(_value_clause(c, negated, vocab, plan.type, slug, concept_operator))
         elif isinstance(c, DateRange):
             clauses.append(_date_clause(slug, c, negated))
-        elif isinstance(c, (Mention, Contains)):
-            term = c.term if isinstance(c, Contains) else " ".join(c.terms)
+        elif isinstance(c, (Mention, Contains, NameMatch)):
+            term = " ".join(c.terms) if isinstance(c, Mention) else c.term
             raise Unsupported(f"a free-text condition ('{term}'): use Arches Search's "
                               "term search for words")
         else:
