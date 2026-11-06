@@ -661,6 +661,18 @@ def resolve_collisions(run: Runner, d: dict, vocab_dir: Path, seeds: dict | None
     return done
 
 
+def model_roles(graphs: Path, descriptions: dict) -> dict[str, dict]:
+    """{model: its nodes' CRM role hints} for the described models."""
+    roles = {}
+    for p in sorted(graphs.glob("*.json")):
+        doc = json.loads(p.read_text())
+        g = doc["graph"][0] if "graph" in doc else doc
+        name = g["name"].get("en") if isinstance(g["name"], dict) else g["name"]
+        if name in descriptions:
+            roles[name] = crm_roles(g)
+    return roles
+
+
 def _check_cases(cases, descriptions: dict, model: str | None = None, need_q: bool = True,
                  need_phrase: bool = True) -> list[str]:
     errors = []
@@ -1488,13 +1500,7 @@ def run(graphs: str | Path, out: str | Path, reference=None, questions=None, llm
             if p.stem not in models:
                 p.unlink()
         descriptions = {k: v for k, v in descriptions.items() if k in models}
-    roles = {}
-    for p in sorted(graphs.glob("*.json")):
-        doc = json.loads(p.read_text())
-        g = doc["graph"][0] if "graph" in doc else doc
-        name = g["name"].get("en") if isinstance(g["name"], dict) else g["name"]
-        if name in descriptions:
-            roles[name] = crm_roles(g)
+    roles = model_roles(graphs, descriptions)
     if layer == "base":
         seeds = list(seeds or []) + [base_seed(descriptions, Path(base), out)]
     seeded, warnings = load_seeds(seeds, descriptions)
