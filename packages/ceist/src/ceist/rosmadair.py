@@ -35,6 +35,9 @@ Mapping (ros-madair-query's serde form; Rós Madair itself is unchanged):
                                      can point at, each the plan plus a has_link to it
                                      (group_counts); over GROUP_CAP of them refuses
 
+    NameMatch (top level)            not in the IR: kept beside the query (`names`) and
+                                     applied to the records it selects (keep_named)
+
     Detail(record, fields)           {"record", "nodes"}: the record's own tiles, read for
                                      those nodes (reader.resource_tiles), not a query
 
@@ -62,7 +65,7 @@ from dataclasses import dataclass, field
 from . import dates, geo
 from .narrate import narrate
 from .plan import (AnyOf, Contains, DateRange, Detail, EntityRef, GroupBy, HasValue, LinkTo,
-                   Mention, Near, Not, OnTile, Plan, as_tile, interpret)
+                   Mention, NameMatch, Near, Not, OnTile, Plan, as_tile, interpret)
 from .readback import check
 
 DEFAULT_LIMIT = 1000
@@ -76,14 +79,16 @@ class Unsupported(Exception):
 @dataclass
 class Compiled:
     """What runs: `query`, minus the records each of `minus` selects, kept to
-    those within each `near` ({"record", "km", "path"}); with `group`, counted
-    once per record in `values` the group's link points at."""
+    those within each `near` ({"record", "km", "path"}) and those whose name
+    holds each of `names`; with `group`, counted once per record in `values`
+    the group's link points at."""
     query: dict
     minus: list[dict] = field(default_factory=list)
     count: bool = False
     group: GroupBy | None = None
     values: list[str] = field(default_factory=list)
     near: list[dict] = field(default_factory=list)
+    names: list = field(default_factory=list)
 
     def all(self) -> list[dict]:
         return [self.query] + self.minus
@@ -149,6 +154,9 @@ def _cond(c, type_name: str, vocab, in_tile: bool = False) -> dict:
                           "hi": dates.days(c.hi) if c.hi else dates.OPEN}}
     if isinstance(c, Near):
         return {"bbox": _near_box(c.entity.id, c.km, c.field, vocab)}
+    if isinstance(c, NameMatch):
+        raise Unsupported(f"a name match ('{c.term}') on a linked record: only the records "
+                          "asked for are matched by name")
     if isinstance(c, (Mention, Contains)):
         term = c.term if isinstance(c, Contains) else " ".join(c.terms)
         raise Unsupported(f"a free-text condition ('{term}'): the substrate indexes "
@@ -196,6 +204,10 @@ def compile_plan(plan: Plan, vocab, limit: int | None = None) -> Compiled:
     """The query (and any queries to subtract) for a plan; raises Unsupported."""
     if plan.recent:
         raise Unsupported("'most recent': the substrate has no update-time column")
+    names = [c for c in plan.where
+             if isinstance(c.condition if isinstance(c, Not) else c, NameMatch)]
+    if names and plan.group:
+        raise Unsupported("a name match with a count per linked record")
     values = group_values(plan, vocab) if plan.group else []
     negated = [c for c in plan.where
                if isinstance(c, Not) and isinstance(c.condition, (LinkTo, OnTile))]
@@ -204,14 +216,22 @@ def compile_plan(plan: Plan, vocab, limit: int | None = None) -> Compiled:
     if near and plan.group:
         raise Unsupported(f"counting by {plan.group.relation.replace('_', ' ')} within a distance: "
                           "group_counts doesn't measure it")
-    if not negated and not near and not plan.group:
+    if not negated and not near and not plan.group and not names:
         return Compiled(_query(plan, vocab, "count_records" if plan.count else "select_ids",
                                None if plan.count else limit), count=plan.count)
-    base = Plan(plan.type, [c for c in plan.where if c not in negated], wh=plan.wh)
+    base = Plan(plan.type, [c for c in plan.where if c not in negated and c not in names],
+                wh=plan.wh)
     return Compiled(_query(base, vocab, "select_ids", None),
                     [_query(Plan(plan.type, [c.condition]), vocab, "select_ids", None)
                      for c in negated], count=plan.count, group=plan.group, values=values,
-                    near=near)
+                    near=near, names=names)
+
+
+def keep_named(ids, compiled: Compiled, vocab) -> set[str]:
+    """The records among `ids` whose names hold every name match of the plan."""
+    def holds(c, name):
+        return not holds(c.condition, name) if isinstance(c, Not) else c.holds(name)
+    return {i for i in ids if all(holds(c, vocab.names.get(i, "")) for c in compiled.names)}
 
 
 def group_values(plan: Plan, vocab) -> list[str]:
@@ -302,6 +322,7 @@ def read_back(compiled: Compiled, vocab) -> Plan:
         if box in where:
             where.remove(box)
         where.append(Near(e, n["km"], n["path"]))
+    where += compiled.names
     return Plan(type_name, where, count="count_records" in q["measures"] or compiled.count,
                 group=compiled.group)
 
@@ -511,7 +532,7 @@ def ask(text: str, vocab, snapshot_dir: str, explain: bool = False, limit: int =
             body = [f"- {vocab.names.get(i, i)}: {n} {plan.type} records" for i, n in counts]
             return "\n".join(lines + (body or ["(no matching records)"]))
         scoped = _scoped_by_model(compiled.query.get("where"))
-        if compiled.minus or compiled.near or not scoped:
+        if compiled.minus or compiled.near or compiled.names or not scoped:
             query = dict(compiled.query, measures=["select_ids"])
             query.pop("limit", None)
             ids = set(reader.resolve(json.dumps(query), graph, linked=linked(query)))
@@ -520,7 +541,8 @@ def ask(text: str, vocab, snapshot_dir: str, explain: bool = False, limit: int =
             ids |= linked_from(reader, plan, vocab)
             for m in compiled.minus:
                 ids -= set(reader.resolve(json.dumps(m), graph, linked=linked(m)))
-            ids = sorted(keep_near(ids, compiled, vocab), key=lambda i: vocab.names.get(i, i))
+            ids = keep_named(keep_near(ids, compiled, vocab), compiled, vocab)
+            ids = sorted(ids, key=lambda i: vocab.names.get(i, i))
             n = len(ids)
         elif plan.count:
             ids, n = [], reader.count(json.dumps(compiled.query), graph,
