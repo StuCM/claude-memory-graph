@@ -4,7 +4,9 @@
  "entries": [
   {
    "phrases": [
-    "in"
+    "in",
+    "county",
+    "counties"
    ],
    "kind": "link",
    "node": "named_location"
