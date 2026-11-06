@@ -13,13 +13,13 @@ ceist.rosmadair, ceist.arches_search. See packages/ceist/README.md.
 
 from .ground import Grounding, ground, is_question
 from .narrate import narrate
-from .plan import (Contains, DateRange, EntityRef, HasValue, Interpretation, LinkTo, Mention,
+from .plan import (Contains, DateRange, Detail, EntityRef, HasValue, Interpretation, LinkTo, Mention,
                    Not, OnTile, Plan, Relaxation, interpret)
 from .readback import Check, check
 from .text import plurals, terms, terms_pos
 from .vocabulary import DateField, Entity, Relation, Value, Vocabulary
 
-__all__ = ["Check", "Contains", "DateField", "DateRange", "Entity", "EntityRef", "Grounding",
+__all__ = ["Check", "Contains", "DateField", "DateRange", "Detail", "Entity", "EntityRef", "Grounding",
            "HasValue", "Interpretation", "LinkTo", "Mention", "Not", "OnTile", "Plan", "Relation",
            "Relaxation", "Value", "Vocabulary", "check", "ground", "interpret", "is_question",
            "narrate", "plurals", "terms", "terms_pos"]

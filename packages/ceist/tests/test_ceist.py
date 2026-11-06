@@ -572,3 +572,37 @@ def test_a_record_of_the_type_asked_for_is_not_where_a_link_points():
     assert m.plan is None and "Building 'Clock Tower' isn't a Site" in m.refused
     m = interpret(Shapes(), "which buildings are in Leeds Dock?")
     assert narrate(m.plan) == "Find Buildings that in Site 'Leeds Dock'."
+
+
+class Fields(Shapes):
+    """Shapes, with each type's own fields: what a question about one record may ask for."""
+
+    def fields(self, type_name):
+        return {"Building": [("period", "period"), ("heritage_status", "heritage status"),
+                             ("listing_status", "listing status")]}.get(type_name, [])
+
+
+def test_a_named_records_own_field_answers():
+    m = interpret(Fields(), "what period is Clock Tower?")
+    assert m.plan is None and not m.refused
+    assert narrate(m.detail) == "Show the period of Building 'Clock Tower'."
+    m = interpret(Fields(), "what heritage status is Clock Tower?")
+    assert narrate(m.detail) == "Show the heritage status of Building 'Clock Tower'."
+    m = interpret(Fields(), "what period is Leeds Dock?")
+    assert m.detail is None and "isn't a field a Site has" in m.refused
+
+
+def test_a_field_word_several_fields_hold_asks_which():
+    m = interpret(Fields(), "what status is Clock Tower?")
+    assert m.detail is None and m.plan is None
+    assert ("'status' could be any of 2 fields of Building 'Clock Tower'; "
+            "did you mean listing status or heritage status for 'status'?") == m.refused
+
+
+def test_a_link_that_cant_say_what_it_points_at_or_the_records_own_field_refuses():
+    # was: Find Sites whose period is Building 'Clock Tower'
+    m = interpret(Fields(), "which sites have period Clock Tower?")
+    assert m.plan is None
+    assert "'period' could be Building 'Clock Tower''s own period, or a link to it" in m.refused
+    m = interpret(Shapes(), "which sites have period Clock Tower?")
+    assert narrate(m.plan) == "Find Sites that period Building 'Clock Tower'."

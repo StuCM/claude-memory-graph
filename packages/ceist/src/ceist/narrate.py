@@ -2,8 +2,8 @@
 understood before trusting the answer. Every output shares it."""
 
 from .dates import label as date_label
-from .plan import (Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, Not, OnTile,
-                   Plan)
+from .plan import (Contains, DateRange, Detail, EntityRef, HasValue, LinkTo, Mention, Not,
+                   OnTile, Plan)
 
 
 def _plural(t: str) -> str:
@@ -92,7 +92,7 @@ def _phrase(plan: Plan, forms: bool, canonical: bool, nested: bool = False) -> s
     return head + " " + " and ".join(parts)
 
 
-def narrate(plan: Plan, forms: bool = True, canonical: bool = False) -> str:
+def narrate(plan: Plan | Detail, forms: bool = True, canonical: bool = False) -> str:
     """'Find Decisions that affect Project 'quartz'.' / 'Count Buildings whose
     heritage status is Listed and whose construction date is before 1900.'
 
@@ -101,6 +101,10 @@ def narrate(plan: Plan, forms: bool = True, canonical: bool = False) -> str:
     and conditions in a fixed order."""
     if canonical:
         forms = False
+    if isinstance(plan, Detail):
+        names = [f.replace("_", " ") if canonical else label for f, label in plan.fields]
+        e = plan.entity
+        return f"Show the {' and '.join(sorted(names) if canonical else names)} of {e.type} '{e.name}'."
     verb = "Count" if plan.count else "Find"
     tail = ", most recent first" if plan.recent else ""
     return f"{verb} {_phrase(plan, forms, canonical)}{tail}."

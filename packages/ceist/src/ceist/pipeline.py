@@ -851,7 +851,7 @@ def planner_run(graphs_dir: Path, reference: Path | None, bundle: dict, cases: l
         outcome = judge_plan(c, m, ends)
         counts[outcome] += 1
         rows.append({"q": c["q"], "outcome": outcome, "refused": m.refused,
-                     "plan": narrate(m.plan) if m.plan is not None else None})
+                     "plan": narrate(m.plan or m.detail) if m.plan or m.detail else None})
     return counts, rows
 
 
@@ -1186,8 +1186,8 @@ def judge_bank(item: dict, m) -> str:
     from .narrate import narrate
     if m.direct is not None:
         said = f"{m.direct.type} '{m.direct.name}'"
-    elif m.plan is not None and not m.refused:
-        said = narrate(m.plan)
+    elif (m.plan or m.detail) and not m.refused:
+        said = narrate(m.plan or m.detail)
     else:
         said = None
     if item["expect"] == "refuse":
