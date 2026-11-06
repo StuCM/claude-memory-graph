@@ -258,6 +258,26 @@ INPUT:
 """
 
 
+REFINE_PROMPT = """You refine the vocabulary of an offline search over Arches heritage data. At \
+question time only exact phrase lookup runs: a question whose words aren't phrases of the right \
+field is refused, and one whose phrase belongs to another field is answered wrongly. You see the \
+questions that failed, with names and numbers masked (<Name>, <number>), the words that couldn't \
+be placed, and the phrases of the fields they could mean; never records.
+
+Give the phrases to add to the field each question should reach, and the phrases to remove where \
+one sends a question to the wrong field. Only fields listed in "fields"; only phrases listed in \
+"added" can be removed. Add nothing for a question the models can't answer.
+
+Reply with ONLY one JSON object:
+{{"add": [{{"model": "<model>", "node": "<alias>", "phrases": ["<lowercase phrase>", ...]}}],
+ "remove": [{{"model": "<model>", "node": "<alias>", "phrase": "<phrase>"}}]}}
+Check that your reply parses as JSON.
+
+INPUT:
+{payload}
+"""
+
+
 class Runner:
     """Sends prompts to the LLM: cached by key, every real call audited."""
 
@@ -803,19 +823,27 @@ def judge_plan(case: dict, m, ends: dict[str, str]) -> str:
     return "right"
 
 
+def _vocabulary(graphs_dir: Path, reference: Path | None, bundle: dict, resources=()):
+    from .arches import ArchesVocabulary, graph_doc, load_reference_data
+    from .arches_describe import reference_files
+    rdm, alts = load_reference_data(reference_files(reference)) if reference else (None, {})
+    return ArchesVocabulary([graph_doc(p) for p in sorted(graphs_dir.glob("*.json"))], rdm,
+                            resources, alt_labels=alts, bundle=bundle)
+
+
+def _ends(bundle: dict) -> dict[str, str]:
+    return {e["node"]: e["end_node"] for m in bundle["models"].values() for e in m["entries"]
+            if e.get("end_node")}
+
+
 def planner_run(graphs_dir: Path, reference: Path | None, bundle: dict, cases: list[dict], cfg):
     """Every case through `interpret`, with no records loaded: (counts, rows)."""
     from . import config
-    from .arches import ArchesVocabulary, graph_doc, load_reference_data
-    from .arches_describe import reference_files
     from .narrate import narrate
     from .plan import interpret
-    rdm, alts = load_reference_data(reference_files(reference)) if reference else (None, {})
-    vocab = ArchesVocabulary([graph_doc(p) for p in sorted(graphs_dir.glob("*.json"))], rdm,
-                             alt_labels=alts, bundle=bundle)
+    vocab = _vocabulary(graphs_dir, reference, bundle)
     chain = config.chain(cfg)
-    ends = {e["node"]: e["end_node"] for m in bundle["models"].values() for e in m["entries"]
-            if e.get("end_node")}
+    ends = _ends(bundle)
     counts = dict.fromkeys(["right", "partial", "dangerous", "missed", "refused"], 0)
     rows = []
     for c in cases:
@@ -1126,9 +1154,248 @@ def field_phrases(run: Runner, d: dict, client_files: dict, masked: list[str],
     return {a: _lower(seed.get(a, []) + said.get(a, [])) for a in list(seed) + list(said)}
 
 
+def _held(holdout: list[dict]) -> set[str]:
+    from .learn import _norm
+    return {_norm(o["q"]) for o in holdout}
+
+
+def _records(path) -> list[dict]:
+    from .arches import read_resources
+    return read_resources(path) if path else []
+
+
+def read_questions(path, holdout: set[str]) -> tuple[list[str], list[dict], int]:
+    """Real questions: a text file, one per line, or a question bank (JSON, {"questions":
+    [{"q", "expect", …}]}); (questions, bank items, how many were hold-out and dropped)."""
+    from .learn import _norm
+    if not path:
+        return [], [], 0
+    p = Path(path)
+    if p.suffix == ".json":
+        items = json.loads(p.read_text())["questions"]
+    else:
+        items = [{"q": q.strip()} for q in p.read_text().splitlines()
+                 if q.strip() and not q.lstrip().startswith("#")]
+    kept = [o for o in items if _norm(o["q"]) not in holdout]
+    return [o["q"] for o in kept], [o for o in kept if "expect" in o], len(items) - len(kept)
+
+
+def judge_bank(item: dict, m) -> str:
+    """right / wrong / refused, or answered when the bank holds no right reading to
+    compare with, for a question-bank item ({"q", "expect": answer|refuse|answer-later})."""
+    from .narrate import narrate
+    if m.direct is not None:
+        said = f"{m.direct.type} '{m.direct.name}'"
+    elif m.plan is not None and not m.refused:
+        said = narrate(m.plan)
+    else:
+        said = None
+    if item["expect"] == "refuse":
+        return "right" if said is None else "wrong"
+    if said is None:
+        return "refused"
+    if item.get("status") != "right" or not item.get("understood"):
+        return "answered"
+    return "right" if said == item["understood"] else "wrong"
+
+
+PLAN_AS = {"right": "right", "refused": "right", "partial": "wrong", "dangerous": "wrong",
+           "missed": "refused"}
+
+
+def _tally(outcomes) -> dict[str, int]:
+    counts = dict.fromkeys(["right", "wrong", "refused", "answered"], 0)
+    for o in outcomes:
+        counts[o] += 1
+    return counts
+
+
+def _failure(c: dict, m, outcome: str, descriptions: dict) -> tuple[dict, set]:
+    """What the refine prompt says of one failed question, masked; and its candidate fields."""
+    from .learn import _masked_phrase, mask
+    g = m.grounding
+    words = _union([w for w in (_masked_phrase(x, c["q"], g)
+                                for x in [u["phrase"] for u in g.unplaced] + list(g.uncovered)) if w])
+    offered = {(u.get("model"), o["node"]) for u in g.unplaced for o in u["options"]}
+    fits = set()      # the fields of the slot an unplaced phrase was in: a date, or a link to that type
+    for u in g.unplaced:
+        for n in (descriptions.get(u.get("model")) or {}).get("nodes", []):
+            if (u["slot"] == "date" and _bundle.kind_of(n) == "date"
+                    or u["slot"].startswith("link:") and u["slot"][5:] in (n.get("targets") or [])):
+                fits.add((u["model"], n["alias"]))
+    labels = {o.lower() for _, opts in g.suggestions for o in opts}
+    for model, d in descriptions.items():
+        for n in d["nodes"]:
+            if {n.get("name", "").lower(), n.get("label", "").lower()} & labels:
+                offered.add((model, n["alias"]))
+    x = c.get("expect")
+    expected = set()
+    if isinstance(x, dict):
+        expected = {(c["model"], a) for a in [x.get("node")] + [w.get("node") for w in x["conditions"]] if a}
+    problem = outcome
+    if outcome == "refused" and expected & offered:
+        problem = "did you mean"
+    read_as = []
+    if outcome == "wrong" and m.plan is not None:
+        for t, f, label, to in sorted(_fields(m.plan), key=str):
+            read_as.append({k: v for k, v in (("model", m.plan.type), ("node", f), ("value", label),
+                                              ("tile", t), ("link", to)) if v})
+            expected.add((m.plan.type, f))
+    item = {"q": mask(c["q"], g), "problem": problem, "unplaced": words,
+            "did_you_mean": [opts for _, opts in g.suggestions],
+            "expect": x, "read_as": read_as}
+    fields = {(mo, a) for mo, a in expected | offered | fits
+              if mo in descriptions and any(n["alias"] == a for n in descriptions[mo]["nodes"])}
+    return item, fields
+
+
+def check_refine(reply, descriptions: dict) -> list[str]:
+    """The schema of a refine reply, against the models."""
+    if not isinstance(reply, dict):
+        return ["the reply is not a JSON object"]
+    errors = []
+    for key, what in (("add", "phrases"), ("remove", "phrase")):
+        for i, x in enumerate(reply.get(key) or []):
+            d = descriptions.get(x.get("model")) if isinstance(x, dict) else None
+            if d is None or not any(n["alias"] == x.get("node") for n in d["nodes"]):
+                errors.append(f"{key}[{i}]: needs a model and one of its nodes")
+            elif not (_strings(x.get(what)) if what == "phrases" else isinstance(x.get(what), str)):
+                errors.append(f"{key}[{i}]: needs \"{what}\"")
+    return errors
+
+
+def _phrases_of(bundle: dict, model: str, alias: str) -> list[str]:
+    return _union(*[e["phrases"] for e in (bundle["models"].get(model) or {}).get("entries", [])
+                    if e["node"] == alias and not e.get("qualifier")])
+
+
+def _apply(reply: dict, descriptions: dict, bundle: dict, edit_dir: Path, added: set) -> list[str]:
+    """A refine reply into edit_dir/<Model>/<nodegroup>.json; what it did. Only phrases
+    the loop added come out: seeds and the base stay."""
+    did = []
+    for a in reply.get("add") or []:
+        n = next(n for n in descriptions[a["model"]]["nodes"] if n["alias"] == a["node"])
+        have = _phrases_of(bundle, a["model"], a["node"])
+        new = [p for p in _lower(a["phrases"]) if p not in have]
+        if not new:
+            continue
+        g = n.get("nodegroup") or ""
+        _write_group(edit_dir / a["model"] / f"{g}.json", {"model": a["model"], "nodegroup": g, "entries": [
+            {"phrases": new, "kind": _bundle.kind_of(n), "node": a["node"]}]})
+        added |= {(a["model"], a["node"], p) for p in new}
+        did += [f"added {a['model']}.{a['node']} '{p}'" for p in new]
+    for r in reply.get("remove") or []:
+        key = (r["model"], r["node"], r["phrase"].strip().lower())
+        if key not in added:
+            did.append(f"not removed {r['model']}.{r['node']} '{key[2]}': the loop didn't add it")
+            continue
+        node = next(n for n in descriptions[r["model"]]["nodes"] if n["alias"] == r["node"])
+        path = edit_dir / r["model"] / f"{node.get('nodegroup') or ''}.json"
+        f = json.loads(path.read_text())
+        for e in f["entries"]:
+            if e["node"] == r["node"] and not e.get("qualifier"):
+                e["phrases"] = [p for p in e["phrases"] if p != key[2]]
+        f["entries"] = [e for e in f["entries"] if e["phrases"]]
+        path.write_text(json.dumps(f, indent=1, ensure_ascii=False) + "\n")
+        added.discard(key)
+        did.append(f"removed {r['model']}.{r['node']} '{key[2]}'")
+    return did
+
+
+def refine(llm: Runner, descriptions: dict, graphs: Path, reference, bundle_of, edit_dir: Path,
+           cases: list[dict], bank: list[dict], holdout: list[dict], rounds: int, cfg,
+           resources=()) -> list[str]:
+    """The refine loop (`--rounds`): each round, the cases' failures go to the LLM masked,
+    with their candidate fields' phrases; its additions and removals are applied to
+    edit_dir and kept only when right answers go up, wrong ones don't, and no hold-out
+    question turns wrong; else rolled back, and the loop stops. Hold-out questions are
+    scored, never sent. The report's lines."""
+    from . import config
+    from .learn import _norm
+    from .plan import interpret
+    chain = config.chain(cfg)
+    held = _held(holdout)
+    cases = [c for c in cases if _norm(c["q"]) not in held]
+    bank = [o for o in bank if _norm(o["q"]) not in held]
+
+    def score():
+        b = bundle_of()
+        vocab, ends = _vocabulary(graphs, reference, b, resources), _ends(b)
+        rows = []
+        for c in cases:
+            m = interpret(vocab, c["q"], matcher=chain)
+            rows.append((c, m, PLAN_AS[judge_plan(c, m, ends)]))
+        for o in bank:
+            m = interpret(vocab, o["q"], matcher=chain)
+            rows.append((o, m, judge_bank(o, m)))
+        return b, rows, {o["q"]: judge_bank(o, interpret(vocab, o["q"], matcher=chain)) for o in holdout}
+
+    def line(r, rows, out, note):
+        t, h = _tally(x for *_, x in rows), _tally(out.values())
+        return (f"| {r} | {t['right']} | {t['answered']} | {t['wrong']} | {t['refused']} | "
+                f"{h['right']} | {h['answered']} | {h['wrong']} | {note} |")
+
+    b, rows, out = score()
+    table = ["| round | right | answered, unchecked | wrong | refused | hold-out right | "
+             "hold-out answered | hold-out wrong | |", "| --- " * 9 + "|", line(0, rows, out, "first build")]
+    notes, added = [], set()
+    for r in range(1, rounds + 1):
+        failures = [x for x in rows
+                    if x[2] == "wrong" or (x[2] == "refused" and x[0].get("expect") != "answer-later")]
+        if not failures:
+            notes.append(f"Round {r}: nothing failed; stopped.")
+            break
+        items, fields = [], set()
+        for c, m, outcome in failures:
+            item, cand = _failure(c, m, outcome, descriptions)
+            items.append(item)
+            fields |= cand
+        payload = {"round": r, "failures": items,
+                   "fields": [{"model": mo, "node": a, "phrases": _phrases_of(b, mo, a)}
+                              for mo, a in sorted(fields)],
+                   "added": [{"model": mo, "node": a, "phrase": p} for mo, a, p in sorted(added)]}
+        prompt = REFINE_PROMPT.format(payload=json.dumps(payload, ensure_ascii=False, indent=1))
+        reply = llm.ask(_key("refine", json.dumps(payload, sort_keys=True)), prompt,
+                        lambda x: check_refine(x, descriptions), {"kind": "refine", "round": r})
+        if reply is None:
+            notes.append(f"Round {r}: the call failed; stopped.")
+            break
+        before, added_before = {p: p.read_text() for p in edit_dir.rglob("*.json")}, set(added)
+        did = _apply(reply, descriptions, b, edit_dir, added)
+        if not any(x.startswith(("added", "removed")) for x in did):
+            notes += [f"Round {r}: nothing new to apply; stopped."] + [f"- {x}" for x in did]
+            break
+        nb, nrows, nout = score()
+        t0, t1 = _tally(x for *_, x in rows), _tally(x for *_, x in nrows)
+        broke = [q for q, o in nout.items() if o == "wrong" and out.get(q) != "wrong"]
+        # an answer the bank has no reading for counts with the right ones: it can't be checked
+        # here, and a refused question the loop makes answer is what it is for
+        r0, r1 = t0["right"] + t0["answered"], t1["right"] + t1["answered"]
+        why = ([f"right {r0} → {r1}"] if r1 <= r0 else []) + (
+            [f"wrong {t0['wrong']} → {t1['wrong']}"] if t1["wrong"] > t0["wrong"] else []) + (
+            [f"hold-out turned wrong: {q}" for q in broke])
+        if why:
+            for p in edit_dir.rglob("*.json"):
+                if p not in before:
+                    p.unlink()
+            for p, text in before.items():
+                p.write_text(text)
+            added.clear()
+            added |= added_before
+            table.append(line(r, nrows, nout, "rolled back"))
+            notes += [f"Round {r}, rolled back ({'; '.join(why)}):"] + [f"- {x}" for x in did]
+            break
+        b, rows, out = nb, nrows, nout
+        table.append(line(r, rows, out, "kept"))
+        notes += [f"Round {r}, kept:"] + [f"- {x}" for x in did]
+    return ["## Refine loop", "", *table, "", *notes]
+
+
 def run_data(graphs: Path, out: Path, client: Path, reference=None, questions=None, llm_cmd=None,
-             model=None, models=None, base=None, jobs: int = 1, log=print) -> int:
+             model=None, models=None, base=None, jobs: int = 1, log=print, rounds: int = 0,
+             holdout=(), records=None, config_path=None) -> int:
     """The data layer into `client`; 0 when every call answered, else 1."""
+    from . import config
     from .arches import graph_doc
     from .arches_describe import describe
     from .learn import mask
@@ -1138,8 +1405,8 @@ def run_data(graphs: Path, out: Path, client: Path, reference=None, questions=No
         if unknown:
             raise ValueError(f"no such model: {', '.join(sorted(unknown))}")
         descriptions = {k: v for k, v in descriptions.items() if k in models}
-    masked = ([mask(q.strip()) for q in Path(questions).read_text().splitlines()
-               if q.strip() and not q.lstrip().startswith("#")] if questions else [])
+    real, bank, dropped = read_questions(questions, _held(holdout))
+    masked = [mask(q) for q in real]
     llm = Runner(out, llm_cmd, model)
     doubts: list[dict] = []
     lines = ["# ceist vocab pipeline --layer data", ""]
@@ -1164,9 +1431,16 @@ def run_data(graphs: Path, out: Path, client: Path, reference=None, questions=No
     for name, d in descriptions.items():
         listed.setdefault("models", {}).setdefault(name, {"graphid": d["graphid"]})
     (client / _bundle.MANIFEST).write_text(json.dumps(listed, indent=1, ensure_ascii=False) + "\n")
+    if dropped:
+        lines.append(f"- {dropped} question(s) also in the hold-out: not used")
+    docs = [graph_doc(p) for p in sorted(graphs.glob("*.json"))]
+    if rounds:
+        lines += [""] + refine(llm, descriptions, graphs, reference,
+                               lambda: _bundle.layered(docs, base or out / "no-base", client)[0], client,
+                               [], bank, holdout, rounds, config.load(config_path), _records(records))
     lines += ["", f"LLM calls: {llm.calls} ({llm.hits} answered from the cache)."]
     if base is not None:
-        _, merge = _bundle.layered([graph_doc(p) for p in sorted(graphs.glob("*.json"))], base, client)
+        _, merge = _bundle.layered(docs, base, client)
         lines += ["", "## Merge report (not applied)", ""] + [f"- {x}" for x in merge or ["(none)"]]
     if doubts:
         lines += ["", "## Seeds the LLM doubts (kept)", ""] + [
@@ -1183,7 +1457,8 @@ def run_data(graphs: Path, out: Path, client: Path, reference=None, questions=No
 
 def run(graphs: str | Path, out: str | Path, reference=None, questions=None, llm_cmd=None,
         model=None, models=None, config_path=None, min_right=None, max_dangerous=None,
-        jobs: int = 1, log=print, seeds=None, layer=None, base=None, client=None) -> int:
+        jobs: int = 1, log=print, seeds=None, layer=None, base=None, client=None,
+        rounds: int = 0, holdout=None, records=None) -> int:
     """The whole pipeline; 0 when the gate passes, 1 when it doesn't."""
     from . import config
     from .arches_describe import describe
@@ -1192,11 +1467,13 @@ def run(graphs: str | Path, out: str | Path, reference=None, questions=None, llm
     out.mkdir(parents=True, exist_ok=True)
     if layer and not (llm_cmd or model):
         model = LAYER_MODELS[layer]
+    held = json.loads(Path(holdout).read_text())["questions"] if holdout else []
+    loop = {"rounds": rounds, "holdout": held, "records": records, "config_path": config_path}
     if layer == "data":
         if client is None:
             raise ValueError("--layer data needs --client, the client layer's folder")
         return run_data(graphs, out, Path(client), reference, questions, llm_cmd, model, models,
-                        Path(base) if base else None, jobs, log)
+                        Path(base) if base else None, jobs, log, **loop)
     if layer == "base" and (base is None or questions):
         raise ValueError("--layer base needs --base, and takes no --questions: they are the client's")
     desc_dir, vocab_dir = out / "descriptions", out / "vocab"
@@ -1242,19 +1519,25 @@ def run(graphs: str | Path, out: str | Path, reference=None, questions=None, llm
         manifest["models"][name]["type_words"] = words
     (vocab_dir / _bundle.MANIFEST).write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n")
 
+    real, bank, dropped = read_questions(questions, _held(loop["holdout"]))
+    if dropped:
+        warnings.append(f"{dropped} question(s) also in the hold-out: not used")
     cases_path = out / "cases.json"
     if cases_path.exists():
         log(f"{cases_path}: frozen, reused")
         cases = json.loads(cases_path.read_text())["cases"]
     else:
-        real = ([q.strip() for q in Path(questions).read_text().splitlines()
-                 if q.strip() and not q.lstrip().startswith("#")] if questions else [])
-        cases = write_cases(llm, descriptions, roles, real)
+        cases = write_cases(llm, descriptions, roles, [] if bank else real)
         if any(f["kind"] in ("questions", "label") for f in llm.failures):
             cases_path = out / "cases.unfrozen.json"   # a rerun asks the failed ones again
         cases_path.write_text(json.dumps({"_about": "Written from the descriptions only; frozen.",
                                           "cases": cases}, indent=1, ensure_ascii=False) + "\n")
 
+    refined = []
+    if rounds:
+        refined = refine(llm, descriptions, graphs, reference,
+                         lambda: _bundle.assemble(desc_dir, vocab_dir, graphs)[0], vocab_dir, cases, bank,
+                         loop["holdout"], rounds, config.load(config_path), _records(records))
     b, errors, _ = _bundle.assemble(desc_dir, vocab_dir, graphs)
     bundle_path = out / "bundle.json"
     bundle_path.write_text(json.dumps(b, separators=(",", ":")))
@@ -1278,7 +1561,7 @@ def run(graphs: str | Path, out: str | Path, reference=None, questions=None, llm
         warnings.append("one-word group phrases (each takes its word anywhere outside a "
                         "record's name): " + "; ".join(short))
     text = report(coverage(descriptions, vocab_dir, status), phrase, planner, gate, llm, warnings,
-                  types, doubts)
+                  types, doubts) + "".join(x + "\n" for x in ["", *refined] if refined)
     (out / "report.md").write_text(text)
     log(text)
     if layer == "base" and not gate:

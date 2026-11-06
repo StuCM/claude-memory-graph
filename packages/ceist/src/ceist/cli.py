@@ -12,6 +12,7 @@
                          [--llm-cmd CMD] [--model M] [--models A,B] [--config ceist.toml]
                          [--min-right N] [--max-dangerous N] [--jobs N]   # LLM build → gate
                          [--layer base --base <dir> | --layer data --client <dir> [--base <dir>]]
+                         [--rounds N [--holdout bank.json] [--records <business_data dir>]]
     ceist vocab try <data dir> <questions.txt> --bundle <bundle.json> [--log learn.jsonl]   # how each reads
     ceist vocab learn <learn.jsonl> --bundle <bundle.json> -o proposals.json [--exclude cases.json]
     ceist vocab assign <proposals.json> <reply.json>    # the LLM's reply to `learn` → "assign" fields
@@ -130,7 +131,8 @@ def _pipeline(a):
     from .pipeline import run
     return run(a.graphs, a.out, a.reference, a.questions, a.llm_cmd, a.model,
                a.models.split(",") if a.models else None, a.config, a.min_right, a.max_dangerous,
-               a.jobs, seeds=a.seed, layer=a.layer, base=a.base, client=a.client)
+               a.jobs, seeds=a.seed, layer=a.layer, base=a.base, client=a.client, rounds=a.rounds,
+               holdout=a.holdout, records=a.records)
 
 
 def _eval(a):
@@ -335,6 +337,12 @@ def main(argv=None):
                         "and the questions' phrasings into --client")
     p.add_argument("--base", help="the base layer's root (vocabularies/base)")
     p.add_argument("--client", help="the client layer's folder (--layer data)")
+    p.add_argument("--rounds", type=int, default=0,
+                   help="refine rounds: the failed cases to the LLM, masked; a round is kept only "
+                        "when it answers more right and no more wrong")
+    p.add_argument("--holdout", help="a question bank (JSON) scored every round, never sent")
+    p.add_argument("--records", help="business data, read here so the loop scores named records; "
+                                     "never sent")
     p.set_defaults(fn=_pipeline)
 
     p = vocab.add_parser("try", help="real questions: how each reads; log what wasn't placed")
