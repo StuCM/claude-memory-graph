@@ -54,6 +54,10 @@ CLAUSE_END = {"and", "or", "but", "which", "that", "who", "whose", "where", "whi
 MAX_EDGES = 2
 MAX_VARS = 2
 MAX_ANCHORS = 2
+NEAR_KM = 5.0             # what "near" means, said in the narration
+MILE_KM = 1.609344
+NEAR_RE = re.compile(r"(?<![a-z0-9-])(?:within\s+(\d+(?:\.\d+)?)\s*(km|kms|kilometres?|kilometers?"
+                     r"|miles?)\s+of|near)(?![a-z0-9-])")
 
 
 @dataclass
@@ -118,6 +122,17 @@ class DateGround:
 
 
 @dataclass
+class NearGround:
+    """"near X" / "within 5 km of X": X is measured from, not linked to."""
+    phrase: str
+    pos: float
+    km: float
+    unit: str = "km"                  # as asked: "km" | "miles"
+    entity: Entity | None = None      # the named record after the phrase
+    negated: bool = False
+
+
+@dataclass
 class GroupGround:
     """A phrase naming one tile of a nodegroup, and what its clause says of it."""
     phrase: str
@@ -139,6 +154,7 @@ class Grounding:
     values: list[ValueMatch] = field(default_factory=list)
     dates: list[DateGround] = field(default_factory=list)
     groups: list[GroupGround] = field(default_factory=list)
+    near: NearGround | None = None
     recent: bool = False
     contains: str | None = None
     contains_negated: bool = False
@@ -354,6 +370,17 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
         g.notes.append(f"'{phrase}' → value of "
                        + " / ".join(sorted({c.field for c in cands})))
 
+    # ── "near X", "within 5 km of X": where the vocabulary has locations
+    if getattr(vocab, "geometry_fields", None):
+        m = next((m for m in NEAR_RE.finditer(raw)
+                  if not any(m.start() < e and m.end() > s for s, e in taken + names)), None)
+        if m:
+            taken.append((m.start(), m.end()))
+            miles = bool(m[2]) and m[2].startswith("mile")
+            km = float(m[1]) * (MILE_KM if miles else 1) if m[1] else NEAR_KM
+            g.near = NearGround(m[0], consume_span(m.start(), m.end()), km,
+                                "miles" if miles else "km")
+
     # ── dates ("built before 1900"): only when the vocabulary has date fields
     date_fields = list(getattr(vocab, "date_fields", lambda: [])())
     if date_fields:
@@ -471,8 +498,17 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
         consumed.update(i for i, w in leftovers if parts_of(w) <= hit)
         g.notes.append(f"{'/'.join(node.match_terms)} → anchor "
                        f"{top.type or 'Concept'} '{top.name}'")
-        if len(g.anchors) >= len(g.edges):
-            break                     # one anchor per relation at most
+        if len(g.anchors) >= len(g.edges) + (g.near is not None):
+            break                     # one anchor per relation (or "near") at most
+    if g.near is not None:
+        # the record measured from: not a node any relation joins
+        after = [a for a in g.anchors if a.pos > g.near.pos]
+        if after:
+            a = min(after, key=lambda n: n.pos)
+            g.near.entity = a.entity
+            g.anchors = [n for n in g.anchors if n is not a]
+            g.nodes = [n for n in g.nodes if n is not a]
+            g.notes.append(f"'{g.near.phrase}' → within {g.near.km:g} km of {a.type} '{a.name}'")
     g.anchor = g.anchors[0] if g.anchors else None
     _fit_relations(g, relations, sharing)
     if not g.nodes and not g.edges and not g.about:
@@ -716,6 +752,8 @@ def _scope_negations(g: Grounding, negs: list[tuple[int, str]], contains_pos) ->
     items += [(v.pos, "value", v) for v in g.values]
     items += [(d.pos, "date", d) for d in g.dates]
     items += [(t.pos, "group", t) for t in g.groups]
+    if g.near is not None:
+        items.append((g.near.pos, "near", g.near))
     if contains_pos is not None:
         items.append((contains_pos, "contains", None))
     for n in g.vars():
@@ -742,7 +780,8 @@ def _scope_negations(g: Grounding, negs: list[tuple[int, str]], contains_pos) ->
         name = {"edge": lambda e: f"relation {e.relation}",
                 "value": lambda v: f"value '{v.phrase}'",
                 "date": lambda d: f"date '{d.phrase}'",
-                "group": lambda t: f"the '{t.phrase}' entry"}[kind](what)
+                "group": lambda t: f"the '{t.phrase}' entry",
+                "near": lambda n: f"'{n.phrase}'"}[kind](what)
         g.notes.append(f"'{word}' negates {name}")
 
 

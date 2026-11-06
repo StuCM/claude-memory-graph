@@ -743,13 +743,13 @@
   },
   {
    "q": "which monuments are near Armagh?",
-   "expect": "answer-later",
-   "count": null,
-   "note": "spatial near",
-   "status": "refused-should-answer",
-   "understood": null,
-   "got": null,
-   "refused": "couldn't place 'near' — answering without it would widen the question; did you mean named_location or associated_activities or use_phase_period for 'near'?; did you mean modern (construction phases) or uncertain (construction phases) for 'near'?"
+   "expect": "answer",
+   "count": 161,
+   "note": "spatial near: 'Armagh' names only Monument 'Armagh, Armagh' (Armagh city; County Armagh needs 'county'); 161 checked by haversine over monument.json points",
+   "status": "right",
+   "understood": "Find Monuments within 5 km of Monument 'Armagh, Armagh'.",
+   "got": 161,
+   "refused": null
   },
   {
    "q": "show all monuments whose name starts with Cat",

@@ -119,6 +119,8 @@ def _group(plan: Plan, vocab, relationship: dict | None, concept_operator: str |
             term = c.term if isinstance(c, Contains) else " ".join(c.terms)
             raise Unsupported(f"a free-text condition ('{term}'): use Arches Search's "
                               "term search for words")
+        else:
+            raise Unsupported(f"the condition {c!r}")
     return {"graph_slug": slug, "scope": "RESOURCE", "logic": "AND", "clauses": clauses,
             "groups": groups, "aggregations": [], "relationship": relationship}
 

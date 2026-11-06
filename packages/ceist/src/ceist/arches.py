@@ -42,7 +42,7 @@ from pathlib import Path
 
 import alizarin
 
-from . import crm
+from . import crm, geo
 from .index import NameIndex
 from .text import plurals
 from .vocabulary import DateField, Entity, Group, Relation, Value
@@ -51,6 +51,7 @@ LINK_TYPES = {"resource-instance", "resource-instance-list"}
 REFERENCE_TYPES = {"reference"}                  # controlled lists: the primary kind
 CONCEPT_TYPES = {"concept", "concept-list"}      # SKOS concepts: legacy
 CONTROLLED_TYPES = REFERENCE_TYPES | CONCEPT_TYPES
+GEO_TYPES = {"geojson-feature-collection"}
 DATE_TYPES = {"date", "edtf"}     # HER keeps event dates (construction, loss) as EDTF
 _RDF = "{http://www.w3.org/1999/02/22-rdf-syntax-ns#}"
 _SKOS = "{http://www.w3.org/2004/02/skos/core#}"
@@ -188,6 +189,7 @@ class ArchesVocabulary:
         self._labels: dict[str, str] = {}        # item id → label
         self._items: dict[str, dict] = {}        # item id → {collection, uri, labels}
         self.resources = list(resources)
+        self._geometry: dict[str, list[dict]] | None = None
         entities, unnamed = [], {}
         for r in resources:
             e = self._entity(r)
@@ -483,6 +485,22 @@ class ArchesVocabulary:
         return [(n["alias"], str(n.get("name") or n["alias"]).lower())
                 for n in self.model(type_name).nodes
                 if n.get("alias") and n.get("datatype") != "semantic"]
+
+    def geometry_fields(self, type_name: str) -> list[str]:
+        return [n["alias"] for n in self.model(type_name).nodes if n.get("datatype") in GEO_TYPES]
+
+    def geometry(self, resource_id: str) -> list[dict]:
+        """A record's geometries, read from its tiles."""
+        if self._geometry is None:
+            nodes = {n["nodeid"] for m in self.models.values() for n in m.nodes
+                     if n.get("datatype") in GEO_TYPES}
+            self._geometry = {}
+            for r in self.resources:
+                found = [g for t in r.get("tiles") or [] for k, v in (t.get("data") or {}).items()
+                         if k in nodes for g in geo.geometries(v)]
+                if found:
+                    self._geometry[r["resourceinstance"]["resourceinstanceid"]] = found
+        return self._geometry.get(resource_id, [])
 
     def date_label(self, type_name: str, alias: str) -> str:
         n = self.node(type_name, alias) or {}

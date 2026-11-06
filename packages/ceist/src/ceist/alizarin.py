@@ -23,10 +23,10 @@ from dataclasses import replace
 
 import alizarin
 
-from . import dates
+from . import dates, geo
 from .narrate import narrate
-from .plan import (AnyOf, Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, Not, OnTile,
-                   Plan, as_tile, interpret)
+from .plan import (AnyOf, Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, Near, Not,
+                   OnTile, Plan, as_tile, interpret)
 
 __all__ = ["RecordTiles", "Tiles", "ask", "evaluate"]
 
@@ -201,7 +201,9 @@ def _filter(c, hits: set[str], tiles: Tiles, type_name: str) -> set[str]:
         return {r for r in hits if all(t in tiles.text(r) for t in c.terms)}
     if isinstance(c, Contains):
         return {r for r in hits if c.term.lower() in tiles.text(r)}
-    return hits
+    if isinstance(c, Near):
+        return geo.keep_within(vocab, c.entity.id, c.km, hits)
+    raise TypeError(f"{c!r} can't be evaluated")
 
 
 def _targets(c: LinkTo, tiles: Tiles) -> set[str]:
