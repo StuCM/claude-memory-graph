@@ -683,23 +683,23 @@
   },
   {
    "q": "which tales mention scheduled monuments?",
-   "expect": "answer-later",
-   "count": null,
-   "note": "chain: needs Rós Madair linked graphs",
-   "status": "refused-should-answer",
+   "expect": "answer",
+   "count": 0,
+   "note": "chain (on_link, linked graphs); 0 by hand: the one Tale link on that node is to Object 'Gáe Bulg'",
+   "status": "right",
    "understood": "Find Tales whose associated monuments areas and artefacts is any Monument whose designation or protection type is Scheduled.",
-   "got": null,
-   "refused": "Rós Madair couldn't run it (compile: on-link target model '062f4e2c-8c06-55d6-9547-f87f2fffffa8' not available to the compiler (open the reader over all linked models))"
+   "got": 0,
+   "refused": null
   },
   {
    "q": "which figures are associated with tales in the Ulster Cycle?",
-   "expect": "answer-later",
-   "count": null,
-   "note": "backlink chain",
-   "status": "refused-should-answer",
+   "expect": "answer",
+   "count": 17,
+   "note": "backlink chain (on_backlink); 17 by hand from tale.json actor links on Ulster Cycle tales",
+   "status": "right",
    "understood": "Find Figures that are the actor of any Tale whose parent story is Tale 'Ulster Cycle'.",
-   "got": null,
-   "refused": "walking 'actor' backwards (Figure records that another record's actor points at): Rós Madair walks links forward; ask from the other side"
+   "got": 17,
+   "refused": null
   },
   {
    "q": "what is related to Navan Fort?",

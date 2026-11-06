@@ -4,7 +4,7 @@ This file lists what ceist works around, or refuses, because of how Rós Madair 
 
 Each entry says what we saw, how it was confirmed, what ceist does about it, and what would let ceist drop that workaround.
 
-The tests ran against Rós Madair at the version cloned on 2026-10-27, with Python bindings `ros_madair` 0.1.0a30 and `ros-madair-emit` built from the same checkout. The fixture is `packages/ceist/tests/arches_fixture.py`: 2 Sites, 2 People and 3 Buildings.
+The tests ran against Rós Madair at the version cloned on 2026-10-27, with Python bindings `ros_madair` 0.1.0a33 (plus the `linked` argument, branch `ceist-linked`); `ros-madair-emit` is still the 0.1.0a30 build, and alpha.31–33 only add columns to the snapshot. The fixture is `packages/ceist/tests/arches_fixture.py`: 2 Sites, 2 People and 3 Buildings.
 
 ## 1. A query without a model-tied filter is not limited to its `model` (bug)
 
@@ -31,15 +31,15 @@ So "how many buildings are there?" answers 7.
 
 **To drop it:** exact negation of `has_link` and `on_link`, for example by verifying on hydrated tiles as the positive case appears to do, or a `not_link` predicate.
 
-## 3. No way to walk a link backwards along a named path (limitation)
+## 3. Walking a link backwards: `on_backlink` (mostly resolved in 0.1.0-alpha.31)
 
-**Seen:** the IR walks links forward only (`has_link` and `on_link` from the model that holds the node). `backlink` goes backwards but has no `path`, and isn't scoped to a model (see 1).
+**Seen:** before alpha.31 the IR walked links forward only. alpha.31 added `on_backlink {path, model, where}`: records that a `model` record's `path` points at, where that record matches `where`. Its result isn't scoped to the query's model (the link may point at other models too), so ceist keeps only the asked-for type's records. The compiler needs every model a hop names: the Python binding's `Reader.resolve`/`count` take them as `linked=[Graph, …]` (local branch `ceist-linked`, offered upstream).
 
-**What ceist does:** it refuses by name questions like "which sites have buildings designed by Ada?". That needs Sites that a Building's `site` node points at, where the Building matches a sub-filter. The refusal suggests asking from the other side. ceist's Alizarin and Arches Search outputs both answer it.
+**What ceist does:** "which sites have buildings designed by Ada?" compiles to `on_backlink`. It still refuses by name a backwards link from one named record ("sites that the Clock Tower's `site` points at") and a qualified one, since `on_backlink` takes a filter on the other model, not a record id or a same-tile condition.
 
-For a loose link to one named record ("which site is Navan Fort at?"), `linked_from` reads that record's own tiles (`Reader.resource_tiles`) and adds the records of the asked-for type they link to, beside the `backlink` results. The narration says "linked to or from".
+For a loose link to one named record ("which site is Navan Fort at?"), `linked_from` reads that record's own tiles (`Reader.resource_tiles`) and adds the records of the asked-for type they link to, beside the `backlink` results. The narration says "linked to or from". `on_backlink` can't replace it: it needs a named `path`.
 
-**To drop it:** an inverse link predicate, e.g. `{"linked_from": {"model", "path", "where"}}` meaning "records that a `model` record's `path` points at, where that record matches `where`". This could reuse the reverse edge index that `backlink` already uses.
+**To drop the rest:** a record-id predicate (`{"is": id}`) usable inside `where`, which would cover both the one-record case and `linked_from`.
 
 ## 4. `quantize_date` isn't exposed to Python (drift risk)
 

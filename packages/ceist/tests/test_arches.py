@@ -62,11 +62,19 @@ def test_count_and_multi_hop(vocab):
     assert paths == {"architect", "site"}
 
 
-def test_backwards_link_is_refused_by_name(vocab):
+def test_backwards_link_compiles_to_on_backlink(vocab, data):
     m = interpret(vocab, "which sites have buildings designed by Ada Lovelace?")
     assert m.plan.type == "Site" and m.plan.where[0].direction == "in"
+    q = to_query(m.plan, vocab)
+    assert q["where"] == {"on_backlink": {"path": "site", "model": fx.BUILDING, "where": {
+        "has_link": {"path": "architect", "target": data[1]["ids"]["ada"]}}}}
+    assert check(m.plan, read_back(compile_plan(m.plan, vocab), vocab)).ok
+
+
+def test_backwards_link_from_one_record_is_refused_by_name(vocab, data):
+    tower = EntityRef(vocab.entity(data[1]["ids"]["tower"]))
     with pytest.raises(Unsupported, match="backwards"):
-        to_query(m.plan, vocab)
+        to_query(Plan("Site", [LinkTo("site", tower, "in", style="field")]), vocab)
 
 
 def _classed(root, site_class="E53_Place"):
@@ -134,7 +142,6 @@ CASES_DATES_NOT = [
 @pytest.mark.parametrize("question, expect, absent", CASES + CASES_DATES_NOT + [
     ("which sites have no buildings designed by Isambard Brunel?", ["Salts Mill"],
      ["Leeds Dock"]),
-    # what Rós Madair can't walk, the data_dir can
     ("which sites have buildings designed by Isambard Brunel?", ["Leeds Dock"], ["Salts Mill"]),
     ("how many buildings designed by Ada Lovelace are on site Salts Mill?",
      ["1 Building records"], []),
@@ -310,6 +317,39 @@ def test_end_to_end(vocab, snapshot, question, expect, absent):
         assert a not in out, out
 
 
+@pytest.mark.parametrize("question, expect, absent", [
+    ("which sites have buildings designed by Isambard Brunel?", ["Leeds Dock"], ["Salts Mill"]),
+    ("which sites have no buildings designed by Isambard Brunel?", ["Salts Mill"],
+     ["Leeds Dock"]),
+])
+def test_end_to_end_reverse_link(vocab, snapshot, question, expect, absent):
+    from ceist.rosmadair import ask
+    out = ask(question, vocab, str(snapshot))
+    assert "Building '" not in out, out
+    for e in expect:
+        assert e in out, out
+    for a in absent:
+        assert a not in out, out
+
+
+def test_end_to_end_chain_through_another_model(vocab, data, snapshot):
+    """Buildings on a site where Isambard designed a building: a hop into Site
+    and back, so the compiler needs the Site graph passed as `linked`."""
+    from ceist.rosmadair import linked_models
+    ids = data[1]["ids"]
+    isambard = EntityRef(vocab.entity(ids["isambard"]))
+    by_isambard = Plan("Building", [LinkTo("architect", isambard, style="field")])
+    on_that_site = Plan("Site", [LinkTo("site", by_isambard, "in", style="field")])
+    plan = Plan("Building", [LinkTo("site", on_that_site, style="field")])
+    q = to_query(plan, vocab)
+    assert linked_models(q) == [fx.SITE]
+    assert _resolve(snapshot, vocab, q) == {ids["tower"], ids["warehouse"]}
+    import ros_madair
+    graph, site = (ros_madair.Graph(json.dumps(vocab.model(t).doc)) for t in ("Building", "Site"))
+    counted = dict(q, measures=["count_records"])
+    assert ros_madair.Reader(str(snapshot)).count(json.dumps(counted), graph, linked=[site]) == 2
+
+
 def test_end_to_end_explains(vocab, snapshot):
     from ceist.rosmadair import ask
     out = ask("which listed buildings are on site Leeds Dock?", vocab, str(snapshot), explain=True)
@@ -452,8 +492,11 @@ def _entry(vocab, data, who, role):
 def _resolve(snapshot, vocab, query, type_name="Building"):
     """The records of the type a query selects (a vacuous filter selects every record)."""
     import ros_madair
+    from ceist.rosmadair import linked_models
     graph = ros_madair.Graph(json.dumps(vocab.model(type_name).doc))
-    ids = ros_madair.Reader(str(snapshot)).resolve(json.dumps(query), graph)
+    linked = [ros_madair.Graph(json.dumps(vocab.model(vocab.by_graph[m].name).doc))
+              for m in linked_models(query)]
+    ids = ros_madair.Reader(str(snapshot)).resolve(json.dumps(query), graph, linked=linked)
     return set(ids) & vocab.ids_of(type_name)
 
 
@@ -532,8 +575,4 @@ def test_qualified_links_answer_the_same_through_on_tile(roles, data, snapshot, 
             ids -= _resolve(snapshot, roles, m, p.type)
         return ids
 
-    if plan.type == "Site":          # walks "site" backwards: not for Rós Madair
-        with pytest.raises(Unsupported, match="backwards"):
-            run(plan)
-        return
     assert run(old) == run(plan) == evaluate(plan, tiles)
