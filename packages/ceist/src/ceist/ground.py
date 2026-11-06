@@ -65,6 +65,7 @@ class Node:
     entity: Entity | None = None
     match_terms: list[str] = field(default_factory=list)
     implicit: bool = False    # a var only a relation's end implied, not named
+    either: list[Entity] = field(default_factory=list)   # anchors: the records "or" adds
 
     # conveniences for backends that address anchors directly
     @property
@@ -101,6 +102,8 @@ class ValueMatch:
     pos: float
     candidates: list[Value]   # every field this phrase can be a value of
     negated: bool = False
+    words: list[int] = field(default_factory=list)
+    either: list["ValueMatch"] = field(default_factory=list)   # the values "or" adds
 
 
 @dataclass
@@ -149,6 +152,8 @@ class Grounding:
     field_of: Edge | None = None   # a link to a named record that can't say what it
                                    # points at: the record's own field may be meant
     count: bool = False       # "how many …"
+    group: Edge | None = None # "by county": count per record this link points at
+    group_order: str = ""     # "most" | "fewest": only the top or bottom one
     loose: str = ""           # relation phrases dropped to list a type
     about: bool = False       # "what do we know about X"
     notes: list[str] = field(default_factory=list)
@@ -331,6 +336,8 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
         g.notes.append(f"'{form}' → relation {rel}")
         sharing[form] = [r for f, r in forms if f == form]
     g.edges.sort(key=lambda e: e.pos)
+    if getattr(vocab, "group_by", False):
+        _group_by(g, words, consumed)
 
     # ── group phrases ("burnt down"): filled from their clause below
     for phrase, cands, m in _phrase_spans(raw, list(by_form.items()), taken, names):
@@ -342,7 +349,8 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
 
     # ── controlled values ("listed", "active")
     for phrase, cands, m in _phrase_spans(raw, list(by_phrase.items()), taken, names):
-        g.values.append(ValueMatch(phrase, consume_span(m.start(), m.end()), cands))
+        at = [i for i, s, e, _w in words if s >= m.start() and e <= m.end()]
+        g.values.append(ValueMatch(phrase, consume_span(m.start(), m.end()), cands, words=at))
         g.notes.append(f"'{phrase}' → value of "
                        + " / ".join(sorted({c.field for c in cands})))
 
@@ -421,6 +429,8 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
 
     # ── anchors: leftover terms against the records — only a whole name (or
     # alias) may bind, never a guess. Up to two ("designed by Ada on site Salts Mill").
+    if getattr(vocab, "any_of", False):
+        _either_records(g, vocab, words, names, consumed, parts_of)
     partial = getattr(vocab, "partial_names", False)
     expected = {t for e in g.edges for r in sharing.get(e.form, [e.relation]) if r in relations
                 for t in relations[r].domain | relations[r].range}
@@ -488,10 +498,16 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
     g.uncovered = sorted(terms - covered)
 
     # a plan is a conjunction: "raths or cairns" would be read as "raths and cairns"
-    if any(w == "or" and i not in consumed and not any(s <= ws and we <= e for s, e in names)
-           for i, ws, we, w in words):
-        g.refuse = "'or' isn't supported yet; ask one at a time"
-        return g
+    for i, ws, we, w in words:
+        if w != "or" or i in consumed or any(s <= ws and we <= e for s, e in names):
+            continue
+        if not getattr(vocab, "any_of", False):
+            g.refuse = "'or' isn't supported yet; ask one at a time"
+            return g
+        g.refuse = _either_values(g, i)
+        if g.refuse:
+            return g
+        consumed.add(i)
 
     # ── grammar caps + wiring the relations to their ends
     if len(g.edges) > MAX_EDGES:
@@ -638,7 +654,7 @@ def _imply_model(g: Grounding, add_var, raw: str, words) -> None:
         return
     first = min(named, key=lambda x: x[1])
     # "what's the brooch made of?" asks about one brooch, not which brooches
-    if not _SUBJECT_LEAD.search(raw[:words[int(first[1])][1]]):
+    if not (g.group_order or _SUBJECT_LEAD.search(raw[:words[int(first[1])][1]])):
         return
     models = set().union(*(owners for _p, _pos, owners, _k in named))
     if len(models) == 1:
@@ -876,3 +892,84 @@ def _assign_edges(g: Grounding, relations: dict[str, Relation], seen: dict) -> N
         straight = (left.type in dom) + (right.type in rng)
         swapped = (right.type in dom) + (left.type in rng)
         edge.source, edge.target = (right, left) if swapped > straight else (left, right)
+
+
+MOST = {"most": "most", "fewest": "fewest", "least": "fewest"}
+
+
+def _group_by(g: Grounding, words, consumed: set[int]) -> None:
+    """"… by county" ending the question, or "which county has the most …":
+    the link names what to count per record of, not a condition."""
+    w = [x[3] for x in words]
+    for e in g.edges:
+        if e.qualifier:
+            continue
+        start = int(e.pos)
+        end = start + len(WORD_RE.findall(e.form)) - 1
+        took, order = [], ""
+        if start and w[start - 1] == "by" and end == len(w) - 1:
+            took = [start - 1]
+        elif start == 1 and w[0] in ("which", "what") and w[end + 1:end + 2] in (["has"], ["have"]):
+            k = end + 2 + (w[end + 2:end + 3] == ["the"])
+            if k < len(w) and w[k] in MOST:
+                took, order = list(range(end + 1, k + 1)), MOST[w[k]]
+        if took:
+            consumed.update(took)
+            g.edges.remove(e)
+            g.group, g.group_order = e, order
+            g.notes.append(f"'{e.form}' → count per {e.relation}"
+                           + (f", the {order}" if order else ""))
+            return
+
+
+def _either_records(g: Grounding, vocab: Vocabulary, words, names, consumed: set[int],
+                    parts_of) -> None:
+    """"County Antrim or County Down": a whole name either side of "or", both of
+    one type, is one anchor that may be either record."""
+    for i, ws, we, w in words:
+        if (w != "or" or i in consumed or not 0 < i < len(words) - 1
+                or any(s <= ws and we <= e for s, e in names)):
+            continue
+        before = [s for s, e in names if e == words[i - 1][2]]
+        after = [e for s, e in names if s == words[i + 1][1]]
+        if not before or not after:
+            continue
+        found = []
+        for s, e in ((min(before), words[i - 1][2]), (words[i + 1][1], max(after))):
+            at = [j for j, s2, e2, _w in words if s2 >= s and e2 <= e]
+            left = set().union(*(parts_of(words[j][3]) for j in at))
+            named = [x for _score, x in vocab.rank_entities(left) if x.named_by(left)]
+            exact = [x for x in named if x.name_terms == left]
+            found.append(((exact or named or [None])[0], at))
+        (a, at_a), (b, at_b) = found
+        if a is None or b is None or a.type != b.type:
+            continue
+        node = Node("anchor", a.type, float(at_a[0]), entity=a, either=[b],
+                    match_terms=sorted(a.name_terms))
+        g.anchors.append(node)
+        g.nodes.append(node)
+        consumed.update(at_a + at_b + [i])
+        g.notes.append(f"'{words[at_a[0]][3]} … {words[at_b[-1]][3]}' → anchor "
+                       f"{a.type} '{a.name}' or '{b.name}'")
+
+
+def _either_values(g: Grounding, i: int) -> str:
+    """Join the values either side of the "or" at word `i` when one field can
+    hold both; otherwise why not."""
+    a = next((v for v in g.values if v.words and (v.either or [v])[-1].words[-1] == i - 1),
+             None)
+    b = next((v for v in g.values if v.words and v.words[0] == i + 1), None)
+    if a is None or b is None:
+        return ("'or' is supported only between two values of one field or two named "
+                "records; ask one at a time")
+    fields = {c.field for c in b.candidates}
+    for v in [a, *a.either]:
+        fields &= {c.field for c in v.candidates}
+    if not fields:
+        return (f"'or' joins '{a.phrase}' and '{b.phrase}', which aren't values of one "
+                "field; ask one at a time")
+    a.either.append(b)
+    g.values.remove(b)
+    g.notes.append(f"'{a.phrase}' or '{b.phrase}' → either value of "
+                   + " / ".join(sorted(fields)))
+    return ""

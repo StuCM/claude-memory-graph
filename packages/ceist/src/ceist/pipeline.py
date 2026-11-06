@@ -760,7 +760,7 @@ def write_cases(run: Runner, descriptions: dict, roles: dict, real: list[str]) -
 def _fields(plan) -> set[tuple[str, str, str | None, str | None]]:
     """(tile, alias, value label, link target type) for each condition on the
     plan's own type; tile is the group of the OnTile it is in, else ""."""
-    from .plan import DateRange, HasValue, LinkTo, Not, OnTile
+    from .plan import AnyOf, DateRange, HasValue, LinkTo, Not, OnTile
     out = set()
     todo = [("", c) for c in plan.where]
     while todo:
@@ -769,6 +769,8 @@ def _fields(plan) -> set[tuple[str, str, str | None, str | None]]:
             c = c.condition
         if isinstance(c, OnTile):
             todo += [(c.group, x) for x in c.conditions]
+        elif isinstance(c, AnyOf):
+            todo += [(tile, x) for x in c.conditions]
         elif isinstance(c, LinkTo) and c.relation:
             target = c.target.entity.type if hasattr(c.target, "entity") else c.target.type
             out.add((tile, c.relation.split("#")[0], None, target))

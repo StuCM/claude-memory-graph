@@ -2,8 +2,8 @@
 understood before trusting the answer. Every output shares it."""
 
 from .dates import label as date_label
-from .plan import (Contains, DateRange, Detail, EntityRef, HasValue, LinkTo, Mention, Not,
-                   OnTile, Plan)
+from .plan import (AnyOf, Contains, DateRange, Detail, EntityRef, HasValue, LinkTo, Mention,
+                   Not, OnTile, Plan)
 
 
 def _plural(t: str) -> str:
@@ -36,8 +36,8 @@ def _field(name: str, label: str = "") -> str:
     return label or name.replace("_", " ")
 
 
-def _link(c: LinkTo, forms: bool, canonical: bool, negated: bool) -> str:
-    target = _target(c, forms, canonical)
+def _link(c: LinkTo, forms: bool, canonical: bool, negated: bool, target: str = "") -> str:
+    target = target or _target(c, forms, canonical)
     if c.qualifier is not None:
         # same entry: "whose actor is Person 'Ada Lovelace' (role type: Architect)"
         target += f" ({_field(c.qualifier.field)}: {c.qualifier.label})"
@@ -73,6 +73,8 @@ def _condition(c, forms: bool, canonical: bool) -> str:
         return f"that {'do not ' if negated else ''}mention {' '.join(inner.terms)}"
     if isinstance(inner, Contains):
         return f"{neg}mentioning '{inner.term}'"
+    if isinstance(inner, AnyOf):
+        return _any_of(inner, forms, canonical, negated)
     if isinstance(inner, OnTile):
         parts = [_condition(x, forms, canonical) for x in inner.conditions]
         if canonical:
@@ -80,6 +82,28 @@ def _condition(c, forms: bool, canonical: bool) -> str:
         return (f"with {'no' if negated else 'one'} {_field(inner.group)} entry "
                 f"({' and '.join(parts)})")
     return f"{neg}({inner})"
+
+
+def _any_of(c: AnyOf, forms: bool, canonical: bool, negated: bool) -> str:
+    """"whose monument type is Rath or Cairn": one field, its values joined."""
+    first = c.conditions[0]
+    if all(isinstance(x, LinkTo) and isinstance(x.target, EntityRef)
+           and (x.relation, x.direction, x.style, x.qualifier)
+           == (first.relation, first.direction, first.style, first.qualifier)
+           for x in c.conditions):
+        targets = [_target(x, forms, canonical) for x in c.conditions]
+        if canonical:
+            targets.sort()
+        return _link(first, forms, canonical, negated, " or ".join(targets))
+    if all(isinstance(x, HasValue) and x.field == first.field for x in c.conditions):
+        labels = [x.label for x in c.conditions]
+        if canonical:
+            labels.sort()
+        return f"whose {_field(first.field)} is {'not ' if negated else ''}{' or '.join(labels)}"
+    parts = [_condition(x, forms, canonical) for x in c.conditions]
+    if canonical:
+        parts.sort()
+    return f"{'not ' if negated else ''}({' or '.join(parts)})"
 
 
 def _phrase(plan: Plan, forms: bool, canonical: bool, nested: bool = False) -> str:
@@ -107,4 +131,8 @@ def narrate(plan: Plan | Detail, forms: bool = True, canonical: bool = False) ->
         return f"Show the {' and '.join(sorted(names) if canonical else names)} of {e.type} '{e.name}'."
     verb = "Count" if plan.count else "Find"
     tail = ", most recent first" if plan.recent else ""
+    if plan.group is not None:
+        tail += f", by {_field(plan.group.relation)}"
+        if plan.group.order:
+            tail += f": the one with the {plan.group.order}"
     return f"{verb} {_phrase(plan, forms, canonical)}{tail}."

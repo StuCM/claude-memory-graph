@@ -26,7 +26,11 @@ Mapping (ros-madair-query's serde form; Rós Madair itself is unchanged):
     Not(value or date)               {"not": …}
     Not(link)                        a second query, subtracted client-side: Rós Madair
                                      refuses `not` over a link (it is chunk-coarse)
+    AnyOf([conditions])              {"any": [<each condition>]}
     count / list                     measures ["count_records"] / ["select_ids"]
+    group (GroupBy)                  the IR can't group: one query per record the link
+                                     can point at, each the plan plus a has_link to it
+                                     (group_counts); over GROUP_CAP of them refuses
 
     Detail(record, fields)           {"record", "nodes"}: the record's own tiles, read for
                                      those nodes (reader.resource_tiles), not a query
@@ -54,11 +58,12 @@ from dataclasses import dataclass, field
 
 from . import dates
 from .narrate import narrate
-from .plan import (Contains, DateRange, Detail, EntityRef, HasValue, LinkTo, Mention, Not,
-                   OnTile, Plan, as_tile, interpret)
+from .plan import (AnyOf, Contains, DateRange, Detail, EntityRef, GroupBy, HasValue, LinkTo,
+                   Mention, Not, OnTile, Plan, as_tile, interpret)
 from .readback import check
 
 DEFAULT_LIMIT = 1000
+GROUP_CAP = 50
 
 
 class Unsupported(Exception):
@@ -67,10 +72,13 @@ class Unsupported(Exception):
 
 @dataclass
 class Compiled:
-    """What runs: `query`, minus the records each of `minus` selects."""
+    """What runs: `query`, minus the records each of `minus` selects; with
+    `group`, counted once per record in `values` the group's link points at."""
     query: dict
     minus: list[dict] = field(default_factory=list)
     count: bool = False
+    group: GroupBy | None = None
+    values: list[str] = field(default_factory=list)
 
     def all(self) -> list[dict]:
         return [self.query] + self.minus
@@ -91,6 +99,8 @@ def _cond(c, type_name: str, vocab, in_tile: bool = False) -> dict:
                               "Rós Madair can't negate a link, and only the top level "
                               "can be subtracted")
         return {"not": _cond(c.condition, type_name, vocab, in_tile)}
+    if isinstance(c, AnyOf):
+        return {"any": [_cond(x, type_name, vocab, in_tile) for x in c.conditions]}
     if isinstance(c, OnTile):
         if in_tile:
             raise Unsupported(f"a {c.group} entry inside another entry")
@@ -175,15 +185,39 @@ def compile_plan(plan: Plan, vocab, limit: int | None = None) -> Compiled:
     """The query (and any queries to subtract) for a plan; raises Unsupported."""
     if plan.recent:
         raise Unsupported("'most recent': the substrate has no update-time column")
+    values = group_values(plan, vocab) if plan.group else []
     negated = [c for c in plan.where
                if isinstance(c, Not) and isinstance(c.condition, (LinkTo, OnTile))]
-    if not negated:
+    if not negated and not plan.group:
         return Compiled(_query(plan, vocab, "count_records" if plan.count else "select_ids",
                                None if plan.count else limit), count=plan.count)
     base = Plan(plan.type, [c for c in plan.where if c not in negated], wh=plan.wh)
     return Compiled(_query(base, vocab, "select_ids", None),
                     [_query(Plan(plan.type, [c.condition]), vocab, "select_ids", None)
-                     for c in negated], count=plan.count)
+                     for c in negated], count=plan.count, group=plan.group, values=values)
+
+
+def group_values(plan: Plan, vocab) -> list[str]:
+    """The records the group's link can point at: every record of its target
+    types, else (targets unknown) every record the plan's type links to by it.
+    Raises Unsupported over GROUP_CAP: each is a query of its own."""
+    from .alizarin import _links
+    from .ground import _targets
+    path = plan.group.relation
+    rel = next(r for r in vocab.relations() if r.name == path)
+    ids = set().union(*(vocab.ids_of(t) for t in _targets(rel, plan.type)))
+    if not ids:
+        node = vocab.node(plan.type, path)["nodeid"]
+        graph_id = vocab.model(plan.type).graph_id
+        for r in vocab.resources:
+            if (r.get("resourceinstance") or {}).get("graph_id") != graph_id:
+                continue
+            for tile in r.get("tiles") or []:
+                ids.update(t for t in _links((tile.get("data") or {}).get(node)) if t)
+    if len(ids) > GROUP_CAP:
+        raise Unsupported(f"counting by {path.replace('_', ' ')}: {len(ids)} records it can "
+                          f"point at, over the {GROUP_CAP} a count per record runs")
+    return sorted(ids, key=lambda i: vocab.names.get(i, i))
 
 
 def to_query(plan: Plan, vocab, limit: int | None = None) -> dict:
@@ -220,6 +254,8 @@ def _conditions(expr: dict | None, type_name: str, vocab) -> list:
         if e is None:
             return [f"a backlink to unknown record {body['target']}"]
         return [LinkTo(None, EntityRef(e), "any")]
+    if kind == "any":
+        return [AnyOf([c for e in body for c in _conditions(e, type_name, vocab)])]
     if kind == "on_tile":
         parts = [c for e in body for c in _conditions(e, type_name, vocab)]
         first = next(iter(tile_fields(parts)), "")
@@ -239,7 +275,8 @@ def read_back(compiled: Compiled, vocab) -> Plan:
     where = _conditions(q.get("where"), type_name, vocab)
     for m in compiled.minus:
         where += [Not(c) for c in _conditions(m.get("where"), type_name, vocab)]
-    return Plan(type_name, where, count="count_records" in q["measures"] or compiled.count)
+    return Plan(type_name, where, count="count_records" in q["measures"] or compiled.count,
+                group=compiled.group)
 
 
 # ── one record's own fields ──────────────────────────────────────────────
@@ -314,6 +351,30 @@ def linked_from(reader, plan: Plan, vocab) -> set[str]:
             if node in link_nodes:
                 out.update(t for t in _links(value) if t)
     return out & vocab.ids_of(plan.type)
+
+
+def group_counts(reader, compiled: Compiled, graph, linked) -> list[tuple[str, int]]:
+    """(record, count) for each of the group's values, most first; only the
+    top or bottom ones (ties kept) when the group asks for the most or fewest,
+    else the ones counted at least once. `linked(query)` gives a query's
+    other graphs."""
+    minus = set()
+    for m in compiled.minus:
+        minus |= set(reader.resolve(json.dumps(m), graph, linked=linked(m)))
+    base = compiled.query.get("where")
+    counts = []
+    for value in compiled.values:
+        link = {"has_link": {"path": compiled.group.relation, "target": value}}
+        query = dict(compiled.query, measures=["select_ids"],
+                     where={"all": [base, link]} if base else link)
+        query.pop("limit", None)
+        ids = set(reader.resolve(json.dumps(query), graph, linked=linked(query)))
+        counts.append((value, len(ids - minus)))
+    counts.sort(key=lambda x: -x[1])
+    if compiled.group.order and counts:
+        edge = counts[0 if compiled.group.order == "most" else -1][1]
+        return [c for c in counts if c[1] == edge and (edge or compiled.group.order == "fewest")]
+    return [c for c in counts if c[1]]
 
 
 def linked_models(query: dict) -> list[str]:
@@ -408,6 +469,10 @@ def ask(text: str, vocab, snapshot_dir: str, explain: bool = False, limit: int =
             return "\n".join(lines + ["(not run: the compiled query reads back differently "
                                       "from the question)"])
         graph = graph_for(plan.type)
+        if compiled.group is not None:
+            counts = group_counts(reader, compiled, graph, linked)
+            body = [f"- {vocab.names.get(i, i)}: {n} {plan.type} records" for i, n in counts]
+            return "\n".join(lines + (body or ["(no matching records)"]))
         scoped = _scoped_by_model(compiled.query.get("where"))
         if compiled.minus or not scoped:
             query = dict(compiled.query, measures=["select_ids"])

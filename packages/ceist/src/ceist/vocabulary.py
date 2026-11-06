@@ -113,7 +113,10 @@ class Vocabulary(Protocol):
         alias; a vocabulary with `partial_names = True` lets any name word bind.
         One with `free_text = True` lets a word nothing places become a text
         filter, and a relation it can't wire be dropped to list the type;
-        without it, both refuse."""
+        without it, both refuse. `any_of = True` lets "or" join two values of
+        one field or two records, and `group_by = True` lets "by <link>" and
+        "which <link> has the most" count per linked record: set them only
+        where every backend the vocabulary feeds compiles AnyOf and GroupBy."""
 
     def implied_types(self) -> dict[str, str]:
         """Question words that imply a type ("who" → "Person"). May be empty."""

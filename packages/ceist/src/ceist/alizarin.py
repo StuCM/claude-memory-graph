@@ -25,8 +25,8 @@ import alizarin
 
 from . import dates
 from .narrate import narrate
-from .plan import (Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, Not, OnTile, Plan,
-                   as_tile, interpret)
+from .plan import (AnyOf, Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, Not, OnTile,
+                   Plan, as_tile, interpret)
 
 __all__ = ["RecordTiles", "Tiles", "ask", "evaluate"]
 
@@ -183,6 +183,8 @@ def _filter(c, hits: set[str], tiles: Tiles, type_name: str) -> set[str]:
         c = as_tile(c, vocab.group_of(type_name, c.relation))
     if isinstance(c, OnTile):
         return _on_tile(c, hits, tiles, type_name)
+    if isinstance(c, AnyOf):
+        return set().union(*(_filter(x, hits, tiles, type_name) for x in c.conditions))
     if isinstance(c, LinkTo):
         targets = _targets(c, tiles)
         if c.relation is None:
@@ -297,6 +299,9 @@ def ask(text: str, vocab, explain: bool = False, limit: int = 25, tiles: Tiles |
             lines += ["── understood ──", "  " + narrate(meaning.detail)]
         return "\n".join(lines + detail_lines(meaning.detail,
                                                read_detail(RecordTiles(vocab), q, vocab)))
+    if meaning.plan.group is not None:
+        return "\n".join(lines + ["(not answered: counting by a field is answered over "
+                                   "Rós Madair, not here)"])
     tiles = tiles or Tiles(vocab)
     for plan, note in [(meaning.plan, "")] + [(r.plan, r.note) for r in meaning.relaxations]:
         if explain:
