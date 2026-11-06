@@ -10,6 +10,8 @@ Mapping (ros-madair-query's serde form; Rós Madair itself is unchanged):
 
     LinkTo(path, EntityRef, out)     {"has_link": {"path", "target"}}
     LinkTo(path, Plan, out)          {"on_link": {"path", "model", "where"}}  (multi-hop)
+    LinkTo(path, Plan, in)           {"on_backlink": {"path", "model", "where"}}  (the other
+                                     model's `path` points at the record)
     LinkTo(None, EntityRef, any)     {"backlink": {"target"}}   (linked to it, any field), and
                                      when it is the only condition, the record's own links
                                      read from its tiles (linked_from)
@@ -27,12 +29,13 @@ Mapping (ros-madair-query's serde form; Rós Madair itself is unchanged):
     count / list                     measures ["count_records"] / ["select_ids"]
 
 A query with nothing that ties it to the model — no filter, or only a
-`backlink` (a link from any field) — is answered by resolving and keeping the
-model's own records: Rós Madair doesn't scope a vacuous filter to `model`.
+`backlink` or `on_backlink` (whose link may point at other models too) — is
+answered by resolving and keeping the model's own records: Rós Madair
+doesn't scope a vacuous filter to `model`.
 
 What the IR can't say, the compiler refuses by name (Unsupported), so the
 runner moves on to a relaxation or says what it couldn't do: a link walked
-backwards (Rós Madair walks links forward), a negated link inside a hop,
+backwards to one named record, or with a qualifier, a negated link inside a hop,
 free text (the substrate indexes concepts, ranges, geometry and links, not
 text), and "most recent".
 
@@ -98,10 +101,15 @@ def _cond(c, type_name: str, vocab, in_tile: bool = False) -> dict:
                 raise Unsupported("a link by any field, on one entry")
             return {"backlink": {"target": c.target.entity.id}}
         if c.direction != "out":
-            raise Unsupported(
-                f"walking '{c.relation}' backwards ({type_name} records that another "
-                f"record's {c.relation} points at): Rós Madair walks links forward; "
-                f"ask from the other side")
+            if c.direction != "in" or c.qualifier is not None or isinstance(c.target, EntityRef):
+                raise Unsupported(
+                    f"walking '{c.relation}' backwards ({type_name} records that another "
+                    f"record's {c.relation} points at) from one named record or with a "
+                    f"qualifier: Rós Madair's on_backlink takes a filter on the other "
+                    f"model; ask from the other side")
+            return {"on_backlink": {"path": c.relation,
+                                    "model": vocab.model(c.target.type).graph_id,
+                                    "where": _expr(c.target, vocab) or {"all": []}}}
         if c.qualifier is not None:
             return _cond(as_tile(c, vocab.group_of(type_name, c.relation)), type_name, vocab,
                          in_tile)
@@ -200,10 +208,10 @@ def _conditions(expr: dict | None, type_name: str, vocab) -> list:
         if e is None:
             return [f"a link to unknown record {body['target']}"]
         return [LinkTo(body["path"], EntityRef(e), "out", style="field")]
-    if kind == "on_link":
+    if kind in ("on_link", "on_backlink"):
         sub = vocab.by_graph[body["model"]].name
-        return [LinkTo(body["path"], Plan(sub, _conditions(body["where"], sub, vocab)), "out",
-                       style="field")]
+        return [LinkTo(body["path"], Plan(sub, _conditions(body["where"], sub, vocab)),
+                       "out" if kind == "on_link" else "in", style="field")]
     if kind == "backlink":
         e = vocab.entity(body["target"])
         if e is None:
@@ -236,7 +244,7 @@ def read_back(compiled: Compiled, vocab) -> Plan:
 def linked_from(reader, plan: Plan, vocab) -> set[str]:
     """For a plan that is only a loose link to a named record, the records of
     the plan's type that record's own tiles link to. `backlink` finds only
-    the records linking to it, and Rós Madair has no inverse link (ROS-MADAIR.md
+    the records linking to it, and on_backlink needs a named path (ROS-MADAIR.md
     #3), so "which site is Navan Fort at?" reads Navan Fort's tiles instead."""
     from .alizarin import _links
     from .arches import LINK_TYPES
@@ -253,9 +261,31 @@ def linked_from(reader, plan: Plan, vocab) -> set[str]:
     return out & vocab.ids_of(plan.type)
 
 
+def linked_models(query: dict) -> list[str]:
+    """The graph ids of the other models a query's hops name: Rós Madair's
+    compiler needs their graphs (`linked`) to resolve the paths inside them."""
+    found = []
+
+    def walk(expr):
+        if isinstance(expr, list):
+            for e in expr:
+                walk(e)
+        elif isinstance(expr, dict):
+            for kind, body in expr.items():
+                if kind in ("on_link", "on_backlink"):
+                    if body["model"] not in found and body["model"] != query["model"]:
+                        found.append(body["model"])
+                    walk(body["where"])
+                else:
+                    walk(body)
+    walk(query.get("where"))
+    return found
+
+
 def _scoped_by_model(where: dict | None) -> bool:
     """Whether a filter only matches records of the query's model: some
-    conjunct names a node of it (a vacuous filter or a backlink doesn't)."""
+    conjunct names a node of it (a vacuous filter, a backlink or an
+    on_backlink doesn't: the link it follows may point at other models)."""
     if not where:
         return False
     (kind, body), = where.items()
@@ -292,6 +322,9 @@ def ask(text: str, vocab, snapshot_dir: str, explain: bool = False, limit: int =
             graphs[type_name] = ros_madair.Graph(json.dumps(vocab.model(type_name).doc))
         return graphs[type_name]
 
+    def linked(q: dict) -> list:
+        return [graph_for(vocab.by_graph[m].name) for m in linked_models(q)]
+
     skipped: list[str] = []
     for plan, note in [(meaning.plan, "")] + [(r.plan, r.note) for r in meaning.relaxations]:
         try:
@@ -314,18 +347,20 @@ def ask(text: str, vocab, snapshot_dir: str, explain: bool = False, limit: int =
         if compiled.minus or not scoped:
             query = dict(compiled.query, measures=["select_ids"])
             query.pop("limit", None)
-            ids = set(reader.resolve(json.dumps(query), graph))
+            ids = set(reader.resolve(json.dumps(query), graph, linked=linked(query)))
             if not scoped:
                 ids &= vocab.ids_of(plan.type)
             ids |= linked_from(reader, plan, vocab)
             for m in compiled.minus:
-                ids -= set(reader.resolve(json.dumps(m), graph))
+                ids -= set(reader.resolve(json.dumps(m), graph, linked=linked(m)))
             ids = sorted(ids, key=lambda i: vocab.names.get(i, i))
             n = len(ids)
         elif plan.count:
-            ids, n = [], reader.count(json.dumps(compiled.query), graph)
+            ids, n = [], reader.count(json.dumps(compiled.query), graph,
+                                      linked=linked(compiled.query))
         else:
-            ids = reader.resolve(json.dumps(compiled.query), graph)
+            ids = reader.resolve(json.dumps(compiled.query), graph,
+                                 linked=linked(compiled.query))
             n = len(ids)
         if plan.count:
             if n or note == "":

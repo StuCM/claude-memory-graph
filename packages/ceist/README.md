@@ -64,7 +64,7 @@ From that it builds a small, backend-neutral **plan**, and each **output** compi
 | output | module | runs | can't express (refused by name) |
 | --- | --- | --- | --- |
 | **Alizarin** | `ceist.alizarin` | in-process, straight over a data_dir's tiles | nothing in the plan |
-| **Rós Madair** | `ceist.rosmadair` | `compile_plan` / `to_query` produce the Query IR; `ask` runs it on a snapshot | links walked backwards, a negated link inside a hop, free text |
+| **Rós Madair** | `ceist.rosmadair` | `compile_plan` / `to_query` produce the Query IR; `ask` runs it on a snapshot | a link walked backwards from one named record, a negated link inside a hop, free text |
 | **Arches Search** | `ceist.arches_search` | `to_payload` / `compile_checked` produce an advanced-search GroupPayload | concepts (unless `concept_operator=`), a link by any field |
 | **SPARQL** | in the memory graph (`claude_memory_graph.planner`) | Oxigraph | — |
 
