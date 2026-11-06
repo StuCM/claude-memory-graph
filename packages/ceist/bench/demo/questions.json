@@ -1,0 +1,875 @@
+{
+ "about": "starches-demo question bank (NI SMR + myths), run through foundation Ceist on 2026-11-06. expect: answer | refuse | answer-later (should answer once the named feature exists). status is today's result.",
+ "questions": [
+  {
+   "q": "which tales feature Cú Chulainn?",
+   "expect": "answer",
+   "count": 11,
+   "note": "",
+   "status": "right",
+   "understood": "Find Tales whose actor is Figure 'Cú Chulainn'.",
+   "got": 11,
+   "refused": null
+  },
+  {
+   "q": "which tales belong to the Ulster Cycle?",
+   "expect": "answer",
+   "count": 12,
+   "note": "",
+   "status": "right",
+   "understood": "Find Tales whose parent story is Tale 'Ulster Cycle'.",
+   "got": 12,
+   "refused": null
+  },
+  {
+   "q": "how many tales belong to the Fenian Cycle?",
+   "expect": "answer",
+   "count": 3,
+   "note": "",
+   "status": "right",
+   "understood": "Count Tales whose parent story is Tale 'Fenian Cycle'.",
+   "got": 3,
+   "refused": null
+  },
+  {
+   "q": "which figures are associated with Conchobar mac Nessa?",
+   "expect": "answer",
+   "count": 15,
+   "note": "",
+   "status": "right",
+   "understood": "Find Figures whose actor is Figure 'Conchobar mac Nessa'.",
+   "got": 15,
+   "refused": null
+  },
+  {
+   "q": "which monuments are at Emain Macha?",
+   "expect": "answer",
+   "count": 1,
+   "note": "",
+   "status": "right",
+   "understood": "Find Monuments linked to or from Site 'Emain Macha'.",
+   "got": 1,
+   "refused": null
+  },
+  {
+   "q": "which tales mention the Gáe Bulg?",
+   "expect": "answer",
+   "count": 1,
+   "note": "",
+   "status": "right",
+   "understood": "Find Tales whose associated monuments areas and artefacts is Object 'Gáe Bulg'.",
+   "got": 1,
+   "refused": null
+  },
+  {
+   "q": "how many monuments are in County Down?",
+   "expect": "answer",
+   "count": 3586,
+   "note": "",
+   "status": "right",
+   "understood": "Count Monuments whose named location is Site 'County Down'.",
+   "got": 3586,
+   "refused": null
+  },
+  {
+   "q": "which monuments are in County Antrim?",
+   "expect": "answer",
+   "count": 5638,
+   "note": "",
+   "status": "right",
+   "understood": "Find Monuments whose named location is Site 'County Antrim'.",
+   "got": 5638,
+   "refused": null
+  },
+  {
+   "q": "which monuments are located in County Down?",
+   "expect": "answer",
+   "count": 3586,
+   "note": "",
+   "status": "right",
+   "understood": "Find Monuments whose named location is Site 'County Down'.",
+   "got": 3586,
+   "refused": null
+  },
+  {
+   "q": "how many monuments are in County Armagh?",
+   "expect": "answer",
+   "count": 1155,
+   "note": "",
+   "status": "right",
+   "understood": "Count Monuments whose named location is Site 'County Armagh'.",
+   "got": 1155,
+   "refused": null
+  },
+  {
+   "q": "how many monuments are in County Tyrone?",
+   "expect": "answer",
+   "count": 2372,
+   "note": "",
+   "status": "right",
+   "understood": "Count Monuments whose named location is Site 'County Tyrone'.",
+   "got": 2372,
+   "refused": null
+  },
+  {
+   "q": "how many monuments are in County Fermanagh?",
+   "expect": "answer",
+   "count": 2612,
+   "note": "",
+   "status": "right",
+   "understood": "Count Monuments whose named location is Site 'County Fermanagh'.",
+   "got": 2612,
+   "refused": null
+  },
+  {
+   "q": "how many monuments are in County Londonderry?",
+   "expect": "answer",
+   "count": 2200,
+   "note": "",
+   "status": "right",
+   "understood": "Count Monuments whose named location is Site 'County Londonderry'.",
+   "got": 2200,
+   "refused": null
+  },
+  {
+   "q": "which site is Navan Fort at?",
+   "expect": "answer",
+   "count": 2,
+   "note": "",
+   "status": "right",
+   "understood": "Find Sites linked to or from Monument 'Navan Fort, Navan'.",
+   "got": 2,
+   "refused": null
+  },
+  {
+   "q": "which place is Navan Fort at?",
+   "expect": "answer",
+   "count": 2,
+   "note": "",
+   "status": "right",
+   "understood": "Find Sites linked to or from Monument 'Navan Fort, Navan'.",
+   "got": 2,
+   "refused": null
+  },
+  {
+   "q": "which figures are in Táin Bó Cúailnge?",
+   "expect": "answer",
+   "count": 11,
+   "note": "",
+   "status": "right",
+   "understood": "Find Figures linked to or from Tale 'Táin Bó Cúailnge'.",
+   "got": 11,
+   "refused": null
+  },
+  {
+   "q": "which tales are part of the Ulster Cycle?",
+   "expect": "answer",
+   "count": 12,
+   "note": "",
+   "status": "right",
+   "understood": "Find Tales whose parent story is Tale 'Ulster Cycle'.",
+   "got": 12,
+   "refused": null
+  },
+  {
+   "q": "which tales come from the Ulster Cycle?",
+   "expect": "answer",
+   "count": 12,
+   "note": "",
+   "status": "right",
+   "understood": "Find Tales whose parent story is Tale 'Ulster Cycle'.",
+   "got": 12,
+   "refused": null
+  },
+  {
+   "q": "which tales originate from the Ulster Cycle?",
+   "expect": "answer",
+   "count": 12,
+   "note": "bge paraphrase",
+   "status": "right",
+   "understood": "Find Tales whose parent story is Tale 'Ulster Cycle'.",
+   "got": 12,
+   "refused": null
+  },
+  {
+   "q": "which tales are not about Cú Chulainn?",
+   "expect": "answer",
+   "count": 61,
+   "note": "72 tales minus 11; hand-tuned vocab refuses",
+   "status": "refused",
+   "understood": null,
+   "got": null,
+   "refused": "'not' — couldn't tell what it negates (ignoring it would invert the answer)"
+  },
+  {
+   "q": "which monuments in County Antrim are bronze age cairns?",
+   "expect": "answer",
+   "count": 43,
+   "note": "verified",
+   "status": "right",
+   "understood": "Find Monuments whose named location is Site 'County Antrim' and with one construction phases entry (whose cultural period is Bronze Age and whose monument type is Cairn).",
+   "got": 43,
+   "refused": null
+  },
+  {
+   "q": "which bronze age cairns are in County Antrim?",
+   "expect": "answer",
+   "count": 43,
+   "note": "verified; word order",
+   "status": "right",
+   "understood": "Find Monuments whose named location is Site 'County Antrim' and with one construction phases entry (whose cultural period is Bronze Age and whose monument type is Cairn).",
+   "got": 43,
+   "refused": null
+  },
+  {
+   "q": "which monuments are medieval mottes in County Antrim?",
+   "expect": "answer",
+   "count": 31,
+   "note": "verified",
+   "status": "right",
+   "understood": "Find Monuments whose named location is Site 'County Antrim' and with one construction phases entry (whose cultural period is Medieval and whose monument type is Motte).",
+   "got": 31,
+   "refused": null
+  },
+  {
+   "q": "which early christian raths are in County Armagh?",
+   "expect": "answer",
+   "count": 275,
+   "note": "verified",
+   "status": "right",
+   "understood": "Find Monuments whose named location is Site 'County Armagh' and with one construction phases entry (whose cultural period is Early Christian and whose monument type is Rath).",
+   "got": 275,
+   "refused": null
+  },
+  {
+   "q": "which scheduled monuments in County Down are medieval raths?",
+   "expect": "answer",
+   "count": 4,
+   "note": "verified",
+   "status": "right",
+   "understood": "Find Monuments whose named location is Site 'County Down' and with one construction phases entry (whose cultural period is Medieval and whose monument type is Rath) and whose designation or protection type is Scheduled.",
+   "got": 4,
+   "refused": null
+  },
+  {
+   "q": "which medieval raths are in County Down?",
+   "expect": "answer",
+   "count": 4,
+   "note": "verified",
+   "status": "right",
+   "understood": "Find Monuments whose named location is Site 'County Down' and with one construction phases entry (whose cultural period is Medieval and whose monument type is Rath).",
+   "got": 4,
+   "refused": null
+  },
+  {
+   "q": "which state care monuments in County Armagh are early christian?",
+   "expect": "answer",
+   "count": 7,
+   "note": "verified",
+   "status": "right",
+   "understood": "Find Monuments whose named location is Site 'County Armagh' and whose cultural period is Early Christian and whose designation or protection type is State Care.",
+   "got": 7,
+   "refused": null
+  },
+  {
+   "q": "how many monuments in County Antrim are not scheduled?",
+   "expect": "answer",
+   "count": 5108,
+   "note": "verified",
+   "status": "right",
+   "understood": "Count Monuments whose named location is Site 'County Antrim' and whose designation or protection type is not Scheduled.",
+   "got": 5108,
+   "refused": null
+  },
+  {
+   "q": "how many scheduled monuments are in County Antrim?",
+   "expect": "answer",
+   "count": 530,
+   "note": "",
+   "status": "right",
+   "understood": "Count Monuments whose named location is Site 'County Antrim' and whose designation or protection type is Scheduled.",
+   "got": 530,
+   "refused": null
+  },
+  {
+   "q": "which early christian monuments are in County Armagh?",
+   "expect": "answer",
+   "count": 399,
+   "note": "",
+   "status": "right",
+   "understood": "Find Monuments whose named location is Site 'County Armagh' and whose cultural period is Early Christian.",
+   "got": 399,
+   "refused": null
+  },
+  {
+   "q": "how many monuments are raths?",
+   "expect": "answer",
+   "count": 2902,
+   "note": "verified",
+   "status": "right",
+   "understood": "Count Monuments whose monument type is Rath.",
+   "got": 2902,
+   "refused": null
+  },
+  {
+   "q": "how many raths are there?",
+   "expect": "answer",
+   "count": 2902,
+   "note": "verified",
+   "status": "right",
+   "understood": "Count Monuments whose monument type is Rath.",
+   "got": 2902,
+   "refused": null
+  },
+  {
+   "q": "how many medieval raths are there?",
+   "expect": "answer",
+   "count": 10,
+   "note": "verified",
+   "status": "right",
+   "understood": "Count Monuments with one construction phases entry (whose cultural period is Medieval and whose monument type is Rath).",
+   "got": 10,
+   "refused": null
+  },
+  {
+   "q": "which raths are not medieval?",
+   "expect": "answer",
+   "count": 2892,
+   "note": "verified",
+   "status": "right",
+   "understood": "Find Monuments whose cultural period is not Medieval and whose monument type is Rath.",
+   "got": 2892,
+   "refused": null
+  },
+  {
+   "q": "which cairns are bronze age?",
+   "expect": "answer",
+   "count": 73,
+   "note": "verified",
+   "status": "right",
+   "understood": "Find Monuments whose cultural period is Bronze Age and whose monument type is Cairn.",
+   "got": 73,
+   "refused": null
+  },
+  {
+   "q": "how many state care monuments are in County Down?",
+   "expect": "answer",
+   "count": 56,
+   "note": "",
+   "status": "right",
+   "understood": "Count Monuments whose named location is Site 'County Down' and whose designation or protection type is State Care.",
+   "got": 56,
+   "refused": null
+  },
+  {
+   "q": "how many late medieval raths are there?",
+   "expect": "answer",
+   "count": 2,
+   "note": "",
+   "status": "right",
+   "understood": "Count Monuments with one construction phases entry (whose cultural period is Late Medieval and whose monument type is Rath).",
+   "got": 2,
+   "refused": null
+  },
+  {
+   "q": "how many souterrains are there?",
+   "expect": "answer",
+   "count": 894,
+   "note": "",
+   "status": "right",
+   "understood": "Count Monuments whose monument type is Souterrain.",
+   "got": 894,
+   "refused": null
+  },
+  {
+   "q": "which standing stones are in County Tyrone?",
+   "expect": "answer",
+   "count": 205,
+   "note": "",
+   "status": "right",
+   "understood": "Find Monuments whose named location is Site 'County Tyrone' and whose monument type is Standing Stone.",
+   "got": 205,
+   "refused": null
+  },
+  {
+   "q": "how many crannogs are in County Fermanagh?",
+   "expect": "answer",
+   "count": 141,
+   "note": "",
+   "status": "right",
+   "understood": "Count Monuments whose named location is Site 'County Fermanagh' and whose monument type is Crannog.",
+   "got": 141,
+   "refused": null
+  },
+  {
+   "q": "which neolithic monuments are in County Antrim?",
+   "expect": "answer",
+   "count": 120,
+   "note": "",
+   "status": "right",
+   "understood": "Find Monuments whose named location is Site 'County Antrim' and whose cultural period is Neolithic.",
+   "got": 120,
+   "refused": null
+  },
+  {
+   "q": "how many monuments in County Londonderry are scheduled?",
+   "expect": "answer",
+   "count": 263,
+   "note": "",
+   "status": "right",
+   "understood": "Count Monuments whose named location is Site 'County Londonderry' and whose designation or protection type is Scheduled.",
+   "got": 263,
+   "refused": null
+  },
+  {
+   "q": "which monuments in County Fermanagh are in state care?",
+   "expect": "answer",
+   "count": 12,
+   "note": "",
+   "status": "right",
+   "understood": "Find Monuments whose named location is Site 'County Fermanagh' and whose designation or protection type is State Care.",
+   "got": 12,
+   "refused": null
+  },
+  {
+   "q": "how many mottes are not scheduled?",
+   "expect": "answer",
+   "count": 8,
+   "note": "",
+   "status": "right",
+   "understood": "Count Monuments whose designation or protection type is not Scheduled and whose monument type is Motte.",
+   "got": 8,
+   "refused": null
+  },
+  {
+   "q": "which iron age monuments are in County Armagh?",
+   "expect": "answer",
+   "count": 7,
+   "note": "",
+   "status": "right",
+   "understood": "Find Monuments whose named location is Site 'County Armagh' and whose cultural period is Iron Age.",
+   "got": 7,
+   "refused": null
+  },
+  {
+   "q": "how many mesolithic monuments are there?",
+   "expect": "answer",
+   "count": 131,
+   "note": "",
+   "status": "right",
+   "understood": "Count Monuments whose cultural period is Mesolithic.",
+   "got": 131,
+   "refused": null
+  },
+  {
+   "q": "which tales feature Medb?",
+   "expect": "answer",
+   "count": 6,
+   "note": "",
+   "status": "right",
+   "understood": "Find Tales whose actor is Figure 'Medb'.",
+   "got": 6,
+   "refused": null
+  },
+  {
+   "q": "which figures are associated with Medb?",
+   "expect": "answer",
+   "count": 5,
+   "note": "",
+   "status": "right",
+   "understood": "Find Figures whose actor is Figure 'Medb'.",
+   "got": 5,
+   "refused": null
+  },
+  {
+   "q": "which tales belong to the Mythological Cycle?",
+   "expect": "answer",
+   "count": 1,
+   "note": "",
+   "status": "right",
+   "understood": "Find Tales whose parent story is Tale 'Mythological Cycle'.",
+   "got": 1,
+   "refused": null
+  },
+  {
+   "q": "how many figures are there?",
+   "expect": "answer",
+   "count": 201,
+   "note": "",
+   "status": "right",
+   "understood": "Count Figures.",
+   "got": 201,
+   "refused": null
+  },
+  {
+   "q": "how many tales are there?",
+   "expect": "answer",
+   "count": 72,
+   "note": "",
+   "status": "right",
+   "understood": "Count Tales.",
+   "got": 72,
+   "refused": null
+  },
+  {
+   "q": "which tales come from the Fenian Cycle?",
+   "expect": "answer",
+   "count": 3,
+   "note": "",
+   "status": "right",
+   "understood": "Find Tales whose parent story is Tale 'Fenian Cycle'.",
+   "got": 3,
+   "refused": null
+  },
+  {
+   "q": "how many post-medieval monuments are in County Down?",
+   "expect": "answer",
+   "count": 207,
+   "note": "",
+   "status": "right",
+   "understood": "Count Monuments whose named location is Site 'County Down' and whose cultural period is Post-Medieval.",
+   "got": 207,
+   "refused": null
+  },
+  {
+   "q": "which early christian souterrains are in County Antrim?",
+   "expect": "answer",
+   "count": 565,
+   "note": "",
+   "status": "right",
+   "understood": "Find Monuments whose named location is Site 'County Antrim' and with one construction phases entry (whose cultural period is Early Christian and whose monument type is Souterrain).",
+   "got": 565,
+   "refused": null
+  },
+  {
+   "q": "how many raths in County Tyrone are scheduled?",
+   "expect": "answer",
+   "count": 72,
+   "note": "",
+   "status": "right",
+   "understood": "Count Monuments whose named location is Site 'County Tyrone' and whose designation or protection type is Scheduled and whose monument type is Rath.",
+   "got": 72,
+   "refused": null
+  },
+  {
+   "q": "which monuments are not in County Antrim?",
+   "expect": "answer",
+   "count": 12870,
+   "note": "plus 5,638 = 18,508",
+   "status": "right",
+   "understood": "Find Monuments whose named location is not Site 'County Antrim'.",
+   "got": 12870,
+   "refused": null
+  },
+  {
+   "q": "which monuments are at Navan Fort?",
+   "expect": "answer",
+   "count": 1,
+   "note": "direct record match",
+   "status": "right",
+   "understood": "Monument 'Navan Fort, Navan'",
+   "got": 1,
+   "refused": null
+  },
+  {
+   "q": "which monuments are in County Nowhere?",
+   "expect": "refuse",
+   "count": null,
+   "note": "no such county",
+   "status": "right",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'county', 'nowhere' — answering without them would widen the question; did you mean uncertain (construction phases) or medieval/late medieval (construction phases) or medieval (construction phases) for 'county nowhere'?"
+  },
+  {
+   "q": "which medieval raths are in County Nowhere?",
+   "expect": "refuse",
+   "count": null,
+   "note": "",
+   "status": "right",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'county', 'nowhere' — answering without them would widen the question"
+  },
+  {
+   "q": "how many monuments are in Down?",
+   "expect": "refuse",
+   "count": null,
+   "note": "partial record name",
+   "status": "right",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'down' — answering without it would widen the question; did you mean uncertain (construction phases) or modern (construction phases) or medieval/late medieval (construction phases) for 'down'?"
+  },
+  {
+   "q": "which monuments are in Belfast?",
+   "expect": "refuse",
+   "count": null,
+   "note": "WRONG today: matches the monument named Belfast; no Belfast Site",
+   "status": "wrong",
+   "understood": "Monument 'Belfast, Belfast'",
+   "got": 1,
+   "refused": null
+  },
+  {
+   "q": "which raths or cairns are in County Down?",
+   "expect": "answer-later",
+   "count": null,
+   "note": "WRONG today: or read as and -> 0; needs or support, refuse until then",
+   "status": "wrong",
+   "understood": "Find Monuments whose named location is Site 'County Down' and whose monument type is Cairn and whose monument type is Rath.",
+   "got": 0,
+   "refused": null
+  },
+  {
+   "q": "what period is Navan Fort?",
+   "expect": "answer-later",
+   "count": null,
+   "note": "WRONG today: nonsense plan -> 0; single-record attribute question",
+   "status": "wrong",
+   "understood": "Find Objects whose cultural period is Monument 'Navan Fort, Navan'.",
+   "got": 0,
+   "refused": null
+  },
+  {
+   "q": "what type of monument is Navan Fort?",
+   "expect": "answer-later",
+   "count": null,
+   "note": "single-record attribute question",
+   "status": "refused-should-answer",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'type' — answering without it would widen the question; did you mean medieval/late medieval (construction phases) or modern (construction phases) or post-medieval (construction phases) for 'type of'?"
+  },
+  {
+   "q": "which tales have figures associated with Conchobar mac Nessa?",
+   "expect": "answer-later",
+   "count": null,
+   "note": "chain",
+   "status": "refused-should-answer",
+   "understood": null,
+   "got": null,
+   "refused": "named Figure records and Figure 'Conchobar mac Nessa', but couldn't tell how they relate to the Tale records asked for"
+  },
+  {
+   "q": "who killed Cú Chulainn?",
+   "expect": "refuse",
+   "count": null,
+   "note": "narrative, out of scope",
+   "status": "right",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'killed' — answering without it would widen the question"
+  },
+  {
+   "q": "which tales are about love?",
+   "expect": "refuse",
+   "count": null,
+   "note": "narrative, out of scope",
+   "status": "right",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'love' — answering without it would widen the question"
+  },
+  {
+   "q": "which monuments are in the townland of Navan?",
+   "expect": "refuse",
+   "count": null,
+   "note": "townland is free text",
+   "status": "right",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'navan', 'townland' — answering without them would widen the question; did you mean late medieval (construction phases) or neolithic (construction phases) or late neolithic (construction phases) for 'townland of navan'?"
+  },
+  {
+   "q": "which tales mention scheduled monuments?",
+   "expect": "answer-later",
+   "count": null,
+   "note": "chain: needs Rós Madair linked graphs",
+   "status": "refused-should-answer",
+   "understood": "Find Tales whose associated monuments areas and artefacts is any Monument whose designation or protection type is Scheduled.",
+   "got": null,
+   "refused": "Rós Madair couldn't run it (compile: on-link target model '062f4e2c-8c06-55d6-9547-f87f2fffffa8' not available to the compiler (open the reader over all linked models))"
+  },
+  {
+   "q": "which figures are associated with tales in the Ulster Cycle?",
+   "expect": "answer-later",
+   "count": null,
+   "note": "backlink chain",
+   "status": "refused-should-answer",
+   "understood": "Find Figures that are the actor of any Tale whose parent story is Tale 'Ulster Cycle'.",
+   "got": null,
+   "refused": "walking 'actor' backwards (Figure records that another record's actor points at): Rós Madair walks links forward; ask from the other side"
+  },
+  {
+   "q": "what is related to Navan Fort?",
+   "expect": "answer-later",
+   "count": null,
+   "note": "backlink",
+   "status": "refused-should-answer",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'related' — answering without it would widen the question"
+  },
+  {
+   "q": "how many monuments are in County Antrim or County Down?",
+   "expect": "answer-later",
+   "count": 9224,
+   "note": "or across places (5,638 + 3,586)",
+   "status": "refused-should-answer",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'down' — answering without it would widen the question; did you mean uncertain (construction phases) or modern (construction phases) or medieval/late medieval (construction phases) for 'down'?"
+  },
+  {
+   "q": "which county has the most raths?",
+   "expect": "answer-later",
+   "count": null,
+   "note": "group-by / superlative",
+   "status": "refused-should-answer",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'county', 'most' — answering without them would widen the question"
+  },
+  {
+   "q": "list scheduled monuments by county",
+   "expect": "answer-later",
+   "count": null,
+   "note": "group-by",
+   "status": "refused-should-answer",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'county' — answering without it would widen the question; did you mean neolithic (construction phases) or mesolithic/neolithic (construction phases) or medieval (construction phases) for 'county'?"
+  },
+  {
+   "q": "which monuments are near Armagh?",
+   "expect": "answer-later",
+   "count": null,
+   "note": "spatial near",
+   "status": "refused-should-answer",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'near' — answering without it would widen the question; did you mean named_location or associated_activities or use_phase_period for 'near'?; did you mean modern (construction phases) or uncertain (construction phases) for 'near'?"
+  },
+  {
+   "q": "show all monuments whose name starts with Cat",
+   "expect": "answer-later",
+   "count": null,
+   "note": "name matching",
+   "status": "refused-should-answer",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'cat', 'name', 'starts', 'whose' — answering without them would widen the question; did you mean early christian (construction phases) or 15th century (construction phases) or early christian/medieval (construction phases) for 'whose name starts with cat'?"
+  },
+  {
+   "q": "which monuments have more than one construction phase?",
+   "expect": "answer-later",
+   "count": null,
+   "note": "per-record count",
+   "status": "refused-should-answer",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'construction', 'more', 'phase' — answering without them would widen the question; did you mean modern (construction phases) or post-medieval (construction phases) or medieval/late medieval (construction phases) for 'more than one construction phase'?"
+  },
+  {
+   "q": "how many tales does Medb appear in?",
+   "expect": "answer-later",
+   "count": 6,
+   "note": "vocab: 'appear in' = actor",
+   "status": "refused-should-answer",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'appear' — answering without it would widen the question"
+  },
+  {
+   "q": "which tales mention Emain Macha?",
+   "expect": "answer-later",
+   "count": null,
+   "note": "vocab: 'mention' with a Site",
+   "status": "refused-should-answer",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'mention' — answering without it would widen the question; did you mean bibliographic_source_citation or statement_creation_carried_out_by or digital_file_s_ for 'mention'?"
+  },
+  {
+   "q": "which tales stem from the Ulster Cycle?",
+   "expect": "answer-later",
+   "count": 12,
+   "note": "vocab/bge: 'stem from' = parent story",
+   "status": "refused-should-answer",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'stem' — answering without it would widen the question; did you mean parent_story or associated_activities or bibliographic_source_citation for 'stem from'?"
+  },
+  {
+   "q": "which monuments lie within County Down?",
+   "expect": "answer-later",
+   "count": 3586,
+   "note": "vocab/bge: 'lie within' = named location",
+   "status": "refused-should-answer",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'lie', 'within' — answering without them would widen the question; did you mean parent_monument_or_area or named_location or associated_activities for 'lie within'?; did you mean mesolithic (construction phases) or modern (construction phases) or uncertain (construction phases) for 'lie within'?"
+  },
+  {
+   "q": "which forts are in County Antrim?",
+   "expect": "answer-later",
+   "count": null,
+   "note": "vocab: synonym fort -> rath/fort types",
+   "status": "refused-should-answer",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'forts' — answering without it would widen the question"
+  },
+  {
+   "q": "which portal tombs are in County Down?",
+   "expect": "answer-later",
+   "count": null,
+   "note": "vocab: value label variant",
+   "status": "refused-should-answer",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'portal', 'tombs' — answering without them would widen the question"
+  },
+  {
+   "q": "how many court tombs are there?",
+   "expect": "answer-later",
+   "count": null,
+   "note": "vocab: value label variant",
+   "status": "refused-should-answer",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'court', 'tombs' — answering without them would widen the question"
+  },
+  {
+   "q": "what is the oldest monument?",
+   "expect": "answer-later",
+   "count": null,
+   "note": "ordering; no dates in demo data",
+   "status": "refused-should-answer",
+   "understood": null,
+   "got": null,
+   "refused": "couldn't place 'oldest' — answering without it would widen the question; did you mean late medieval (construction phases) or late neolithic (construction phases) or late bronze age (construction phases) for 'oldest'?"
+  },
+  {
+   "q": "which monuments were built after 1600?",
+   "expect": "answer",
+   "count": 0,
+   "note": "plan right; demo data has no dates",
+   "status": "right",
+   "understood": "Find Monuments whose construction phase start date is after 1600.",
+   "got": 0,
+   "refused": null
+  },
+  {
+   "q": "how many churches are in County Down?",
+   "expect": "answer",
+   "count": 0,
+   "note": "list value unused in data",
+   "status": "right",
+   "understood": "Count Monuments whose named location is Site 'County Down' and whose monument type is Church.",
+   "got": 0,
+   "refused": null
+  }
+ ]
+}
