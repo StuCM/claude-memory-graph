@@ -15,7 +15,7 @@ files:
 
 ## Goal
 Vocabulary layers become **ontology → graph → client**.
-- **The ontology layer:** . Phrasings attached to CRM properties and classes, not to graph fields, for example:
+- **The ontology layer:** `vocabularies/ontology/cidoc-crm/`. Phrasings attached to CRM properties and classes, not to graph fields, for example:
   - P14 *carried out by* → "built by", "made by", "by";
   - P7 *took place at* → "at", "in";
   - P2 *has type* / E55 → "what kind of", "type";
@@ -34,20 +34,20 @@ Stu, 2026-11-06: "I feel the ontology could be our greatest strength with this a
 
 ## Step 1 (do first, stop and report if it fails): audit the CRM mapping
 Before building, measure how consistently the graphs map their nodes to CRM:
-- HER, from the arches-her clone at ;
-- the demo graphs (, read only).
+- HER, from the arches-her clone at `/home/stuart/.cache/tmp-003/arches-her/arches_her/pkg/graphs/resource_models`;
+- the demo graphs (`/home/stuart/git/personal/starches-demo/prebuild/graphs/resource_models`, read only).
 
 For each graph:
-- the share of nodes with an  and a parent property;
+- the share of nodes with an `ontologyclass` and a parent property;
 - which CRM properties and classes are most used;
 - whether the same meaning uses the same property across graphs (for example, is "named location" always P53 or P89?).
 
 If the mapping is too inconsistent for a shared layer to help (say, under half of the link and date nodes carry a usable property), **stop, write the audit into Worker notes, and report**. Then the orchestrator and Stu decide. Otherwise continue.
 
 ## Background
-- **CRM code lives in ** (task 010 split it out): , , , , a small class hierarchy and .
-- **Layers and merge rules:**  and the 020 overrides. Read 011's and 020's Worker notes. The ontology layer sits beneath the graph base. Its phrases apply to a node whose parent property or class matches, and the graph and client layers may add to them or override them by the same rules.
-- **Grounding:**  ( and the wh-word handling; check how "who" is handled today, in  ).
+- **CRM code lives in `crm.py`** (task 010 split it out): `crm_code`, `crm_roles`, `ROLES`, `CRM_PROPERTIES`, a small class hierarchy and `clash`.
+- **Layers and merge rules:** `bundle.layered` and the 020 overrides. Read 011's and 020's Worker notes. The ontology layer sits beneath the graph base. Its phrases apply to a node whose parent property or class matches, and the graph and client layers may add to them or override them by the same rules.
+- **Grounding:** `ground.py` (`_fit_relations` and the wh-word handling; check how "who" is handled today, in `arches.py` `implied_types`).
 - **Write the ontology phrasings by hand** for roughly the top 30 properties and classes the audit finds. They're small, reviewable and reusable. An LLM pass can extend them later.
 
 ## Definition of done

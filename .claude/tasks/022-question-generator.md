@@ -20,7 +20,7 @@ files:
    - The scorer fills the placeholders locally, from the vocabulary's own record names, at test time.
 2. **Each question is labelled with the reading it should get, not a count:**
    - a structured target: the model, whether it's a count, and the conditions (field, value label or target type, negated, same-tile);
-   - or  with a reason: story text, an "or" across fields, an unsupported shape.
+   - or `refuse` with a reason: story text, an "or" across fields, an unsupported shape.
 3. **Breadth:**
    - for every model, its fields, links, lists and nodegroups;
    - direct, paraphrased and awkward wordings;
@@ -29,7 +29,7 @@ files:
 4. **Independent of the vocabulary:**
    - its own prompts;
    - it never reads the vocabulary;
-   - a deterministic split into  and ;
+   - a deterministic split into `train.json` and `holdout.json`;
    - written in the bank format `packages/ceist/bench/demo/questions.json` uses, extended with the structured target.
 5. **Scoring:** `run_bank` (or a sibling) scores a generated set by **comparing Ceist's plan with the target**, structurally. It reports right, wrong reading, refused (should answer), right refusal, and wrong (answered a should-refuse).
 
