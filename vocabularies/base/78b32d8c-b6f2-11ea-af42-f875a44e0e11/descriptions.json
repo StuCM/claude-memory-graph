@@ -1,0 +1,20 @@
+{
+ "model": "Place",
+ "nodegroup": "descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "description",
+    "describe",
+    "about",
+    "summary",
+    "details",
+    "overview",
+    "tell me about",
+    "information"
+   ],
+   "kind": "property",
+   "node": "description"
+  }
+ ]
+}

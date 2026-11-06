@@ -1,0 +1,304 @@
+{
+ "model": "Area",
+ "nodegroup": "associated_actors",
+ "entries": [
+  {
+   "phrases": [
+    "association date",
+    "period of involvement",
+    "when was involved",
+    "dates of association",
+    "when were they involved"
+   ],
+   "kind": "date",
+   "node": "associated_actor_start_date",
+   "end_node": "associated_actor_end_date"
+  },
+  {
+   "phrases": [
+    "associated with",
+    "involved",
+    "people",
+    "organisations",
+    "organizations",
+    "who was involved",
+    "connected with",
+    "associated people",
+    "associated person",
+    "associated organisation",
+    "linked to person"
+   ],
+   "kind": "link",
+   "node": "actor"
+  }
+ ],
+ "group": {
+  "phrases": [],
+  "nodes": {},
+  "combos": [
+   {
+    "phrases": [
+     "designed by",
+     "architect",
+     "who designed",
+     "which architect",
+     "architect of"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Architect"
+    }
+   },
+   {
+    "phrases": [
+     "designer",
+     "design by",
+     "who was the designer"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Designer"
+    }
+   },
+   {
+    "phrases": [
+     "built by",
+     "builder",
+     "who built",
+     "constructed by",
+     "erected by",
+     "building contractor"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Builder"
+    }
+   },
+   {
+    "phrases": [
+     "excavated by",
+     "excavator",
+     "who excavated",
+     "dug by",
+     "excavation by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Excavator"
+    }
+   },
+   {
+    "phrases": [
+     "director of fieldwork",
+     "fieldwork director",
+     "directed by",
+     "excavation director",
+     "who directed the excavation"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Director of Fieldwork"
+    }
+   },
+   {
+    "phrases": [
+     "investigated by",
+     "field investigator",
+     "archaeological investigator",
+     "who investigated"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Archaeological Field Investigator"
+    }
+   },
+   {
+    "phrases": [
+     "surveyed by",
+     "surveyor",
+     "who surveyed"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Surveyor"
+    }
+   },
+   {
+    "phrases": [
+     "owned by",
+     "owner",
+     "who owns it",
+     "who owned",
+     "proprietor",
+     "owners"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Owner"
+    }
+   },
+   {
+    "phrases": [
+     "landscaped by",
+     "landscape gardener",
+     "landscape designer",
+     "garden designed by",
+     "gardens laid out by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Landscape Gardener"
+    }
+   },
+   {
+    "phrases": [
+     "engineer",
+     "engineered by",
+     "civil engineer"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Engineer"
+    }
+   },
+   {
+    "phrases": [
+     "commissioned by",
+     "patron",
+     "who commissioned"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Patron"
+    }
+   },
+   {
+    "phrases": [
+     "client",
+     "built for",
+     "made for"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Client"
+    }
+   },
+   {
+    "phrases": [
+     "developer",
+     "developed by",
+     "property developer"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Developer"
+    }
+   },
+   {
+    "phrases": [
+     "funded by",
+     "financed by",
+     "paid for by",
+     "funder",
+     "financier"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Funding Body/Financier"
+    }
+   },
+   {
+    "phrases": [
+     "found by",
+     "finder",
+     "discovered by",
+     "who discovered"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Finder"
+    }
+   },
+   {
+    "phrases": [
+     "person of historic interest",
+     "famous person",
+     "historic figure",
+     "notable person",
+     "famous resident"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Person of Historic Interest"
+    }
+   },
+   {
+    "phrases": [
+     "recorded by",
+     "recorder",
+     "who recorded"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Recorder"
+    }
+   },
+   {
+    "phrases": [
+     "photographed by",
+     "photographer",
+     "who took the photograph"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Photographer"
+    }
+   },
+   {
+    "phrases": [
+     "sculptor",
+     "sculpted by",
+     "carved by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Sculptor"
+    }
+   },
+   {
+    "phrases": [
+     "stonemason",
+     "mason",
+     "masonry by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Stonemason"
+    }
+   },
+   {
+    "phrases": [
+     "antiquarian",
+     "antiquarian interest",
+     "recorded by antiquarian"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Antiquarian"
+    }
+   },
+   {
+    "phrases": [
+     "researched by",
+     "researcher",
+     "studied by"
+    ],
+    "node": "actor",
+    "set": {
+     "role_type": "Researcher"
+    }
+   }
+  ],
+  "answers": {}
+ }
+}

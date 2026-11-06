@@ -1,0 +1,20 @@
+{
+ "model": "Organization",
+ "nodegroup": "associated_activities",
+ "entries": [
+  {
+   "phrases": [
+    "activities",
+    "projects",
+    "fieldwork carried out",
+    "what work did they do",
+    "events",
+    "investigations",
+    "excavations carried out",
+    "surveys"
+   ],
+   "kind": "link",
+   "node": "associated_activities"
+  }
+ ]
+}

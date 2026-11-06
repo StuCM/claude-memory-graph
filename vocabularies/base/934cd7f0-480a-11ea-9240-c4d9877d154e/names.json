@@ -1,0 +1,21 @@
+{
+ "model": "Historic Landscape Characterization",
+ "nodegroup": "names",
+ "entries": [
+  {
+   "phrases": [
+    "name",
+    "called",
+    "what is it called",
+    "hlc area name",
+    "hlc name",
+    "character area name",
+    "named",
+    "title",
+    "known as"
+   ],
+   "kind": "property",
+   "node": "name"
+  }
+ ]
+}

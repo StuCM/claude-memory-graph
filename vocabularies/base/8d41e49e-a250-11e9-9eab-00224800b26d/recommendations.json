@@ -1,0 +1,27 @@
+{
+ "model": "Consultation",
+ "nodegroup": "recommendations",
+ "entries": [
+  {
+   "phrases": [
+    "recommendation",
+    "recommendations",
+    "what was recommended",
+    "recommended",
+    "site visit recommendation"
+   ],
+   "kind": "property",
+   "node": "recommendation_value"
+  },
+  {
+   "phrases": [
+    "recommended by",
+    "who recommended",
+    "recommender",
+    "recommendation made by"
+   ],
+   "kind": "link",
+   "node": "recommended_by"
+  }
+ ]
+}

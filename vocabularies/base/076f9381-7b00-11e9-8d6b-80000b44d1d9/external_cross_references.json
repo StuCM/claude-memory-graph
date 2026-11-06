@@ -1,0 +1,50 @@
+{
+ "model": "Monument",
+ "nodegroup": "external_cross_references",
+ "entries": [
+  {
+   "phrases": [
+    "cross reference",
+    "cross-reference",
+    "external reference",
+    "other reference number",
+    "other record number",
+    "external id",
+    "list entry number"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference"
+  },
+  {
+   "phrases": [
+    "cross reference source",
+    "reference source",
+    "which database",
+    "external database"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_source"
+  },
+  {
+   "phrases": [
+    "cross reference note",
+    "cross reference notes",
+    "external reference note"
+   ],
+   "kind": "property",
+   "node": "external_cross_reference_description"
+  },
+  {
+   "phrases": [
+    "website",
+    "web link",
+    "web page",
+    "url",
+    "online link",
+    "link"
+   ],
+   "kind": "property",
+   "node": "url"
+  }
+ ]
+}

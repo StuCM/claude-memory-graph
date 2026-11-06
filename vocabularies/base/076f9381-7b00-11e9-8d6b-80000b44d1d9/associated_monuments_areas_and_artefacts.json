@@ -1,0 +1,32 @@
+{
+ "model": "Monument",
+ "nodegroup": "associated_monuments_areas_and_artefacts",
+ "entries": [
+  {
+   "phrases": [
+    "related monuments",
+    "associated monuments",
+    "associated sites",
+    "related sites",
+    "nearby monuments",
+    "linked sites",
+    "related finds",
+    "associated artefacts",
+    "related records",
+    "associated areas"
+   ],
+   "kind": "link",
+   "node": "associated_monument_area_or_artefact"
+  },
+  {
+   "phrases": [
+    "association type",
+    "relationship type",
+    "how are they related",
+    "nature of link"
+   ],
+   "kind": "property",
+   "node": "association_type"
+  }
+ ]
+}

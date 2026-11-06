@@ -1,0 +1,21 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "location_descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "location",
+    "where is it",
+    "location description",
+    "situated",
+    "whereabouts",
+    "where",
+    "where is it located",
+    "position",
+    "where can i find it"
+   ],
+   "kind": "property",
+   "node": "location_description"
+  }
+ ]
+}

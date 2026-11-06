@@ -1,0 +1,39 @@
+{
+ "model": "Monument",
+ "nodegroup": "associated_archives",
+ "entries": [
+  {
+   "phrases": [
+    "archive holder",
+    "archive held by",
+    "who holds the archive",
+    "where is the archive",
+    "archive repository",
+    "records held by"
+   ],
+   "kind": "link",
+   "node": "archive_holder"
+  },
+  {
+   "phrases": [
+    "archive",
+    "archive title",
+    "archive item",
+    "archive object",
+    "archive material",
+    "archives"
+   ],
+   "kind": "property",
+   "node": "archive_object_title"
+  },
+  {
+   "phrases": [
+    "archive reference",
+    "archive number",
+    "archive accession number"
+   ],
+   "kind": "property",
+   "node": "archive_object_reference"
+  }
+ ]
+}

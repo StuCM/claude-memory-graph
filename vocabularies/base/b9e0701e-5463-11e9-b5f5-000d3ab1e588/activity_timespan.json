@@ -1,0 +1,30 @@
+{
+ "model": "Activity",
+ "nodegroup": "activity_timespan",
+ "entries": [
+  {
+   "phrases": [
+    "when did it take place",
+    "when was it carried out",
+    "date of activity",
+    "took place",
+    "carried out",
+    "undertaken",
+    "conducted",
+    "held",
+    "activity dates",
+    "fieldwork dates",
+    "when was the excavation",
+    "when did the survey happen",
+    "when",
+    "date of fieldwork",
+    "started",
+    "year of investigation",
+    "happened"
+   ],
+   "kind": "date",
+   "node": "activity_start_date",
+   "end_node": "activity_end_date"
+  }
+ ]
+}

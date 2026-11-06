@@ -1,0 +1,27 @@
+{
+ "model": "Heritage Story",
+ "nodegroup": "spatial_record_compilation",
+ "entries": [
+  {
+   "phrases": [
+    "spatial record compiled",
+    "date of compilation",
+    "when was the mapping compiled",
+    "compilation date"
+   ],
+   "kind": "date",
+   "node": "compilation_start_date",
+   "end_node": "compilation_end_date"
+  },
+  {
+   "phrases": [
+    "compiled by",
+    "compiler",
+    "spatial record compiler",
+    "mapped by"
+   ],
+   "kind": "property",
+   "node": "compiler_name"
+  }
+ ]
+}

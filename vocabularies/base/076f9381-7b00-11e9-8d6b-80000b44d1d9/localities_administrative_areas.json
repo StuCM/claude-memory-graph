@@ -1,0 +1,33 @@
+{
+ "model": "Monument",
+ "nodegroup": "localities_administrative_areas",
+ "entries": [
+  {
+   "phrases": [
+    "borough",
+    "london borough",
+    "district",
+    "parish",
+    "local authority",
+    "council area",
+    "administrative area",
+    "which borough",
+    "which council",
+    "county council area",
+    "local planning authority",
+    "area name"
+   ],
+   "kind": "property",
+   "node": "area_name"
+  },
+  {
+   "phrases": [
+    "area type",
+    "type of administrative area",
+    "administrative unit"
+   ],
+   "kind": "property",
+   "node": "area_type"
+  }
+ ]
+}

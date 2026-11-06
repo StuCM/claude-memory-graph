@@ -1,0 +1,57 @@
+{
+ "format": "ceist.vocab-groups/1",
+ "model": "Digital Object",
+ "graphid": "a535a235-8481-11ea-a6b9-f875a44e0e11",
+ "nodegroups": {
+  "audit_metadata": {
+   "id": "539fea95-f44d-11eb-a237-a87eeabdefba",
+   "parent": null,
+   "description_sha256": "4026d3442363584b40a473d741241af04f511a2d16078772bab0df7248b46bc0"
+  },
+  "copyright": {
+   "id": "c4581abb-edf5-11eb-b686-a87eeabdefba",
+   "parent": null,
+   "description_sha256": "292f8b6362720d293f9a1e73e43b96cc7d1bbe987e828418abbb8f13f488aaa9"
+  },
+  "creation": {
+   "id": "e55389c6-8481-11ea-9c0c-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "5a55445219e7ba05c883803eb34391d27b87c7c861b5f37f814464a57613bd15"
+  },
+  "descriptions": {
+   "id": "e7cb0a5f-9513-11ea-a02b-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "88695d208a3835d81340f0cf27f83fd4e587e96109a19f34c66d4983b9d353bb"
+  },
+  "external_cross_references": {
+   "id": "c5c43d89-eecc-11eb-81ea-a87eeabdefba",
+   "parent": null,
+   "description_sha256": "3284b555d0502e08de7e3b11fb9c4023e54187a0d5fb5019c6b4477019169ffa"
+  },
+  "file_content": {
+   "id": "7db68c6c-8490-11ea-a543-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "9e9760958e0e8cdfe292b9712793b1d9a9cdb846bef9063c0da89683d4fa6b00"
+  },
+  "file_format_type": {
+   "id": "aff2509b-848f-11ea-81e1-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "d341467217613edda16f53c0f96fcd4c8f9e13a207882bf91c7e0af180edd9c9"
+  },
+  "names": {
+   "id": "c61ab163-9513-11ea-9bb6-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "a3b86f1afff67867eebf4e18843f52394892584ff40fc84ec076a481bf137f07"
+  },
+  "resource_model_type": {
+   "id": "fc1d0ded-a0f5-11ea-b90c-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "9f8713aaf287f9114a813b50809eafe7b550b5bcfb68712a4e664dc213efd972"
+  },
+  "system_reference_numbers": {
+   "id": "79026212-a0f4-11ea-8df3-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "cbe39420f1ae501284a6a480952e8063e8685e1c870a4e5ef7631a262abfa053"
+  }
+ }
+}

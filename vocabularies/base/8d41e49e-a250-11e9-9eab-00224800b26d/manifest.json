@@ -1,0 +1,207 @@
+{
+ "format": "ceist.vocab-groups/1",
+ "model": "Consultation",
+ "graphid": "8d41e49e-a250-11e9-9eab-00224800b26d",
+ "nodegroups": {
+  "action": {
+   "id": "a5e15f5c-51a3-11eb-b240-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "d0ce782b1d78864bd4ab678326dc625228e8a3e2fa290491153e678dfc26cab3"
+  },
+  "advice": {
+   "id": "8d41e49f-a250-11e9-b6b3-00224800b26d",
+   "parent": null,
+   "description_sha256": "bc19243d6f10308e66d5cc485473b8eb8016f2a1152b036cb83b551173e16e90"
+  },
+  "application_type": {
+   "id": "54de6acc-8895-11ea-9067-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "29785fe92ee1a6aa4823652893000df0114e581882c4d6689b13d7cea880a83d"
+  },
+  "assessment_of_significance": {
+   "id": "8d41e4b7-a250-11e9-9b6c-00224800b26d",
+   "parent": null,
+   "description_sha256": "6a78bd581e15df21ec15e527487fc06d531beeb31074ebea8b799e449fa12a2d"
+  },
+  "associated_activities": {
+   "id": "44532175-2007-11ea-9976-c4d9877d154e",
+   "parent": null,
+   "description_sha256": "2c7a024dd335f0f369cfce202996d3d35fd74e6077fe31f4bbb2d6a864b4fa22"
+  },
+  "associated_consultations": {
+   "id": "4912e29f-edf2-11eb-bf42-a87eeabdefba",
+   "parent": null,
+   "description_sha256": "4213137d9a3812e0c0425a83e871b8eff934ff5966e1c795e3553d5a627512c4"
+  },
+  "attendees": {
+   "id": "ab622f1f-a251-11e9-bda5-00224800b26d",
+   "parent": "site_visits",
+   "description_sha256": "bf470c8286bf2fca3624cf6f4ffaeda17f9a04b34c88fa2eb0e703e49fa415df"
+  },
+  "audit_metadata": {
+   "id": "6246123b-3ee4-11eb-bc52-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "4026d3442363584b40a473d741241af04f511a2d16078772bab0df7248b46bc0"
+  },
+  "capture_scale": {
+   "id": "b9490532-184f-11eb-9877-f875a44e0e11",
+   "parent": "consultation_area",
+   "description_sha256": "0166dd532807e716476ecf4297ccf0cae4a1337c98c3fa8c5910d395b511511d"
+  },
+  "communications": {
+   "id": "caf5bff1-a3d7-11e9-aa28-00224800b26d",
+   "parent": null,
+   "description_sha256": "4d208cecf271cfedfe67a779b0c287537d17ca1099751eeff5cbf5428c7cbf1b"
+  },
+  "consultation_area": {
+   "id": "152aa058-936d-11ea-b517-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "4e6d451be6e47018f09b89d8f03abd5a36490bec7244f7fbac20d172eb877a01"
+  },
+  "consultation_dates": {
+   "id": "40eff4c9-893a-11ea-ac3a-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "2c25effddb761ab280c0892b2d95e1f02718430d2cb4fab6ae4407e946077fa4"
+  },
+  "consultation_descriptions": {
+   "id": "82f8a163-951a-11ea-b58e-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "ecc4a2c387188b8e0c8f95e9eb808271f2a9df34bb7739b7490794fff0627aa5"
+  },
+  "consultation_names": {
+   "id": "4ad66f55-951f-11ea-b2e2-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "eeb1a627e00272d782e7518146f68db6aa06f8b128d6fd61551cfbf076e878a2"
+  },
+  "consultation_type": {
+   "id": "771bb1e2-8895-11ea-8446-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "df781ad9b91688022a40dffaae75be0ec57e9062c7a220de64c440b24f1ada6f"
+  },
+  "contacts": {
+   "id": "4ea4a189-184f-11eb-b45e-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "81a1d963be25ea828861f90a50601255cab7631a78eda6c9c8a7842aedcb11a9"
+  },
+  "contested_heritage_assignment": {
+   "id": "599d7da2-eec2-11eb-9575-a87eeabdefba",
+   "parent": null,
+   "description_sha256": "78ac3a7c90869cd5ea4a10cf67f6bf9f77c70b9374fd1a868118e61749af284b"
+  },
+  "coordinate_system": {
+   "id": "b9490523-184f-11eb-bd34-f875a44e0e11",
+   "parent": "consultation_area",
+   "description_sha256": "d9e5ada87fc32e22f991a69d08e35451ed327b8377d16de91641d6d097d16375"
+  },
+  "correspondence": {
+   "id": "8d41e4b4-a250-11e9-993d-00224800b26d",
+   "parent": null,
+   "description_sha256": "0eadcb7a83d666734e777c922c1ac35b452e76dec39edb8a48ec91ac3c025e05"
+  },
+  "current_base_map": {
+   "id": "b9490529-184f-11eb-9ada-f875a44e0e11",
+   "parent": "consultation_area",
+   "description_sha256": "f011ca397f09562b3aea68a549e8e21153a8b0e4a6d332641df280e0f73b1943"
+  },
+  "development_type": {
+   "id": "73fdfe62-8895-11ea-a058-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "787dea3005ec68f3a0f08560d4b05b63113175493f1121a981243d524a629c26"
+  },
+  "external_cross_references": {
+   "id": "3b500555-eec2-11eb-b785-a87eeabdefba",
+   "parent": null,
+   "description_sha256": "3284b555d0502e08de7e3b11fb9c4023e54187a0d5fb5019c6b4477019169ffa"
+  },
+  "file_s_": {
+   "id": "b3addca4-8882-11ea-acc1-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "ce16f8e06b0ff89247b5d76f7ba3fd94fe64f092f3fe7a861b86eb9b6b390688"
+  },
+  "localities_administrative_areas": {
+   "id": "b31a7fe3-d2c8-11ec-8614-a87eeabdefba",
+   "parent": null,
+   "description_sha256": "a8e1e4dc4ee37c49c40011e944c8282e636e51272ee619201f4665647ed412fe"
+  },
+  "observations": {
+   "id": "a2b47f25-938d-11ea-82cb-f875a44e0e11",
+   "parent": "site_visits",
+   "description_sha256": "297606f1156393cedbeed56fe4d5deac20b854313a309e3a98a2f50b030080fe"
+  },
+  "outcomes": {
+   "id": "8d41e4c3-a250-11e9-b348-00224800b26d",
+   "parent": null,
+   "description_sha256": "3d7e2eba4479c76a39efadcb3c3f16cd1c59493569a96f68802b437996766493"
+  },
+  "photographs": {
+   "id": "3a79a0dd-4535-11eb-b88f-f875a44e0e11",
+   "parent": "site_visits",
+   "description_sha256": "b26efa383302a8e5a2c9e4463fb86cca7e83954b1776b6f26ae82c9eef09d39b"
+  },
+  "proposal": {
+   "id": "1b0e15e9-8864-11ea-b5f3-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "d05ee58243452e9a6cb1dc84e41a02b0be61c9777cbac98108af63886013f747"
+  },
+  "recommendations": {
+   "id": "f5ecfbca-938b-11ea-865d-f875a44e0e11",
+   "parent": "site_visits",
+   "description_sha256": "2f834fb16a7d5d60a2d8718943b10b7e62b5f3617e8f1d7d7bb12654e4a39c57"
+  },
+  "references": {
+   "id": "8d41e4a2-a250-11e9-82f1-00224800b26d",
+   "parent": null,
+   "description_sha256": "82669700cb78212cb8d358930c4fcd3b2618be9a48aa6d594d6c11eeacf86cef"
+  },
+  "related_monuments_and_areas": {
+   "id": "58a2b98f-a255-11e9-9a30-00224800b26d",
+   "parent": null,
+   "description_sha256": "8155bdfae8382a56e16d1ff61c62101e26d1958d6f445a6e343a66d49de26d02"
+  },
+  "resource_model_type": {
+   "id": "22657c39-ee0e-11eb-aa25-a87eeabdefba",
+   "parent": null,
+   "description_sha256": "17328684e7738b511a356d1a921a66c867e94a0506bda3e320ef6e88c559b36d"
+  },
+  "site_visits": {
+   "id": "066cb8f0-a251-11e9-85d5-00224800b26d",
+   "parent": null,
+   "description_sha256": "9931b9f13c6d183feb8213699e351a77eb6dc7240f1b93bf15cb6aa3d1cf873b"
+  },
+  "spatial_accuracy_qualifier": {
+   "id": "b948de31-184f-11eb-87d5-f875a44e0e11",
+   "parent": "consultation_area",
+   "description_sha256": "18035a6e33cb855eb9ff7c8abb109f25850f96e1f8bc64e9198104751c3b35c6"
+  },
+  "spatial_metadata_descriptions": {
+   "id": "b949051c-184f-11eb-b462-f875a44e0e11",
+   "parent": "consultation_area",
+   "description_sha256": "7b4d08f54988473e1bd7907855201a107d4354f4d7d0349b9db41978b63991a9"
+  },
+  "spatial_record_authorization": {
+   "id": "b948de3c-184f-11eb-8cdb-f875a44e0e11",
+   "parent": "consultation_area",
+   "description_sha256": "0ef9741171ac7e223a0b47e2003e5de6e33875f53d9abbe85fd96d78ffea2142"
+  },
+  "spatial_record_compilation": {
+   "id": "b9490519-184f-11eb-81e6-f875a44e0e11",
+   "parent": "consultation_area",
+   "description_sha256": "f46a2296b2f99c6d32a2d034f8f16e42724030807fb6aba3c0aa746c4157ec2b"
+  },
+  "spatial_record_update": {
+   "id": "b948de3e-184f-11eb-9663-f875a44e0e11",
+   "parent": "consultation_area",
+   "description_sha256": "8420eaff5aff30463df683e3e7237b72a1cfed1e038993c981251a36cbf72207"
+  },
+  "status": {
+   "id": "6a773228-db20-11e9-b6dd-784f435179ea",
+   "parent": null,
+   "description_sha256": "706f8c46f52166d2751798e0bb4af82bc706fee8f356249c19dc7eee642baa50"
+  },
+  "system_reference_numbers": {
+   "id": "b37552ba-9527-11ea-96b5-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "cbe39420f1ae501284a6a480952e8063e8685e1c870a4e5ef7631a262abfa053"
+  }
+ }
+}

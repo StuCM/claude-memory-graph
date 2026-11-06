@@ -1,0 +1,92 @@
+{
+ "format": "ceist.vocab-groups/1",
+ "model": "Organization",
+ "graphid": "d4a88461-5463-11e9-90d9-000d3ab1e588",
+ "nodegroups": {
+  "associated_activities": {
+   "id": "381f2a0b-8ea9-11ea-872d-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "0cb355596255e67b21d6c097f911979724de6b6c0b088949ffad4cb6b4df8aa5"
+  },
+  "associated_actors": {
+   "id": "e6ab4ed0-905b-11ea-8e3f-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "868fc039d6821c22920635c72ee2d6e444016a7a83ca8767b092e88f3aa71180"
+  },
+  "associated_monuments_areas_and_artefacts": {
+   "id": "135f23db-4514-11eb-b403-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "e28b942b2669dbcf0cd6ea09ca53270e62227a3360cd95cbdb3d6428b17a7933"
+  },
+  "audit_metadata": {
+   "id": "11098477-eff4-11eb-9d26-a87eeabdefba",
+   "parent": null,
+   "description_sha256": "4026d3442363584b40a473d741241af04f511a2d16078772bab0df7248b46bc0"
+  },
+  "bibliographic_source_citation": {
+   "id": "dc17b6e9-eff3-11eb-9210-a87eeabdefba",
+   "parent": null,
+   "description_sha256": "c2b0e66bb3fae3ee78babc4a9241bd53ecf58334f1388df775b19cb95ff4501d"
+  },
+  "contact_details": {
+   "id": "1b6f9cb4-51ae-11eb-a1fe-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "448d9974bf0fcbd9d3eff9bbdd1d031b7b5d328083331ff5e7e53c45f272dab8"
+  },
+  "descriptions": {
+   "id": "0dd62abb-8097-11ea-9f6b-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "164fa533f67fbf603ce8a1964ab0e45aabc73ecbfd320b97d747b786fd205345"
+  },
+  "digital_file_s_": {
+   "id": "9f21e689-8554-11ea-8c73-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "64c4f8371f96c8ed85706613dd6a6ed9fa4a8e79227634974b3970d617446223"
+  },
+  "external_cross_references": {
+   "id": "ff9d5002-eff3-11eb-8186-a87eeabdefba",
+   "parent": null,
+   "description_sha256": "3284b555d0502e08de7e3b11fb9c4023e54187a0d5fb5019c6b4477019169ffa"
+  },
+  "images": {
+   "id": "032635bb-8fda-11ec-90e7-a87eeabdefba",
+   "parent": null,
+   "description_sha256": "6287acc358446fe2048f9705e25bab3a0a7238db46db49493567c5b6085b1c9d"
+  },
+  "location_data": {
+   "id": "af3b0116-29a9-11eb-8333-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "05fecda254ad74ea4599949766231f0b16b2c5ba60cd00a78d317ffe1cf95928"
+  },
+  "names": {
+   "id": "e8431c5d-8098-11ea-8348-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "cd98a24dd6717e0955082197deba2eabfb139671ac4c353c55b9ded337ea5159"
+  },
+  "organization_currency_type": {
+   "id": "e34c42f9-942c-11ea-a089-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "9778e166fad699ae5aed98c5985601bdb76e65d361e0e9d06d3ca8044194d395"
+  },
+  "organization_formation": {
+   "id": "600e7102-8555-11ea-8211-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "9145f62dbf96e88748f3f6ed2087bea0a786ce4c275db9a48f786693c434bdc7"
+  },
+  "parent_organization": {
+   "id": "cb49587a-4513-11eb-a4e0-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "3575c539dd53b47b49d91e4014c0a52bc171ba0d6ff8081cbf212833c4523730"
+  },
+  "resource_model_type": {
+   "id": "91b44225-a1b4-11ea-857a-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "9f8713aaf287f9114a813b50809eafe7b550b5bcfb68712a4e664dc213efd972"
+  },
+  "system_reference_numbers": {
+   "id": "c8e9e9c1-9456-11ea-aacc-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "cbe39420f1ae501284a6a480952e8063e8685e1c870a4e5ef7631a262abfa053"
+  }
+ }
+}

@@ -1,0 +1,16 @@
+{
+ "model": "Artefact",
+ "nodegroup": "spatial_accuracy_qualifier",
+ "entries": [
+  {
+   "phrases": [
+    "spatial accuracy",
+    "location accuracy",
+    "how accurate is the location",
+    "positional accuracy"
+   ],
+   "kind": "property",
+   "node": "spatial_accuracy_qualifier"
+  }
+ ]
+}

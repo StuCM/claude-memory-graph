@@ -1,0 +1,20 @@
+{
+ "model": "Historic Landscape Characterization",
+ "nodegroup": "national_grid_references",
+ "entries": [
+  {
+   "phrases": [
+    "grid reference",
+    "ngr",
+    "os grid reference",
+    "national grid reference",
+    "grid ref",
+    "easting",
+    "northing",
+    "eastings and northings"
+   ],
+   "kind": "property",
+   "node": "national_grid_reference"
+  }
+ ]
+}

@@ -1,0 +1,22 @@
+{
+ "model": "Area",
+ "nodegroup": "descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "description",
+    "describe",
+    "about",
+    "summary",
+    "details",
+    "overview",
+    "history",
+    "what is known",
+    "tell me about",
+    "information"
+   ],
+   "kind": "property",
+   "node": "description"
+  }
+ ]
+}

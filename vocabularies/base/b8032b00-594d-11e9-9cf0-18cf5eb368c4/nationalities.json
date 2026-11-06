@@ -1,0 +1,21 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "nationalities",
+ "entries": [
+  {
+   "phrases": [
+    "nationality",
+    "which country",
+    "country of origin",
+    "whose aircraft",
+    "air force",
+    "what nationality",
+    "national origin",
+    "british or german",
+    "which side"
+   ],
+   "kind": "property",
+   "node": "aircraft_nationality"
+  }
+ ]
+}

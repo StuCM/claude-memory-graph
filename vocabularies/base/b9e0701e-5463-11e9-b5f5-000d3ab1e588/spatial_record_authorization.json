@@ -1,0 +1,34 @@
+{
+ "model": "Activity",
+ "nodegroup": "spatial_record_authorization",
+ "entries": [
+  {
+   "phrases": [
+    "spatial record authorized",
+    "date of authorization",
+    "map record authorised",
+    "when was the location authorised"
+   ],
+   "kind": "date",
+   "node": "date_of_authorization",
+   "end_node": "authorization_end_date"
+  },
+  {
+   "phrases": [
+    "authorization status",
+    "spatial authorization",
+    "authorised location"
+   ],
+   "kind": "property",
+   "node": "authorization_type"
+  },
+  {
+   "phrases": [
+    "spatial record authorised by",
+    "location authorised by"
+   ],
+   "kind": "property",
+   "node": "authorizer_name"
+  }
+ ]
+}

@@ -1,0 +1,13 @@
+{
+ "model": "Object",
+ "nodegroup": "named_locations",
+ "entries": [
+  {
+   "phrases": [
+    "in"
+   ],
+   "kind": "link",
+   "node": "named_location"
+  }
+ ]
+}

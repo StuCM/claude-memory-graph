@@ -1,0 +1,17 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "spatial_accuracy_qualifier",
+ "entries": [
+  {
+   "phrases": [
+    "spatial accuracy",
+    "how accurate is the location",
+    "positional accuracy",
+    "location accuracy",
+    "precision of the mapping"
+   ],
+   "kind": "property",
+   "node": "spatial_accuracy_qualifier"
+  }
+ ]
+}

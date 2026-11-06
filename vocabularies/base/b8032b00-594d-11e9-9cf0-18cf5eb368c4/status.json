@@ -1,0 +1,18 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "status",
+ "entries": [
+  {
+   "phrases": [
+    "status",
+    "casualty",
+    "known site",
+    "casualty or known site",
+    "is the site known",
+    "site status"
+   ],
+   "kind": "property",
+   "node": "status"
+  }
+ ]
+}

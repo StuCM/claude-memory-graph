@@ -1,0 +1,39 @@
+{
+ "model": "Person",
+ "nodegroup": "death",
+ "entries": [
+  {
+   "phrases": [
+    "died",
+    "death",
+    "date of death",
+    "when did he die",
+    "when did she die",
+    "when did they die",
+    "year of death",
+    "passed away",
+    "death date",
+    "deceased",
+    "death year",
+    "when died"
+   ],
+   "kind": "date",
+   "node": "date_of_death"
+  },
+  {
+   "phrases": [
+    "place of death",
+    "where did he die",
+    "where did she die",
+    "where did they die",
+    "deathplace",
+    "death place",
+    "died where",
+    "where died",
+    "died at"
+   ],
+   "kind": "property",
+   "node": "death_place"
+  }
+ ]
+}

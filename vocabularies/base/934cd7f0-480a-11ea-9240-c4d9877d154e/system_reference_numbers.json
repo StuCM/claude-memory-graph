@@ -1,0 +1,43 @@
+{
+ "model": "Historic Landscape Characterization",
+ "nodegroup": "system_reference_numbers",
+ "entries": [
+  {
+   "phrases": [
+    "reference number",
+    "record number",
+    "her number",
+    "her reference",
+    "smr number",
+    "primary reference",
+    "primary reference number",
+    "id number",
+    "record id"
+   ],
+   "kind": "property",
+   "node": "primary_reference_number"
+  },
+  {
+   "phrases": [
+    "legacy id",
+    "old reference",
+    "previous id",
+    "former reference number",
+    "old record number",
+    "old smr number"
+   ],
+   "kind": "property",
+   "node": "legacy_id"
+  },
+  {
+   "phrases": [
+    "uuid",
+    "resource id",
+    "resourceid",
+    "system id"
+   ],
+   "kind": "property",
+   "node": "resourceid"
+  }
+ ]
+}

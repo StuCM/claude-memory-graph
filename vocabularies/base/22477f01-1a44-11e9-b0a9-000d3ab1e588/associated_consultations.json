@@ -1,0 +1,16 @@
+{
+ "model": "Person",
+ "nodegroup": "associated_consultations",
+ "entries": [
+  {
+   "phrases": [
+    "consultations",
+    "planning applications",
+    "casework",
+    "planning consultations"
+   ],
+   "kind": "link",
+   "node": "associated_consultations"
+  }
+ ]
+}

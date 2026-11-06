@@ -1,0 +1,319 @@
+{
+ "model": "Monument",
+ "nodegroup": "construction_phases",
+ "entries": [
+  {
+   "phrases": [
+    "built",
+    "constructed",
+    "erected",
+    "put up",
+    "construction",
+    "construction date",
+    "date built",
+    "when was it built",
+    "year built",
+    "built in",
+    "building date",
+    "date of construction",
+    "originally built",
+    "first built",
+    "founded",
+    "how old",
+    "age of the building",
+    "dated",
+    "dates from",
+    "construction phase"
+   ],
+   "kind": "date",
+   "node": "construction_phase_start_date",
+   "end_node": "construction_phase_end_date"
+  },
+  {
+   "phrases": [
+    "period",
+    "what period",
+    "which period",
+    "era",
+    "cultural period",
+    "historic period",
+    "period of construction",
+    "date period",
+    "age",
+    "epoch",
+    "archaeological period",
+    "time period"
+   ],
+   "kind": "link",
+   "node": "cultural_period"
+  },
+  {
+   "phrases": [
+    "type",
+    "what type",
+    "monument type",
+    "site type",
+    "kind of monument",
+    "what kind of",
+    "what is it",
+    "classification",
+    "class",
+    "category",
+    "type of site",
+    "building type",
+    "type of monument",
+    "sort of site",
+    "what sort"
+   ],
+   "kind": "property",
+   "node": "monument_type"
+  },
+  {
+   "phrases": [
+    "material",
+    "materials",
+    "made of",
+    "what is it made of",
+    "built of",
+    "built from",
+    "building material",
+    "constructed of",
+    "construction material",
+    "main material",
+    "fabric",
+    "brick or stone",
+    "built with",
+    "what material"
+   ],
+   "kind": "property",
+   "node": "main_construction_material"
+  },
+  {
+   "phrases": [
+    "roof covering",
+    "roofing material",
+    "roofed with",
+    "roof material",
+    "covering",
+    "covering material",
+    "clad in",
+    "cladding",
+    "covered with",
+    "roof"
+   ],
+   "kind": "property",
+   "node": "covering_material"
+  },
+  {
+   "phrases": [
+    "construction method",
+    "method of manufacture",
+    "production method",
+    "how was it made",
+    "manufacturing method",
+    "made how"
+   ],
+   "kind": "property",
+   "node": "construction_method"
+  },
+  {
+   "phrases": [
+    "construction technique",
+    "building technique",
+    "how was it built",
+    "how was it constructed",
+    "technique",
+    "structural system",
+    "construction type",
+    "built using"
+   ],
+   "kind": "property",
+   "node": "construction_technique"
+  },
+  {
+   "phrases": [
+    "phase type",
+    "type of phase",
+    "construction phase type",
+    "building phase",
+    "phases",
+    "phase",
+    "building phases",
+    "development phases"
+   ],
+   "kind": "property",
+   "node": "construction_phase_type"
+  },
+  {
+   "phrases": [
+    "display date",
+    "date text",
+    "approximate date",
+    "date range",
+    "construction date text"
+   ],
+   "kind": "property",
+   "node": "construction_phase_display_date"
+  },
+  {
+   "phrases": [
+    "evidence",
+    "evidence type",
+    "type of evidence",
+    "what survives",
+    "surviving evidence",
+    "form of evidence",
+    "remains",
+    "what remains",
+    "survival",
+    "earthwork or cropmark",
+    "extant",
+    "does it survive"
+   ],
+   "kind": "property",
+   "node": "construction_phase_evidence_type"
+  },
+  {
+   "phrases": [
+    "confidence of interpretation",
+    "interpretation certainty",
+    "how certain is the interpretation",
+    "certainty",
+    "how sure is the identification",
+    "confidence in identification"
+   ],
+   "kind": "property",
+   "node": "phase_certainty"
+  },
+  {
+   "phrases": [
+    "dating confidence",
+    "confidence of dating",
+    "how sure is the date",
+    "how certain is the date",
+    "date certainty",
+    "reliability of date"
+   ],
+   "kind": "property",
+   "node": "confidence_of_dating"
+  },
+  {
+   "phrases": [
+    "phase description",
+    "description of the phase",
+    "phase notes",
+    "phase summary"
+   ],
+   "kind": "property",
+   "node": "phase_description"
+  }
+ ],
+ "group": {
+  "phrases": [
+   "construction phase",
+   "building phase"
+  ],
+  "nodes": {
+   "construction_phase_type": {
+    "role": "type"
+   },
+   "construction_phase_start_date": {
+    "role": "date",
+    "end_node": "construction_phase_end_date"
+   },
+   "main_construction_material": {
+    "role": "other"
+   },
+   "covering_material": {
+    "role": "other"
+   },
+   "construction_method": {
+    "role": "other"
+   },
+   "construction_technique": {
+    "role": "other"
+   }
+  },
+  "combos": [
+   {
+    "phrases": [
+     "altered",
+     "alteration",
+     "alterations",
+     "modified",
+     "remodelled",
+     "remodeled",
+     "extended",
+     "extension added",
+     "enlarged",
+     "rebuilt",
+     "refaced",
+     "refronted"
+    ],
+    "node": "construction_phase_start_date",
+    "set": {
+     "construction_phase_type": "Alteration"
+    }
+   },
+   {
+    "phrases": [
+     "demolished",
+     "destroyed",
+     "pulled down",
+     "knocked down",
+     "torn down",
+     "razed",
+     "demolition",
+     "destruction",
+     "bombed",
+     "burnt down",
+     "burned down",
+     "lost",
+     "removed",
+     "date of demolition"
+    ],
+    "node": "construction_phase_start_date",
+    "set": {
+     "construction_phase_type": "Destruction"
+    }
+   },
+   {
+    "phrases": [
+     "converted",
+     "conversion",
+     "converted to",
+     "converted into",
+     "change of use",
+     "repurposed",
+     "adapted"
+    ],
+    "node": "construction_phase_start_date",
+    "set": {
+     "construction_phase_type": "Conversion"
+    }
+   },
+   {
+    "phrases": [
+     "repaired",
+     "repairs",
+     "restored",
+     "restoration",
+     "renovated",
+     "renovation",
+     "refurbished",
+     "refurbishment",
+     "conserved",
+     "consolidated",
+     "patched up"
+    ],
+    "node": "construction_phase_start_date",
+    "set": {
+     "construction_phase_type": "Repairs"
+    }
+   }
+  ],
+  "answers": {
+   "when": "construction_phase_start_date"
+  }
+ }
+}

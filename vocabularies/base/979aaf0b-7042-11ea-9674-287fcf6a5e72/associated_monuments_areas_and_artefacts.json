@@ -1,0 +1,23 @@
+{
+ "model": "Area",
+ "nodegroup": "associated_monuments_areas_and_artefacts",
+ "entries": [
+  {
+   "phrases": [
+    "related monuments",
+    "associated monuments",
+    "associated sites",
+    "related sites",
+    "linked monuments",
+    "associated artefacts",
+    "related artefacts",
+    "finds from",
+    "buildings within",
+    "monuments within",
+    "contains"
+   ],
+   "kind": "link",
+   "node": "associated_monument_area_or_artefact"
+  }
+ ]
+}

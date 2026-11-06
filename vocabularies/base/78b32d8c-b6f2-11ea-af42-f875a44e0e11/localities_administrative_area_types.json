@@ -1,0 +1,21 @@
+{
+ "model": "Place",
+ "nodegroup": "localities_administrative_area_types",
+ "entries": [
+  {
+   "phrases": [
+    "administrative area type",
+    "area type",
+    "borough or parish",
+    "what kind of area",
+    "administrative level",
+    "parish",
+    "borough",
+    "district",
+    "unitary authority"
+   ],
+   "kind": "property",
+   "node": "area_type"
+  }
+ ]
+}

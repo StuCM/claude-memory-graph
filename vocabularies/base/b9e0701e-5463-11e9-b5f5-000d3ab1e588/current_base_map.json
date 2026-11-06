@@ -1,0 +1,14 @@
+{
+ "model": "Activity",
+ "nodegroup": "current_base_map",
+ "entries": [
+  {
+   "phrases": [
+    "base map",
+    "current base map"
+   ],
+   "kind": "property",
+   "node": "current_base_map_name"
+  }
+ ]
+}

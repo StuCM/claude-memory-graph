@@ -1,0 +1,36 @@
+{
+ "model": "Area",
+ "nodegroup": "associated_archives",
+ "entries": [
+  {
+   "phrases": [
+    "archive held by",
+    "archive holder",
+    "who holds the archive",
+    "archive location",
+    "where is the archive"
+   ],
+   "kind": "link",
+   "node": "archive_holder"
+  },
+  {
+   "phrases": [
+    "archive reference",
+    "archive number",
+    "archive object reference"
+   ],
+   "kind": "property",
+   "node": "archive_object_reference"
+  },
+  {
+   "phrases": [
+    "archive title",
+    "archive object",
+    "archive object title",
+    "archive item"
+   ],
+   "kind": "property",
+   "node": "archive_object_title"
+  }
+ ]
+}

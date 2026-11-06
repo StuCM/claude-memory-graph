@@ -1,0 +1,35 @@
+{
+ "model": "Maritime Vessel",
+ "nodegroup": "associated_archives",
+ "entries": [
+  {
+   "phrases": [
+    "archive held by",
+    "archive holder",
+    "who holds the archive",
+    "where is the archive",
+    "archive repository"
+   ],
+   "kind": "link",
+   "node": "archive_holder"
+  },
+  {
+   "phrases": [
+    "archive title",
+    "archive object",
+    "archive item"
+   ],
+   "kind": "property",
+   "node": "archive_object_title"
+  },
+  {
+   "phrases": [
+    "archive reference",
+    "archive object reference",
+    "archive number"
+   ],
+   "kind": "property",
+   "node": "archive_object_reference"
+  }
+ ]
+}

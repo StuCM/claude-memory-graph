@@ -1,0 +1,31 @@
+{
+ "model": "Person",
+ "nodegroup": "descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "biography",
+    "bio",
+    "life",
+    "description",
+    "about",
+    "who was",
+    "background",
+    "career",
+    "tell me about",
+    "life story",
+    "history",
+    "summary",
+    "profile",
+    "achievements",
+    "occupation",
+    "profession",
+    "what did he do",
+    "what did she do",
+    "known for"
+   ],
+   "kind": "property",
+   "node": "description"
+  }
+ ]
+}

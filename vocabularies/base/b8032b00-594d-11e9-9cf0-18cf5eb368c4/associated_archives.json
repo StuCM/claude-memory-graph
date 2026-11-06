@@ -1,0 +1,38 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "associated_archives",
+ "entries": [
+  {
+   "phrases": [
+    "archive held by",
+    "who holds the archive",
+    "archive holder",
+    "where are the records kept",
+    "archive location",
+    "held by"
+   ],
+   "kind": "link",
+   "node": "archive_holder"
+  },
+  {
+   "phrases": [
+    "archive title",
+    "archive object",
+    "archive item",
+    "archive items",
+    "archive material"
+   ],
+   "kind": "property",
+   "node": "archive_object_title"
+  },
+  {
+   "phrases": [
+    "archive reference",
+    "archive number",
+    "archive object reference"
+   ],
+   "kind": "property",
+   "node": "archive_object_reference"
+  }
+ ]
+}

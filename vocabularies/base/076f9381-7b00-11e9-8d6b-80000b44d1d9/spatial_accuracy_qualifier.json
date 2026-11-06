@@ -1,0 +1,17 @@
+{
+ "model": "Monument",
+ "nodegroup": "spatial_accuracy_qualifier",
+ "entries": [
+  {
+   "phrases": [
+    "spatial accuracy",
+    "location accuracy",
+    "positional accuracy",
+    "how accurate is the location",
+    "mapping accuracy"
+   ],
+   "kind": "property",
+   "node": "spatial_accuracy_qualifier"
+  }
+ ]
+}

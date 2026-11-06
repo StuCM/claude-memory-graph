@@ -1,0 +1,19 @@
+{
+ "model": "Area",
+ "nodegroup": "parent_area",
+ "entries": [
+  {
+   "phrases": [
+    "parent area",
+    "part of",
+    "within area",
+    "larger area",
+    "belongs to",
+    "parent site",
+    "wider area"
+   ],
+   "kind": "link",
+   "node": "parent_area"
+  }
+ ]
+}

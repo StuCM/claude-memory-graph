@@ -1,0 +1,41 @@
+{
+ "model": "Bibliographic Source",
+ "nodegroup": "bibliographic_source_names",
+ "entries": [
+  {
+   "phrases": [
+    "title",
+    "name",
+    "called",
+    "book title",
+    "title of the publication",
+    "what is it called",
+    "article title",
+    "report title"
+   ],
+   "kind": "property",
+   "node": "bibliographic_source_name"
+  },
+  {
+   "phrases": [
+    "volume",
+    "volume number",
+    "vol",
+    "which volume"
+   ],
+   "kind": "property",
+   "node": "volume_number"
+  },
+  {
+   "phrases": [
+    "part",
+    "issue",
+    "volume part",
+    "issue number",
+    "part number"
+   ],
+   "kind": "property",
+   "node": "volume_part"
+  }
+ ]
+}

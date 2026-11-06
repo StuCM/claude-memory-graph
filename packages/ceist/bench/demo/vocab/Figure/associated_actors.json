@@ -1,0 +1,18 @@
+{
+ "model": "Figure",
+ "nodegroup": "associated_actors",
+ "entries": [
+  {
+   "phrases": [
+    "tell of",
+    "tells of",
+    "involve",
+    "involves",
+    "feature",
+    "features"
+   ],
+   "kind": "link",
+   "node": "actor"
+  }
+ ]
+}

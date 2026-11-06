@@ -1,0 +1,26 @@
+{
+ "model": "Activity",
+ "nodegroup": "spatial_record_compilation",
+ "entries": [
+  {
+   "phrases": [
+    "spatial record compiled",
+    "date of compilation",
+    "map record compiled",
+    "when was the geometry compiled"
+   ],
+   "kind": "date",
+   "node": "compilation_start_date",
+   "end_node": "compilation_end_date"
+  },
+  {
+   "phrases": [
+    "spatial record compiled by",
+    "map compiled by",
+    "geometry compiler"
+   ],
+   "kind": "property",
+   "node": "compiler_name"
+  }
+ ]
+}

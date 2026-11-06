@@ -1,0 +1,82 @@
+{
+ "format": "ceist.vocab-groups/1",
+ "model": "Bibliographic Source",
+ "graphid": "24d7b54f-5464-11e9-a86b-000d3ab1e588",
+ "nodegroups": {
+  "audit_metadata": {
+   "id": "eb6a4c81-eeca-11eb-a970-a87eeabdefba",
+   "parent": null,
+   "description_sha256": "4026d3442363584b40a473d741241af04f511a2d16078772bab0df7248b46bc0"
+  },
+  "bibliographic_source_creation": {
+   "id": "c06e4047-95ef-11ea-be5d-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "b9e8bef0d863097fc657921619c7f75fcf99cd53c7ae9a0fa438929c85bdb48c"
+  },
+  "bibliographic_source_names": {
+   "id": "03e2984b-8ecf-11ea-8f83-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "90c0c87cbe9624c1c60707588c6ff6c70b2ac9fec840fd0186ef48982709e30a"
+  },
+  "bibliographic_source_type": {
+   "id": "9f29bb76-8ed4-11ea-81d3-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "d6125acb7b519ee1d7abc29636ce2eb3ba984ca5353cefb6ee68ad00ca78ab74"
+  },
+  "copyright": {
+   "id": "6c862f81-8ed4-11ea-b9e9-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "292f8b6362720d293f9a1e73e43b96cc7d1bbe987e828418abbb8f13f488aaa9"
+  },
+  "descriptions": {
+   "id": "95a57b40-95bc-11ea-9792-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "164fa533f67fbf603ce8a1964ab0e45aabc73ecbfd320b97d747b786fd205345"
+  },
+  "digital_file_s_": {
+   "id": "2c5939f5-8ed5-11ea-a638-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "fb8728f9b1a445104f17544120a86b16a0f5838ee5a7df7f5a9256d61a340fc0"
+  },
+  "external_cross_references": {
+   "id": "c7475507-eeca-11eb-bf1d-a87eeabdefba",
+   "parent": null,
+   "description_sha256": "b55052ef362b0003563800114f60d9ff806e6d3311697f5092ec47ffedee41e2"
+  },
+  "journal_or_serial": {
+   "id": "b083ef94-8ee6-11ea-a277-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "71e7675289a3eab4533b552f9d5acabe00135f2821b0ff6f38823e1af7d19600"
+  },
+  "language": {
+   "id": "8cd5def1-8ecf-11ea-ade5-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "e8ed9b92ca85a2508adca8807b4c8f49fcdfa17af16522c9730f5182af077695"
+  },
+  "page_references": {
+   "id": "1ed132d8-95f1-11ea-b306-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "7a6a2a0b4c84c1ff5cf2b3d67336ad5f2677a15759c891a5ad5c4609d8f0724d"
+  },
+  "pages": {
+   "id": "9c800fcc-8f9b-11ea-b968-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "2b9b0773dd14f2b5d956d7587676719743587da920b73c2c11b9ab441fc65f5e"
+  },
+  "publication": {
+   "id": "1987a81b-8ed0-11ea-ba85-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "9c1df94e9305b725eedc50b739a42a4335f6ce8f0bae4b13c30298bebbe3f4d5"
+  },
+  "resource_model_type": {
+   "id": "980ebd07-a0f8-11ea-868d-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "9f8713aaf287f9114a813b50809eafe7b550b5bcfb68712a4e664dc213efd972"
+  },
+  "system_reference_numbers": {
+   "id": "46fbf78d-95ce-11ea-91b5-f875a44e0e11",
+   "parent": null,
+   "description_sha256": "cbe39420f1ae501284a6a480952e8063e8685e1c870a4e5ef7631a262abfa053"
+  }
+ }
+}

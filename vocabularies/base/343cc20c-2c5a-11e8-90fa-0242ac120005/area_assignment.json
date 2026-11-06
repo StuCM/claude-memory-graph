@@ -1,0 +1,53 @@
+{
+ "model": "Artefact",
+ "nodegroup": "area_assignment",
+ "entries": [
+  {
+   "phrases": [
+    "area status date",
+    "status since",
+    "status assigned"
+   ],
+   "kind": "date",
+   "node": "area_status_start_date",
+   "end_node": "area_status_end_date"
+  },
+  {
+   "phrases": [
+    "area status",
+    "land status",
+    "status of the area",
+    "special area status"
+   ],
+   "kind": "property",
+   "node": "area_status"
+  },
+  {
+   "phrases": [
+    "land ownership",
+    "ownership",
+    "ownership type"
+   ],
+   "kind": "property",
+   "node": "ownership"
+  },
+  {
+   "phrases": [
+    "area reference",
+    "area assignment reference",
+    "area reference value"
+   ],
+   "kind": "property",
+   "node": "area_reference_value"
+  },
+  {
+   "phrases": [
+    "shine form",
+    "form of survival",
+    "shine feature form"
+   ],
+   "kind": "property",
+   "node": "shine_form"
+  }
+ ]
+}

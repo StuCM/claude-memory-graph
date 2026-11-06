@@ -1,0 +1,31 @@
+{
+ "model": "Consultation",
+ "nodegroup": "references",
+ "entries": [
+  {
+   "phrases": [
+    "agency",
+    "external agency",
+    "reference agency",
+    "issuing agency"
+   ],
+   "kind": "link",
+   "node": "agency"
+  },
+  {
+   "phrases": [
+    "planning reference",
+    "application number",
+    "planning application number",
+    "council reference",
+    "planning ref",
+    "lpa reference",
+    "borough reference",
+    "application reference",
+    "external system reference"
+   ],
+   "kind": "property",
+   "node": "reference"
+  }
+ ]
+}

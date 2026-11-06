@@ -1,0 +1,25 @@
+{
+ "model": "Activity",
+ "nodegroup": "activity_descriptions",
+ "entries": [
+  {
+   "phrases": [
+    "description",
+    "summary",
+    "about",
+    "what happened",
+    "findings",
+    "results",
+    "what was found",
+    "outcome",
+    "describe",
+    "tell me about",
+    "overview",
+    "abstract",
+    "conclusions"
+   ],
+   "kind": "property",
+   "node": "activity_description"
+  }
+ ]
+}

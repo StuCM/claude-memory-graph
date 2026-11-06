@@ -1,0 +1,57 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "crew",
+ "entries": [
+  {
+   "phrases": [
+    "crew",
+    "crew member",
+    "crew members",
+    "who flew it",
+    "pilot",
+    "pilots",
+    "aircrew",
+    "who was on board",
+    "airmen",
+    "flown by",
+    "who was flying",
+    "navigator",
+    "gunner",
+    "crewed by"
+   ],
+   "kind": "link",
+   "node": "crew_member"
+  },
+  {
+   "phrases": [
+    "crew role",
+    "crew position",
+    "role on board",
+    "position in crew"
+   ],
+   "kind": "property",
+   "node": "crew_role"
+  }
+ ],
+ "group": {
+  "phrases": [],
+  "nodes": {},
+  "combos": [
+   {
+    "phrases": [
+     "captain",
+     "captained by",
+     "commanded by",
+     "commander",
+     "skipper",
+     "aircraft captain"
+    ],
+    "node": "crew_member",
+    "set": {
+     "crew_role": "Captain"
+    }
+   }
+  ],
+  "answers": {}
+ }
+}

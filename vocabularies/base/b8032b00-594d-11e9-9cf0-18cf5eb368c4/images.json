@@ -1,0 +1,64 @@
+{
+ "model": "Historic Aircraft",
+ "nodegroup": "images",
+ "entries": [
+  {
+   "phrases": [
+    "images",
+    "pictures",
+    "photos",
+    "photographs",
+    "image",
+    "picture",
+    "photo",
+    "show me"
+   ],
+   "kind": "property",
+   "node": "images"
+  },
+  {
+   "phrases": [
+    "caption",
+    "image caption",
+    "photo caption",
+    "picture caption"
+   ],
+   "kind": "property",
+   "node": "caption_note"
+  },
+  {
+   "phrases": [
+    "copyright holder",
+    "image copyright holder",
+    "who owns the copyright",
+    "photo credit",
+    "image credit",
+    "rights holder"
+   ],
+   "kind": "link",
+   "node": "copyright_holder"
+  },
+  {
+   "phrases": [
+    "copyright",
+    "licence",
+    "license",
+    "copyright status",
+    "image rights",
+    "can i use the image",
+    "usage rights"
+   ],
+   "kind": "property",
+   "node": "copyright_type"
+  },
+  {
+   "phrases": [
+    "copyright note",
+    "copyright statement",
+    "rights statement"
+   ],
+   "kind": "property",
+   "node": "copyright_note_text"
+  }
+ ]
+}

@@ -1,0 +1,37 @@
+{
+ "model": "Artefact",
+ "nodegroup": "spatial_record_authorization",
+ "entries": [
+  {
+   "phrases": [
+    "spatial record authorized",
+    "mapping authorized",
+    "date of authorization",
+    "location authorised"
+   ],
+   "kind": "date",
+   "node": "date_of_authorization",
+   "end_node": "authorization_end_date"
+  },
+  {
+   "phrases": [
+    "authorization status",
+    "authorisation status",
+    "spatial authorization",
+    "awaiting authorization"
+   ],
+   "kind": "property",
+   "node": "authorization_type"
+  },
+  {
+   "phrases": [
+    "authorizer",
+    "authorised by",
+    "authorized by",
+    "who authorised"
+   ],
+   "kind": "property",
+   "node": "authorizer_name"
+  }
+ ]
+}

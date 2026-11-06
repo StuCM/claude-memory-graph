@@ -1,0 +1,47 @@
+{
+ "model": "Artefact",
+ "nodegroup": "images",
+ "entries": [
+  {
+   "phrases": [
+    "image copyright holder",
+    "photo copyright owner",
+    "image rights holder",
+    "who owns the image copyright"
+   ],
+   "kind": "link",
+   "node": "copyright_holder_n1"
+  },
+  {
+   "phrases": [
+    "images",
+    "photos",
+    "pictures",
+    "photographs",
+    "image",
+    "photo"
+   ],
+   "kind": "property",
+   "node": "images"
+  },
+  {
+   "phrases": [
+    "image caption",
+    "caption",
+    "photo caption"
+   ],
+   "kind": "property",
+   "node": "caption_note"
+  },
+  {
+   "phrases": [
+    "image copyright",
+    "image licence",
+    "photo copyright",
+    "image rights"
+   ],
+   "kind": "property",
+   "node": "copyright_type_n1"
+  }
+ ]
+}

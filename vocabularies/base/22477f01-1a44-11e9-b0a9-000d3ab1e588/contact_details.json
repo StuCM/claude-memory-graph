@@ -1,0 +1,40 @@
+{
+ "model": "Person",
+ "nodegroup": "contact_details",
+ "entries": [
+  {
+   "phrases": [
+    "contact",
+    "email",
+    "e-mail",
+    "phone",
+    "telephone",
+    "phone number",
+    "email address",
+    "contact details",
+    "how to contact",
+    "fax"
+   ],
+   "kind": "property",
+   "node": "contact_point"
+  },
+  {
+   "phrases": [
+    "contact name",
+    "correspondence name",
+    "name for correspondence"
+   ],
+   "kind": "property",
+   "node": "contact_name_for_correspondence"
+  },
+  {
+   "phrases": [
+    "contact method",
+    "contact type",
+    "type of contact"
+   ],
+   "kind": "property",
+   "node": "contact_point_type"
+  }
+ ]
+}

@@ -1,0 +1,33 @@
+{
+ "model": "Consultation",
+ "nodegroup": "proposal",
+ "entries": [
+  {
+   "phrases": [
+    "proposal",
+    "proposed works",
+    "what is proposed",
+    "proposal description",
+    "scheme",
+    "the proposal",
+    "plans for the site",
+    "what do they want to build",
+    "description of works"
+   ],
+   "kind": "property",
+   "node": "proposal_text"
+  },
+  {
+   "phrases": [
+    "proposal documents",
+    "proposal files",
+    "plans",
+    "drawings",
+    "submitted plans",
+    "application documents"
+   ],
+   "kind": "link",
+   "node": "digital_file_s__n1"
+  }
+ ]
+}

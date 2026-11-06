@@ -1,0 +1,33 @@
+{
+ "model": "Historic Landscape Characterization",
+ "nodegroup": "associated_monuments_areas_and_artefacts",
+ "entries": [
+  {
+   "phrases": [
+    "sites",
+    "related monuments",
+    "heritage assets",
+    "what monuments",
+    "buildings",
+    "artefacts",
+    "associated monuments",
+    "associated sites",
+    "listed buildings within",
+    "what is in it",
+    "features within",
+    "contains"
+   ],
+   "kind": "link",
+   "node": "monument_area_or_artefact"
+  },
+  {
+   "phrases": [
+    "association type",
+    "relationship type",
+    "how are they related"
+   ],
+   "kind": "property",
+   "node": "association_type"
+  }
+ ]
+}
