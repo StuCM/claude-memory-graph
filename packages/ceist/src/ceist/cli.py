@@ -11,6 +11,7 @@
     ceist vocab pipeline <graphs dir> -o <out dir> [--reference <dir>] [--questions real.txt] [--seed S]
                          [--llm-cmd CMD] [--model M] [--models A,B] [--config ceist.toml]
                          [--min-right N] [--max-dangerous N] [--jobs N]   # LLM build → gate
+                         [--layer base --base <dir> | --layer data --client <dir> [--base <dir>]]
     ceist vocab try <data dir> <questions.txt> --bundle <bundle.json> [--log learn.jsonl]   # how each reads
     ceist vocab learn <learn.jsonl> --bundle <bundle.json> -o proposals.json [--exclude cases.json]
     ceist vocab assign <proposals.json> <reply.json>    # the LLM's reply to `learn` → "assign" fields
@@ -129,7 +130,7 @@ def _pipeline(a):
     from .pipeline import run
     return run(a.graphs, a.out, a.reference, a.questions, a.llm_cmd, a.model,
                a.models.split(",") if a.models else None, a.config, a.min_right, a.max_dangerous,
-               a.jobs, seeds=a.seed)
+               a.jobs, seeds=a.seed, layer=a.layer, base=a.base, client=a.client)
 
 
 def _eval(a):
@@ -329,6 +330,11 @@ def main(argv=None):
     p.add_argument("--min-right", type=int)
     p.add_argument("--max-dangerous", type=int)
     p.add_argument("--jobs", type=int, default=1, help="LLM calls at once")
+    p.add_argument("--layer", choices=["base", "data"],
+                   help="base: the schema's vocabulary into --base/<graph id>/; data: value variants "
+                        "and the questions' phrasings into --client")
+    p.add_argument("--base", help="the base layer's root (vocabularies/base)")
+    p.add_argument("--client", help="the client layer's folder (--layer data)")
     p.set_defaults(fn=_pipeline)
 
     p = vocab.add_parser("try", help="real questions: how each reads; log what wasn't placed")

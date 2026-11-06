@@ -49,12 +49,12 @@ def load_rdm(ref_dir: str):
     return load_reference_data(reference_files(ref_dir))[0]
 
 
-def collection_labels(rdm, cid):
+def collection_labels(rdm, cid, small=None):
     if rdm is None or not cid or not rdm.has_collection(cid):
         return None
     col = rdm.get_collection(cid)
     ids = col.get_concept_ids()
-    if len(ids) > SMALL:
+    if len(ids) > (SMALL if small is None else small):
         return len(ids)
     return sorted({col.get_concept(i).get_label("en") or "" for i in ids} - {""})
 
@@ -71,7 +71,7 @@ def crm_label(uri: str | None) -> str:
     return " ".join(words).replace("-", " ").lower()
 
 
-def describe_graph(doc: dict, graph_names: dict, rdm=None) -> dict:
+def describe_graph(doc: dict, graph_names: dict, rdm=None, small=None) -> dict:
     g = doc["graph"][0] if "graph" in doc else doc
     alizarin.register_graph(json.dumps(g))
     tree = alizarin.get_graph_schema(g["graphid"])
@@ -111,7 +111,7 @@ def describe_graph(doc: dict, graph_names: dict, rdm=None) -> dict:
                 if crm:
                     entry["crm"] = list(dict.fromkeys(crm))
                 if n["datatype"] in CONTROLLED_TYPES:
-                    labels = collection_labels(rdm, collection_of(n))
+                    labels = collection_labels(rdm, collection_of(n), small)
                     if isinstance(labels, list):
                         entry["values"] = labels
                     elif labels:
@@ -124,8 +124,10 @@ def describe_graph(doc: dict, graph_names: dict, rdm=None) -> dict:
             "description": _text(g.get("description")), "nodegroups": by_alias, "nodes": out}
 
 
-def describe(src: str | Path, dest: str | Path, ref_dir: str | Path | None = None) -> dict:
-    """Describe every model in `src` into `dest`/<Model>.json; returns {name: description}."""
+def describe(src: str | Path, dest: str | Path, ref_dir: str | Path | None = None,
+             small: float | None = None) -> dict:
+    """Describe every model in `src` into `dest`/<Model>.json; returns {name: description}.
+    `small` overrides SMALL, the longest list whose labels are listed."""
     rdm = load_rdm(ref_dir) if ref_dir else None
     docs = [json.loads(p.read_text()) for p in sorted(Path(src).glob("*.json"))]
     graph_names = {}
@@ -134,7 +136,7 @@ def describe(src: str | Path, dest: str | Path, ref_dir: str | Path | None = Non
         graph_names[g["graphid"]] = _text(g["name"])
     models = {}
     for d in docs:
-        m = describe_graph(d, graph_names, rdm)
+        m = describe_graph(d, graph_names, rdm, small)
         models[m["name"]] = m
     out = Path(dest)
     out.mkdir(parents=True, exist_ok=True)
