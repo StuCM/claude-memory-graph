@@ -1,13 +1,17 @@
 ---
 id: 015
 slug: ros-madair-links-both-ways
-status: approved
+status: done
 branch: crew/015-ros-madair-links-both-ways
 model: opus
 env: laptop
 work: tier1-fixes
 files:
   - packages/ceist/
+gate: pass
+gateSha: 83e5dcb1b8a622c7c6222d1887a13cff7a04f343
+gateAt: 2026-11-06T15:51:50.871Z
+rounds: 1
 ---
 
 # Upgrade Rós Madair, pass every model to it, and answer chains and reverse links
@@ -49,7 +53,22 @@ Stu, 2026-11-06: "there is an updated Ros Madair that does reverse linking", and
 - **The gate passes.** Machine load: one heavy suite at a time, `TMPDIR=/home/stuart/.cache/tmp-<id>`, never `git add -A` or `git stash`, no servers left running, no pushes. Never run `claude -p` yourself.
 
 ## Worker notes
+- **Binding** (Rós Madair clone, local branch `ceist-linked` = `v0.1.0-alpha.33` + commit 9e4bc78, not pushed): `Reader.resolve` and `Reader.count` take an optional `linked: list[Graph]` and call the existing `DuckReader::resolve_ids_linked` / `count_records_linked` (both already existed; no Rust beyond the binding). Diff for Phil: `/home/stuart/.cache/tmp-015/ros-madair-linked.diff` (`git -C /home/stuart/.cache/tmp-ask/ros-madair diff v0.1.0-alpha.33 ceist-linked`).
+- **Wheel:** `/home/stuart/.cache/tmp-ask/ros-madair/target/wheels/ros_madair-0.1.0a33-cp39-abi3-manylinux_2_39_x86_64.whl`, installed only in this worktree's `.venv-ceist`.
+- **crew.config.json `prepare` still installs `ros-madair==0.1.0a30`** from PyPI. After merge, a fresh worktree's gate fails the new tests (`linked` kwarg) until prepare installs the wheel above instead; the foundation `.venv-ceist` and the demo venv need it too (`uv pip install -p <venv> <wheel>`).
+- **Emitter / snapshot:** alpha.31–33 only add columns to the snapshot (`render_fields`, `descriptor_description` on the resources table). The a33 reader reads a30 snapshots fine (tests and the demo snapshot both pass), so the emitter was **not** rebuilt and the demo snapshot doesn't need re-emitting. If wanted later: `cd /home/stuart/.cache/tmp-ask/ros-madair && cargo build --release -p ros-madair-emit`, then re-emit the demo snapshot with `target/release/ros-madair-emit <data dir> starches-demo/ask/snapshot`.
+- `packages/ceist/src/ceist/rosmadair.py`: a reverse `LinkTo` (direction `in`) with a Plan target compiles to `on_backlink`. It still refuses a reverse link from one named record or with a qualifier, because `on_backlink` takes a filter on the other model, not a record id. Read-back maps `on_backlink` to a reverse link. New `linked_models(query)` returns the other models' graph ids; `ask` passes their Graphs as `linked`. `on_backlink` counts as unscoped (the compiler returns `target_resource` with no model filter), so its ids are intersected with the type's ids.
+- **`linked_from` kept:** it covers a loose link to one named record ("which site is Navan Fort at?"), and `on_backlink` can't express that because it needs a named path and has no record-id predicate.
+- `tests/test_arches.py`: the backwards-refusal test now checks the `on_backlink` IR and read-back. New tests: a refusal from one record; end-to-end reverse link (positive and negated); end-to-end chain Building→Site→Building, which needs `linked` (fails without it) and also checks `count`; the qualified-link equivalence now runs the Site case too. `_resolve` passes `linked`.
+- `ROS-MADAIR.md` #3 rewritten (mostly resolved by alpha.31) and README backends row updated.
+- **Demo `ask.py` patch** (Graph/linked part only; applies on top of the layered-vocab version): `/home/stuart/.cache/tmp-015/ask-linked.patch`. It imports `linked_models`, adds `def linked(query, vocab): return [ros_madair.Graph(json.dumps(vocab.by_graph[m].doc)) for m in linked_models(query)]`, and passes `linked=linked(query, vocab)` / `linked=linked(m, vocab)` to both `reader.resolve` calls.
+- **Question bank** (run through a patched copy of ask.py with the new wheel on PYTHONPATH): before `answer right 58, answer refused 1, refuse right 6, refuse wrong 1, answer-later wrong 2, answer-later refused-should-answer 19`; after `answer right 60, answer refused 1, refuse right 6, refuse wrong 1, answer-later wrong 2, answer-later refused-should-answer 17`, exit 0. The two questions changed to `expect: answer`, with hand counts: Ulster Cycle figures **17** (actor links in tale.json on tales whose parent_story is Ulster Cycle), scheduled-monument chain **0** (the only Tale link on that node points at Object 'Gáe Bulg'). Until the orchestrator installs the wheel and applies the patch, the bank in the demo venv shows these two as regressions.
+- **Goal examples not reached:** "what is related to Navan Fort?" and "which tales have figures associated with Conchobar mac Nessa?" are refused at grounding, before Rós Madair. This task doesn't change that.
+- **memory_ask / HER plans:** no planner or grounding change; `tests/test_planner.py` passes in the root suite. `her_plans.py` needs the HER clone and wasn't run (plans unaffected: rosmadair only compiles).
 
 ## Graph writes proposed
+- Pattern: Rós Madair `on_backlink` returns target ids unscoped to the query model (no graph filter in the compile), so a client must intersect with the asked-for type's ids, the same as for `backlink`.
+- Decision: hops across models need every named model's Graph passed as `linked` (binding branch `ceist-linked`, offered to Phil); ceist derives them from the IR with `linked_models`.
 
 ## Review rounds
+- Round 1: PASS. No code defects. It flagged that the Worker notes were empty at review time; they are filled in above.
