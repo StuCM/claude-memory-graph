@@ -613,13 +613,13 @@
   },
   {
    "q": "which raths or cairns are in County Down?",
-   "expect": "answer-later",
-   "count": null,
-   "note": "WRONG today: or read as and -> 0; needs or support, refuse until then",
-   "status": "refused-should-answer",
-   "understood": null,
-   "got": null,
-   "refused": "out of grammar ('or' isn't supported yet; ask one at a time)"
+   "expect": "answer",
+   "count": 735,
+   "note": "or between values of one field: 687 raths + 48 cairns in County Down",
+   "status": "right",
+   "understood": "Find Monuments whose named location is Site 'County Down' and whose monument type is Rath or Cairn.",
+   "got": 735,
+   "refused": null
   },
   {
    "q": "what period is Navan Fort?",
@@ -713,19 +713,19 @@
   },
   {
    "q": "how many monuments are in County Antrim or County Down?",
-   "expect": "answer-later",
+   "expect": "answer",
    "count": 9224,
    "note": "or across places (5,638 + 3,586)",
-   "status": "refused-should-answer",
-   "understood": null,
-   "got": null,
-   "refused": "out of grammar ('or' isn't supported yet; ask one at a time)"
+   "status": "right",
+   "understood": "Count Monuments whose named location is Site 'County Antrim' or Site 'County Down'.",
+   "got": 9224,
+   "refused": null
   },
   {
    "q": "which county has the most raths?",
    "expect": "answer-later",
    "count": null,
-   "note": "group-by / superlative",
+   "note": "group-by / superlative; grammar done (017), but 'county' is county_value in the HER base, so the demo layer can't map it to named_location. 'which named location has the most raths?' answers County Down, 687 (checked against 'how many raths are in County Down?')",
    "status": "refused-should-answer",
    "understood": null,
    "got": null,
@@ -735,7 +735,7 @@
    "q": "list scheduled monuments by county",
    "expect": "answer-later",
    "count": null,
-   "note": "group-by",
+   "note": "group-by; grammar done (017), but 'county' is county_value in the HER base, so the demo layer can't map it to named_location. 'which named location has the most raths?' answers County Down, 687 (checked against 'how many raths are in County Down?')",
    "status": "refused-should-answer",
    "understood": null,
    "got": null,

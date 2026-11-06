@@ -14,6 +14,13 @@
       Mention(terms)                                  its text mentions these words
       Contains(term)                                  its text contains this word
       Not(condition)                                  the condition does not hold
+      AnyOf([conditions])                             at least one holds: a value of one
+                                                      field, or a link to one record, of
+                                                      several ("raths or cairns")
+
+    group: GroupBy(relation, order)                   count per record the link points
+                                                      at ("by county"), or only the
+                                                      top or bottom one ("the most")
 
 It maps onto each output: SPARQL (the memory graph), Rós Madair's Query IR
 (has_link / on_link / concept), Arches Search's group payload (clauses and
@@ -87,7 +94,18 @@ class OnTile:
     conditions: list["Condition"]
 
 
-Condition = LinkTo | HasValue | DateRange | Mention | Contains | Not | OnTile
+@dataclass
+class AnyOf:
+    conditions: list["Condition"]
+
+
+Condition = LinkTo | HasValue | DateRange | Mention | Contains | Not | OnTile | AnyOf
+
+
+@dataclass
+class GroupBy:
+    relation: str
+    order: str = ""                    # "most" | "fewest": only the top or bottom one
 
 
 def as_tile(link: LinkTo, group: str) -> OnTile:
@@ -102,6 +120,7 @@ class Plan:
     count: bool = False
     recent: bool = False
     wh: str = ""
+    group: GroupBy | None = None
 
 
 @dataclass
@@ -147,6 +166,9 @@ def interpret(vocab: Vocabulary, text: str, today=None, matcher=None) -> Interpr
     if isinstance(detail, str):
         out.refused = detail
         return out
+    if detail is not None and any(a.either for a in g.anchors):
+        out.refused = "'or' between records whose own fields are asked for; ask one at a time"
+        return out
     if detail is not None:
         out.detail = detail
         return out
@@ -162,6 +184,10 @@ def interpret(vocab: Vocabulary, text: str, today=None, matcher=None) -> Interpr
         return out
     # the anchor IS the answer: an entity-only question, or "why" landing on
     # the very record it asks about
+    if any(a.either and not _linked(g, a) for a in g.anchors):
+        out.refused = ("'or' between records, with no link saying how they relate to "
+                       "what's asked; ask one at a time")
+        return out
     if g.anchor is not None and g.anchor.entity.extra.get("recallable", True) and (
             g.subject is None or (not g.edges and g.subject.type == g.anchor.type)):
         out.direct = g.anchor.entity
@@ -172,10 +198,16 @@ def interpret(vocab: Vocabulary, text: str, today=None, matcher=None) -> Interpr
 
     try:
         plan = _build(g, g.subject, None)
-    except _Cycle as e:
+    except _Refuse as e:
         out.refused = str(e)
         return out
     plan.count, plan.recent, plan.wh = g.count, g.recent, g.wh
+    if g.group is not None:
+        rel = next(r for r in vocab.relations() if r.name == g.group.relation)
+        if plan.type not in rel.domain:
+            out.refused = f"'{g.group.form}' isn't a link {plan.type} records have"
+            return out
+        plan.group, plan.count = GroupBy(g.group.path, g.group_order), True
     why = _attach_groups(g, plan) or _attach_values(g, plan) or _attach_dates(g, plan)
     if why:
         out.refused = why + _did_you_mean(g)
@@ -268,8 +300,9 @@ def _linked(g: Grounding, node: Node) -> bool:
     return any(node is e.source or node is e.target for e in g.edges)
 
 
-class _Cycle(Exception):
-    """Two relations join the same things in a loop: which is meant is a guess."""
+class _Refuse(Exception):
+    """A plan that would be a guess: two relations joining the same things in a
+    loop, or a "not" whose reach over an "or" is unclear."""
 
 
 def _reached(g: Grounding, start: Node) -> list[Node]:
@@ -294,18 +327,25 @@ def _build(g: Grounding, node: Node, via: Edge | None, path: tuple = ()) -> Plan
         other = edge.target if edge.source is node else edge.source
         direction = "out" if edge.source is node else "in"
         if other.kind != "anchor" and any(other is n for n in path):
-            raise _Cycle(f"'{edge.form or edge.relation}' and "
+            raise _Refuse(f"'{edge.form or edge.relation}' and "
                          f"'{via.form or via.relation if via else '?'}' both join "
                          f"{node.type} and {other.type}; say which is meant")
-        target = (EntityRef(other.entity) if other.kind == "anchor"
-                  else _build(g, other, edge, path))
+        targets = ([EntityRef(e) for e in (other.entity, *other.either)]
+                   if other.kind == "anchor" else [_build(g, other, edge, path)])
+        if edge.negated and len(targets) > 1:
+            raise _Refuse(f"'not' with 'or': couldn't tell whether it negates "
+                          f"{other.type} '{other.name}' alone or both")
         qual = (HasValue(edge.qualifier[0], edge.qualifier[1], edge.qualifier[2])
                 if edge.qualifier else None)
-        link = LinkTo(edge.path or edge.relation, target, direction, form=edge.form,
-                      style=edge.style, qualifier=qual)
-        if qual is not None and direction == "out":
-            # a link walked backwards keeps the shim: its tile is on the other record
-            link = as_tile(link, edge.group)
+        links = []
+        for target in targets:
+            link = LinkTo(edge.path or edge.relation, target, direction, form=edge.form,
+                          style=edge.style, qualifier=qual)
+            if qual is not None and direction == "out":
+                # a link walked backwards keeps the shim: its tile is on the other record
+                link = as_tile(link, edge.group)
+            links.append(link)
+        link = links[0] if len(links) == 1 else AnyOf(links)
         plan.where.append(Not(link) if edge.negated else link)
     return plan
 
@@ -354,10 +394,17 @@ def _attach_values(g: Grounding, plan: Plan) -> str:
     for vm in g.values:
         placed = False
         for p in _plans(plan):
-            fit = [v for v in vm.candidates if not v.owners or p.type in v.owners]
-            if fit:
-                v = fit[0]
-                hv = HasValue(v.field, v.value, v.label, v.kind)
+            fits = [[v for v in m.candidates if not v.owners or p.type in v.owners]
+                    for m in (vm, *vm.either)]
+            shared = [v.field for v in fits[0]
+                      if all(any(x.field == v.field for x in f) for f in fits[1:])]
+            if shared:
+                if vm.either and vm.negated:
+                    return (f"'not' with 'or': couldn't tell whether it negates "
+                            f"'{vm.phrase}' alone or both")
+                hvs = [HasValue(v.field, v.value, v.label, v.kind)
+                       for v in (next(x for x in f if x.field == shared[0]) for f in fits)]
+                hv = hvs[0] if len(hvs) == 1 else AnyOf(hvs)
                 p.where.append(Not(hv) if vm.negated else hv)
                 placed = True
                 break
@@ -401,7 +448,7 @@ def _replace(plan: Plan, fn) -> Plan:
         new = fn(_within(c, fn))
         if new is not None:
             where.append(new)
-    return Plan(plan.type, where, plan.count, plan.recent, plan.wh)
+    return replace(plan, where=where)
 
 
 def _within(c, fn):

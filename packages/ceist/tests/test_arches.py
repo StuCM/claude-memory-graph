@@ -139,7 +139,16 @@ CASES_DATES_NOT = [
 ]
 
 
-@pytest.mark.parametrize("question, expect, absent", CASES + CASES_DATES_NOT + [
+# "or": either value of one field, or a link to either record
+CASES_OR = [
+    ("which grade ii or candidate buildings are there?",
+     ["Grain Warehouse", "Boat Shed"], ["Clock Tower"]),
+    ("how many buildings are designed by Ada Lovelace or Isambard Brunel?",
+     ["3 Building records"], []),
+]
+
+
+@pytest.mark.parametrize("question, expect, absent", CASES + CASES_DATES_NOT + CASES_OR + [
     ("which sites have no buildings designed by Isambard Brunel?", ["Salts Mill"],
      ["Leeds Dock"]),
     ("which sites have buildings designed by Isambard Brunel?", ["Leeds Dock"], ["Salts Mill"]),
@@ -324,7 +333,7 @@ def snapshot(data, tmp_path_factory):
     return out
 
 
-@pytest.mark.parametrize("question, expect, absent", CASES + CASES_DATES_NOT)
+@pytest.mark.parametrize("question, expect, absent", CASES + CASES_DATES_NOT + CASES_OR)
 def test_end_to_end(vocab, snapshot, question, expect, absent):
     from ceist.rosmadair import ask
     out = ask(question, vocab, str(snapshot))
@@ -601,3 +610,65 @@ def test_qualified_links_answer_the_same_through_on_tile(roles, data, snapshot, 
         return ids
 
     assert run(old) == run(plan) == evaluate(plan, tiles)
+
+
+def test_or_joins_values_of_one_field_or_records_of_one_link(vocab, data):
+    ids, concepts = data[1]["ids"], data[1]["concepts"]
+    m = interpret(vocab, "which grade ii or candidate buildings are there?")
+    assert narrate(m.plan) == "Find Buildings whose heritage status is Grade II or Candidate."
+    assert to_query(m.plan, vocab)["where"] == {"any": [
+        {"concept": {"path": "heritage_status", "op": "descendant_or_self_of",
+                     "value": concepts[label]}} for label in ("Grade II", "Candidate")]}
+    m = interpret(vocab, "how many buildings are designed by Ada Lovelace or Isambard Brunel?")
+    assert narrate(m.plan) == ("Count Buildings whose architect is Person 'Ada Lovelace' "
+                               "or Person 'Isambard Brunel'.")
+    compiled = compile_plan(m.plan, vocab)
+    assert compiled.query["where"] == {"any": [
+        {"has_link": {"path": "architect", "target": ids[p]}} for p in ("ada", "isambard")]}
+    assert check(m.plan, read_back(compiled, vocab)).ok
+    with pytest.raises(Unsupported, match="'or'"):
+        to_payload(m.plan, vocab)
+
+
+def test_or_refuses_across_fields_and_under_not(vocab):
+    m = interpret(vocab, "which listed or builder buildings are there?")
+    assert m.plan is None
+    assert "'or' joins 'listed' and 'builder', which aren't values of one field" in m.refused
+    m = interpret(vocab, "which buildings are not on site Leeds Dock or Salts Mill?")
+    assert m.plan is None and "'not' with 'or'" in m.refused
+
+
+def test_group_by_counts_per_linked_record(vocab, data, monkeypatch):
+    import ceist.rosmadair as rm
+    ids = data[1]["ids"]
+    m = interpret(vocab, "list buildings by site")
+    assert narrate(m.plan) == "Count Buildings, by site."
+    compiled = compile_plan(m.plan, vocab)
+    assert set(compiled.values) == {ids["dock"], ids["mill"]}
+    assert check(m.plan, read_back(compiled, vocab)).ok
+    m = interpret(vocab, "which architect has the most candidate buildings?")
+    assert narrate(m.plan) == ("Count Buildings whose heritage status is Candidate, "
+                               "by architect: the one with the most.")
+    with pytest.raises(Unsupported, match="counting by"):
+        to_payload(m.plan, vocab)
+    monkeypatch.setattr(rm, "GROUP_CAP", 1)
+    with pytest.raises(Unsupported, match="over the 1 a count per record runs"):
+        compile_plan(m.plan, vocab)
+
+
+@pytest.mark.parametrize("question, expect, absent", [
+    ("list buildings by site", ["- Leeds Dock: 2 Building records",
+                                "- Salts Mill: 1 Building records"], []),
+    ("which architect has the most buildings?", ["- Ada Lovelace: 2 Building records"],
+     ["Isambard"]),
+    ("which architect has the fewest listed buildings?", ["- Ada Lovelace: 1 Building records",
+                                                          "- Isambard Brunel: 1 Building records"],
+     []),
+])
+def test_end_to_end_group_by(vocab, snapshot, question, expect, absent):
+    from ceist.rosmadair import ask
+    out = ask(question, vocab, str(snapshot))
+    for e in expect:
+        assert e in out, out
+    for a in absent:
+        assert a not in out, out

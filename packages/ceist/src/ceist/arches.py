@@ -149,6 +149,9 @@ def _model(g: dict, language: str) -> Model:
 
 
 class ArchesVocabulary:
+    any_of = True
+    group_by = True
+
     def __init__(self, graphs: list[dict], rdm_cache=None, resources: list[dict] = (),
                  language: str = "en", extra_type_words: dict[str, str] | None = None,
                  alt_labels: dict[str, list[str]] | None = None,

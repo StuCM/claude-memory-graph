@@ -48,8 +48,8 @@ refuses by name (Unsupported):
 compiles and refuses if the payload reads back differently from the plan.
 """
 
-from .plan import (Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, Not, OnTile, Plan,
-                   as_tile)
+from .plan import (AnyOf, Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, Not, OnTile,
+                   Plan, as_tile)
 from .readback import Check, check
 from .rosmadair import Unsupported, one_tile, tile_fields
 
@@ -82,6 +82,9 @@ def _group(plan: Plan, vocab, relationship: dict | None, concept_operator: str |
             if c.direction != "out":
                 raise Unsupported(f"'{c.relation}' with {c.qualifier.label}, walked backwards")
             c = as_tile(c, vocab.group_of(plan.type, c.relation))
+        if isinstance(c, AnyOf):
+            raise Unsupported("'or': a search group joins its clauses one way, and an "
+                              "'or' would need a group of its own")
         if isinstance(c, OnTile):
             tile = _tile_group(c, negated, vocab, plan.type, slug, concept_operator)
             if len(plan.where) == 1 and relationship is None:
@@ -180,6 +183,9 @@ def to_payload(plan: Plan, vocab, concept_operator: str | None = None) -> dict:
     """The arches-search GroupPayload for a plan (raises Unsupported)."""
     if plan.recent:
         raise Unsupported("'most recent': order the search results instead")
+    if plan.group is not None:
+        raise Unsupported(f"counting by {plan.group.relation}: use Arches Search's "
+                          "aggregations")
     return _group(plan, vocab, None, concept_operator)
 
 
