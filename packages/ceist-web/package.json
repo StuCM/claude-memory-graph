@@ -1,0 +1,17 @@
+{
+  "name": "ceist-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "spike": "node spike/run.mjs"
+  },
+  "dependencies": {
+    "@duckdb/duckdb-wasm": "1.33.1-dev57.0",
+    "@huggingface/tokenizers": "0.2.0",
+    "onnxruntime-web": "1.31.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "playwright": "1.63.0"
+  }
+}
