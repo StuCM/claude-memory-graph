@@ -30,6 +30,8 @@ elif prompt.startswith("You extend") and "labels" in payload:
     key, reply = "values:" + payload["node"]["alias"] + ":" + payload["labels"][0], {"values": {}}
 elif prompt.startswith("You extend"):
     key, reply = "phrases:" + payload["model"]["model"], {"phrases": {}}
+elif prompt.startswith("You refine"):
+    key, reply = "refine:" + str(payload["round"]), {"add": [], "remove": []}
 elif prompt.startswith("You write acceptance"):
     key, reply = "questions:" + payload["model"]["model"], {"cases": []}
 else:
@@ -680,3 +682,108 @@ def test_the_data_layer_batches_labels_and_writes_only_client_entries(tmp_path, 
     vocab = ArchesVocabulary.from_data_dir(data, bundle=bundle)
     m = interpret(vocab, "how many hopefuls are there?", matcher=config.chain(config.load(None)))
     assert narrate(m.plan) == "Count Buildings whose heritage status is Candidate."
+
+
+ERECTED = {"q": "which buildings were erected before 1900?", "phrase": "erected", "slot": "date",
+           "intent": "filter", "expect": {"node": "construction_date",
+                                          "conditions": [{"node": "construction_date"}]}}
+
+
+def refining(tmp_path, *replies, more=()):
+    """The fixture with an "erected" case Ceist refuses, and the refine replies by round."""
+    canned = dict(CANNED, **{f"refine:{i}": r for i, r in enumerate(replies, 1)})
+    canned["questions:Building"] = {"cases": CANNED["questions:Building"]["cases"] + [ERECTED, *more]}
+    return project(tmp_path, canned)
+
+
+def adds(*phrases):
+    return {"add": [{"model": "Building", "node": "construction_date", "phrases": list(phrases)}]}
+
+
+def date_phrases(out) -> list[str]:
+    f = json.loads((out / "vocab" / "Building" / "construction_date.json").read_text())
+    return next(e["phrases"] for e in f["entries"] if e["node"] == "construction_date")
+
+
+def sent(out, kind) -> list[dict]:
+    audit = [json.loads(x) for x in (out / "audit.jsonl").read_text().splitlines()]
+    return [json.JSONDecoder().raw_decode(a["prompt"].split("INPUT:\n", 1)[1])[0]
+            for a in audit if a["kind"] == kind]
+
+
+def test_a_round_that_fixes_a_refusal_is_kept(tmp_path):
+    data, ref, cmd, _ = refining(tmp_path, adds("erected"),
+                                 {"remove": [{"model": "Building", "node": "construction_date",
+                                              "phrase": "built"}]},
+                                 more=[dict(ERECTED, q="which buildings were razed in 1900?", phrase="razed")])
+    out = tmp_path / "out"
+    pipeline.run(data / "graphs", out, ref, llm_cmd=cmd, models=["Building"], rounds=3, log=lambda _: None)
+    assert "erected" in date_phrases(out) and "built" in date_phrases(out)
+    first = sent(out, "refine")[0]
+    assert [(f["q"], f["problem"], f["unplaced"]) for f in first["failures"]] == [
+        (ERECTED["q"], "refused", ["erected"]), ("which buildings were razed in 1900?", "refused", ["razed"])]
+    assert {"model": "Building", "node": "construction_date",
+            "phrases": ["built", "constructed", "put up"]} in first["fields"]
+    assert sent(out, "refine")[1]["added"] == [
+        {"model": "Building", "node": "construction_date", "phrase": "erected"}]
+    report = (out / "report.md").read_text()
+    assert "| 0 | 3 | 0 | 0 | 2 | 0 | 0 | 0 | first build |" in report
+    assert "| 1 | 4 | 0 | 0 | 1 | 0 | 0 | 0 | kept |" in report
+    assert "- added Building.construction_date 'erected'" in report
+    # round 2 asks to remove a phrase the loop didn't add: kept, and the loop stops
+    assert "- not removed Building.construction_date 'built': the loop didn't add it" in report
+    assert "Round 2: nothing new to apply; stopped." in report
+    assert len(sent(out, "refine")) == 2
+
+
+def test_a_round_that_adds_a_wrong_answer_is_rolled_back(tmp_path):
+    data, ref, cmd, _ = refining(tmp_path, adds("erected", "painted"))
+    out = tmp_path / "out"
+    pipeline.run(data / "graphs", out, ref, llm_cmd=cmd, models=["Building"], rounds=2, log=lambda _: None)
+    assert date_phrases(out) == ["built", "constructed", "put up"]
+    report = (out / "report.md").read_text()
+    # "erected" is now right, the refused "painted" question wrong
+    assert "| 1 | 3 | 0 | 1 | 0 | 0 | 0 | 0 | rolled back |" in report
+    assert "Round 1, rolled back (right 3 → 3; wrong 0 → 1):" in report
+    assert len(sent(out, "refine")) == 1
+
+
+def test_a_round_that_breaks_a_hold_out_question_is_rolled_back_and_none_is_sent(tmp_path):
+    data, ref, cmd, _ = refining(tmp_path, adds("erected", "demolished"))
+    held = "which buildings were demolished in 1900?"
+    holdout = tmp_path / "holdout.json"
+    holdout.write_text(json.dumps({"questions": [
+        {"q": held, "expect": "refuse"},
+        {"q": "which buildings were put up after 1850?", "expect": "answer", "status": "right",
+         "understood": "Find Buildings whose construction date is after 1850."}]}))
+    real = tmp_path / "real.txt"
+    real.write_text("which buildings did Ada Lovelace see constructed in 1872?\n" + held + "\n")
+    out = tmp_path / "out"
+    pipeline.run(data / "graphs", out, ref, real, llm_cmd=cmd, models=["Building"], rounds=2,
+                 holdout=holdout, log=lambda _: None)
+    assert date_phrases(out) == ["built", "constructed", "put up"]
+    report = (out / "report.md").read_text()
+    assert "Warning: 1 question(s) also in the hold-out: not used" in report
+    assert f"Round 1, rolled back (hold-out turned wrong: {held}):" in report
+    # the hold-out is scored (both right before the round), and its "put up" case is not a case
+    assert "| 0 | 2 | 0 | 0 | 2 | 2 | 0 | 0 | first build |" in report
+    assert "| 1 | 3 | 0 | 0 | 1 | 1 | 0 | 1 | rolled back |" in report
+    # never sent: not in any prompt, while the other real question is, masked
+    audit = (out / "audit.jsonl").read_text()
+    assert "did <Name> see constructed" in audit
+    assert "demolished in 1900" not in audit and "put up after 1850" not in audit
+
+
+def test_the_data_layer_refines_the_client_layer_from_bank_questions(tmp_path):
+    data, ref, cmd, _ = project(tmp_path, {"refine:1": adds("erected")})
+    client, out = tmp_path / "client", tmp_path / "out"
+    client.mkdir()
+    bank = tmp_path / "bank.json"
+    bank.write_text(json.dumps({"questions": [{"q": ERECTED["q"], "expect": "answer"}]}))
+    pipeline.run(data / "graphs", out, ref, bank, llm_cmd=cmd, layer="data", client=client, rounds=1,
+                 log=lambda _: None)
+    f = json.loads((client / "Building" / "construction_date.json").read_text())
+    assert f["entries"] == [{"phrases": ["erected"], "kind": "date", "node": "construction_date"}]
+    report = (out / "report.md").read_text()
+    assert "| 0 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | first build |" in report
+    assert "| 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | kept |" in report
