@@ -13,6 +13,8 @@
       DateRange(field, lo, hi)                        a date in an inclusive range
       Mention(terms)                                  its text mentions these words
       Contains(term)                                  its text contains this word
+      Near(record, km, field)                         its location (field) lies within km of
+                                                      the named record's
       Not(condition)                                  the condition does not hold
       AnyOf([conditions])                             at least one holds: a value of one
                                                       field, or a link to one record, of
@@ -84,6 +86,14 @@ class Contains:
 
 
 @dataclass
+class Near:
+    entity: Entity
+    km: float
+    field: str                         # the subject's geometry node
+    unit: str = "km"                   # how the question gave it: "km" | "miles"
+
+
+@dataclass
 class Not:
     condition: "Condition"
 
@@ -99,7 +109,7 @@ class AnyOf:
     conditions: list["Condition"]
 
 
-Condition = LinkTo | HasValue | DateRange | Mention | Contains | Not | OnTile | AnyOf
+Condition = LinkTo | HasValue | DateRange | Mention | Contains | Near | Not | OnTile | AnyOf
 
 
 @dataclass
@@ -208,7 +218,8 @@ def interpret(vocab: Vocabulary, text: str, today=None, matcher=None) -> Interpr
             out.refused = f"'{g.group.form}' isn't a link {plan.type} records have"
             return out
         plan.group, plan.count = GroupBy(g.group.path, g.group_order), True
-    why = _attach_groups(g, plan) or _attach_values(g, plan) or _attach_dates(g, plan)
+    why = (_attach_groups(g, plan) or _attach_values(g, plan) or _attach_dates(g, plan)
+           or _attach_near(vocab, g, plan))
     if why:
         out.refused = why + _did_you_mean(g)
         return out
@@ -439,6 +450,26 @@ def _attach_dates(g: Grounding, plan: Plan) -> str:
                 break
         if not placed:
             return f"'{dm.phrase}' names a date, but nothing asked for has one"
+    return ""
+
+
+def _attach_near(vocab: Vocabulary, g: Grounding, plan: Plan) -> str:
+    """"near X" joins the subject's plan, measured on its one location field."""
+    n = g.near
+    if n is None:
+        return ""
+    if n.entity is None:
+        return f"'{n.phrase}' needs a named record to measure from"
+    if n.negated:
+        return f"'not {n.phrase}' isn't supported yet"
+    fields = vocab.geometry_fields(plan.type)
+    if len(fields) != 1:
+        return (f"{plan.type} records have no location" if not fields else
+                f"{plan.type} records have {len(fields)} locations ({', '.join(fields)}); "
+                "which to measure isn't guessed")
+    if not vocab.geometry(n.entity.id):
+        return f"'{n.entity.name}' has no location to measure from"
+    plan.where.append(Near(n.entity, n.km, fields[0], n.unit))
     return ""
 
 

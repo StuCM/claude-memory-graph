@@ -2,8 +2,9 @@
 understood before trusting the answer. Every output shares it."""
 
 from .dates import label as date_label
+from .ground import MILE_KM
 from .plan import (AnyOf, Contains, DateRange, Detail, EntityRef, HasValue, LinkTo, Mention,
-                   Not, OnTile, Plan)
+                   Near, Not, OnTile, Plan)
 
 
 def _plural(t: str) -> str:
@@ -75,6 +76,11 @@ def _condition(c, forms: bool, canonical: bool) -> str:
         return f"{neg}mentioning '{inner.term}'"
     if isinstance(inner, AnyOf):
         return _any_of(inner, forms, canonical, negated)
+    if isinstance(inner, Near):
+        miles = round(inner.km / MILE_KM, 3)
+        far = (f"{miles:g} mile{'' if miles == 1 else 's'}" if inner.unit == "miles" and not canonical
+               else f"{inner.km:g} km")
+        return f"{neg}within {far} of {inner.entity.type} '{inner.entity.name}'"
     if isinstance(inner, OnTile):
         parts = [_condition(x, forms, canonical) for x in inner.conditions]
         if canonical:

@@ -672,3 +672,79 @@ def test_end_to_end_group_by(vocab, snapshot, question, expect, absent):
         assert e in out, out
     for a in absent:
         assert a not in out, out
+
+
+# ── near and within N km of a named record ─────────────────────────────────
+
+@pytest.fixture(scope="module")
+def places(tmp_path_factory):
+    root = tmp_path_factory.mktemp("places")
+    meta = fx.write(root, places=True)
+    return root, ArchesVocabulary.from_data_dir(root), meta
+
+
+@pytest.mark.parametrize("question, said, expect, absent", [
+    ("which buildings are near Clock Tower?", "within 5 km of Building 'Clock Tower'",
+     ["Grain Warehouse"], ["Boat Shed", "Clock Tower"]),
+    ("which buildings are within 10 km of Clock Tower?", "within 10 km of Building 'Clock Tower'",
+     ["Grain Warehouse", "Boat Shed"], ["Clock Tower"]),
+    ("which buildings are within 1 mile of Clock Tower?", "within 1 mile of Building 'Clock Tower'",
+     ["Grain Warehouse"], ["Boat Shed"]),
+    # inside the site's polygon is 0 km from it
+    ("which buildings are near Salts Mill?", "within 5 km of Site 'Salts Mill'",
+     ["Boat Shed"], ["Grain Warehouse", "Clock Tower"]),
+])
+def test_near_a_named_record(places, question, said, expect, absent):
+    from ceist.alizarin import ask
+    _root, vocab, _meta = places
+    meaning = interpret(vocab, question)
+    assert said in narrate(meaning.plan), meaning.refused
+    out = ask(question, vocab)
+    for e in expect:
+        assert f"'{e}'" in out, out
+    for a in absent:
+        assert f"'{a}'" not in out, out
+
+
+@pytest.mark.parametrize("question, refused", [
+    ("which buildings are near Leeds Dock?", "'Leeds Dock' has no location to measure from"),
+    ("which persons are near Clock Tower?", "Person records have no location"),
+    ("which buildings are not near Clock Tower?", "'not near' isn't supported yet"),
+])
+def test_near_refuses(places, question, refused):
+    meaning = interpret(places[1], question)
+    assert meaning.plan is None and meaning.refused == refused, meaning.refused
+
+
+def test_near_compiles_to_a_bbox_and_reads_back(places):
+    _root, vocab, _meta = places
+    plan = interpret(vocab, "which buildings are within 2 km of Clock Tower?").plan
+    compiled = compile_plan(plan, vocab)
+    box = compiled.query["where"]["bbox"]
+    assert box["path"] == "location" and box["min_lat"] < 53.8 - 0.017 < 53.8 + 0.017 < box["max_lat"]
+    assert compiled.near == [{"record": plan.where[0].entity.id, "km": 2.0, "path": "location"}]
+    assert check(plan, read_back(compiled, vocab)).ok
+    compiled.query["where"]["bbox"]["max_lat"] += 1          # a wider box than the distance
+    assert not check(plan, read_back(compiled, vocab)).ok
+
+
+def test_end_to_end_near(places, tmp_path_factory):
+    emit = _tools()
+    if not emit:
+        pytest.skip("needs ros_madair bindings and ros-madair-emit (ROS_MADAIR_EMIT)")
+    from ceist.rosmadair import ask
+    root, vocab, _meta = places
+    out = tmp_path_factory.mktemp("places-snapshot")
+    subprocess.run([emit, str(root), str(out)], check=True, capture_output=True)
+    said = ask("which buildings are near Clock Tower?", vocab, str(out))
+    assert said == "- Building 'Grain Warehouse'", said
+    counted = ask("how many buildings are within 10 km of Clock Tower?", vocab, str(out))
+    assert counted == "2 Building records", counted
+
+
+def test_near_with_a_group_by_refuses(places):
+    _root, vocab, _meta = places
+    plan = interpret(vocab, "list buildings near Clock Tower by site").plan
+    assert narrate(plan) == "Count Buildings within 5 km of Building 'Clock Tower', by site."
+    with pytest.raises(Unsupported, match="by site within a distance"):
+        compile_plan(plan, vocab)

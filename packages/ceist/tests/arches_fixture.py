@@ -136,7 +136,14 @@ def collection_ids(skos: str = SKOS):
     return cid, concepts, values
 
 
-def write(root: Path, phases: bool = False) -> dict:
+def _point(lng, lat):
+    return {"type": "FeatureCollection", "features": [
+        {"type": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [lng, lat]}}]}
+
+
+def write(root: Path, phases: bool = False, places: bool = False) -> dict:
+    """`places`: a location node on Building and Site; Leeds Dock has none, Salts Mill
+    is a polygon round the Boat Shed, the Warehouse is 1 km and the Shed 8 km from the Tower."""
     cid, concepts, values = collection_ids()
     rid_, roles, role_values = collection_ids(ROLES)
     concepts.update(roles)
@@ -158,7 +165,9 @@ def write(root: Path, phases: bool = False) -> dict:
                        ("phase_cause", "Phase cause", "concept", {"rdmCollection": kid}),
                        ("phase_date", "Phase date", "date", {"dateFormat": "YYYY-MM-DD"}))]
     graphs = {
-        SITE: _graph(SITE, "Site", [_node(SITE, "name", "Name", "string")]),
+        SITE: _graph(SITE, "Site", [_node(SITE, "name", "Name", "string"),
+                                    *([_node(SITE, "location", "Location",
+                                             "geojson-feature-collection")] if places else [])]),
         PERSON: _graph(PERSON, "Person", [_node(PERSON, "name", "Name", "string")]),
         BUILDING: _graph(BUILDING, "Building", [
             _node(BUILDING, "name", "Name", "string"),
@@ -172,6 +181,8 @@ def write(root: Path, phases: bool = False) -> dict:
                   {"dateFormat": "YYYY-MM-DD"}),
             assoc,
             *([phase] if phases else []),
+            *([_node(BUILDING, "location", "Location", "geojson-feature-collection")]
+              if places else []),
         ], nested={"associated_actor": [actor, actor_role],
                    **({"phase": phase_nodes} if phases else {})}),
     }
@@ -218,14 +229,22 @@ def write(root: Path, phases: bool = False) -> dict:
         return [("phase", {"phase_type": phase_values[kind], "phase_cause": cause_values[cause],
                            "phase_date": when})] if phases else []
 
+    def at(lng, lat):
+        return {"location": _point(lng, lat)} if places else {}
+
+    mill_area = {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {},
+                 "geometry": {"type": "Polygon", "coordinates": [[[-1.51, 53.865], [-1.49, 53.865],
+                                                                  [-1.49, 53.88], [-1.51, 53.88],
+                                                                  [-1.51, 53.865]]]}}]}
     sites = [resource(SITE, "dock", "Leeds Dock", {"name": text("Leeds Dock")}),
-             resource(SITE, "mill", "Salts Mill", {"name": text("Salts Mill")})]
+             resource(SITE, "mill", "Salts Mill", {"name": text("Salts Mill"),
+                                                   **({"location": mill_area} if places else {})})]
     people = [resource(PERSON, "ada", "Ada Lovelace", {"name": text("Ada Lovelace")}),
               resource(PERSON, "isambard", "Isambard Brunel", {"name": text("Isambard Brunel")})]
     buildings = [
         resource(BUILDING, "tower", "Clock Tower", {
             "name": text("Clock Tower"), "heritage_status": values["Listed"],
-            "site": link("dock"), "architect": link("ada"), "construction_date": "1845-06-01"},
+            "site": link("dock"), "architect": link("ada"), "construction_date": "1845-06-01", **at(-1.5, 53.8)},
             entries=[("associated_actor", {"actor": link("ada"),
                                            "actor_role": role_values["Architect"]}),
                      *phase_of("Destruction", "Fire", "1940-05-01")]),
@@ -233,7 +252,7 @@ def write(root: Path, phases: bool = False) -> dict:
         resource(BUILDING, "warehouse", "Grain Warehouse", {
             "name": text("Grain Warehouse"), "heritage_status": values["Grade II"],
             "site": link("dock"), "architect": link("isambard"),
-            "construction_date": "1872-03-15"},
+            "construction_date": "1872-03-15", **at(-1.5, 53.809)},
             entries=[("associated_actor", {"actor": link("ada"),
                                            "actor_role": role_values["Builder"]}),
                      ("associated_actor", {"actor": link("isambard"),
@@ -243,7 +262,7 @@ def write(root: Path, phases: bool = False) -> dict:
                      *phase_of("Damage", "Fire", "1900-01-01")]),
         resource(BUILDING, "shed", "Boat Shed", {
             "name": text("Boat Shed"), "heritage_status": values["Candidate"],
-            "site": link("mill"), "architect": link("ada"), "construction_date": "1903-09-30"}),
+            "site": link("mill"), "architect": link("ada"), "construction_date": "1903-09-30", **at(-1.5, 53.872)}),
     ]
     for folder, items in (("site", sites), ("person", people), ("building", buildings)):
         (root / "resources" / folder).mkdir(parents=True)
