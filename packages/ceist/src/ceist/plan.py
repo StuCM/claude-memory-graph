@@ -27,6 +27,7 @@ trust: the planner never guesses.
 from dataclasses import dataclass, field, replace
 
 from .ground import Edge, Grounding, Node, ground, is_question
+from .text import terms
 from .vocabulary import Entity, Value, Vocabulary
 
 COVERAGE_MIN = 0.6
@@ -126,6 +127,13 @@ def interpret(vocab: Vocabulary, text: str, coverage_min: float = COVERAGE_MIN,
     if g.coverage < coverage_min:
         out.refused = f"grounding coverage {g.coverage:.0%} below {coverage_min:.0%}"
         return out
+    if g.uncovered:
+        # words nothing placed would be dropped from the answer: a wider
+        # question answered as if it were the one asked. Refuse, naming them.
+        out.refused = (f"couldn't place {_quoted(g.uncovered)} — answering without "
+                       f"{'it' if len(g.uncovered) == 1 else 'them'} would widen the question"
+                       + _did_you_mean(g))
+        return out
     # the anchor IS the answer: an entity-only question, or "why" landing on
     # the very record it asks about
     if g.anchor is not None and g.anchor.entity.extra.get("recallable", True) and (
@@ -136,13 +144,15 @@ def interpret(vocab: Vocabulary, text: str, coverage_min: float = COVERAGE_MIN,
         out.refused = "no queryable subject"
         return out
 
-    plan = _build(g, g.subject, None)
+    try:
+        plan = _build(g, g.subject, None)
+    except _Cycle as e:
+        out.refused = str(e)
+        return out
     plan.count, plan.recent, plan.wh = g.count, g.recent, g.wh
-    _attach_values(g, plan)
-    why = _attach_dates(g, plan)
+    why = _attach_values(g, plan) or _attach_dates(g, plan)
     if why:
-        out.refused = why + "".join(f"; did you mean {' or '.join(opts)} for '{w}'?"
-                                    for w, opts in g.suggestions)
+        out.refused = why + _did_you_mean(g)
         return out
     loose_anchor = not g.edges and g.anchor is not None and g.subject is not g.anchor
     if len(g.anchors) > 1 and not all(_linked(g, a) for a in g.anchors):
@@ -174,14 +184,24 @@ def _linked(g: Grounding, node: Node) -> bool:
     return any(node is e.source or node is e.target for e in g.edges)
 
 
-def _build(g: Grounding, node: Node, via: Edge | None) -> Plan:
+class _Cycle(Exception):
+    """Two relations join the same things in a loop: which is meant is a guess."""
+
+
+def _build(g: Grounding, node: Node, via: Edge | None, path: tuple = ()) -> Plan:
     plan = Plan(node.type)
+    path = path + (node,)
     for edge in g.edges:
         if edge is via or node not in (edge.source, edge.target):
             continue
         other = edge.target if edge.source is node else edge.source
         direction = "out" if edge.source is node else "in"
-        target = EntityRef(other.entity) if other.kind == "anchor" else _build(g, other, edge)
+        if other.kind != "anchor" and any(other is n for n in path):
+            raise _Cycle(f"'{edge.form or edge.relation}' and "
+                         f"'{via.form or via.relation if via else '?'}' both join "
+                         f"{node.type} and {other.type}; say which is meant")
+        target = (EntityRef(other.entity) if other.kind == "anchor"
+                  else _build(g, other, edge, path))
         qual = (HasValue(edge.qualifier[0], edge.qualifier[1], edge.qualifier[2])
                 if edge.qualifier else None)
         link = LinkTo(edge.path or edge.relation, target, direction, form=edge.form,
@@ -198,10 +218,18 @@ def _plans(plan: Plan):
             yield from _plans(c.target)
 
 
-def _attach_values(g: Grounding, plan: Plan) -> None:
+def _quoted(words) -> str:
+    return ", ".join(f"'{w}'" for w in words)
+
+
+def _did_you_mean(g: Grounding) -> str:
+    return "".join(f"; did you mean {' or '.join(opts)} for '{w}'?" for w, opts in g.suggestions)
+
+
+def _attach_values(g: Grounding, plan: Plan) -> str:
     """Each named value joins the plan whose type has that field: the subject
     first, then any linked sub-plan. A value no type in the plan can hold
-    stays uncovered, and says so."""
+    refuses, as a date does: ignoring it would answer a wider question."""
     for vm in g.values:
         placed = False
         for p in _plans(plan):
@@ -212,11 +240,19 @@ def _attach_values(g: Grounding, plan: Plan) -> None:
                 p.where.append(Not(hv) if vm.negated else hv)
                 placed = True
                 break
-        if not placed:
+        if not placed and not terms(vm.phrase):
+            # a function word that happens to be a label ("in": the unit
+            # inch) can't be what constrains the question; coverage doesn't
+            # count it either
             g.notes.append(f"'{vm.phrase}' is a value of "
                            f"{', '.join(sorted({c.field for c in vm.candidates}))}, "
-                           "which nothing asked for has; ignored")
+                           "which nothing asked for has; ignored (not a content word)")
+        elif not placed:
             g.uncovered.append(vm.phrase)
+            return (f"'{vm.phrase}' is a value of "
+                    f"{', '.join(sorted({c.field for c in vm.candidates}))}, "
+                    "which nothing asked for has")
+    return ""
 
 
 def _attach_dates(g: Grounding, plan: Plan) -> str:

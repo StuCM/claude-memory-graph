@@ -5,17 +5,22 @@
     vocab = ArchesVocabulary.from_data_dir("data")
     print(ask("which listed buildings are on site Leeds Dock?", vocab))
 
-Alizarin reads the thesauri (concept hierarchy, label value ids) and the
-vocabulary carries the business data; this module walks the tiles. It is the
-reference output: every condition the plan can express is evaluated here,
-including links walked backwards, loose links and text — so it is also how a
-plan can be checked before it is sent to Rós Madair or Arches Search.
+Alizarin reads the data: each resource's tiles become its tree
+(`tiles_to_json_tree`), walked with the graph's alias schema, so values are
+read by datatype and child tiles stay under their parent tile. This module
+evaluates plans over them. It is the reference output: every condition the
+plan can express is evaluated here, including links walked backwards, loose
+links and text — so it is also how a plan can be checked before it is sent
+to Rós Madair or Arches Search.
 
 Fine for the data a project keeps on disk; for a large corpus compile to
 Rós Madair (`ceist.rosmadair`) instead.
 """
 
+import json
 from collections import defaultdict
+
+import alizarin
 
 from . import dates
 from .narrate import narrate
@@ -38,23 +43,35 @@ def _strings(value) -> list[str]:
 
 def _links(value) -> list[str]:
     if isinstance(value, list):
-        return [x.get("resourceId") if isinstance(x, dict) else x for x in value]
+        return [x for v in value for x in _links(v)]
     if isinstance(value, dict):
         return [value.get("resourceId")]
     return [value] if isinstance(value, str) else []
 
 
+def _atoms(value) -> list:
+    """A leaf's values, flat: Alizarin wraps a leaf inside a repeated group in
+    a list, and list datatypes are lists themselves."""
+    if isinstance(value, list):
+        return [a for v in value for a in _atoms(v)]
+    return [] if value is None else [value]
+
+
 class Tiles:
-    """The vocabulary's business data, indexed for evaluation."""
+    """The vocabulary's business data, read through Alizarin, indexed for evaluation."""
 
     def __init__(self, vocab):
+        from .arches import LINK_TYPES
         self.vocab = vocab
-        alias = {n["nodeid"]: n.get("alias") for m in vocab.models.values() for n in m.nodes}
         self.type_of: dict[str, str] = {}
-        self.values: dict[str, dict[str, list]] = {}       # resource → alias → raw values
+        self.values: dict[str, dict[str, list]] = {}       # resource → alias → values
+        self.texts: dict[str, list[str]] = {}               # resource → text values
         self.out: dict[str, dict[str, set]] = {}            # resource → alias → linked ids
         self.into: dict[str, dict[str, set]] = defaultdict(lambda: defaultdict(set))
-        self.entries: dict[str, list[dict[str, list]]] = {}  # resource → each tile's alias → values
+        # resource → one entry per tile: its alias → values, with its ancestor
+        # tiles' values too (a condition split between a tile and its parent
+        # holds; one split across sibling tiles doesn't)
+        self.entries: dict[str, list[dict[str, list]]] = {}
         for r in vocab.resources:
             ri = r.get("resourceinstance") or {}
             rid = ri.get("resourceinstanceid")
@@ -62,40 +79,72 @@ class Tiles:
             if not rid or model is None:
                 continue
             self.type_of[rid] = model.name
-            vals, links = defaultdict(list), defaultdict(set)
-            entries = []
-            for tile in r.get("tiles") or []:
-                entry = defaultdict(list)
-                for nid, v in (tile.get("data") or {}).items():
-                    a = alias.get(nid)
-                    if a is None or v is None:
-                        continue
-                    vals[a].append(v)
-                    entry[a].append(v)
-                entries.append(dict(entry))
+            tree = alizarin.tiles_to_json_tree(json.dumps(r))
+            vals, entries = defaultdict(list), []
+            info = {n["alias"]: n for n in model.nodes if n.get("alias")}
+            self._walk(tree, model.schema, info, None, {}, vals, entries)
             self.entries[rid] = entries
+            links = defaultdict(set)
+            text = [vocab.names.get(rid, "")]
             for a, vs in vals.items():
-                if a in self._link_aliases(model):
-                    for v in vs:
-                        for target in _links(v):
-                            if target:
-                                links[a].add(target)
-                                self.into[target][a].add(rid)
+                if (info.get(a) or {}).get("datatype") in LINK_TYPES:
+                    for target in _links(vs):
+                        if target:
+                            links[a].add(target)
+                            self.into[target][a].add(rid)
+                else:
+                    text += _strings(vs)
             self.values[rid], self.out[rid] = dict(vals), dict(links)
+            self.texts[rid] = text
 
-    @staticmethod
-    def _link_aliases(model) -> set[str]:
-        from .arches import LINK_TYPES
-        return {n.get("alias") for n in model.nodes if n.get("datatype") in LINK_TYPES}
+    def _walk(self, tree: dict, schema: dict, info: dict, group, inherited: dict,
+              vals: dict, entries: list) -> None:
+        """One tile of nodegroup `group` (None: the resource root), given as
+        its tree and alias schema; `inherited` holds the values of the tiles
+        above it. Adds its entry, then walks the tiles below it."""
+        own: dict[str, list] = defaultdict(list)
+        leaf_tiles: list[tuple[str, list]] = []           # a leaf that is a tile of its own
+        subtiles: list[tuple[dict, dict, str]] = []
+
+        def collect(t: dict, sch: dict) -> None:
+            for alias, s in sch.items():
+                if alias not in t:
+                    continue
+                ng = (info.get(alias) or {}).get("nodegroup_id")
+                inside = group is not None and ng == group
+                raw = t[alias]
+                if s.get("children"):
+                    for inst in (raw if isinstance(raw, list) else [raw]):
+                        if not isinstance(inst, dict):
+                            continue
+                        if inside:
+                            collect(inst, s["children"])   # a semantic node within this tile
+                        else:
+                            subtiles.append((inst, s["children"], ng))
+                    continue
+                atoms = _atoms(raw)
+                vals[alias] += atoms
+                if inside:
+                    own[alias] += atoms
+                else:
+                    leaf_tiles.append((alias, atoms))
+
+        collect(tree, schema)
+        here = {a: list(v) for a, v in inherited.items()}
+        for a, vs in own.items():
+            here[a] = here.get(a, []) + vs
+        if group is not None:
+            entries.append(here)
+        for alias, atoms in leaf_tiles:
+            entries.append(dict(here, **{alias: here.get(alias, []) + atoms}))
+        for inst, sch, ng in subtiles:
+            self._walk(inst, sch, info, ng, here, vals, entries)
 
     def of_type(self, type_name: str) -> set[str]:
         return {r for r, t in self.type_of.items() if t == type_name}
 
     def text(self, rid: str) -> str:
-        words = [self.vocab.names.get(rid, "")]
-        for vs in self.values.get(rid, {}).values():
-            words += _strings(vs)
-        return " ".join(words).lower()
+        return " ".join(self.texts.get(rid, [])).lower()
 
 
 def _date_keys(raw) -> list[int]:
@@ -130,9 +179,7 @@ def _filter(c, hits: set[str], tiles: Tiles) -> set[str]:
             wanted = {c.value, *vocab.descendants(c.value)}
             return {r for r in hits
                     if any(vocab.concept_of(v) in wanted
-                           for raw in tiles.values.get(r, {}).get(c.field, [])
-                           for v in (raw if isinstance(raw, list) else [raw])
-                           if isinstance(v, str))}
+                           for v in _atoms(tiles.values.get(r, {}).get(c.field, [])))}
         return {r for r in hits
                 if c.value.lower() in " ".join(
                     _strings(tiles.values.get(r, {}).get(c.field, []))).lower()}
@@ -156,9 +203,7 @@ def _entry_holds(entry: dict, c: LinkTo, targets: set[str], vocab) -> bool:
         return False
     q = c.qualifier
     wanted = {q.value, *vocab.descendants(q.value)}
-    return any(vocab.concept_of(v) in wanted
-               for raw in entry.get(q.field, [])
-               for v in (raw if isinstance(raw, list) else [raw]) if isinstance(v, str))
+    return any(vocab.concept_of(v) in wanted for v in _atoms(entry.get(q.field, [])))
 
 
 def _qualified_link(c: LinkTo, hits: set[str], tiles: Tiles) -> set[str]:

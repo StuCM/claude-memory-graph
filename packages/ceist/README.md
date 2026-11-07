@@ -81,16 +81,20 @@ A compiler that can't express a condition raises `Unsupported` with the reason. 
 
 ### Arches data (Alizarin, Rós Madair, Arches Search)
 
-`ArchesVocabulary.from_data_dir(path)` reads the layout that Alizarin and Rós Madair share:
+`ArchesVocabulary.from_data_dir(path)` reads the layout that Alizarin and Rós Madair share, through Alizarin (a dependency): graphs via its model wrapper, tiles as its resource trees, lists via its RDM cache.
 
 ```
 data/graphs/*.json           resource models     → types; resource-instance nodes → relations
 data/resources/**/*.json     business data       → record names (and tiles, for Alizarin)
-data/vocabularies/*.xml      SKOS thesauri       → controlled values, via Alizarin's RDM cache
+data/vocabularies/*.xml      controlled lists and thesauri, as SKOS        → controlled values
+data/vocabularies/*.json     the same as Arches/Alizarin collection JSON   → controlled values
 ```
 
-- **Concept ids.** They come from Alizarin, so they are the same ids that Rós Madair interns.
-- **Value hierarchy.** "Listed" covers "Grade II": each output expands a value to include every narrower concept.
+- **Controlled lists first.** `reference` nodes (`config.controlledList`) are the primary kind of controlled value; `concept` / `concept-list` nodes (`config.rdmCollection`) are legacy and read the same way. A tile's reference value (`{"labels": [{"list_item_id", …}], "uri", "list_id"}`) is matched by its item id, label id or URI.
+- **Item ids.** They come from Alizarin, so they are the same ids that Rós Madair interns.
+- **Value hierarchy.** "Listed" covers "Grade II": each output expands a value to include every narrower item.
+- **Tiles.** Each tile's values are read with its ancestor tiles' values, so a link and a role split between a tile and its parent count as one entry; split across sibling tiles they don't.
+- **Skipped bundle entries.** `vocab.skipped` lists every qualified bundle entry that couldn't be used, and why (qualified dates and properties need tile-scoped conditions the plan can't express yet).
 - **Alternative labels.** They are read from the SKOS, so "protected" finds Listed.
 - **Dates.** Each `date` node, named by its own name. Add words that pick it with `date_forms`.
 - **Relation synonyms.** Teach phrasings like "designed by" with `relation_forms`:
@@ -169,7 +173,8 @@ clarify_min = 0.15
 
 ```
 ceist vocab describe <graphs dir> descriptions/ --reference <reference_data dir>   # read the models (Alizarin)
-ceist vocab prompt descriptions/ Monument Person …                                  # the instruction for an LLM (or agent)
+ceist vocab prompt descriptions/ Monument > prompt.txt                               # the instruction, with the schema inline
+ceist vocab save reply.json descriptions/ vocab/                                    # the LLM's JSON reply → vocab/<Model>.json
 ceist vocab assemble descriptions/ vocab/ -o her.bundle.json --graphs <graphs dir> # validate and bundle
 ceist vocab check her.bundle.json <graphs dir>                                      # stale since the graphs changed?
 ceist eval --bundle her.bundle.json --questions cases.json --config ceist.toml \
@@ -192,13 +197,16 @@ Nothing is trained: the vocabulary is phrasings per node, and use adds the ones 
 ```
 ceist vocab learn learn.jsonl --bundle her.bundle.json -o proposals.json --exclude cases.json
 #   picks → "confirmed" (approve: true); the rest → "to_assign", with the instruction for an LLM
-#   to set each one's node, or "none"; a person reviews and sets approve: true
+#   to set each one's node, or "none" (the items inline)
+ceist vocab assign proposals.json reply.json                       # its reply → "assign"; a person sets approve
 ceist vocab merge proposals.json vocab/ --bundle her.bundle.json   # into the right entries
 ceist vocab assemble descriptions/ vocab/ -o her.bundle.json --graphs <graphs dir>
 ceist eval --bundle her.bundle.json --questions cases.json --config ceist.toml   # did it help?
 ```
 
 A phrase picked as two different nodes is flagged as a conflict and waits for a person.
+
+**What an LLM sees.** The build and learn prompts carry everything inline: the model descriptions (the schema: node names, datatypes, small value lists), or the proposals to assign. No paths, so an agent is never pointed into the project folder where the records live, and the reply comes back as JSON for `save` / `assign` to validate. The learning log is masked when it is written (`learn.mask`): the records a question named become `<Type>`, quoted text `<text>`, other capitalised words `<Name>`, numbers other than years `<number>`; a phrase that is itself a name isn't logged.
 
 ### Qualified links: a link and a value on the same entry
 

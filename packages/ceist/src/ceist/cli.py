@@ -1,11 +1,13 @@
 """ceist on the command line: build a project's vocabulary bundle, and measure it.
 
     ceist vocab describe <graphs dir> <descriptions dir> [--reference <reference_data dir>]
-    ceist vocab prompt <descriptions dir> <Model> [<Model> …] [--vocab <vocab dir>]
+    ceist vocab prompt <descriptions dir> <Model> [<Model> …]   # the schema inline: no paths, no data
+    ceist vocab save <reply.json> <descriptions dir> <vocab dir>   # the LLM's reply → vocab/<Model>.json
     ceist vocab assemble <descriptions dir> <vocab dir> -o <bundle.json> [--graphs <graphs dir>]
     ceist vocab check <bundle.json> <graphs dir>
     ceist vocab try <data dir> <questions.txt> --bundle <bundle.json> [--log learn.jsonl]   # how each reads
     ceist vocab learn <learn.jsonl> --bundle <bundle.json> -o proposals.json [--exclude cases.json]
+    ceist vocab assign <proposals.json> <reply.json>    # the LLM's reply to `learn` → "assign" fields
     ceist vocab merge <proposals.json> <vocab dir> --bundle <bundle.json>   # the approved ones
     ceist eval --bundle <bundle.json> --questions <cases.json> [--config ceist.toml] [--report out.md]
                [--min-right N] [--max-dangerous N]      # the acceptance gate: exit 1 if missed
@@ -29,7 +31,18 @@ def _describe(a):
 
 def _prompt(a):
     from .bundle import prompt
-    print(prompt(a.descriptions, a.models, a.vocab))
+    print(prompt(a.descriptions, a.models))
+
+
+def _save(a):
+    from .bundle import save
+    written, errors, warnings = save(Path(a.reply).read_text(), a.descriptions, a.vocab)
+    for w in warnings:
+        print(f"  warning: {w}", file=sys.stderr)
+    for e in errors:
+        print(f"  ! {e}", file=sys.stderr)
+    print(f"{len(written)} model(s) written to {a.vocab}: {', '.join(written) or '-'}")
+    return 1 if errors else 0
 
 
 def _assemble(a):
@@ -121,11 +134,24 @@ def _learn(a):
     Path(a.out).write_text(json.dumps(props, indent=1, ensure_ascii=False) + "\n")
     print(learn.summary(props))
     if props["to_assign"]:
-        print("\n── for the LLM (or agent) that assigns the rest ──\n")
-        print(learn.prompt(a.out, a.bundle))
+        print("\n── for the LLM that assigns the rest (everything it needs is inline) ──\n")
+        print(learn.prompt(props, b))
+        print(f"\nSave its reply and run `ceist vocab assign {a.out} <reply.json>`.")
     print(f"\nThen review {a.out}: set \"approve\": true on what you agree with, and run "
           f"`ceist vocab merge {a.out} <vocab dir> --bundle {a.bundle}`.")
     return 0
+
+
+def _assign(a):
+    from . import learn
+    path = Path(a.proposals)
+    props = json.loads(path.read_text())
+    done, errors = learn.assign(props, Path(a.reply).read_text())
+    path.write_text(json.dumps(props, indent=1, ensure_ascii=False) + "\n")
+    for e in errors:
+        print(f"  ! {e}", file=sys.stderr)
+    print(f"{done} assignment(s) written to {a.proposals}; a person sets \"approve\" next.")
+    return 1 if errors else 0
 
 
 def _merge(a):
@@ -189,8 +215,13 @@ def main(argv=None):
     p = vocab.add_parser("prompt", help="the instruction an LLM follows to write entries")
     p.add_argument("descriptions")
     p.add_argument("models", nargs="+")
-    p.add_argument("--vocab", default="vocab")
     p.set_defaults(fn=_prompt)
+
+    p = vocab.add_parser("save", help="an LLM's reply to `prompt` → validated vocab files")
+    p.add_argument("reply", help="the reply: one JSON object keyed by model name")
+    p.add_argument("descriptions")
+    p.add_argument("vocab")
+    p.set_defaults(fn=_save)
 
     p = vocab.add_parser("assemble", help="validate entries and write the bundle")
     p.add_argument("descriptions")
@@ -219,6 +250,11 @@ def main(argv=None):
     p.add_argument("-o", "--out", required=True)
     p.add_argument("--exclude", help="held-out questions (cases.json): never learn from these")
     p.set_defaults(fn=_learn)
+
+    p = vocab.add_parser("assign", help="an LLM's reply to `learn` → the proposals' assign fields")
+    p.add_argument("proposals")
+    p.add_argument("reply")
+    p.set_defaults(fn=_assign)
 
     p = vocab.add_parser("merge", help="add the approved proposals to the vocabulary files")
     p.add_argument("proposals")

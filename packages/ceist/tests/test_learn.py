@@ -122,6 +122,9 @@ def test_the_loop_end_to_end_on_arches_data(tmp_path):
     m = interpret(ArchesVocabulary.from_data_dir(data, bundle=shipped), q, matcher=exact)
     log = tmp_path / "learn.jsonl"
     assert learn.from_grounding(log, q, m.grounding) == 1
+    logged = log.read_text()
+    assert "Ada" not in logged and "Lovelace" not in logged          # the record is masked
+    assert "drafted by <Person>" in logged
     props = learn.proposals(log, shipped)
     (u,) = props["to_assign"]
     assert u["phrase"] == "drafted by" and u["slot"] == "link:Person" and "architect" in u["candidates"]
@@ -145,3 +148,42 @@ def test_record_never_breaks_a_search(tmp_path):
     blocked.write_text("")
     learn.record(blocked / "learn.jsonl", "Building", "q", "p", "property")   # a file, not a folder
     assert _bundle.FORMAT == "ceist.vocab/1"
+
+
+def test_mask_takes_record_data_out_of_the_question():
+    assert learn.mask('Which buildings did "Smith & Sons" restore at 14 Acacia Avenue in 1890?') == \
+        "Which buildings did <text> restore at <number> <Name> in 1890?"
+    assert learn.mask("what was built in the 1850s by Isambard's firm?") == \
+        "what was built in the 1850s by <Name> firm?"
+
+
+def test_a_phrase_that_is_a_name_is_never_logged(tmp_path):
+    class G:
+        unplaced = [{"phrase": "victoria dock", "slot": "property", "model": "Building"},
+                    {"phrase": "knocked about", "slot": "property", "model": "Building"}]
+    log = tmp_path / "learn.jsonl"
+    assert learn.from_grounding(log, "which buildings near Victoria Dock got knocked about?", G()) == 1
+    (line,) = log.read_text().splitlines()
+    ev = json.loads(line)
+    assert ev["phrase"] == "knocked about" and "Victoria" not in ev["q"]
+
+
+def test_the_learn_prompt_is_inline_and_assign_fills_it(tmp_path):
+    log = tmp_path / "learn.jsonl"
+    _log(log, dict(model="Building", question="which buildings were knocked about?",
+                   phrase="knocked about", slot="property"),
+         dict(model="Building", question="buildings drafted by <Person>?", phrase="drafted by",
+              slot="link:Person"))
+    props = learn.proposals(log, BUNDLE)
+    text = learn.prompt(props, BUNDLE)
+    assert "knocked about" in text and '"label": "Heritage status"' in text
+    assert str(tmp_path) not in text and '"value": "Builder"' in text      # qualifiers inline
+    i = {u["phrase"]: n for n, u in enumerate(props["to_assign"])}
+    reply = json.dumps([{"i": i["drafted by"], "assign": {"node": "architect"}},
+                        {"i": i["knocked about"], "assign": {"node": "architect"}},  # not a candidate
+                        {"i": 9, "assign": "none"}])
+    done, errors = learn.assign(props, reply)
+    assert done == 1 and len(errors) == 2
+    assert props["to_assign"][i["drafted by"]]["assign"] == {"node": "architect"}
+    assert props["to_assign"][i["knocked about"]]["assign"] is None
+    assert all(u["approve"] is False for u in props["to_assign"])          # a person approves

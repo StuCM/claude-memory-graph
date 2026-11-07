@@ -101,6 +101,9 @@ def _expr(plan: Plan, vocab) -> dict | None:
         elif isinstance(c, HasValue):
             if c.kind != "concept":
                 raise Unsupported(f"the literal value {c.label}")
+            # controlled lists and legacy concepts alike: Rós Madair interns
+            # both through Alizarin's RDM cache (item ids). Not yet run against
+            # a snapshot with reference nodes — see ROS-MADAIR.md
             parts.append({"concept": {"path": c.field, "op": "descendant_or_self_of",
                                       "value": c.value}})
         elif isinstance(c, DateRange):

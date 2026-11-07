@@ -69,3 +69,7 @@ So "how many buildings are there?" answers 7.
 - "Most recent" (there's no update-time column).
 
 These are refused by name, and the runner moves on to a looser version of the question or says what it couldn't do.
+
+## Controlled lists (`reference` nodes): compiled, not yet run
+
+ceist compiles a value on a controlled-list node exactly as a concept value: `{"concept": {"path", "op": "descendant_or_self_of", "value": <list item id>}}`, on the reasoning that Rós Madair interns both through Alizarin's RDM cache (`StaticNodeConfigReference` resolves `controlledList` to a collection like `rdmCollection`). The end-to-end tests here use concept nodes only; no snapshot with `reference` nodes has been emitted and queried yet. Until one has, treat reference values on Rós Madair as unverified.
