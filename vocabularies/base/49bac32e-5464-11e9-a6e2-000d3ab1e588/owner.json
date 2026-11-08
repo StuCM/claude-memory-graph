@@ -27,7 +27,10 @@
     "proprietor",
     "owners",
     "owning company",
-    "belonged to"
+    "belonged to",
+    "owns",
+    "own",
+    "who owns"
    ],
    "kind": "link",
    "node": "owner"

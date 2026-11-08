@@ -11,7 +11,11 @@
     "archive location",
     "museum holding archive",
     "deposited at",
-    "archive depository"
+    "archive depository",
+    "owns repository",
+    "own repository",
+    "repository owned by",
+    "who owns repository"
    ],
    "kind": "link",
    "node": "repository_owner"

@@ -24,7 +24,9 @@
     "when was the record updated",
     "last modified",
     "last edited",
-    "record last changed"
+    "record last changed",
+    "last update date",
+    "updated"
    ],
    "kind": "date",
    "node": "date_of_last_update",

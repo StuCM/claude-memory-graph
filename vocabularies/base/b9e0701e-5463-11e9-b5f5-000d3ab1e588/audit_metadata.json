@@ -22,7 +22,9 @@
     "last modified",
     "date of last update",
     "when was the record updated",
-    "record last edited"
+    "record last edited",
+    "last update date",
+    "updated"
    ],
    "kind": "date",
    "node": "date_of_last_update",

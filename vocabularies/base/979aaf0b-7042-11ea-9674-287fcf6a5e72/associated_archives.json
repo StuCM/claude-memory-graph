@@ -8,7 +8,10 @@
     "archive holder",
     "who holds the archive",
     "archive location",
-    "where is the archive"
+    "where is the archive",
+    "holds archive",
+    "hold archive",
+    "who holds archive"
    ],
    "kind": "link",
    "node": "archive_holder"

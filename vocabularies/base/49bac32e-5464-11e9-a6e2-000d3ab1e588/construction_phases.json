@@ -42,7 +42,10 @@
     "constructed by",
     "shipwright",
     "yard",
-    "building yard"
+    "building yard",
+    "builds",
+    "build",
+    "who builds"
    ],
    "kind": "link",
    "node": "builder"

@@ -15,7 +15,8 @@
     "death date",
     "deceased",
     "death year",
-    "when died"
+    "when died",
+    "die"
    ],
    "kind": "date",
    "node": "date_of_death"
