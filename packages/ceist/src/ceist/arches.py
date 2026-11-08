@@ -559,6 +559,13 @@ class ArchesVocabulary:
         return self._index.rank(terms)
 
     def implied_types(self) -> dict[str, str]:
+        """"who": the model whose root is a CIDOC-CRM Actor (E39), or among several the one
+        Person (E21); else a model named Person."""
+        actors = [name for name, (root, _) in self._crm.items() if root and crm.is_a(root, "E39")]
+        if len(actors) > 1:
+            actors = [name for name in actors if crm.is_a(self._crm[name][0], "E21")]
+        if len(actors) == 1:
+            return {"who": actors[0]}
         people = next((m.name for m in self.models.values()
                        if m.name.lower() in ("person", "people", "persons")), None)
         return {"who": people} if people else {}

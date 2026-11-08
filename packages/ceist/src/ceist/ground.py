@@ -942,7 +942,8 @@ def _assign_edges(g: Grounding, relations: dict[str, Relation], seen: dict) -> N
             return next((n for n in cands if not fits or n.type in fits),
                         cands[0] if cands else None)
 
-        left = nearest(n for n in reversed(parts) if n.pos < edge.pos)
+        # <=: the type "who" implies sits at 0.0, where a phrase that starts with it ("who made") also is
+        left = nearest(n for n in reversed(parts) if n.pos <= edge.pos)
         right = nearest(n for n in parts if n.pos > edge.pos)
         if left is not None and right is not None and left is right:
             right = None

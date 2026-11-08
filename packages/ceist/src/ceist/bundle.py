@@ -232,7 +232,7 @@ def _model_dir(d: Path) -> dict | None:
 
 
 def layered(graphs: list[dict], base_dir: str | Path, client_dir: str | Path | None = None,
-            language: str = "en") -> tuple[dict, list[str]]:
+            language: str = "en", ontology_dir: str | Path | None = None) -> tuple[dict, list[str]]:
     """A bundle for these graphs from the base layer (base_dir/<graph id>/, split by
     nodegroup) plus an optional client layer (a vocabulary directory keyed by model
     name; its manifest's "base" names the base graph id when the client's differs).
@@ -240,7 +240,13 @@ def layered(graphs: list[dict], base_dir: str | Path, client_dir: str | Path | N
     the base's is left out and listed in the merge report returned with the bundle,
     unless the manifest confirms it ("overrides": [{phrase, node, was}]). A base entry
     whose node the client's graph lacks or holds as another kind is dropped and
-    reported; "renamed": {old: new} carries the base phrases over to a renamed node."""
+    reported; "renamed": {old: new} carries the base phrases over to a renamed node.
+    Beneath the base, the ontology layer (ontology_dir, by default ontology/cidoc-crm
+    beside base_dir) gives phrases by CIDOC-CRM path; a base phrase wins over it."""
+    from . import crm
+    ontology_dir = Path(ontology_dir) if ontology_dir else Path(base_dir).parent / "ontology" / "cidoc-crm"
+    ontology = {"entries": [e for p in sorted(ontology_dir.glob("*.json"))
+                            for e in json.loads(p.read_text())["entries"]]}
     client = {v["model"]: v for v in read_vocab(client_dir)[0]} if client_dir is not None else {}
     listed = (_manifest(Path(client_dir)).get("models") or {}) if client_dir is not None else {}
     models, report, type_words = {}, [], {}
@@ -257,6 +263,7 @@ def layered(graphs: list[dict], base_dir: str | Path, client_dir: str | Path | N
         report += dropped
         models[name] = {"graphid": g["graphid"], "nodes": nodes, "entries": entries,
                         "groups": {a: _block(b) for a, b in base["groups"].items()}}
+        report += _add_ontology(name, models[name], crm.ontology_entries(g, ontology))
     for name, model in models.items():
         mine = client.get(name) or {}
         if mine:
@@ -269,6 +276,25 @@ def layered(graphs: list[dict], base_dir: str | Path, client_dir: str | Path | N
     if type_words:
         bundle["extra_type_words"] = type_words
     return bundle, report
+
+
+def _add_ontology(name: str, model: dict, entries: list[dict]) -> list[str]:
+    """Add the ontology layer's entries beneath a model's base: a phrase the base
+    already uses is the base's; one that fits several nodes is left out, as a guess."""
+    taken, report = _meanings(model), []
+    nodes_of: dict[str, set] = {}
+    for e in entries:
+        for p in e["phrases"]:
+            nodes_of.setdefault(p.strip().lower(), set()).add(e["node"])
+    for e in entries:
+        phrases = [p for p in e["phrases"] if p.strip().lower() not in taken
+                   and len(nodes_of[p.strip().lower()]) == 1]
+        if phrases:
+            model["entries"].append(dict(e, phrases=phrases))
+    for p, nodes in sorted(nodes_of.items()):
+        if len(nodes) > 1 and p not in taken:
+            report.append(f"{name}: ontology phrase '{p}' fits {', '.join(sorted(nodes))}; not applied")
+    return report
 
 
 def _fit(name: str, entries: list[dict], nodes: dict, renamed: dict) -> tuple[list[dict], list[str]]:
