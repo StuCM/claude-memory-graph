@@ -24,6 +24,8 @@ def status(o, a):
     got = a.get("total")
     refused = bool(a.get("refused")) or got is None
     if o["expect"] == "answer":
+        if not refused and o.get("want") and a.get("understood") != o["want"]:
+            return "wrong"      # a record's field and the bare record both total 1
         return "refused" if refused else ("right" if o["count"] is None or got == o["count"] else "wrong")
     if o["expect"] == "refuse":
         return "right" if refused else "wrong"
