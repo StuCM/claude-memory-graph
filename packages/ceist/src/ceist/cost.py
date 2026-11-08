@@ -34,7 +34,8 @@ NOTE = "Dollars are API list prices; on a Claude subscription they are usage, no
 
 
 def stage_of(what: dict) -> str:
-    return STAGES.get(what.get("kind"), "base")
+    # "step": the ontology runs before the ledger
+    return STAGES.get(what.get("kind") or what.get("step"), "base")
 
 
 def _row(name: str, t: Counter) -> str:

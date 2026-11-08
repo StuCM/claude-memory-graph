@@ -10,7 +10,8 @@ a wrong added). Then the passing ones together, on the bench and on the demo que
 bank: a question that changes rejects the candidates whose phrases it holds. Then the
 HER plans, which must not change. A missing checkout fails the gate unless its option
 is "skip". Prints the verdict as JSON on its last line, each candidate as "<kind> <path>":
-{"accepted": [key], "rejected": {key: why}, "checks": [line]}.
+{"accepted": [key], "rejected": {key: why}, "checks": [line],
+ "bench": {"before"|"after": {set: {mode: [n per score]}}}, "demo": {"before"|"after": tally}}.
 """
 
 import json
@@ -66,15 +67,25 @@ def judge(before: dict, after: dict) -> tuple[int, list[str]]:
     return gained, sorted(set(worse))
 
 
+def counts(scored: dict) -> dict:
+    """{mode: [n per run.SCORES]}."""
+    out = {}
+    for (mode, _), s in scored.items():
+        out.setdefault(mode, [0] * len(run.SCORES))[run.SCORES.index(s)] += 1
+    return out
+
+
 def one_set(name: str, path: str, base: list[dict], cands: list[dict], together: bool) -> dict:
-    """Alone: {key: [gained, worse]} per candidate. Together: {"*": [gained, worse]}."""
+    """Alone: {key: [gained, worse]} per candidate. Together: {"*": [gained, worse],
+    "tally": {"before": counts, "after": counts}}."""
     from ceist.arches import ArchesVocabulary
     graphs = run.graph_docs(path)
     resources = run.synthetic(graphs)
     vocab = ArchesVocabulary(graphs, resources=resources)
     before = scores(name, graphs, resources, vocab, base)
     if together:
-        return {"*": judge(before, scores(name, graphs, resources, vocab, base + cands))}
+        after = scores(name, graphs, resources, vocab, base + cands)
+        return {"*": judge(before, after), "tally": {"before": counts(before), "after": counts(after)}}
     out = {}
     for c in cands:
         # ponytail: only the questions sharing a word with its phrases are re-asked; the together run re-asks all
@@ -84,8 +95,9 @@ def one_set(name: str, path: str, base: list[dict], cands: list[dict], together:
 
 
 def bench(sets: dict, base: list[dict], cands: list[dict], together: bool = False) -> dict:
-    """one_set over every set, each in its own process (Alizarin registers graphs by id)."""
-    out = {}
+    """one_set over every set, each in its own process (Alizarin registers graphs by id);
+    together, also {"tally": {name: tally}}."""
+    out = {"tally": {}} if together else {}
     with tempfile.TemporaryDirectory() as d:
         Path(d, "in.json").write_text(json.dumps({"base": base, "cands": cands, "together": together}))
         for name, path in sets.items():
@@ -93,7 +105,10 @@ def bench(sets: dict, base: list[dict], cands: list[dict], together: bool = Fals
                                  capture_output=True, text=True)
             if res.returncode:
                 raise RuntimeError(f"{name}: {res.stderr[-2000:]}")
-            for k, (gained, worse) in json.loads(res.stdout.splitlines()[-1]).items():
+            got = json.loads(res.stdout.splitlines()[-1])
+            if together:
+                out["tally"][name] = got.pop("tally")
+            for k, (gained, worse) in got.items():
                 g, w = out.get(k, (0, []))
                 out[k] = (g + gained, w + [f"{name}: {q}" for q in worse])
     return out
@@ -114,6 +129,10 @@ def demo_bank(demo: Path, base_dir: Path) -> str:
     if res.returncode not in (0, 1) or not any(line.startswith("{") for line in res.stdout.splitlines()):
         raise RuntimeError(f"demo bank failed (exit {res.returncode}): {(res.stderr or res.stdout)[-1000:]}")
     return res.stdout
+
+
+def tally_line(report: str) -> str:
+    return next(line for line in report.splitlines() if line.startswith("{"))
 
 
 def changed_lines(a: str, b: str) -> list[str]:
@@ -164,8 +183,11 @@ def gate(cands: list[dict], ontology_dir: Path, sets: dict, demo: Path | None, h
         if not worse or not drop(worse, "bench, together"):
             break
     checks.append(f"bench: {len(passing)} pass alone and together")
+    demo_tally = {}
     if passing and demo:
         was = demo_bank(demo, run.BASE)
+        # what passes leaves the bank unchanged, so after is before
+        demo_tally["before"] = demo_tally["after"] = tally_line(was)
         while passing:
             with tempfile.TemporaryDirectory() as d:
                 (Path(d) / "ontology" / "cidoc-crm").mkdir(parents=True)
@@ -188,7 +210,11 @@ def gate(cands: list[dict], ontology_dir: Path, sets: dict, demo: Path | None, h
         checks.append(f"HER plans: {said.splitlines()[-1] if said else ''}")
     else:
         checks.append("HER plans: not run (skipped, or nothing passed)")
-    return {"accepted": [key(c) for c in passing], "rejected": rejected, "checks": checks}
+    tally = bench(sets, base, passing, together=True)["tally"]
+    return {"accepted": [key(c) for c in passing], "rejected": rejected, "checks": checks,
+            "bench": {"before": {n: t["before"] for n, t in tally.items()},
+                      "after": {n: t["after"] for n, t in tally.items()}},
+            "demo": demo_tally}
 
 
 def main(argv: list[str]) -> int:

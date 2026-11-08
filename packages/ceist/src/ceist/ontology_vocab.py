@@ -5,14 +5,17 @@ proposed by an LLM from the public CRM definitions, reviewed, gated, then merged
               ranked by how many nodes each reaches
     propose   per batch of paths, the CRM labels and scope notes along them and the
               existing phrasings as seeds → <ontology>/proposed.json, for review
-    accept    the proposals marked "reviewed": true, through the gate script
-              (bench/ontology/gate.py), → phrases.json
+    review    the checks a person made by hand: generic phrasings, phrasings shared by sibling
+              paths, clashes with phrases.json, bare nouns → "reviewed": "auto" on what survives
+    accept    the reviewed proposals, through the gate script (bench/ontology/gate.py), → phrases.json
+    build     all of it, after an estimate, and build-report.md
 
 Privacy: a prompt holds CRM codes, CRM labels and scope notes, and the layer's own
 phrasings. No graph, node or record name, label or alias.
 """
 
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -21,7 +24,7 @@ from collections import Counter
 from pathlib import Path
 
 from . import bundle as _bundle
-from . import cost, crm
+from . import cost, crm, prices
 from .pipeline import Runner, _key
 
 PROMPT_VERSION = "1"
@@ -29,6 +32,11 @@ BATCH = 10
 MAX_CALLS = 300
 NOTE_CHARS = 700
 GATE = Path(__file__).resolve().parents[2] / "bench" / "ontology" / "gate.py"
+GENERIC = "generic.json"
+HIGH_USE = 10
+SCORES = ("right", "wrong reading", "refused", "right refusal", "wrong")
+CHECKS = ("not generic", "not shared with a sibling path", "no clash with phrases.json",
+          "a bare noun only where the path reaches one field")
 _RDF = "{http://www.w3.org/1999/02/22-rdf-syntax-ns#}"
 _RDFS = "{http://www.w3.org/2000/01/rdf-schema#}"
 
@@ -185,8 +193,14 @@ def propose(graph_dirs, ontology_dir: Path, out: Path, llm_cmd: str | None = Non
             answered[(c["path"], c["kind"])] = json.loads(hit.read_text())
     todo = [c for c in cands if (c["path"], c["kind"]) not in answered]
     batches = [todo[i:i + BATCH] for i in range(0, len(todo), BATCH)]
+    dollars = sum(prices.cost({"input_tokens": cost.by_chars(prompt(b, ontology, defs)),
+                               "output_tokens": cost.DEFAULT_OUTPUT}, model or "opus") for b in batches)
     log(f"{len(cands)} paths ({sum(c['nodes'] for c in cands)} nodes), {len(cands) - len(todo)} cached: "
-        f"{len(batches)} calls, up to {2 * len(batches)} with retries (--max-calls {max_calls})")
+        f"{len(batches)} calls, up to {2 * len(batches)} with retries, about ${dollars:.2f} "
+        f"(--max-calls {max_calls})")
+    if len(batches) > max_calls:
+        log(f"over --max-calls {max_calls}: nothing sent")
+        return 2
     for batch in batches:
         if run.calls >= max_calls:
             log(f"stopped at --max-calls {max_calls}; re-run to go on (answered paths are cached)")
@@ -219,9 +233,9 @@ def propose(graph_dirs, ontology_dir: Path, out: Path, llm_cmd: str | None = Non
                   "`ceist vocab ontology --accept`",
            "proposals": proposals, "skipped": skips,
            "not_proposed": dict(skipped)}
-    (ontology_dir / "proposed.json").write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n")
+    _write_proposed(ontology_dir, doc)
     log(f"{len(proposals)} proposals, {len(skips)} skipped by the LLM → {ontology_dir / 'proposed.json'}; "
-        f"LLM calls {run.calls}, from the cache {run.hits}; {len(run.failures)} failed")
+        f"LLM calls {run.calls}; {len(cands) - len(todo)} paths from the cache; {len(run.failures)} failed")
     log("\n".join(cost.summary(run.ledger)))
     return 1 if run.failures else 0
 
@@ -254,16 +268,17 @@ def merge(ontology: dict, accepted: list[dict]) -> dict:
     return dict(ontology, entries=entries)
 
 
-def accept(ontology_dir: Path, gate_cmd: list[str] | None = None, skip=(), log=print) -> int:
+def accept(ontology_dir: Path, gate_cmd: list[str] | None = None, skip=(), log=print) -> dict | None:
     """The reviewed proposals through the gate; those it passes go into phrases.json,
     and each proposal's verdict is written back into proposed.json. `skip`: "demo" or
-    "her", gate checks to leave out on a machine without that checkout."""
+    "her", gate checks to leave out on a machine without that checkout. The gate's
+    verdict, {} with nothing to accept, None when the gate failed."""
     ontology_dir = Path(ontology_dir)
     doc = read_proposed(ontology_dir)
     todo = [p for p in doc.get("proposals", []) if p.get("reviewed") and p.get("gate") != "merged"]
     if not todo:
-        log('nothing to accept: no proposal has "reviewed": true')
-        return 0
+        log('nothing to accept: no proposal is reviewed')
+        return {}
     with tempfile.TemporaryDirectory() as d:
         cands = Path(d) / "candidates.json"
         cands.write_text(json.dumps([{"path": p["path"], "kind": p["kind"], "phrases": p["phrases"]} for p in todo]))
@@ -272,15 +287,192 @@ def accept(ontology_dir: Path, gate_cmd: list[str] | None = None, skip=(), log=p
         res = subprocess.run(cmd, capture_output=True, text=True)
     if res.returncode:
         log(f"the gate failed (exit {res.returncode}); nothing merged\n{res.stderr[-2000:]}")
-        return 1
+        return None
     verdict = json.loads(res.stdout.strip().splitlines()[-1])
     passed = set(verdict["accepted"])
     for p in todo:
         k = f"{p['kind']} {p['path']}"
         p["gate"] = "merged" if k in passed else "rejected: " + verdict["rejected"].get(k, "?")
     write_phrases(ontology_dir, merge(load(ontology_dir), [p for p in todo if p["gate"] == "merged"]))
-    (ontology_dir / "proposed.json").write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n")
+    _write_proposed(ontology_dir, doc)
     log(f"{len(passed)} of {len(todo)} reviewed proposals passed the gate and are in phrases.json")
     for line in verdict.get("checks", []):
         log("  " + line)
+    return verdict
+
+
+def _write_proposed(ontology_dir: Path, doc: dict) -> None:
+    (Path(ontology_dir) / "proposed.json").write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n")
+
+
+def _is_class(token: str) -> bool:
+    return token != "^" and not re.fullmatch(r"[PO]\d+[a-z]?", token)
+
+
+def _extends(path: str, other: str) -> bool:
+    """`path` is `other` with more in front: it reaches only nodes `other` reaches, so a phrase
+    on both means one node (025's same-meaning test, at the path)."""
+    a, b = path.split(), other.split()
+    return len(a) > len(b) and a[-len(b):] == b
+
+
+def _bare_noun(phrase: str) -> bool:
+    # ponytail: one word not ending in "ed" counts as a noun; a POS tagger if this misfires
+    return " " not in phrase and not phrase.endswith("ed")
+
+
+def _unique_in_models(p: dict, graphs: list[dict]) -> bool:
+    """The path reaches at most one node of its kind in every graph."""
+    one = {"entries": [{"path": p["path"], "kind": p["kind"], "phrases": ["x"]}]}
+    counts = [sum(1 for e in crm.ontology_entries(g, one) if e["kind"] == p["kind"]) for g in graphs]
+    return any(counts) and max(counts) == 1
+
+
+def _share(todo: list[dict], doc: dict, dropped: dict) -> None:
+    """A phrase on several proposals ending in the same property keeps one: for links that
+    differ only in their start class, the path without it; else the one reaching most nodes."""
+    holders: dict[tuple, list[dict]] = {}
+    for p in todo:
+        for ph in p["phrases"]:
+            if ph not in dropped.get(id(p), {}):
+                holders.setdefault((ph, p["kind"], p["path"].split()[-1]), []).append(p)
+    for (ph, kind, _), ps in holders.items():
+        if len(ps) < 2:
+            continue
+        tails = {" ".join(p["path"].split()[1:]) for p in ps}
+        tail = next(iter(tails))
+        # a link's start class rarely changes the question; an object type's or an event's date does
+        if kind == "link" and len(tails) == 1 and tail and all(_is_class(p["path"].split()[0]) for p in ps):
+            home = next((p for p in todo if p["path"] == tail and p["kind"] == kind), None)
+            if home is None:
+                home = {"path": tail, "kind": kind, "nodes": 0, "graphs": 0, "phrases": [],
+                        "reason": "the phrasings its start-class variants shared", "from": []}
+                doc["proposals"].append(home)
+                todo.append(home)
+            home["nodes"] += sum(p["nodes"] for p in ps)
+            home["graphs"] = max([home["graphs"]] + [p["graphs"] for p in ps])
+            home["from"] = sorted(set(home.get("from", []) + [p["path"] for p in ps]))
+            home["phrases"].append(ph)
+            keep = home
+        else:
+            keep = max(ps, key=lambda p: (p["nodes"], p["graphs"]))
+        for p in ps:
+            if p is not keep:
+                dropped.setdefault(id(p), {})[ph] = f"shared by {len(ps)} sibling paths; kept on {keep['path']}"
+
+
+def review(ontology_dir: Path, graph_dirs, log=print) -> list[str]:
+    """The checks a person made by hand after the first live run, on each proposal no person
+    has reviewed: a verdict and reason on each, "reviewed": "auto" on what survives.
+    The review report as markdown lines."""
+    ontology_dir = Path(ontology_dir)
+    doc = read_proposed(ontology_dir)
+    generic = set(json.loads((ontology_dir / GENERIC).read_text())["phrases"])
+    existing: dict[str, set] = {}
+    for e in load(ontology_dir)["entries"]:
+        for ph in e["phrases"]:
+            existing.setdefault(ph, set()).add(e["path"])
+    todo = [p for p in doc.get("proposals", []) if p.get("reviewed") is not True and p.get("gate") != "merged"]
+    graphs = [d["graph"][0] if "graph" in d else d for d in graph_docs(graph_dirs)]
+    dropped: dict[int, dict] = {}
+    for p in todo:
+        for ph in p["phrases"]:
+            if ph in generic:
+                dropped.setdefault(id(p), {})[ph] = "too generic"
+    _share(todo, doc, dropped)
+    for p in todo:
+        mine = dropped.setdefault(id(p), {})
+        for ph in p["phrases"]:
+            clash = sorted(q for q in existing.get(ph, ()) if not _extends(p["path"], q))
+            if ph in mine:
+                continue
+            if clash:
+                mine[ph] = f"clash: already on {', '.join(clash)}"
+            elif _bare_noun(ph) and not _unique_in_models(p, graphs):
+                mine[ph] = "a bare noun, and the path reaches several fields in a model"
+        kept = [ph for ph in p["phrases"] if ph not in mine]
+        why = "; ".join(f"'{ph}': {r}" for ph, r in mine.items())
+        if kept:
+            p.update(phrases=kept, reviewed="auto", checks=list(CHECKS))
+            p["review"] = {"verdict": "trimmed" if mine else "kept", "reason": why or "passed every check",
+                           "dropped": mine}
+        else:
+            p.update(reviewed=False)
+            p["review"] = {"verdict": "dropped", "reason": why, "dropped": mine}
+    hand = [s for s in doc.get("skipped", []) if s["kind"] == "date" and s["nodes"] >= HIGH_USE]
+    doc["needs_hand"] = [{"path": s["path"], "kind": s["kind"], "nodes": s["nodes"]} for s in hand]
+    _write_proposed(ontology_dir, doc)
+    verdicts = Counter(p["review"]["verdict"] for p in todo)
+    log(f"review: {len(todo)} proposals: {verdicts['kept']} kept, {verdicts['trimmed']} trimmed, "
+        f"{verdicts['dropped']} dropped; {len(hand)} skipped high-use date paths need a hand phrasing")
+    lines = ["## Review", "", f"{len(todo)} proposals reviewed: {verdicts['kept']} kept whole, "
+             f"{verdicts['trimmed']} trimmed, {verdicts['dropped']} dropped.", "",
+             "| verdict | kind | path | kept | dropped |", "| --- " * 5 + "|"]
+    for p in todo:
+        gone = "; ".join(f"{ph} ({r})" for ph, r in p["review"]["dropped"].items())
+        kept = ", ".join(p["phrases"]) if p["reviewed"] else ""
+        lines.append(f"| {p['review']['verdict']} | {p['kind']} | {p['path']} | {kept} | {gone} |")
+    lines += ["", "### Needs a hand phrasing", "",
+              f"Date paths reaching {HIGH_USE} or more nodes that the LLM skipped:", "",
+              "| path | nodes | the LLM's reason |", "| --- " * 3 + "|"]
+    lines += [f"| {s['path']} | {s['nodes']} | {s['skip']} |" for s in hand]
+    return lines
+
+
+def _tally_rows(verdict: dict) -> list[str]:
+    bench = verdict.get("bench") or {}
+    rows = ["| set | mode | before | after |", "| --- " * 4 + "|"]
+    for name, modes in (bench.get("before") or {}).items():
+        for mode, counts in modes.items():
+            rows.append(f"| {name} | {mode} | {' / '.join(map(str, counts))} | "
+                        f"{' / '.join(map(str, bench['after'][name][mode]))} |")
+    return rows
+
+
+def build(graph_dirs, ontology_dir: Path, out: Path, llm_cmd: str | None = None, model: str | None = None,
+          max_calls: int = MAX_CALLS, review_only: bool = False, skip=(), gate_cmd: list[str] | None = None,
+          log=print) -> int:
+    """estimate → propose → review → gate → accept, and <ontology_dir>/build-report.md for a person to read."""
+    ontology_dir, out = Path(ontology_dir), Path(out)
+    said = []
+
+    def note(line: str) -> None:
+        said.append(line)
+        log(line)
+    rc = propose(graph_dirs, ontology_dir, out, llm_cmd, model, max_calls, log=note)
+    if rc:
+        log("the proposals are incomplete; fix that and re-run (answered paths are cached)")
+        return rc
+    doc = read_proposed(ontology_dir)
+    lines = ["# Ontology build report", "",
+             f"Graphs: {', '.join(str(d) for d in graph_dirs)}.", "",
+             f"Estimate: {said[0]}", "", f"Generated: {said[1]}", "",
+             f"Proposed: {len(doc['proposals'])} paths with phrasings; {len(doc['skipped'])} skipped by the LLM; "
+             f"not proposed: {', '.join(f'{n} {k}' for k, n in doc.get('not_proposed', {}).items())}.", ""]
+    lines += review(ontology_dir, graph_dirs, log) + [""]
+    if not review_only:
+        verdict = accept(ontology_dir, gate_cmd, skip, log)
+        if verdict is None:
+            return 1
+        proposals = read_proposed(ontology_dir)["proposals"]
+        gated = [p for p in proposals if str(p.get("gate", "")).startswith("rejected")]
+        merged = [p for p in proposals if p.get("gate") == "merged"]
+        lines += ["## Rejected by the gate", "", "| kind | path | phrases | why |", "| --- " * 4 + "|"]
+        lines += [f"| {p['kind']} | {p['path']} | {', '.join(p['phrases'])} | {p['gate'][len('rejected: '):]} |"
+                  for p in gated]
+        lines += ["", "## Accepted into phrases.json", "", "| kind | path | phrases |", "| --- " * 3 + "|"]
+        lines += [f"| {p['kind']} | {p['path']} | {', '.join(p['phrases'])} |" for p in merged]
+        lines += ["", "## Bench and demo bank", "", "Bench counts: " + " / ".join(SCORES) + ".", ""]
+        lines += _tally_rows(verdict)
+        demo = verdict.get("demo") or {}
+        lines += ["", f"Demo bank before: {demo.get('before', 'not run')}", "",
+                  f"Demo bank after: {demo.get('after', 'not run')}", ""]
+        lines += [f"- {c}" for c in verdict.get("checks", [])] + [""]
+    runs = cost.read_runs([out]) if (out / "audit.jsonl").exists() else []
+    lines += cost.summary([r for run in runs for r in run["spent"]])
+    if any(run["prompts"] for run in runs):
+        lines += [""] + cost.against(runs)
+    report = ontology_dir / "build-report.md"
+    report.write_text("\n".join(lines) + "\n")
+    log(f"build report → {report}")
     return 0

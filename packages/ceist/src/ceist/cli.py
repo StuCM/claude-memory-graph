@@ -19,7 +19,10 @@
     ceist vocab merge <proposals.json> <vocab dir> --bundle <bundle.json>   # the approved ones
     ceist vocab ontology <graphs dir> [<graphs dir> …] -o <out dir> [--max-calls N] [--top N]
                          [--llm-cmd CMD] [--model M]   # CRM path phrasings → proposed.json
+    ceist vocab ontology --review <graphs dir> [<graphs dir> …]   # the automatic review of proposed.json
     ceist vocab ontology --accept [--skip demo|her]   # the reviewed proposals, gated → phrases.json
+    ceist vocab ontology build <graphs dir> [<graphs dir> …] -o <out dir> [--review-only]
+                         [--max-calls N] [--skip demo|her]   # estimate, propose, review, gate, accept, report
     ceist vocab profile <graphs dir> [--reference <dir>] [--json]   # the sizes that drive LLM cost
     ceist vocab estimate <graphs dir> --stages base,data,questions,ontology [--model M] [--rounds N]
                          [--ledger <run dir> …] [--json]   # calls, tokens and dollars before a run
@@ -247,10 +250,17 @@ def _merge(a):
 def _ontology(a):
     from . import ontology_vocab as ov
     if a.accept:
-        return ov.accept(a.ontology, skip=a.skip or ())
-    if not (a.graphs and a.out):
-        print("give the graphs dirs and -o, or --accept", file=sys.stderr)
+        return 0 if ov.accept(a.ontology, skip=a.skip or ()) is not None else 1
+    building = a.graphs[:1] == ["build"]
+    graphs = a.graphs[1:] if building else a.graphs
+    if a.review and graphs:
+        ov.review(a.ontology, graphs)
+        return 0
+    if not (graphs and a.out):
+        print("give the graphs dirs and -o, or --accept, or --review with the graphs dirs", file=sys.stderr)
         return 2
+    if building:
+        return ov.build(graphs, a.ontology, a.out, a.llm_cmd, a.model, a.max_calls, a.review_only, a.skip or ())
     return ov.propose(a.graphs, a.ontology, a.out, a.llm_cmd, a.model, a.max_calls, a.top)
 
 
@@ -422,7 +432,8 @@ def main(argv=None):
     p.set_defaults(fn=_merge)
 
     p = vocab.add_parser("ontology", help="CIDOC-CRM path phrasings from an LLM, reviewed, gated, merged")
-    p.add_argument("graphs", nargs="*", help="graphs/resource_models dirs, read for their CRM paths")
+    p.add_argument("graphs", nargs="*", help='graphs/resource_models dirs, read for their CRM paths; '
+                                             '"build" first runs the whole build')
     p.add_argument("-o", "--out", help="the LLM cache and audit log")
     p.add_argument("--ontology", default="vocabularies/ontology/cidoc-crm")
     p.add_argument("--llm-cmd", help="a command that reads a prompt on stdin and prints the reply "
@@ -432,7 +443,9 @@ def main(argv=None):
     p.add_argument("--top", type=int, help="only the N most used paths")
     p.add_argument("--accept", action="store_true", help='merge the "reviewed": true proposals that pass the gate')
     p.add_argument("--skip", action="append", choices=["demo", "her"],
-                   help="with --accept: leave out a gate check whose checkout this machine lacks")
+                   help="with --accept or build: leave out a gate check whose checkout this machine lacks")
+    p.add_argument("--review", action="store_true", help="review proposed.json automatically")
+    p.add_argument("--review-only", action="store_true", help="build: stop after the review")
     p.set_defaults(fn=_ontology)
 
     p = vocab.add_parser("profile", help="the sizes that drive a build's LLM cost, per graph")
