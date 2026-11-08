@@ -8,7 +8,8 @@ Exits 1 if a question that was right is no longer right, or a new wrong answer a
     ... run_bank.py --set <train.json | holdout.json>   # a `ceist questions generate` set
 
 scores each generated question by comparing Ceist's plan with its target, its {Model}
-placeholders filled from the demo's own record names. Prints the counts; exits 0.
+placeholders filled from the demo's own record names. Prints the counts, and each refusal's
+partial match: a subset of the target reading, or off-target. Exits 0.
 
 CEIST_BASE and CEIST_CLIENT put a training run's base and client layers in place of the demo's.
 """
@@ -42,10 +43,10 @@ def status(o, a):
 
 
 def structural(path):
-    from ceist import interpret
-    from ceist.questions import fill, score, target_of
+    from ceist import interpret, narrate
+    from ceist.questions import fill, plan_target, score, target_of, wider
     v, _, matcher, _ = ask.startup()
-    now = Counter()
+    now, partial = Counter(), Counter()
     for o in json.loads(Path(path).read_text())["questions"]:
         q = fill(o["q"], v)
         if q is None:
@@ -56,7 +57,13 @@ def structural(path):
         now[s] += 1
         if s not in ("right", "right refusal"):
             print(f"{s}: {q} | want {o.get('target') or o.get('reason')} | got {target_of(m) or m.refused}")
+        if m.partial is not None:
+            p = "should refuse" if "target" not in o else (
+                "subset" if wider(o["target"], plan_target(m.partial.plan)) else "off-target")
+            partial[p] += 1
+            print(f"  partial ({p}): {narrate(m.partial)}")
     print(dict(now))
+    print("partial matches:", dict(partial))
 
 
 def main():
