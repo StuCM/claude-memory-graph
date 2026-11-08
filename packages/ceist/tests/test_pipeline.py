@@ -32,6 +32,8 @@ elif prompt.startswith("You extend"):
     key, reply = "phrases:" + payload["model"]["model"], {"phrases": {}}
 elif prompt.startswith("You refine"):
     key, reply = "refine:" + str(payload["round"]), {"add": [], "remove": []}
+elif prompt.startswith("You write a starting"):
+    key, reply = "generate:" + payload["model"]["model"], {"questions": []}
 elif prompt.startswith("You write acceptance"):
     key, reply = "questions:" + payload["model"]["model"], {"cases": []}
 else:

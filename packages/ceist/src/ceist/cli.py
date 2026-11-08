@@ -17,6 +17,8 @@
     ceist vocab learn <learn.jsonl> --bundle <bundle.json> -o proposals.json [--exclude cases.json]
     ceist vocab assign <proposals.json> <reply.json>    # the LLM's reply to `learn` → "assign" fields
     ceist vocab merge <proposals.json> <vocab dir> --bundle <bundle.json>   # the approved ones
+    ceist questions generate <graphs dir> -o <out dir> [--reference <dir>] [--per-model N]
+                             [--llm-cmd CMD] [--model M] [--models A,B]   # → train.json, holdout.json
     ceist eval --bundle <bundle.json> --questions <cases.json> [--config ceist.toml] [--report out.md]
                [--min-right N] [--max-dangerous N]      # the acceptance gate: exit 1 if missed
                [--half even|odd]                         # every other question: tune on one half
@@ -133,6 +135,12 @@ def _pipeline(a):
                a.models.split(",") if a.models else None, a.config, a.min_right, a.max_dangerous,
                a.jobs, seeds=a.seed, layer=a.layer, base=a.base, client=a.client, rounds=a.rounds,
                holdout=a.holdout, records=a.records)
+
+
+def _questions(a):
+    from .questions import generate
+    return generate(a.graphs, a.out, a.reference, a.llm_cmd, a.model,
+                    a.models.split(",") if a.models else None, a.per_model)
 
 
 def _eval(a):
@@ -370,6 +378,19 @@ def main(argv=None):
     p.add_argument("vocab")
     p.add_argument("--bundle", required=True)
     p.set_defaults(fn=_merge)
+
+    qs = sub.add_parser("questions", help="a labelled starting question set").add_subparsers(
+        dest="step", required=True)
+    p = qs.add_parser("generate", help="an LLM writes questions and their readings from the schema")
+    p.add_argument("graphs", help="graphs/resource_models")
+    p.add_argument("-o", "--out", required=True)
+    p.add_argument("--reference", help="reference_data: value labels for the descriptions")
+    p.add_argument("--per-model", type=int, default=40, help="about this many questions per model")
+    p.add_argument("--llm-cmd", help="a command that reads a prompt on stdin and prints the reply "
+                                     "(default: claude -p)")
+    p.add_argument("--model", help="passed to claude -p")
+    p.add_argument("--models", help="only these models, comma-separated")
+    p.set_defaults(fn=_questions)
 
     p = sub.add_parser("eval", help="score a bundle and config on acceptance questions")
     p.add_argument("--bundle")
