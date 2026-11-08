@@ -224,9 +224,10 @@ class ArchesVocabulary:
 
     def _absorb(self, bundle) -> None:
         """A vocabulary bundle's phrasings (ceist.bundle): unqualified link
-        entries become relation phrasings, date entries date phrasings, its
-        type words type words. Group blocks are kept for _load_groups; a v1
-        entry with a qualifier is read as a combo of its node's group."""
+        entries become relation phrasings, date entries date phrasings, the ontology
+        layer's property entries field phrasings, its type words type words. Group
+        blocks are kept for _load_groups; a v1 entry with a qualifier is read as a
+        combo of its node's group."""
         from . import bundle as _bundle
         b = bundle if isinstance(bundle, dict) else _bundle.load(bundle)
         for w, t in (b.get("extra_type_words") or {}).items():
@@ -248,7 +249,7 @@ class ArchesVocabulary:
                                                        "set": {q["node"]: q["value"]}})
                     continue
                 kind = (m["nodes"].get(e["node"]) or {}).get("kind")
-                if kind in ("link", "date"):
+                if kind in ("link", "date") or (kind == "property" and e.get("layer") == "ontology"):
                     key = (name, e["node"])
                     self._bundle_forms[key] = list(dict.fromkeys(
                         self._bundle_forms.get(key, []) + e["phrases"]))
@@ -495,6 +496,17 @@ class ArchesVocabulary:
         return [(n["alias"], str(n.get("name") or n["alias"]).lower())
                 for n in self.model(type_name).nodes
                 if n.get("alias") and n.get("datatype") != "semantic"]
+
+    def field_phrases(self) -> list[tuple[str, str, str]]:
+        """(phrase, model, alias): the ontology layer's phrasings of the controlled fields ("made of" → material)."""
+        return [(p.lower(), m, a) for (m, a), phrases in self._bundle_forms.items()
+                if (self.node(m, a) or {}).get("datatype") in CONTROLLED_TYPES for p in phrases]
+
+    def place_fields(self, type_name: str) -> list[tuple[str, str]]:
+        """The links to a CIDOC-CRM Place (E53) a model has, as `fields` gives them: what "where" asks for."""
+        ranges = self._crm[type_name][1]
+        return [(a, label) for a, label in self.fields(type_name)
+                if a in ranges and crm.is_a(ranges[a], "E53")]
 
     def geometry_fields(self, type_name: str) -> list[str]:
         return [n["alias"] for n in self.model(type_name).nodes if n.get("datatype") in GEO_TYPES]

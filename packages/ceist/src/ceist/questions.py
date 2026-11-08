@@ -22,6 +22,7 @@ import zlib
 from pathlib import Path
 
 from . import crm
+from .ground import PREPS
 from .pipeline import Runner, _a_value, _key, model_roles, outline
 
 SHAPES = ("value", "date", "link", "on-tile", "negation", "or", "group-by", "near", "name match",
@@ -359,8 +360,8 @@ def _link_question(p: str, many: str, other: str) -> str:
 
 
 def templated(vocab, ontology: dict) -> list[dict]:
-    """A question bank from the ontology layer alone, with no LLM: for each link or date
-    node a graph's CRM paths give a phrase, template questions using it, each with its
+    """A question bank from the ontology layer alone, with no LLM: for each link, date or
+    field node a graph's CRM paths give a phrase, template questions using it, each with its
     target, plus refusals ("why", and "who <verb>" where the event has no one actor).
     A text with two targets is left out: the layer drops that phrase, so the reading
     rests on node labels, which no target here can predict."""
@@ -393,6 +394,11 @@ def templated(vocab, ontology: dict) -> list[dict]:
                     if " " not in p and f"who {p}" not in said:
                         add(f"who {p} {{{name}}}?", name, "backlink",
                             refuse=f"no one actor on the event {node} hangs from")
+                    continue
+                if e["kind"] == "property":
+                    if p.split()[-1] not in PREPS:
+                        add(f"what is the {p} of {{{name}}}?", name, "record detail",
+                            {"model": name, "detail": [node], "conditions": []})
                     continue
                 targets = ends.get((name, node)) or []
                 if p.startswith("who "):

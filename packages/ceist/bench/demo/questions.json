@@ -642,6 +642,28 @@
    "refused": null
   },
   {
+   "q": "what kind of monument is Navan Fort?",
+   "expect": "answer",
+   "count": 1,
+   "want": "Show the monument type of Monument 'Navan Fort, Navan'.",
+   "note": "record detail by the ontology's 'kind' (025): monument type Settlement, Ritual Site, checked against monument.json",
+   "status": "right",
+   "understood": "Show the monument type of Monument 'Navan Fort, Navan'.",
+   "got": 1,
+   "refused": null
+  },
+  {
+   "q": "where is Navan Fort?",
+   "expect": "answer",
+   "count": 1,
+   "want": "Show the named location of Monument 'Navan Fort, Navan'.",
+   "note": "'where' → its links to a place (E53, 025): named location Emain Macha, County Armagh, checked against monument.json",
+   "status": "right",
+   "understood": "Show the named location of Monument 'Navan Fort, Navan'.",
+   "got": 1,
+   "refused": null
+  },
+  {
    "q": "which tales have figures associated with Conchobar mac Nessa?",
    "expect": "answer-later",
    "count": null,
@@ -659,7 +681,7 @@
    "status": "right",
    "understood": null,
    "got": null,
-   "refused": "couldn't place 'killed' — answering without it would widen the question"
+   "refused": "out of grammar ('who' (actor) can't join Figure)"
   },
   {
    "q": "which tales are about love?",

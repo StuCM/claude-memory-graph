@@ -167,16 +167,18 @@ def chains(graph: dict) -> dict[str, list[str]]:
     return out
 
 
+def is_controlled(node: dict) -> bool:
+    return "concept" in node["datatype"] or node["datatype"] == "reference"
+
+
 _TIME_SPAN_ENDS = {"P82a": "P82b", "P82": None}
-# membership is the record's own: a group deeper in (a vessel's crew, a consultation's
-# planning body, a record's approvers) gives its members a role there, not membership
-_ON_ROOT = {"P107", "P107i"}
 
 
 def ontology_entries(graph: dict, ontology: dict) -> list[dict]:
-    """The ontology layer's entries for one graph: a link or date node gets the
-    phrases of every ontology path its CRM path ends with. A date is matched by the
-    event its time-span hangs from ("O18i E11 P4"), and carries its begin and end.
+    """The ontology layer's entries for one graph: a link, date or controlled (concept or
+    reference) node gets the phrases of every ontology path its CRM path ends with. A
+    date is matched by the event its time-span hangs from ("O18i E11 P4"), and carries
+    its begin and end.
     "who" before a date's phrase ("who made") names the one actor (P14) of that event."""
     g = graph["graph"][0] if "graph" in graph else graph
     paths = chains(g)
@@ -185,7 +187,7 @@ def ontology_entries(graph: dict, ontology: dict) -> list[dict]:
     for n in g["nodes"]:
         kind = _bundle.kind_of(n)
         tokens = paths.get(n.get("alias") or "")
-        if kind == "property" or not tokens:
+        if not tokens or (kind == "property" and not is_controlled(n)):
             continue
         entry = {"kind": kind, "node": n["alias"]}
         if kind == "date":
@@ -212,7 +214,8 @@ def ontology_entries(graph: dict, ontology: dict) -> list[dict]:
 
 
 def _ends_with(tokens: list[str], path: list[str]) -> bool:
-    """The path may stop at the property into the node, or name the node's class too."""
-    if path[0] in _ON_ROOT and tokens[1:2] != path[:1]:
-        return False
+    """The path may stop at the property into the node, or name the node's class too.
+    A path that starts with "^" starts at the record's root ("^ P107": its own members)."""
+    if path[0] == "^":
+        return tokens[1:] == path[1:] or tokens[1:-1] == path[1:]
     return tokens[-len(path):] == path or tokens[:-1][-len(path):] == path

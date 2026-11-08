@@ -83,15 +83,16 @@ def stub(tmp_path) -> str:
 
 def test_paths_are_ranked_by_the_nodes_they_reach(tmp_path):
     docs = ov.graph_docs([graphs_dir(tmp_path)])
-    cands, props, skipped = ov.collect(docs, {"entries": []}, ov.definitions(SOURCE))
+    cands, skipped = ov.collect(docs, {"entries": []}, ov.definitions(SOURCE))
     assert [(c["path"], c["kind"], c["nodes"], c["graphs"]) for c in cands] == [
-        ("P108i E12 P14", "link", 2, 2), ("E22 P49", "link", 1, 1), ("P108i E12 P4", "date", 1, 1)]
-    assert props == [{"path": "E22 P2", "nodes": 1}]
+        ("P108i E12 P14", "link", 2, 2), ("E22 P2", "property", 1, 1), ("E22 P49", "link", 1, 1),
+        ("P108i E12 P4", "date", 1, 1)]
     assert skipped["outside CIDOC-CRM and CRMsci"] == 1
-    phrased = {"entries": [{"path": "E22 P49", "kind": "link", "phrases": ["kept by"]}]}
-    cands, _, skipped = ov.collect(docs, phrased, ov.definitions(SOURCE))
+    phrased = {"entries": [{"path": "E22 P49", "kind": "link", "phrases": ["kept by"]},
+                           {"path": "P2", "kind": "property", "phrases": ["kind"]}]}
+    cands, skipped = ov.collect(docs, phrased, ov.definitions(SOURCE))
     assert [c["path"] for c in cands] == ["P108i E12 P14", "P108i E12 P4"]
-    assert skipped["already phrased"] == 1
+    assert skipped["already phrased"] == 2
 
 
 def test_prompts_hold_only_crm_text_and_seeds(tmp_path):
@@ -112,10 +113,10 @@ def test_proposals_are_written_for_review_and_a_rerun_pays_nothing(tmp_path):
     graphs, cmd = graphs_dir(tmp_path), stub(tmp_path)
     ov.propose([graphs], onto, tmp_path / "out", cmd, log=lambda _: None)
     doc = json.loads((onto / "proposed.json").read_text())
-    assert [(p["path"], p["phrases"], p["reviewed"]) for p in doc["proposals"]] == [
-        ("P108i E12 P14", ["phrase p14"], False), ("P108i E12 P4", ["phrase p4"], False)]
+    assert [(p["path"], p["kind"], p["phrases"], p["reviewed"]) for p in doc["proposals"]] == [
+        ("P108i E12 P14", "link", ["phrase p14"], False), ("E22 P2", "property", ["phrase p2"], False),
+        ("P108i E12 P4", "date", ["phrase p4"], False)]
     assert [(s["path"], s["skip"]) for s in doc["skipped"]] == [("E22 P49", "audit metadata")]
-    assert doc["property_nodes"] == [{"path": "E22 P2", "nodes": 1}]
     doc["proposals"][0].update(phrases=["made by"], reviewed=True)
     (onto / "proposed.json").write_text(json.dumps(doc))
     ov.propose([graphs], onto, tmp_path / "out", cmd, log=lambda _: None)

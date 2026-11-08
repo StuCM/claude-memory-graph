@@ -289,7 +289,8 @@ def _detail(vocab: Vocabulary, g: Grounding) -> "Detail | str | None":
     when the question isn't one. Only a question that would otherwise refuse
     becomes one: a link that can't point at the record ("what period is Navan
     Fort", `field_of`), or words nothing placed beside the record's own type
-    ("what type of monument is Navan Fort")."""
+    ("what type of monument is Navan Fort"), or "where" and the record alone (its
+    links to a place)."""
     fields = getattr(vocab, "fields", None)
     e = g.field_of
     if e is not None:
@@ -311,9 +312,15 @@ def _detail(vocab: Vocabulary, g: Grounding) -> "Detail | str | None":
             return f"{asks}, and more besides; ask for the field alone)"
         return Detail(a.entity, [own])
     a = g.anchor
-    if (fields is None or not g.uncovered or len(g.anchors) != 1 or g.edges or g.values
-            or g.dates or g.groups or g.contains or g.name or g.count
-            or any(n.type != a.type for n in g.vars())):
+    if (fields is None or len(g.anchors) != 1 or g.edges or g.values or g.dates or g.groups
+            or g.contains or g.name or g.count or any(n.type != a.type for n in g.vars())):
+        return None
+    if g.wh == "where" and not g.uncovered:
+        places = vocab.place_fields(a.type)
+        if not places:
+            return f"'where': a {a.type} has no link to a place to answer it from"
+        return Detail(a.entity, places)
+    if not g.uncovered:
         return None
     words = (set(terms(g.text)) | set(g.uncovered)) - set(a.match_terms)
     if g.wh == "when" or (g.wh == "what" and words & DATE_WORDS):
@@ -325,8 +332,12 @@ def _detail(vocab: Vocabulary, g: Grounding) -> "Detail | str | None":
         if len(dates) == 1:
             g.suggestions = []
             return Detail(a.entity, list(dates))
+    # "what kind of monument is Navan Fort": a field phrase with or without the record's type word
+    bare = words - {w for t, m in vocab.type_words().items() if m == a.type for w in terms(t)}
+    phrased = {f for p, m, f in getattr(vocab, "field_phrases", lambda: [])()
+               if m == a.type and terms(p) and set(terms(p)) in (words, bare)}
     named = [(f, label) for f, label in fields(a.type)
-             if words in (set(terms(label)), set(terms(f.replace("_", " "))))]
+             if words in (set(terms(label)), set(terms(f.replace("_", " ")))) or f in phrased]
     if len(named) == 1:
         g.suggestions = []            # for the words the field just placed
         return Detail(a.entity, named)
