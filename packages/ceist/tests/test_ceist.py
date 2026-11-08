@@ -637,3 +637,37 @@ def test_a_link_that_cant_say_what_it_points_at_or_the_records_own_field_refuses
     assert "'period' could be Building 'Clock Tower''s own period, or a link to it" in m.refused
     m = interpret(Shapes(), "which sites have period Clock Tower?")
     assert narrate(m.plan) == "Find Sites that period Building 'Clock Tower'."
+
+
+def test_a_refusal_offers_a_partial_match_from_what_grounded():
+    m = interpret(Toy(), "which listed buildings are folk of Leeds Dock?")
+    assert m.plan is None and "couldn't place 'folk'" in m.refused
+    p = m.partial
+    assert p.unused == ["folk"]
+    assert p.plan.type == "Building"
+    assert p.plan.where[0] == LinkTo(None, EntityRef(Toy.records[0]), "any")
+    assert p.plan.where[1] == HasValue("heritage_status", "c-listed", "Listed")
+    assert narrate(p) == ("Partial match: Find Buildings linked to or from Site 'Leeds Dock' and "
+                          "whose heritage status is Listed. Couldn't use 'folk'.")
+
+
+@pytest.mark.parametrize("q", [
+    "which buildings are not folk of Leeds Dock?",
+    "which buildings with more than two folk are on site Leeds Dock?",
+    "which buildings from before 1900 are folk of Leeds Dock?",
+    "which buildings from before the war are folk of Leeds Dock?",
+    "which buildings are folk of Leeds Dock or Salts Mill?",
+    "which are the oldest buildings folk of Leeds Dock?",
+])
+def test_no_partial_match_that_would_drop_a_negation_number_date_or_or(q):
+    assert interpret(Toy(), "which buildings are folk of Leeds Dock?").partial is not None
+    m = interpret(Toy(), q)
+    assert m.refused and m.partial is None
+
+
+def test_no_partial_match_when_nothing_grounded_or_only_a_link_implied_the_type():
+    m = interpret(Toy(), "what colour is the bikeshed?")
+    assert "couldn't place 'bikeshed', 'colour'" in m.refused and m.partial is None
+    m = interpret(Toy(), "what is folk designed by Ada Lovelace?")
+    assert m.grounding.subject.implicit and "couldn't place 'folk'" in m.refused
+    assert m.partial is None
