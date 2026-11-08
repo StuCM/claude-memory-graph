@@ -9,8 +9,11 @@ Exits 1 if a question that was right is no longer right, or a new wrong answer a
 
 scores each generated question by comparing Ceist's plan with its target, its {Model}
 placeholders filled from the demo's own record names. Prints the counts; exits 0.
+
+CEIST_BASE and CEIST_CLIENT put a training run's base and client layers in place of the demo's.
 """
 import json
+import os
 import sys
 from collections import Counter
 from pathlib import Path
@@ -18,6 +21,10 @@ from pathlib import Path
 BANK = Path(__file__).with_name("questions.json")
 sys.path.insert(0, str(Path.cwd()))
 import ask  # noqa: E402  (the demo's ask.py, from the current directory)
+
+if os.environ.get("CEIST_CLIENT"):   # a training run's client layer in place of the demo's vocab/
+    from ceist.bundle import layered
+    ask.layered = lambda graphs, base, _: layered(graphs, base, os.environ["CEIST_CLIENT"])
 
 
 def status(o, a):

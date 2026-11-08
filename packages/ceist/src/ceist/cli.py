@@ -20,6 +20,9 @@
     ceist vocab ontology <graphs dir> [<graphs dir> …] -o <out dir> [--max-calls N] [--top N]
                          [--llm-cmd CMD] [--model M]   # CRM path phrasings → proposed.json
     ceist vocab ontology --accept [--skip demo|her]   # the reviewed proposals, gated → phrases.json
+    ceist vocab profile <graphs dir> [--reference <dir>] [--json]   # the sizes that drive LLM cost
+    ceist vocab estimate <graphs dir> --stages base,data,questions,ontology [--model M] [--rounds N]
+                         [--ledger <run dir> …] [--json]   # calls, tokens and dollars before a run
     ceist questions generate <graphs dir> -o <out dir> [--reference <dir>] [--per-model N]
                              [--llm-cmd CMD] [--model M] [--models A,B]   # → train.json, holdout.json
     ceist eval --bundle <bundle.json> --questions <cases.json> [--config ceist.toml] [--report out.md]
@@ -251,6 +254,32 @@ def _ontology(a):
     return ov.propose(a.graphs, a.ontology, a.out, a.llm_cmd, a.model, a.max_calls, a.top)
 
 
+def _profile(a):
+    from . import cost
+    p = cost.profile(a.graphs, a.reference, a.ontology)
+    print(json.dumps(p, indent=1) if a.json else "\n".join(cost.profile_lines(p)))
+    return 0
+
+
+def _estimate(a):
+    from . import cost
+    stages = a.stages.split(",")
+    unknown = set(stages) - set(cost.MODELS)
+    if unknown:
+        print(f"unknown stage: {', '.join(sorted(unknown))} (known: {', '.join(cost.MODELS)})", file=sys.stderr)
+        return 2
+    e = cost.estimate(a.graphs, stages, {s: a.model for s in stages} if a.model else None, a.rounds,
+                      a.ledger or (), reference=a.reference, seeds=a.seed, base=a.base, client=a.client,
+                      questions=a.questions, per_model=a.per_model, ontology_dir=a.ontology)
+    if a.json:
+        print(json.dumps(e))
+        return 0
+    print("\n".join(cost.estimate_lines(e, a.rounds)))
+    if a.ledger:
+        print("\n" + "\n".join(cost.against(cost.read_runs(a.ledger))))
+    return 0
+
+
 def _fetch(a):
     from . import onnx
     if a.model not in onnx.MODELS:
@@ -405,6 +434,30 @@ def main(argv=None):
     p.add_argument("--skip", action="append", choices=["demo", "her"],
                    help="with --accept: leave out a gate check whose checkout this machine lacks")
     p.set_defaults(fn=_ontology)
+
+    p = vocab.add_parser("profile", help="the sizes that drive a build's LLM cost, per graph")
+    p.add_argument("graphs")
+    p.add_argument("--reference", help="reference_data: list sizes")
+    p.add_argument("--ontology", default="vocabularies/ontology/cidoc-crm")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(fn=_profile)
+
+    p = vocab.add_parser("estimate", help="calls, tokens and dollars per stage, before a run")
+    p.add_argument("graphs")
+    p.add_argument("--stages", default="base", help="comma-separated: ontology, base, data, questions")
+    p.add_argument("--model", help="every stage's model (default: opus, data sonnet)")
+    p.add_argument("--rounds", type=int, default=0, help="refine rounds")
+    p.add_argument("--reference")
+    p.add_argument("--seed", action="append", help="as the pipeline's --seed")
+    p.add_argument("--base", help="the base layer's root, a seed as --layer base reads it")
+    p.add_argument("--client", help="the client layer (data): its combos go with the labels")
+    p.add_argument("--questions", help="as the pipeline's --questions")
+    p.add_argument("--per-model", type=int, default=40, help="questions stage: as `questions generate`")
+    p.add_argument("--ontology", default="vocabularies/ontology/cidoc-crm")
+    p.add_argument("--ledger", action="append", help="a past run's out dir: replies sized from its usage, "
+                                                     "and the estimate set beside its actuals")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(fn=_estimate)
 
     qs = sub.add_parser("questions", help="a labelled starting question set").add_subparsers(
         dest="step", required=True)

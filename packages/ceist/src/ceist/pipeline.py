@@ -11,7 +11,7 @@ Out dir:
                                    each model's type words in the manifest
     cases.json                     the acceptance questions, frozen: kept if present
     bundle.json, report.md
-    audit.jsonl                    every prompt sent, in full and hashed
+    audit.jsonl                    every prompt sent, in full and hashed, with its usage and cost
     cache/<key>.json               replies, by nodegroup description and prompt version
 
 Layers (`--layer`, see bundle.layered):
@@ -40,6 +40,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from . import bundle as _bundle
+from . import cost, prices
 from .crm import crm_roles
 from .text import plurals
 
@@ -290,23 +291,44 @@ class Runner:
         self.model = model or ""
         self.calls = self.hits = 0
         self.failures: list[dict] = []
+        self.ledger: list[dict] = []
 
-    def _send(self, prompt: str) -> str:
+    def _send(self, prompt: str) -> dict:
+        """claude -p's JSON result; a stub (--llm-cmd) may print the same shape, else its
+        output is the reply."""
         with tempfile.TemporaryDirectory() as cwd:
             p = subprocess.run(self.argv, input=prompt, capture_output=True, text=True, cwd=cwd,
                                timeout=1800)
         if p.returncode and not self.claude:
             raise LLMError(f"{self.argv[0]} exited {p.returncode}: {p.stderr.strip()[-300:]}")
-        if not self.claude:
-            return p.stdout
         try:
-            reply, _ = json.JSONDecoder().raw_decode(p.stdout.strip())
+            env, _ = json.JSONDecoder().raw_decode(p.stdout.strip())
         except ValueError:
+            env = None
+        if not self.claude and not (isinstance(env, dict) and env.get("type") == "result"):
+            return {"result": p.stdout}
+        if not isinstance(env, dict):
             raise LLMError(f"claude -p gave no JSON (exit {p.returncode}): "
-                           f"{(p.stderr or p.stdout).strip()[-300:]}") from None
-        if reply.get("is_error"):
-            raise LLMError(f"claude -p: {reply.get('result')}")
-        return reply.get("result") or ""
+                           f"{(p.stderr or p.stdout).strip()[-300:]}")
+        return env
+
+    def _spent(self, what: dict, sha: str, env: dict | None, prompt: str | None) -> None:
+        """The call's line in audit.jsonl: what was asked, the prompt sent, and the ledger
+        (stage, model, usage, dollars). A reply from the cache has no prompt and costs 0."""
+        usage = (env or {}).get("usage") or {}
+        model = next(iter((env or {}).get("modelUsage") or {}), self.model)
+        if prompt is None:
+            dollars, source = 0.0, "cache"
+        elif env and env.get("total_cost_usd") is not None:
+            dollars, source = env["total_cost_usd"], "claude"
+        else:
+            dollars, source = (prices.cost(usage, model), "prices") if usage else (None, None)
+        row = dict(what, ts=int(time.time()), sha256=sha, **({"prompt": prompt} if prompt is not None else {}),
+                   stage=cost.stage_of(what), llm=model, cached=prompt is None,
+                   usage={k: usage.get(k, 0) for k in cost.USAGE}, cost_usd=dollars, cost_from=source)
+        self.ledger.append({k: v for k, v in row.items() if k != "prompt"})
+        with open(self.audit, "a", encoding="utf-8") as f:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
     def ask(self, key: str, prompt: str, check, what: dict):
         """The reply to `prompt`, parsed and passed by `check` (→ errors); one
@@ -315,19 +337,22 @@ class Runner:
         hit = self.cache / f"{_key(key, self.model)}.json"
         if hit.exists():
             self.hits += 1
+            self._spent(what, hashlib.sha256(prompt.encode()).hexdigest(), None, None)
             return json.loads(hit.read_text())
         text = prompt
         for _ in range(2):
             self.calls += 1
-            sha = hashlib.sha256(text.encode()).hexdigest()
-            with open(self.audit, "a", encoding="utf-8") as f:
-                f.write(json.dumps(dict(what, ts=int(time.time()), sha256=sha, prompt=text),
-                                   ensure_ascii=False) + "\n")
+            sha, env = hashlib.sha256(text.encode()).hexdigest(), None
             try:
-                raw = self._send(text)
+                env = self._send(text)
+                if env.get("is_error"):
+                    raise LLMError(f"claude -p: {env.get('result')}")
             except (LLMError, subprocess.TimeoutExpired) as e:
                 errors = [str(e)]
                 break
+            finally:
+                self._spent(what, sha, env, text)
+            raw = env.get("result") or ""
             try:
                 reply = _bundle.parse_reply(raw)
                 errors = check(reply)
@@ -1463,6 +1488,7 @@ def run_data(graphs: Path, out: Path, client: Path, reference=None, questions=No
         lines += ["", "## Failed calls", ""] + [
             f"- {f['kind']} {f['model']}{'.' + f['node'] if f.get('node') else ''}: "
             + "; ".join(f["errors"][:3]) for f in llm.failures]
+    lines += [""] + cost.summary(llm.ledger)
     text = "\n".join(lines) + "\n"
     (out / "report.md").write_text(text)
     log(text)
@@ -1570,6 +1596,7 @@ def run(graphs: str | Path, out: str | Path, reference=None, questions=None, llm
                         "record's name): " + "; ".join(short))
     text = report(coverage(descriptions, vocab_dir, status), phrase, planner, gate, llm, warnings,
                   types, doubts) + "".join(x + "\n" for x in ["", *refined] if refined)
+    text += "\n" + "\n".join(cost.summary(llm.ledger)) + "\n"
     (out / "report.md").write_text(text)
     log(text)
     if layer == "base" and not gate:

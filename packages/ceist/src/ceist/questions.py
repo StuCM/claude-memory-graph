@@ -21,7 +21,7 @@ import re
 import zlib
 from pathlib import Path
 
-from . import crm
+from . import cost, crm
 from .ground import PREPS
 from .pipeline import Runner, _a_value, _key, model_roles, outline
 
@@ -180,6 +180,14 @@ def bank_item(x: dict, model: str) -> dict:
     return out
 
 
+def prompt_for(name: str, descriptions: dict, roles: dict, per_model: int) -> tuple[str, str]:
+    """(cache key, prompt) of one model's call."""
+    p = payload(descriptions[name], roles.get(name, {}), descriptions)
+    text = json.dumps(p, ensure_ascii=False, indent=1)
+    return (_key("generate", name, str(per_model), json.dumps(p, sort_keys=True)),
+            PROMPT.format(model=name, n=per_model, shapes=", ".join(SHAPES), payload=text))
+
+
 def generate(graphs, out, reference=None, llm_cmd=None, model=None, models=None, per_model: int = 40,
              log=print) -> int:
     """train.json and holdout.json for the graphs; 0 when every call answered, else 1."""
@@ -196,11 +204,8 @@ def generate(graphs, out, reference=None, llm_cmd=None, model=None, models=None,
     llm = Runner(out, llm_cmd, model)
     items, seen = [], set()
     for name in asked:
-        p = payload(descriptions[name], roles.get(name, {}), descriptions)
-        text = json.dumps(p, ensure_ascii=False, indent=1)
-        prompt = PROMPT.format(model=name, n=per_model, shapes=", ".join(SHAPES), payload=text)
-        reply = llm.ask(_key("generate", name, str(per_model), json.dumps(p, sort_keys=True)), prompt,
-                        lambda r: check(r, descriptions), {"kind": "generate", "model": name})
+        key, prompt = prompt_for(name, descriptions, roles, per_model)
+        reply = llm.ask(key, prompt, lambda r: check(r, descriptions), {"kind": "generate", "model": name})
         for x in (reply or {}).get("questions", []):
             if _norm(x["q"]) not in seen:
                 seen.add(_norm(x["q"]))
@@ -215,6 +220,7 @@ def generate(graphs, out, reference=None, llm_cmd=None, model=None, models=None,
         f"LLM calls: {llm.calls} ({llm.hits} from the cache)")
     for f in llm.failures:
         log(f"failed: {f['model']}: {'; '.join(f['errors'][:3])}")
+    log("\n".join(cost.summary(llm.ledger)))
     return 1 if llm.failures else 0
 
 

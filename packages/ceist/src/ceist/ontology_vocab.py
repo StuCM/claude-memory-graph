@@ -21,7 +21,7 @@ from collections import Counter
 from pathlib import Path
 
 from . import bundle as _bundle
-from . import crm
+from . import cost, crm
 from .pipeline import Runner, _key
 
 PROMPT_VERSION = "1"
@@ -192,7 +192,7 @@ def propose(graph_dirs, ontology_dir: Path, out: Path, llm_cmd: str | None = Non
             log(f"stopped at --max-calls {max_calls}; re-run to go on (answered paths are cached)")
             break
         text = prompt(batch, ontology, defs)
-        what = {"step": "ontology", "paths": [c["path"] for c in batch]}
+        what = {"kind": "ontology", "paths": [c["path"] for c in batch]}
         reply = run.ask("ontology\0" + PROMPT_VERSION + "\0" + text, text, lambda r, b=batch: check(r, b), what)
         for x in (reply or {}).get("paths", []):
             c = next(c for c in batch if c["path"] == x["path"])
@@ -222,6 +222,7 @@ def propose(graph_dirs, ontology_dir: Path, out: Path, llm_cmd: str | None = Non
     (ontology_dir / "proposed.json").write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n")
     log(f"{len(proposals)} proposals, {len(skips)} skipped by the LLM → {ontology_dir / 'proposed.json'}; "
         f"LLM calls {run.calls}, from the cache {run.hits}; {len(run.failures)} failed")
+    log("\n".join(cost.summary(run.ledger)))
     return 1 if run.failures else 0
 
 

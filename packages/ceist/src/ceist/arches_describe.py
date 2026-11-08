@@ -73,6 +73,9 @@ def crm_label(uri: str | None) -> str:
 
 def describe_graph(doc: dict, graph_names: dict, rdm=None, small=None) -> dict:
     g = doc["graph"][0] if "graph" in doc else doc
+    for n in g["nodes"]:
+        if n.get("config") is None:   # Alizarin refuses a null config (arches-lingo has them)
+            n["config"] = {}
     alizarin.register_graph(json.dumps(g))
     tree = alizarin.get_graph_schema(g["graphid"])
     nodes = {n["nodeid"]: n for n in g["nodes"]}

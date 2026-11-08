@@ -2,7 +2,8 @@
 
     .venv-ceist/bin/python packages/ceist/bench/ontology/run.py [name=<graphs dir> ...]
 
-With no arguments it runs the local checkouts in SETS that exist. For each set: how
+With no arguments it runs the local checkouts in SETS that exist; CEIST_ONTOLOGY names
+another ontology layer to score (a training run's). For each set: how
 independent of HER it is (same graph ids, node-alias overlap), the share of link and
 date nodes whose CRM path has an ontology phrasing, and a template question set
 (`questions.templated`, no LLM) scored with no vocabulary, with the ontology layer
@@ -11,6 +12,7 @@ filled with a made-up record name, one per model; no record data is read.
 """
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -20,7 +22,7 @@ from collections import Counter
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[4]
-ONTOLOGY = REPO / "vocabularies" / "ontology" / "cidoc-crm"
+ONTOLOGY = Path(os.environ.get("CEIST_ONTOLOGY") or REPO / "vocabularies" / "ontology" / "cidoc-crm")
 BASE = REPO / "vocabularies" / "base"
 SETS = {
     "lingo": "/home/stuart/git/fat/arches/arches-lingo/arches_lingo/pkg/graphs/resource_models",
