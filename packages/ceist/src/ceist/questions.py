@@ -21,6 +21,7 @@ import re
 import zlib
 from pathlib import Path
 
+from . import crm
 from .pipeline import Runner, _a_value, _key, model_roles, outline
 
 SHAPES = ("value", "date", "link", "on-tile", "negation", "or", "group-by", "near", "name match",
@@ -29,7 +30,7 @@ SHAPES = ("value", "date", "link", "on-tile", "negation", "or", "group-by", "nea
 ASKS = {"date": "when", "actor": "who", "place": "where", "type": "what kind", "link": "which"}
 NAME, TEXT = "@name", "@text"
 HOLDOUT_EVERY = 5
-_PLACEHOLDER = re.compile(r"\{([A-Za-z][\w ]*)\}")
+_PLACEHOLDER = re.compile(r"\{([A-Za-z][^{}]*)\}")
 
 PROMPT = """You write a starting question set for a natural-language search over the Arches \
 model "{model}". People will ask these; the search reads each question into a structured plan, \
@@ -333,3 +334,83 @@ def score(item: dict, m, ends: dict[str, str] | None = None) -> str:
     if got is None:
         return "refused"
     return "right" if matches(item["target"], got, ends) else "wrong reading"
+
+
+_AT = ("in", "of", "within", "at", "as", "from", "with")
+_VERBS = {"involved", "mentions", "concerns"}
+
+
+def _plural(name: str) -> str:
+    from .text import plurals
+    low = name.replace("_", " ").lower()
+    irregular = plurals(low) - {low, low + "s"}
+    return irregular.pop() if irregular else low + "s"
+
+
+def _link_question(p: str, many: str, other: str) -> str:
+    last = p.split()[-1]
+    if last == "by":
+        return f"which {many} were {p} {{{other}}}?"
+    if last in _AT:
+        return f"which {many} are {p} {{{other}}}?"
+    if p in _VERBS:
+        return f"which {many} {p} {{{other}}}?"
+    return f"which {many} have {{{other}}} as {p}?"
+
+
+def templated(vocab, ontology: dict) -> list[dict]:
+    """A question bank from the ontology layer alone, with no LLM: for each link or date
+    node a graph's CRM paths give a phrase, template questions using it, each with its
+    target, plus refusals ("why", and "who <verb>" where the event has no one actor).
+    A text with two targets is left out: the layer drops that phrase, so the reading
+    rests on node labels, which no target here can predict."""
+    who = vocab.implied_types().get("who")
+    ends = {(m, r.name): sorted(t) for r in vocab.relations() for m, t in r.ends}
+    found: dict[str, list[dict]] = {}
+
+    def add(q: str, model: str, shape: str, target: dict | None = None, refuse: str = ""):
+        x = {"q": q, "model": model, "shape": shape, "wording": "template"}
+        found.setdefault(q, []).append(dict(x, refuse=refuse) if refuse else dict(x, target=target))
+
+    for name in sorted(vocab.models):
+        entries = crm.ontology_entries(vocab.models[name].doc, ontology)
+        many, said = _plural(name), {p for e in entries for p in e["phrases"]}
+        for e in entries:
+            node = e["node"]
+            for i, p in enumerate(e["phrases"]):
+                if e["kind"] == "date":
+                    if p.endswith(" date") or p.startswith("date of"):
+                        add(f"what is the {p} of {{{name}}}?", name, "record detail",
+                            {"model": name, "detail": [node], "conditions": []})
+                    if "date" in p:
+                        continue
+                    add(f"when was {{{name}}} {p}?", name, "record detail",
+                        {"model": name, "detail": [node], "conditions": []})
+                    if i == 0:
+                        add(f"which {many} were {p} before 1900?", name, "date",
+                            {"model": name, "count": False, "conditions": [{"node": node}]})
+                        add(f"why was {{{name}}} {p}?", name, "date", refuse="why")
+                    if " " not in p and f"who {p}" not in said:
+                        add(f"who {p} {{{name}}}?", name, "backlink",
+                            refuse=f"no one actor on the event {node} hangs from")
+                    continue
+                targets = ends.get((name, node)) or []
+                if p.startswith("who "):
+                    if who in targets:
+                        add(f"{p} {{{name}}}?", who, "backlink",
+                            {"model": who, "count": False, "conditions": [{"node": node, "link": name}]})
+                    continue
+                if not targets:
+                    continue
+                other = who if who in targets else targets[0]
+                q = _link_question(p, many, other)
+                add(q, name, "link", {"model": name, "count": False, "conditions": [{"node": node, "link": other}]})
+                if i == 0:
+                    add("how many " + q[len("which "):], name, "link",
+                        {"model": name, "count": True, "conditions": [{"node": node, "link": other}]})
+    items = []
+    for q in sorted(found):
+        xs = [x for i, x in enumerate(found[q]) if x not in found[q][:i]]
+        if len(xs) == 1:
+            items.append(bank_item(xs[0], xs[0]["model"]))
+    return items
