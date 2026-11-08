@@ -310,6 +310,13 @@ def _detail(vocab: Vocabulary, g: Grounding) -> "Detail | str | None":
             or any(n.type != a.type for n in g.vars())):
         return None
     words = set(terms(g.text)) - set(a.match_terms)
+    if g.wh == "when":
+        # "when was Navan Fort built?": the one date of its type a form names exactly
+        dates = {(d.field, d.label) for d in vocab.date_fields()
+                 if a.type in d.owners and any(set(terms(f)) == words for f in d.forms)}
+        if len(dates) == 1:
+            g.suggestions = []
+            return Detail(a.entity, list(dates))
     named = [(f, label) for f, label in fields(a.type)
              if words in (set(terms(label)), set(terms(f.replace("_", " "))))]
     if len(named) == 1:

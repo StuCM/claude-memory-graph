@@ -1,0 +1,33 @@
+{
+ "format": "ceist.ontology/1",
+ "entries": [
+  {"path": "P108i E12 P14", "kind": "link", "phrases": ["made by", "produced by", "manufactured by", "maker", "producer"]},
+  {"path": "O18i E11 P14", "kind": "link", "phrases": ["built by", "constructed by", "builder"]},
+  {"path": "E65 P14", "kind": "link", "phrases": ["created by", "written by", "author"]},
+  {"path": "P9 E7 P14", "kind": "link", "phrases": ["involved", "associated with", "people involved"]},
+  {"path": "P75i", "kind": "link", "phrases": ["copyright holder", "copyright owned by", "rights held by"]},
+  {"path": "P89i", "kind": "link", "phrases": ["located in", "situated in", "within"]},
+  {"path": "E53 P89 E53", "kind": "link", "phrases": ["part of", "within", "falls within"]},
+  {"path": "P74i", "kind": "link", "phrases": ["kept by", "held by", "repository"]},
+  {"path": "P49", "kind": "link", "phrases": ["held by", "in the keeping of", "archive holder"]},
+  {"path": "P51", "kind": "link", "phrases": ["owned by", "owner"]},
+  {"path": "P107", "kind": "link", "phrases": ["members", "member"]},
+  {"path": "P107i", "kind": "link", "phrases": ["member of", "parent organisation", "parent organization"]},
+  {"path": "P46i", "kind": "link", "phrases": ["part of", "forms part of"]},
+  {"path": "P148i", "kind": "link", "phrases": ["part of", "comes from"]},
+  {"path": "P67 E4", "kind": "link", "phrases": ["set in", "set in the period"]},
+  {"path": "P129 E18", "kind": "link", "phrases": ["mentions", "concerns"]},
+  {"path": "P67i E73", "kind": "link", "phrases": ["cited in", "sources", "references"]},
+  {"path": "P73", "kind": "link", "phrases": ["translation", "translated as"]},
+  {"path": "P96", "kind": "link", "phrases": ["mother"]},
+  {"path": "P97", "kind": "link", "phrases": ["father"]},
+  {"path": "P189i", "kind": "link", "phrases": ["approximated by"]},
+  {"path": "P108i E12 P4", "kind": "date", "phrases": ["made", "produced", "date made", "manufactured"]},
+  {"path": "O18i E11 P4", "kind": "date", "phrases": ["built", "constructed", "construction date", "date built"]},
+  {"path": "P98i E67 P4", "kind": "date", "phrases": ["born", "date of birth", "birth date"]},
+  {"path": "P100i E69 P4", "kind": "date", "phrases": ["died", "date of death", "death date"]},
+  {"path": "P95i E66 P4", "kind": "date", "phrases": ["founded", "formed", "established"]},
+  {"path": "P12i E5 P4", "kind": "date", "phrases": ["in use", "used", "occupied"]},
+  {"path": "E65 P4", "kind": "date", "phrases": ["created", "written"]}
+ ]
+}

@@ -141,3 +141,73 @@ def link_ranges(graph: dict) -> dict[str, str]:
         if cls:
             out[n["alias"]] = cls
     return out
+
+
+def is_a(cls: str, kind: str) -> bool:
+    return kind in _kinds(cls)
+
+
+def chains(graph: dict) -> dict[str, list[str]]:
+    """{alias: [root class, property, class, …, property, its class]}: each node's
+    CIDOC-CRM path down from the root ("-" for a node with no class)."""
+    g = graph["graph"][0] if "graph" in graph else graph
+    nodes = {n["nodeid"]: n for n in g["nodes"]}
+    parent = {e["rangenode_id"]: e for e in g.get("edges", [])}
+    out = {}
+    for n in g["nodes"]:
+        if not n.get("alias"):
+            continue
+        tokens, m = [crm_code(n.get("ontologyclass")) or "-"], n
+        while m["nodeid"] in parent and parent[m["nodeid"]]["domainnode_id"] in nodes:
+            e = parent[m["nodeid"]]
+            tokens.append(crm_code(m.get("parentproperty") or e.get("ontologyproperty")) or "-")
+            m = nodes[e["domainnode_id"]]
+            tokens.append(crm_code(m.get("ontologyclass")) or "-")
+        out[n["alias"]] = tokens[::-1]
+    return out
+
+
+_TIME_SPAN_ENDS = {"P82a": "P82b", "P82": None}
+
+
+def ontology_entries(graph: dict, ontology: dict) -> list[dict]:
+    """The ontology layer's entries for one graph: a link or date node gets the
+    phrases of every ontology path its CRM path ends with. A date is matched by the
+    event its time-span hangs from ("O18i E11 P4"), and carries its begin and end.
+    "who" before a date's phrase ("who made") names the one actor (P14) of that event."""
+    g = graph["graph"][0] if "graph" in graph else graph
+    paths = chains(g)
+    up = {e["rangenode_id"]: e["domainnode_id"] for e in g.get("edges", [])}
+    out = []
+    for n in g["nodes"]:
+        kind = _bundle.kind_of(n)
+        tokens = paths.get(n.get("alias") or "")
+        if kind == "property" or not tokens:
+            continue
+        entry = {"kind": kind, "node": n["alias"]}
+        if kind == "date":
+            if len(tokens) < 3 or tokens[-3] != "E52" or tokens[-2] not in _TIME_SPAN_ENDS:
+                continue
+            end = _TIME_SPAN_ENDS[tokens[-2]]
+            tokens = tokens[:-3]
+            mate = next((m["alias"] for m in g["nodes"] if end and m.get("alias")
+                         and up.get(m["nodeid"]) == up.get(n["nodeid"]) and paths[m["alias"]][-2] == end), None)
+            if mate:
+                entry["end_node"] = mate
+        phrases = [p for o in ontology["entries"] if o["kind"] == kind
+                   and _ends_with(tokens, o["path"].split()) for p in o["phrases"]]
+        if not phrases:
+            continue
+        out.append(dict(entry, phrases=list(dict.fromkeys(phrases))))
+        if kind == "date":
+            event = up.get(up.get(n["nodeid"]))
+            actors = [m["alias"] for m in g["nodes"] if m.get("alias") and up.get(m["nodeid"]) == event
+                      and _bundle.kind_of(m) == "link" and paths[m["alias"]][-2] == "P14"]
+            if len(actors) == 1:
+                out.append({"kind": "link", "node": actors[0], "phrases": [f"who {p}" for p in out[-1]["phrases"]]})
+    return out
+
+
+def _ends_with(tokens: list[str], path: list[str]) -> bool:
+    """The path may stop at the property into the node, or name the node's class too."""
+    return tokens[-len(path):] == path or tokens[:-1][-len(path):] == path
