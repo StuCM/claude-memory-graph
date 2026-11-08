@@ -102,6 +102,7 @@
   {"path": "P12i", "kind": "link", "phrases": ["present at", "featured in"]},
   {"path": "P16i", "kind": "link", "phrases": ["used for"]},
   {"path": "P17", "kind": "link", "phrases": ["motivated by", "prompted by"]},
-  {"path": "P16", "kind": "link", "phrases": ["objects used"]}
+  {"path": "P16", "kind": "link", "phrases": ["objects used"]},
+  {"path": "P141i E13 P141", "kind": "date", "phrases": ["land use assessed", "date of land use assessment", "land use assessment date"]}
  ]
 }
