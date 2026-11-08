@@ -1,0 +1,17 @@
+The CIDOC-CRM definitions `ceist vocab ontology` reads labels and scope notes from.
+
+cidoc_crm_v6.2.xml      CIDOC CRM v6.2 (draft) in RDFS, by FORTH-ICS (2015), with Arches'
+                        edits (the "Human-Made" class names the graphs' ontologyclass URIs use)
+CRMsci_v1.2.3.rdfs.xml  CRMsci 1.2.3 in RDFS, by FORTH-ICS (2016): O-codes such as O18i
+
+Both copied unchanged from arches-her (github.com/archesproject/arches-her, commit 9f6a113,
+arches_her/pkg/ontologies/cidoc_crm/), the ontology the HER graphs were built against;
+its ontology_config.json names cidoc_crm_v6.2.xml as base, version 6.2.
+
+sha256
+9af52fce783032fc0bc6fa1c5b11c57b381b5b3d870de519251214afea32b734  cidoc_crm_v6.2.xml
+4b80f58fa2376b7ee0dccb487922205ce5ca4c211c5d003a26b33eda33e80ee5  CRMsci_v1.2.3.rdfs.xml
+
+Licence: the CIDOC CRM and its extensions are published by the CIDOC CRM SIG / FORTH-ICS
+for free use; cidoc-crm.org states CC BY 4.0. The files themselves carry no licence text,
+so check cidoc-crm.org before redistributing outside this repository.

@@ -17,6 +17,9 @@
     ceist vocab learn <learn.jsonl> --bundle <bundle.json> -o proposals.json [--exclude cases.json]
     ceist vocab assign <proposals.json> <reply.json>    # the LLM's reply to `learn` → "assign" fields
     ceist vocab merge <proposals.json> <vocab dir> --bundle <bundle.json>   # the approved ones
+    ceist vocab ontology <graphs dir> [<graphs dir> …] -o <out dir> [--max-calls N] [--top N]
+                         [--llm-cmd CMD] [--model M]   # CRM path phrasings → proposed.json
+    ceist vocab ontology --accept [--skip demo|her]   # the reviewed proposals, gated → phrases.json
     ceist questions generate <graphs dir> -o <out dir> [--reference <dir>] [--per-model N]
                              [--llm-cmd CMD] [--model M] [--models A,B]   # → train.json, holdout.json
     ceist eval --bundle <bundle.json> --questions <cases.json> [--config ceist.toml] [--report out.md]
@@ -238,6 +241,16 @@ def _merge(a):
     return 1 if done["errors"] else 0
 
 
+def _ontology(a):
+    from . import ontology_vocab as ov
+    if a.accept:
+        return ov.accept(a.ontology, skip=a.skip or ())
+    if not (a.graphs and a.out):
+        print("give the graphs dirs and -o, or --accept", file=sys.stderr)
+        return 2
+    return ov.propose(a.graphs, a.ontology, a.out, a.llm_cmd, a.model, a.max_calls, a.top)
+
+
 def _fetch(a):
     from . import onnx
     if a.model not in onnx.MODELS:
@@ -378,6 +391,20 @@ def main(argv=None):
     p.add_argument("vocab")
     p.add_argument("--bundle", required=True)
     p.set_defaults(fn=_merge)
+
+    p = vocab.add_parser("ontology", help="CIDOC-CRM path phrasings from an LLM, reviewed, gated, merged")
+    p.add_argument("graphs", nargs="*", help="graphs/resource_models dirs, read for their CRM paths")
+    p.add_argument("-o", "--out", help="the LLM cache and audit log")
+    p.add_argument("--ontology", default="vocabularies/ontology/cidoc-crm")
+    p.add_argument("--llm-cmd", help="a command that reads a prompt on stdin and prints the reply "
+                                     "(default: claude -p, no tools, over your subscription)")
+    p.add_argument("--model", help="passed to claude -p")
+    p.add_argument("--max-calls", type=int, default=300)
+    p.add_argument("--top", type=int, help="only the N most used paths")
+    p.add_argument("--accept", action="store_true", help='merge the "reviewed": true proposals that pass the gate')
+    p.add_argument("--skip", action="append", choices=["demo", "her"],
+                   help="with --accept: leave out a gate check whose checkout this machine lacks")
+    p.set_defaults(fn=_ontology)
 
     qs = sub.add_parser("questions", help="a labelled starting question set").add_subparsers(
         dest="step", required=True)

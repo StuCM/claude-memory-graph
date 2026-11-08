@@ -246,7 +246,7 @@ def layered(graphs: list[dict], base_dir: str | Path, client_dir: str | Path | N
     from . import crm
     ontology_dir = Path(ontology_dir) if ontology_dir else Path(base_dir).parent / "ontology" / "cidoc-crm"
     ontology = {"entries": [e for p in sorted(ontology_dir.glob("*.json"))
-                            for e in json.loads(p.read_text())["entries"]]}
+                            for e in json.loads(p.read_text()).get("entries", [])]}
     client = {v["model"]: v for v in read_vocab(client_dir)[0]} if client_dir is not None else {}
     listed = (_manifest(Path(client_dir)).get("models") or {}) if client_dir is not None else {}
     models, report, type_words = {}, [], {}
