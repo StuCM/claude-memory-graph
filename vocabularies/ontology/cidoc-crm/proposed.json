@@ -1024,7 +1024,7 @@
     "reason": "passed every check",
     "dropped": {}
    },
-   "gate": "rejected: bench: adds no right answer"
+   "gate": "rejected: bench: worse on 6, e.g. catalina: how many historic aircrafts have Taldrith as transformed into?"
   },
   {
    "path": "P94 E33 P2",
@@ -2661,7 +2661,7 @@
     "reason": "passed every check",
     "dropped": {}
    },
-   "gate": "rejected: bench: worse on 7, e.g. catalina: how many heritage stories are subject of Sendrith?"
+   "gate": "rejected: bench: worse on 10, e.g. catalina: how many events are documented in Bryndrith?"
   },
   {
    "path": "P12i",
@@ -2772,6 +2772,35 @@
     "reason": "passed every check",
     "dropped": {}
    },
+   "gate": "merged"
+  },
+  {
+   "path": "P140i E17 P17",
+   "kind": "date",
+   "nodes": 18,
+   "graphs": 5,
+   "phrases": [
+    "designated",
+    "protected",
+    "date of designation",
+    "designation date"
+   ],
+   "reason": "by hand (035): the time-span of a designation and protection assignment, in every graph that has it",
+   "reviewed": true,
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "P141i E13 P141",
+   "kind": "date",
+   "nodes": 15,
+   "graphs": 9,
+   "phrases": [
+    "land use assessed",
+    "date of land use assessment",
+    "land use assessment date"
+   ],
+   "reason": "by hand (035): the time-span of a land use classification of a location, in every graph that has it",
+   "reviewed": true,
    "gate": "merged"
   }
  ],
