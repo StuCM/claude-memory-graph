@@ -48,6 +48,7 @@ One picture of the system, what is proven, what isn't, and the plan we work from
 | Learned rewrite patterns (no LLM) | 2/34 → 2/34 | **disproven** at this data size |
 | Live LLM rewrite (the ceiling) | ~9/34; blocked by grammar gaps | not the fix on its own |
 | Type-word synonyms (people → Figure, stories → Tale) | most of the 7 → 22 gain on train | **cheap, big**, and belongs in the vocabulary |
+| bge-small on the words the awkward set leaves unplaced (no LLM; `~/.cache/tmp-demo/bgecheck/`) | 74 words in 41 refused questions: right and confident 3, right but too close to call 13, wrong or no right candidate near 58; would fix 2 questions. Wrong picks score as high as right ones (0.84–0.91 vs 0.65–0.75) | **disproven** as a question-time fix; looser thresholds would bring wrongs. A weak build-time hint (top pick right about 1 time in 4) |
 | Cost estimates | about 5–7 times low for small calls: `claude -p` writes ~33k tokens of system prompt per call | estimator needs fixing |
 
 ## 5. The plan: three workstreams, in order
@@ -58,7 +59,7 @@ One picture of the system, what is proven, what isn't, and the plan we work from
    - graph: type words with base-graph names; link forward, inverse, passive and noun forms; field forms;
    - client: value plurals, alternative labels, synonyms.
 2. **Deterministic generators first:** CRM labels (classes and inverse properties, already saved locally), morphology (plurals, tenses), base-graph names, label splitting. No LLM.
-3. **A directed LLM fill** of the remaining gaps only, gated as now.
+3. **A directed LLM fill** of the remaining gaps only, gated as now. (bge was checked as a cheaper ranker and is too weak to replace this step.)
 4. **A coverage report per element**, as a build stage in `VOCAB-TRAINING.md`.
 
 **B. The grammar gaps** (a short, known list from the refusals)
