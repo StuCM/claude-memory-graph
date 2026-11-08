@@ -106,13 +106,13 @@ def reason(m, models) -> str:
     return out
 
 
-def layer_bundles(name: str, graphs: list[dict], ontology_dir: Path = ONTOLOGY) -> dict:
+def layer_bundles(name: str, graphs: list[dict], ontology_dir: Path = ONTOLOGY, base_dir: Path = BASE) -> dict:
     """{mode: bundle}: the ontology layer alone and, for "her", under HER's base."""
     from ceist.bundle import layered
     with tempfile.TemporaryDirectory() as empty:
         out = {"ontology": layered(graphs, empty, ontology_dir=ontology_dir)[0]}
     if name == "her":
-        out["ontology+base"] = layered(graphs, BASE, ontology_dir=ontology_dir)[0]
+        out["ontology+base"] = layered(graphs, base_dir, ontology_dir=ontology_dir)[0]
     return out
 
 
