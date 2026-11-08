@@ -41,8 +41,8 @@ trust: the planner never guesses.
 import re
 from dataclasses import dataclass, field, replace
 
-from .ground import Edge, Grounding, Node, ground, is_question
-from .text import terms
+from .ground import DATE_WORDS, Edge, Grounding, Node, ground, is_question
+from .text import ALNUM, terms
 from .vocabulary import Entity, Value, Vocabulary
 
 
@@ -105,7 +105,7 @@ class NameMatch:
         low, term = name.lower(), self.term.lower()
         if self.mode == "prefix":
             return low.startswith(term)
-        return term in re.findall(r"[a-z0-9][a-z0-9'-]*", low)
+        return term in re.findall(rf"{ALNUM}(?:{ALNUM}|['-])*", low)
 
 
 @dataclass
@@ -316,8 +316,10 @@ def _detail(vocab: Vocabulary, g: Grounding) -> "Detail | str | None":
             or any(n.type != a.type for n in g.vars())):
         return None
     words = (set(terms(g.text)) | set(g.uncovered)) - set(a.match_terms)
-    if g.wh == "when":
-        # "when was Navan Fort built?": the one date of its type a form names exactly
+    if g.wh == "when" or (g.wh == "what" and words & DATE_WORDS):
+        # "when was Navan Fort built?", "what is its construction date?": the one date
+        # of its type a form names exactly, before the field labels that share its words.
+        # "what" needs "date": "what was it built from?" asks for something else
         dates = {(d.field, d.label) for d in vocab.date_fields()
                  if a.type in d.owners and any(set(terms(f)) == words for f in d.forms)}
         if len(dates) == 1:

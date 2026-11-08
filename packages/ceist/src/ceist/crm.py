@@ -168,6 +168,9 @@ def chains(graph: dict) -> dict[str, list[str]]:
 
 
 _TIME_SPAN_ENDS = {"P82a": "P82b", "P82": None}
+# membership is the record's own: a group deeper in (a vessel's crew, a consultation's
+# planning body, a record's approvers) gives its members a role there, not membership
+_ON_ROOT = {"P107", "P107i"}
 
 
 def ontology_entries(graph: dict, ontology: dict) -> list[dict]:
@@ -210,4 +213,6 @@ def ontology_entries(graph: dict, ontology: dict) -> list[dict]:
 
 def _ends_with(tokens: list[str], path: list[str]) -> bool:
     """The path may stop at the property into the node, or name the node's class too."""
+    if path[0] in _ON_ROOT and tokens[1:2] != path[:1]:
+        return False
     return tokens[-len(path):] == path or tokens[:-1][-len(path):] == path

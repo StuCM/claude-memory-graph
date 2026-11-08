@@ -16,7 +16,7 @@ Implementations: the memory graph (its schema graph and gate index), and
 Arches resource models (ceist.arches) for Rós Madair and Arches Search.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Protocol
 
 
@@ -37,6 +37,18 @@ class Relation:
     ends: frozenset[tuple[str, frozenset[str]]] = frozenset()   # (a type holding the link, the
                                                 # types it may target; empty = any), when
                                                 # domain × range is coarser than the truth
+    form_owners: frozenset[tuple[str, frozenset[str]]] = frozenset()   # (a form, the types
+                                                # holding the link that are said with it), for
+                                                # a form only some of them are
+
+    def said_as(self, form: str) -> "Relation":
+        """The link as `form` names it: only on the types said with that form."""
+        owners = next((o for f, o in self.form_owners if f == form), None)
+        if owners is None:
+            return self
+        ends = frozenset(e for e in self.ends if e[0] in owners)
+        return replace(self, domain=self.domain & owners, ends=ends,
+                       range=self.range & {t for _m, ts in ends for t in ts})
 
     def joins(self, source: str, target: str) -> bool:
         """Whether this link can run from a `source` record to a `target` one."""

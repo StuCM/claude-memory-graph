@@ -163,3 +163,97 @@ def test_template_questions_score_through_interpret(data, tmp_path):
     assert got["which buildings were made by {Maker}?"] == "right"
     assert got["who built {Building}?"] == "right"
     assert sum(1 for s in got.values() if s == "right") >= 4
+
+
+# ── what made the ontology layer miss (026's bench)
+
+def _plain(tmp_path, edit=None):
+    """The fixture, uncrm'd, with `edit(graphs by name)` applied to its graph files."""
+    fx.write(tmp_path)
+    if edit is not None:
+        docs = {p: json.loads(p.read_text()) for p in (tmp_path / "graphs").glob("*.json")}
+        edit({d["graph"][0]["name"]: d["graph"][0] for d in docs.values()})
+        for p, d in docs.items():
+            p.write_text(json.dumps(d))
+    return tmp_path
+
+
+def test_have_x_as_a_noun_links_the_subject_to_x(data):
+    v = ArchesVocabulary.from_data_dir(data[0])
+    m = interpret(v, "which buildings have Ada Lovelace as architect?")
+    assert narrate(m.plan) == "Find Buildings whose architect is Maker 'Ada Lovelace'."
+
+
+def test_a_bundle_phrase_stays_on_the_model_that_owns_it(tmp_path):
+    def person_has_a_site(g):
+        g["Person"]["nodes"].append(fx._node(fx.PERSON, "site", "Site", "resource-instance",
+                                             {"graphs": [{"graphid": fx.SITE}]}))
+    root = _plain(tmp_path, person_has_a_site)
+    bundle = {"format": "ceist.vocab/1", "models": {"Building": {
+        "nodes": {"site": {"kind": "link"}},
+        "entries": [{"phrases": ["stands on"], "kind": "link", "node": "site"}]}}}
+    v = ArchesVocabulary.from_data_dir(root, bundle=bundle)
+    m = interpret(v, "which buildings stands on Leeds Dock?")
+    assert narrate(m.plan) == "Find Buildings whose site is Site 'Leeds Dock'."
+    m = interpret(v, "which persons stands on Leeds Dock?")
+    assert m.plan is None and m.refused == "out of grammar ('stands on' (site) can't join Person and Site)"
+
+
+def test_type_words_and_names_keep_their_diacritics(tmp_path):
+    from ceist import terms
+    assert terms("Táin Bó Cúailnge, mātaurangas") == ["táin", "cúailnge", "mātaurangas"]
+
+    def rename(g):
+        g["Site"]["name"] = "Mātauranga"
+    v = ArchesVocabulary.from_data_dir(_plain(tmp_path, rename))
+    m = interpret(v, "how many mātaurangas are there?")
+    assert narrate(m.plan) == "Count Mātaurangas."
+
+
+def _graph(*nodes):
+    """A graph from (alias, class, property into it, parent alias, datatype); the first is the root."""
+    out = {"nodes": [], "edges": []}
+    for alias, cls, prop, up, datatype in nodes:
+        out["nodes"].append({"nodeid": alias, "alias": alias, "datatype": datatype,
+                             "ontologyclass": CRM + cls, "parentproperty": CRM + prop if prop else None})
+        if up:
+            out["edges"].append({"domainnode_id": up, "rangenode_id": alias})
+    return out
+
+
+def test_membership_is_only_the_records_own():
+    from ceist.crm import ontology_entries
+    members = {"entries": [{"path": "P107", "kind": "link", "phrases": ["members"]}]}
+    group = _graph(("group", "E74", None, None, "semantic"),
+                   ("associated_actors", "E39", "P107", "group", "resource-instance-list"))
+    assert ontology_entries(group, members) == [
+        {"kind": "link", "node": "associated_actors", "phrases": ["members"]}]
+    # a vessel's crew: the members of a group inside its voyage
+    vessel = _graph(("vessel", "E24", None, None, "semantic"),
+                    ("voyage", "E9", "P16i", "vessel", "semantic"),
+                    ("crew", "E74", "P17", "voyage", "semantic"),
+                    ("crew_member", "E21", "P107", "crew", "resource-instance"))
+    assert ontology_entries(vessel, members) == []
+
+
+def test_what_is_its_date_takes_the_one_date_a_form_names(data, tmp_path):
+    named = dict(ONTOLOGY, entries=[{"path": "P108i E12 P4", "kind": "date", "phrases": ["build date"]}])
+    v, _, _ = vocab(data, tmp_path, ontology=named)
+    m = interpret(v, "what is the build date of the Clock Tower?")
+    assert narrate(m.detail) == "Show the production date of Building 'Clock Tower'."
+    m = interpret(v, "what is the date of the Clock Tower?")
+    assert m.detail is None and "did you mean" in m.refused, m.refused
+
+
+def test_a_phrase_no_relation_it_names_can_take_refuses(data):
+    bundle = {"format": "ceist.vocab/1", "models": {"Building": {
+        "nodes": {"site": {"kind": "link"}, "architect": {"kind": "link"}},
+        "entries": [{"phrases": ["part of"], "kind": "link", "node": "site"},
+                    {"phrases": ["part of"], "kind": "link", "node": "architect"}]}}}
+    v = ArchesVocabulary.from_data_dir(data[0], bundle=bundle)
+    m = interpret(v, "which makers are part of Leeds Dock?")
+    assert m.plan is None and m.refused == "out of grammar ('part of' can't join Maker and Site)"
+    # the memory graph's free text still sets it aside and links loosely, saying so
+    v.free_text = True
+    m = interpret(v, "which makers are part of Leeds Dock?")
+    assert narrate(m.plan) == "Find Makers linked to or from Site 'Leeds Dock'."

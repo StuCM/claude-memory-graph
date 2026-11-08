@@ -28,7 +28,7 @@ import re
 from dataclasses import dataclass, field
 
 from . import dates as _dates
-from .text import terms_pos
+from .text import ALNUM, terms_pos
 from .vocabulary import DateField, Entity, Group, Relation, Value, Vocabulary
 
 WH = {"what", "which", "who", "whom", "whose", "why", "when", "how", "where"}
@@ -46,7 +46,7 @@ MEANINGFUL = {"make", "use", "get", "set", "need", "want", "know", "before", "af
 # verb ("know") must not ground as a relation
 ABOUT_RE = re.compile(r"^\s*(?:what\s+(?:do|does|did)\s+(?:we|i|you)\s+(?:know|have|remember)"
                       r"|tell\s+me|what(?:'s| is)\s+(?:known|there))\s+about\s+", re.I)
-WORD_RE = re.compile(r"[a-z0-9][a-z0-9'-]*")
+WORD_RE = re.compile(rf"{ALNUM}(?:{ALNUM}|['-])*")
 NEG = {"not", "no", "without", "never", "non", "isn't", "aren't", "wasn't", "weren't",
        "don't", "doesn't", "didn't", "hasn't", "haven't", "hadn't", "lacking"}
 DATE_WORDS = {"date", "dated", "dates", "dating"}   # shape, once a date is grounded
@@ -57,8 +57,8 @@ MAX_VARS = 2
 MAX_ANCHORS = 2
 NEAR_KM = 5.0             # what "near" means, said in the narration
 MILE_KM = 1.609344
-NEAR_RE = re.compile(r"(?<![a-z0-9-])(?:within\s+(\d+(?:\.\d+)?)\s*(km|kms|kilometres?|kilometers?"
-                     r"|miles?)\s+of|near)(?![a-z0-9-])")
+NEAR_RE = re.compile(rf"(?<!{ALNUM})(?<!-)(?:within\s+(\d+(?:\.\d+)?)\s*(km|kms|kilometres?|kilometers?"
+                     r"|miles?)\s+of|near)" rf"(?!{ALNUM}|-)")
 
 
 @dataclass
@@ -156,13 +156,13 @@ class NameGround:
 
 
 # the only free text a question may hold, and only in this slot
-_WORD = r"(['\"]?)([a-z0-9][a-z0-9'-]*?)\1(?![a-z0-9'-])"
+_WORD = rf"(['\"]?)({ALNUM}(?:{ALNUM}|['-])*?)\1(?!{ALNUM}|['-])"
 NAME_RES = [
-    ("prefix", re.compile(r"(?<![a-z0-9])(?:whose\s+|with\s+(?:an?|the)\s+)?names?\s+"
+    ("prefix", re.compile(rf"(?<!{ALNUM})(?:whose\s+|with\s+(?:an?|the)\s+)?names?\s+"
                           r"(?:starts?|starting|begins?|beginning)\s+with\s+" + _WORD)),
-    ("word", re.compile(r"(?<![a-z0-9])" + _WORD + r"\s+in\s+(?:the|their|its)\s+names?"
-                        r"(?![a-z0-9])")),
-    ("word", re.compile(r"(?<![a-z0-9])called\s+" + _WORD)),
+    ("word", re.compile(rf"(?<!{ALNUM})" + _WORD + r"\s+in\s+(?:the|their|its)\s+names?"
+                        rf"(?!{ALNUM})")),
+    ("word", re.compile(rf"(?<!{ALNUM})called\s+" + _WORD)),
 ]
 
 
@@ -216,7 +216,7 @@ def _phrase_spans(raw: str, phrases: list[tuple[str, object]], taken: list[tuple
     """Longest phrase first; each match must not overlap an earlier one, nor
     sit inside a longer record name (`names`)."""
     for phrase, payload in sorted(phrases, key=lambda x: -len(x[0])):
-        m = next((m for m in re.finditer(rf"(?<![a-z0-9]){re.escape(phrase)}(?![a-z0-9])", raw)
+        m = next((m for m in re.finditer(rf"(?<!{ALNUM}){re.escape(phrase)}(?!{ALNUM})", raw)
                   if not any(s <= m.start() and m.end() <= e and m.end() - m.start() < e - s
                              for s, e in names)), None)
         if not m or any(m.start() < e and m.end() > s for s, e in taken):
@@ -284,13 +284,13 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
     raw = text.lower().replace("\u2019", "'").replace("non-", "non ")
     words = [(i, m.start(), m.end(), m.group())
              for i, m in enumerate(WORD_RE.finditer(raw))]
-    terms = {w for _, w in terms_pos(text)} | (MEANINGFUL & set(re.findall(r"[a-z0-9]+", raw)))
+    terms = {w for _, w in terms_pos(text)} | (MEANINGFUL & set(re.findall(ALNUM + "+", raw)))
     consumed: set[int] = set()
     taken: list[tuple[int, int]] = []
 
     def parts_of(word: str) -> set[str]:
         # raw words like "memory-graph" must meet terms ("memory", "graph")
-        return {p for p in re.split(r"[^a-z0-9]+", word) if p} & terms
+        return {p for p in re.split(r"[\W_]+", word) if p} & terms
 
     def consume_span(start: int, end: int) -> float:
         first = None
@@ -337,7 +337,7 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
     # "bronze age" is a period, not 'age' (cultural_period) and a stray "bronze"
     shape = taken + [(s, e) for i, s, e, _w in words if i in consumed]
     longer = [(m.start(), m.end()) for p in (*by_form, *by_phrase)
-              for m in re.finditer(rf"(?<![a-z0-9]){re.escape(p)}(?![a-z0-9])", raw)
+              for m in re.finditer(rf"(?<!{ALNUM}){re.escape(p)}(?!{ALNUM})", raw)
               if not any(m.start() < e and m.end() > s for s, e in shape)]
 
     # ── relations
@@ -360,9 +360,13 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
     # a phrasing two relations share ("part of": a tale's parent story, a
     # group's parent organisation) goes to one that joins the types the question names
     named = {t for w, t in type_names.items()
-             if re.search(rf"(?<![a-z0-9]){re.escape(w)}(?![a-z0-9])", raw)}
+             if re.search(rf"(?<!{ALNUM}){re.escape(w)}(?!{ALNUM})", raw)}
+    def types_of(form: str, rel: str) -> frozenset[str]:
+        said = relations[rel].said_as(form)
+        return said.domain | said.range
+
     forms = sorted(((f, r.name) for r in relations.values() for f in r.forms),
-                   key=lambda x: not (relations[x[1]].domain | relations[x[1]].range) & named)
+                   key=lambda x: not types_of(*x) & named)
     for form, rel, m in ([] if g.about else _phrase_spans(raw, forms, taken, names + longer)):
         if just_a_type(form) and (form.split()[0] in _LEAD_WORDS
                                   or _SUBJECT_LEAD.search(raw[:m.start()])):
@@ -372,6 +376,7 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
             taken.remove((m.start(), m.end()))
             continue
         matched.add(rel)
+        relations[rel] = relations[rel].said_as(form)
         g.edges.append(_edge(relations[rel], consume_span(m.start(), m.end()), form=form))
         g.notes.append(f"'{form}' → relation {rel}")
         sharing[form] = [r for f, r in forms if f == form]
@@ -484,7 +489,7 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
         _either_records(g, vocab, words, names, consumed, parts_of)
     partial = getattr(vocab, "partial_names", False)
     expected = {t for e in g.edges for r in sharing.get(e.form, [e.relation]) if r in relations
-                for t in relations[r].domain | relations[r].range}
+                for t in types_of(e.form, r)}
     for _ in range(MAX_ANCHORS):
         leftovers = [(i, w) for i, _s, _e, w in words if i not in consumed and parts_of(w)]
         if not leftovers:
@@ -534,7 +539,7 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
             g.nodes = [n for n in g.nodes if n is not a]
             g.notes.append(f"'{g.near.phrase}' → within {g.near.km:g} km of {a.type} '{a.name}'")
     g.anchor = g.anchors[0] if g.anchors else None
-    _fit_relations(g, relations, sharing)
+    _fit_relations(g, relations, sharing, getattr(vocab, "free_text", False))
     if not g.nodes and not g.edges and not g.about:
         _imply_model(g, add_var, raw, words)
 
@@ -573,7 +578,7 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
     if len(g.edges) > MAX_EDGES:
         g.refuse = f"{len(g.edges)} relations — the grammar caps at {MAX_EDGES}"
         return g
-    _assign_edges(g, relations, seen)
+    _assign_edges(g, relations, seen, words)
     if not g.refuse:
         _check_anchors(g, relations)
     if (g.refuse.startswith("cannot resolve") and g.anchor is None
@@ -828,7 +833,7 @@ def _scope_negations(g: Grounding, negs: list[tuple[int, str]], contains_pos) ->
 
 
 def _fit_relations(g: Grounding, relations: dict[str, Relation],
-                   sharing: dict[str, list[str]]) -> None:
+                   sharing: dict[str, list[str]], free_text: bool = False) -> None:
     """A phrase binds only a relation that can join two of the things named. A
     shared phrase ("in": a tale's parent story, a monument's named location)
     takes the one of its relations that can; when none can, or a bare
@@ -837,7 +842,8 @@ def _fit_relations(g: Grounding, relations: dict[str, Relation],
     was understood, as "at" is. A phrase with a content word naming one
     relation is specific ("architect"): it keeps it when it can join two
     things named (a type it implies but nobody named refuses later, in
-    plan.py), and refuses when it can't."""
+    plan.py), and refuses when it can't. So does one naming several relations, none of
+    which can ("part of"), unless the vocabulary has free text and says what it set aside."""
     if len(g.nodes) < 2:
         return
     used = {e.relation for e in g.edges}
@@ -853,7 +859,7 @@ def _fit_relations(g: Grounding, relations: dict[str, Relation],
             g.refuse = f"'{edge.form}' ({edge.relation}) can't join {types}"
             return
         pick = next((r for r in sharing.get(edge.form, [])
-                     if r not in used and fits(relations[r])), None)
+                     if r not in used and fits(relations[r].said_as(edge.form))), None)
         if pick is None:
             # "which monuments are in Belfast", with Belfast a Monument: set aside,
             # the anchor would be answered as itself, ignoring what "in" asked for
@@ -863,10 +869,14 @@ def _fit_relations(g: Grounding, relations: dict[str, Relation],
                     t for r in sharing.get(edge.form, [edge.relation])
                     for t in _targets(relations[r])})
                 return
+            if terms_pos(edge.form) and not free_text:
+                g.refuse = f"'{edge.form}' can't join {types}"
+                return
             g.edges.remove(edge)
             g.notes.append(f"'{edge.form}' set aside: no relation it names joins {types}")
             continue
         used.add(pick)
+        relations[pick] = relations[pick].said_as(edge.form)
         g.edges[g.edges.index(edge)] = _edge(relations[pick], edge.pos, form=edge.form)
         g.notes.append(f"'{edge.form}' → relation {pick} instead: it joins {types}")
 
@@ -927,7 +937,7 @@ def _imply_join(g: Grounding, relations: dict[str, Relation]) -> None:
     g.notes.append(f"{src.type} → {dst.type} joined by {rel.name} (the only relation between them)")
 
 
-def _assign_edges(g: Grounding, relations: dict[str, Relation], seen: dict) -> None:
+def _assign_edges(g: Grounding, relations: dict[str, Relation], seen: dict, words) -> None:
     """Word order picks each relation's neighbours; domain/range orient it and
     fill a missing end (with an implicit typed variable when needed)."""
     for edge in g.edges:
@@ -948,6 +958,11 @@ def _assign_edges(g: Grounding, relations: dict[str, Relation], seen: dict) -> N
         right = nearest(n for n in parts if n.pos > edge.pos)
         if left is not None and right is not None and left is right:
             right = None
+        before = words[int(edge.pos) - 1][3] if edge.pos >= 1 else ""
+        if right is None and left is not None and before == "as":
+            # "which areas have X as copyright holder": the phrase names X's role
+            right = left
+            left = nearest(n for n in reversed(parts) if n.pos < right.pos)
 
         def fill(hints: set, present: Node | None) -> Node | None:
             cand = next((n for n in parts if n is not present and n.type in hints), None)

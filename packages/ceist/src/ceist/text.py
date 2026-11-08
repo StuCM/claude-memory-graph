@@ -17,7 +17,9 @@ STOP = {
     "really", "will", "should", "have", "has", "had", "been", "there", "then",
     "than", "from", "into", "any", "all", "one", "thing", "going",
 }
-_WORD = re.compile(r"[a-z0-9]+")
+# a letter of any script, diacritics included ("mātauranga", "táin"), or a digit
+ALNUM = r"[^\W_]"
+_WORD = re.compile(ALNUM + "+")
 
 
 def terms_pos(text: str) -> list[tuple[int, str]]:

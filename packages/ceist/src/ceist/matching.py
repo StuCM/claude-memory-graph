@@ -25,9 +25,11 @@ Layers (configured per project, see ceist.config):
 import re
 from dataclasses import dataclass, field
 
+from .text import ALNUM
+
 FROM = {"from", "leaving", "departing", "departed", "left", "out"}
 TO = {"to", "towards", "toward", "into", "bound", "arriving", "arrived", "reaching"}
-_WORD = re.compile(r"[a-z0-9]+")
+_WORD = re.compile(ALNUM + "+")
 
 
 @dataclass(frozen=True)
