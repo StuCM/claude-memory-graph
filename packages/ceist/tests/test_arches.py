@@ -798,3 +798,11 @@ def test_near_with_a_group_by_refuses(places):
     assert narrate(plan) == "Count Buildings within 5 km of Building 'Clock Tower', by site."
     with pytest.raises(Unsupported, match="by site within a distance"):
         compile_plan(plan, vocab)
+
+
+def test_a_partial_match_reads_back_exactly(vocab, data):
+    m = interpret(vocab, "which listed buildings are folk of Leeds Dock?")
+    assert m.plan is None and "couldn't place 'folk'" in m.refused
+    plan = m.partial.plan
+    assert narrate(plan) == "Find Buildings linked to or from Site 'Leeds Dock' and whose heritage status is Listed."
+    assert check(plan, read_back(compile_plan(plan, vocab), vocab)).ok

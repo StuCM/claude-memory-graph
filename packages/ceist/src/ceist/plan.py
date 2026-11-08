@@ -41,7 +41,7 @@ trust: the planner never guesses.
 import re
 from dataclasses import dataclass, field, replace
 
-from .ground import DATE_WORDS, Edge, Grounding, Node, ground, is_question
+from .ground import DATE_WORDS, NEG, WORD_RE, Edge, Grounding, Node, ground, is_question
 from .text import ALNUM, terms
 from .vocabulary import Entity, Value, Vocabulary
 
@@ -165,6 +165,14 @@ class Relaxation:
 
 
 @dataclass
+class Partial:
+    """What a refused question still says, built from what grounded confidently: for a
+    site to show as a partial match, never as the answer."""
+    plan: Plan
+    unused: list[str]                  # the words it couldn't use
+
+
+@dataclass
 class Interpretation:
     grounding: Grounding
     plan: Plan | None = None
@@ -173,9 +181,17 @@ class Interpretation:
     detail: Detail | None = None       # the question asks for that record's own fields
     refused: str = ""                  # why no plan: statement, out of grammar, thin grounding
     statement: bool = False
+    partial: Partial | None = None     # on a refusal only; the refusal stays the answer
 
 
 def interpret(vocab: Vocabulary, text: str, today=None, matcher=None) -> Interpretation:
+    out = _interpret(vocab, text, today, matcher)
+    if out.refused and not out.statement:
+        out.partial = _partial(vocab, out.grounding)
+    return out
+
+
+def _interpret(vocab: Vocabulary, text: str, today, matcher) -> Interpretation:
     if not is_question(text):
         return Interpretation(Grounding(text=text), statement=True,
                               refused="statement-shaped, not a question")
@@ -349,6 +365,72 @@ def _detail(vocab: Vocabulary, g: Grounding) -> "Detail | str | None":
     g.suggestions = [(phrase, labels[:6])]
     return (f"'{phrase}' could be any of {len(labels)} fields of {a.type} '{a.name}'"
             + _did_you_mean(g))
+
+
+# a partial match never drops one of these: losing it inverts the meaning, or widens a
+# number, a comparison, a range or an "or" without saying so
+_NEVER_DROP = NEG | {
+    "or", "nor", "either", "neither", "except", "only", "than", "more", "less", "fewer", "most",
+    "least", "over", "under", "above", "below", "before", "after", "since", "until", "till",
+    "between", "during", "earlier", "later", "older", "newer", "first", "last", "one", "two",
+    "three", "four", "five", "six", "seven", "eight", "nine", "ten", "dozen", "hundred",
+    "thousand", "century", "centuries", "decade", "decades", "year", "years", "close", "closest",
+    "nearby", "nearest", "around", "far", "average", "mean", "median", "total", "sum",
+    "per", "percent", "percentage", "proportion", "sorted", "sort", "order", "ordered", "rank",
+    "ranked", "compare", "compared", "oldest", "newest", "youngest", "earliest", "latest",
+    "largest", "biggest", "smallest", "longest", "shortest", "highest", "lowest", "greatest"}
+
+
+def _partial(vocab: Vocabulary, g: Grounding) -> Partial | None:
+    """The plan of a refused question's confident pieces: the type it names, its named
+    records (by their links, else linked by any), values, tile phrases and dates, with the
+    words it couldn't use. None when nothing grounded, when only a link implied the type,
+    or when the question holds one of `_NEVER_DROP`."""
+    s = g.subject
+    if (s is None or s.implicit or g.negation_unplaced or g.group is not None
+            or g.near is not None):
+        return None
+    named = {w for a in g.anchors for e in (a.entity, *a.either)
+             for w in WORD_RE.findall(e.name.lower())}
+    dated = {w for d in g.dates for w in WORD_RE.findall(d.phrase.lower())}
+    for w in WORD_RE.findall(g.text.lower()):
+        # ponytail: any negator refuses a partial, even one scoped to a piece it keeps
+        if w not in named | dated and (w in _NEVER_DROP or any(ch.isdigit() for ch in w)):
+            return None
+    g = replace(g, uncovered=list(g.uncovered), notes=list(g.notes))   # attaching appends to these
+    unused = list(g.uncovered) + ([g.contains] if g.contains else [])
+    plan = None
+    if not g.refuse:
+        try:
+            plan = _build(g, s, None)
+        except _Refuse:
+            pass
+    if plan is None:
+        unused += [e.form or e.relation for e in g.edges]
+        g = replace(g, edges=[])
+        plan = Plan(s.type)
+    joined = _reached(g, s)
+    for n in g.nodes:
+        if any(n is j for j in joined):
+            continue
+        if n.kind != "anchor" or n.type == s.type:
+            return None                # a type, or the record itself, with no link to what's asked
+        plan.where.append(LinkTo(None, EntityRef(n.entity), "any"))
+    for vm in g.values:
+        if _attach_values(replace(g, values=[vm]), plan):
+            unused.append(vm.phrase)
+    for gm in g.groups:
+        if _attach_groups(replace(g, groups=[gm]), plan):
+            unused.append(gm.phrase)
+    if _attach_dates(g, plan):
+        return None
+    if g.name is not None:
+        _attach_name(g, plan)
+    unused = list(dict.fromkeys(unused))
+    if not unused:
+        return None
+    plan.count, plan.recent, plan.wh = g.count, g.recent, g.wh
+    return Partial(plan, unused)
 
 
 def _linked(g: Grounding, node: Node) -> bool:

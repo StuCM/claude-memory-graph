@@ -285,11 +285,13 @@ def target_of(m) -> dict | None:
     if m.detail is not None:
         return {"model": m.detail.entity.type, "detail": [f for f, _ in m.detail.fields],
                 "conditions": []}
-    if m.plan is None:
-        return None
-    t = {"model": m.plan.type, "count": m.plan.count, "conditions": _conditions(m.plan.where)}
-    if m.plan.group is not None:
-        t["group"] = m.plan.group.relation.split("#")[0]
+    return None if m.plan is None else plan_target(m.plan)
+
+
+def plan_target(plan) -> dict:
+    t = {"model": plan.type, "count": plan.count, "conditions": _conditions(plan.where)}
+    if plan.group is not None:
+        t["group"] = plan.group.relation.split("#")[0]
     return t
 
 
@@ -330,6 +332,26 @@ def matches(want: dict, got: dict, ends: dict[str, str] | None = None) -> bool:
             return False
         left.remove(hit)
     return not left
+
+
+def wider(want: dict, got: dict, ends: dict[str, str] | None = None) -> bool:
+    """`got` is the target with conditions left out, or a link by any relation in place of
+    one by a named relation: the right reading, only wider (how a partial match is judged)."""
+    ends = ends or {}
+    counts = bool(want.get("count") or want.get("group"))
+    if "detail" in want or want["model"] != got["model"] or counts != bool(got.get("count")):
+        return False
+    left = list(want.get("conditions", []))
+    for c in got["conditions"]:
+        if c["node"]:
+            hit = next((w for w in left if _same(c, w, ends)), None)
+        else:
+            hit = next((w for w in left if w.get("link") == c["link"]
+                        and bool(w.get("negated")) == bool(c.get("negated"))), None)
+        if hit is None:
+            return False
+        left.remove(hit)
+    return True
 
 
 def score(item: dict, m, ends: dict[str, str] | None = None) -> str:

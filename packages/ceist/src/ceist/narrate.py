@@ -4,7 +4,7 @@ understood before trusting the answer. Every output shares it."""
 from .dates import label as date_label
 from .ground import MILE_KM
 from .plan import (AnyOf, Contains, DateRange, Detail, EntityRef, HasValue, LinkTo, Mention,
-                   NameMatch, Near, Not, OnTile, Plan)
+                   NameMatch, Near, Not, OnTile, Partial, Plan)
 
 
 def _plural(t: str) -> str:
@@ -126,13 +126,16 @@ def _phrase(plan: Plan, forms: bool, canonical: bool, nested: bool = False) -> s
     return head + " " + " and ".join(parts)
 
 
-def narrate(plan: Plan | Detail, forms: bool = True, canonical: bool = False) -> str:
+def narrate(plan: Plan | Detail | Partial, forms: bool = True, canonical: bool = False) -> str:
     """'Find Decisions that affect Project 'quartz'.' / 'Count Buildings whose
     heritage status is Listed and whose construction date is before 1900.'
 
     `canonical=True` is the comparable form read-back uses: relation names
     instead of the words the question used, field names instead of labels,
     and conditions in a fixed order."""
+    if isinstance(plan, Partial):
+        unused = ", ".join(f"'{w}'" for w in plan.unused)
+        return f"Partial match: {narrate(plan.plan, forms)} Couldn't use {unused}."
     if canonical:
         forms = False
     if isinstance(plan, Detail):
