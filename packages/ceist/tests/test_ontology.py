@@ -125,3 +125,41 @@ def test_a_dropped_verb_beside_a_record_with_fields_is_named(data, tmp_path):
     m = interpret(v, "what does the Clock Tower need?")
     assert m.direct is None and m.detail is None
     assert m.refused.startswith("couldn't place 'need'"), m.refused
+
+
+def test_templated_questions_come_from_the_crm_paths_each_with_a_target(data, tmp_path):
+    from ceist.questions import templated
+    v, _, _ = vocab(data, tmp_path)
+    items = templated(v, ONTOLOGY)
+    assert items == templated(v, ONTOLOGY)
+    assert all(("target" in o) != ("reason" in o) for o in items)
+    by_q = {o["q"]: o for o in items}
+    assert by_q["which buildings were built by {Maker}?"]["target"] == {
+        "model": "Building", "count": False, "conditions": [{"node": "actor", "link": "Maker"}]}
+    assert by_q["who built {Building}?"]["target"] == {
+        "model": "Maker", "count": False, "conditions": [{"node": "actor", "link": "Building"}]}
+    assert by_q["when was {Building} built?"]["target"]["detail"] == ["production_date"]
+    assert by_q["why was {Building} built?"]["reason"] == "why"
+    # architect is P14 too, but off no production: nothing asks about it
+    assert not [o for o in items if "architect" in json.dumps(o)]
+
+
+def test_a_template_question_with_no_one_actor_expects_a_refusal(data, tmp_path):
+    from ceist.questions import templated
+    v, _, _ = vocab(data, tmp_path)
+    for n in v.models["Building"].doc["nodes"]:
+        if n["alias"] == "actor":
+            n["parentproperty"] = CRM + "P11_had_participant"
+    by_q = {o["q"]: o for o in templated(v, ONTOLOGY)}
+    assert by_q["who built {Building}?"]["reason"].startswith("no one actor")
+    assert by_q["when was {Building} built?"]["target"]["detail"] == ["production_date"]
+    assert "which buildings were built by {Maker}?" not in by_q
+
+
+def test_template_questions_score_through_interpret(data, tmp_path):
+    from ceist.questions import fill, score, templated
+    v, _, _ = vocab(data, tmp_path)
+    got = {o["q"]: score(o, interpret(v, fill(o["q"], v))) for o in templated(v, ONTOLOGY)}
+    assert got["which buildings were made by {Maker}?"] == "right"
+    assert got["who built {Building}?"] == "right"
+    assert sum(1 for s in got.values() if s == "right") >= 4
