@@ -6,6 +6,7 @@ import shutil
 import sys
 from collections import Counter
 from pathlib import Path
+import pytest
 
 from test_ontology import data  # noqa: F401  (the module fixture)
 from test_ontology_vocab import graphs_dir, ontology_dir, stub
@@ -56,8 +57,9 @@ def test_with_no_total_cost_the_price_table_prices_the_usage(tmp_path):
     assert abs(row["cost_usd"] - (1000 * 2 + 500 * 10 + 200 * 0.2) / 1e6) < 1e-12
 
 
-def test_the_estimate_counts_the_calls_a_stub_run_makes_per_stage(tmp_path, monkeypatch):
-    monkeypatch.setattr(pipeline, "BATCH", 2)
+@pytest.mark.parametrize("batch, values", [(2, 3), (100, 1)])
+def test_the_estimate_counts_the_calls_a_stub_run_makes_per_stage(tmp_path, monkeypatch, batch, values):
+    monkeypatch.setattr(pipeline, "BATCH", batch)
     graphs_data, ref, cmd, _ = project(tmp_path, {})
     graphs = graphs_data / "graphs"
     real = tmp_path / "real.txt"
@@ -72,7 +74,7 @@ def test_the_estimate_counts_the_calls_a_stub_run_makes_per_stage(tmp_path, monk
     made = Counter(r["stage"] for d in ("base", "data", "questions") for r in ledger(tmp_path / d))
     assert made == planned
     assert planned["base"] == 8 + 3 + 3 + 1   # per nodegroup, per model, its questions; the real ones labelled
-    assert planned["data"] == 3 + 3          # five labels in two lists, batches of two; a phrases call per model
+    assert planned["data"] == values + 3     # two lists: split in batches of two, or packed in one; a phrases call per model
 
 
 def test_the_estimate_counts_the_ontology_calls_a_stub_run_makes(tmp_path, monkeypatch):
