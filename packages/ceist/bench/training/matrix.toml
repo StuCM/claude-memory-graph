@@ -1,0 +1,48 @@
+# Vocabulary training experiments. Each run varies one choice from [baseline].
+# `run.py --estimate` prices every run before anything is spent; `run.py --run a,b` runs those.
+
+[paths]
+her = "/home/stuart/.cache/tmp-003/arches-her/arches_her/pkg"   # graphs/resource_models, reference_data
+demo = "/home/stuart/git/personal/starches-demo/ask"            # data/graphs, data/vocabularies, data/resources
+holdout = ""      # 022's held-out set (a `ceist questions generate` holdout.json); empty: not scored
+work = "/home/stuart/.cache/ceist-training"                     # run dirs and the shared LLM cache
+
+[baseline]
+ontology = "first"         # "first": propose, accept all through the gate, then the rest; "none": phrases.json as it is
+ontology_model = "opus"
+base_model = "opus"        # the base layer, built from HER
+data_model = "sonnet"      # the demo's client layer, and the refine rounds on it
+questions_model = "opus"   # the training questions the refine rounds learn from
+seeds = true               # base from vocabularies/base + bench/her/vocab, client from bench/demo/vocab; false: empty
+rounds = 0
+
+[[run]]
+name = "baseline"
+
+[[run]]
+name = "base-sonnet"
+base_model = "sonnet"
+
+[[run]]
+name = "data-opus"
+data_model = "opus"
+
+[[run]]
+name = "no-seeds"
+seeds = false
+
+[[run]]
+name = "no-ontology"
+ontology = "none"
+
+[[run]]
+name = "rounds-1"
+rounds = 1
+
+[[run]]
+name = "rounds-2"
+rounds = 2
+
+[[run]]
+name = "rounds-3"
+rounds = 3

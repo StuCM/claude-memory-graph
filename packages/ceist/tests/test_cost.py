@@ -1,15 +1,19 @@
 """The cost ledger, the size profile and the estimate, against stub LLMs."""
 
+import importlib.util
 import json
 import shutil
 import sys
 from collections import Counter
+from pathlib import Path
 
 from test_ontology import data  # noqa: F401  (the module fixture)
 from test_ontology_vocab import graphs_dir, ontology_dir, stub
 from test_pipeline import project
 
 from ceist import cost, ontology_vocab as ov, pipeline, questions
+
+TRAINING = Path(__file__).resolve().parents[1] / "bench" / "training" / "run.py"
 
 ENVELOPE = '''import json, sys
 sys.stdin.read()
@@ -118,3 +122,49 @@ def test_the_profile_counts_a_fixture_graph(data, tmp_path):  # noqa: F811
     # paths, all but the actor's unphrased (the status a list field, which the ontology stage now proposes)
     assert p["ontology"] == {"classes": 8, "properties": 6, "paths": 5, "unphrased": 4, "unphrased_nodes": 4,
                              "calls": 1}
+
+
+def _training():
+    spec = importlib.util.spec_from_file_location("training_run", TRAINING)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_the_matrix_estimate_sums_its_runs_and_pays_a_shared_prompt_once(tmp_path):
+    t = _training()
+    paths = {"her": str(tmp_path / "her"), "demo": str(tmp_path / "demo"), "work": str(tmp_path / "work")}
+    baseline = {"ontology": "none", "ontology_model": "opus", "base_model": "opus", "data_model": "sonnet",
+                "questions_model": "opus", "seeds": True, "rounds": 0}
+    runs = [dict(baseline, name="baseline"), dict(baseline, name="rounds-1", rounds=1)]
+    calls = {"base": [["base", "opus", "b1", 1.0], ["base", "opus", "b2", 2.0]],
+             "data": [["data", "sonnet", "d1", 0.5]], "questions": [["questions", "opus", "q1", 0.1]]}
+
+    def est(graphs, args):
+        stage = args[args.index("--stages") + 1]
+        mine = calls[stage] + ([["refine", "sonnet", None, 0.25]] if stage == "data" and "1" in args else [])
+        stages = {}
+        for s, _, _, d in mine:
+            stages.setdefault(s, {"calls": 0, "dollars": 0.0})
+            stages[s]["calls"] += 1
+            stages[s]["dollars"] += d
+        return {"stages": stages, "calls": mine}
+
+    lines = t.estimate_matrix(runs, baseline, paths, est)
+    assert "| baseline | baseline |  | $3.00 |  | $0.50 |  | 3 | $3.50 |" in lines
+    assert "| rounds-1 | rounds 1 |  | $3.00 | $0.10 | $0.50 | $0.25 | 5 | $3.85 |" in lines
+    assert any("each run on its own: $7.35" in x and "**$3.85**" in x for x in lines)
+
+
+def test_the_report_runs_over_a_results_file(tmp_path):
+    t = _training()
+    res = {"run": "rounds-1", "varies": "rounds 1", "choices": {"rounds": 1},
+           "scores": {"fresh graphs": {"right": 40, "of": 50, "wrong": 2}, "demo bank": {"right": 60, "of": 87},
+                      "HER plans": {"right": 120, "of": 125}, "hold-out": None},
+           "cost": {"base": {"calls": 10, "cached": 2, "dollars": 3.0}, "refine": {"calls": 1, "cached": 0, "dollars": 0.2}},
+           "size": {"base": 4, "data": 543}}
+    (tmp_path / "results.jsonl").write_text(json.dumps(res) + "\n")
+    lines = t.report([json.loads(x) for x in (tmp_path / "results.jsonl").read_text().splitlines()])
+    assert "| rounds-1 | rounds 1 | 40/50 (2 wrong) | 60/87 | 120/125 |  | 9 | $3.20 |" in lines
+    assert "| rounds-1 | base | 8 | $3.00 | 4 nodegroup | 2.00 | $0.750 |" in lines
+    assert "| rounds-1 | refine | 1 | $0.20 | 1 round | 1.00 | $0.200 |" in lines
