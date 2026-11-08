@@ -70,8 +70,9 @@ def synthetic(graphs: list[dict]) -> list[dict]:
     return out
 
 
-def load_ontology() -> dict:
-    return {"entries": [e for p in sorted(ONTOLOGY.glob("*.json")) for e in json.loads(p.read_text())["entries"]]}
+def load_ontology(ontology_dir: Path = ONTOLOGY) -> dict:
+    return {"entries": [e for p in sorted(Path(ontology_dir).glob("*.json"))
+                        for e in json.loads(p.read_text()).get("entries", [])]}
 
 
 def coverage(graphs: list[dict], ontology: dict, bundle: dict) -> tuple[list[tuple], Counter]:
@@ -103,30 +104,43 @@ def reason(m, models) -> str:
     return out
 
 
-def one(name: str, path: str) -> dict:
+def layer_bundles(name: str, graphs: list[dict], ontology_dir: Path = ONTOLOGY) -> dict:
+    """{mode: bundle}: the ontology layer alone and, for "her", under HER's base."""
+    from ceist.bundle import layered
+    with tempfile.TemporaryDirectory() as empty:
+        out = {"ontology": layered(graphs, empty, ontology_dir=ontology_dir)[0]}
+    if name == "her":
+        out["ontology+base"] = layered(graphs, BASE, ontology_dir=ontology_dir)[0]
+    return out
+
+
+def outcomes(graphs: list[dict], resources: list[dict], bundle: dict | None, items: list[dict]):
+    """(item, filled question, interpretation, score, vocabulary) for each template question."""
     from ceist import interpret
     from ceist.arches import ArchesVocabulary
-    from ceist.bundle import layered
-    from ceist.questions import fill, score, target_of, templated
+    from ceist.questions import fill, score
+    v = ArchesVocabulary(graphs, resources=resources, bundle=bundle)
+    ends = {e["node"]: e["end_node"] for m in (bundle or {"models": {}})["models"].values()
+            for e in m["entries"] if e.get("end_node")}
+    for o in items:
+        q = fill(o["q"], v)
+        m = interpret(v, q)
+        yield o, q, m, score(o, m, ends), v
+
+
+def one(name: str, path: str) -> dict:
+    from ceist.arches import ArchesVocabulary
+    from ceist.questions import target_of, templated
     graphs = graph_docs(path)
     resources = synthetic(graphs)
-    with tempfile.TemporaryDirectory() as empty:
-        bundles = {"none": None, "ontology": layered(graphs, empty, ontology_dir=ONTOLOGY)[0]}
-    if name == "her":
-        bundles["ontology+base"] = layered(graphs, BASE, ontology_dir=ONTOLOGY)[0]
+    bundles = {"none": None, **layer_bundles(name, graphs)}
     ontology = load_ontology()
     items = templated(ArchesVocabulary(graphs, resources=resources), ontology)
     rows, missed = coverage(graphs, ontology, bundles["ontology"])
     out = {"coverage": rows, "unphrased": missed.most_common(10), "items": items, "scores": {}, "misses": {}}
     for mode, bundle in bundles.items():
-        v = ArchesVocabulary(graphs, resources=resources, bundle=bundle)
-        ends = {e["node"]: e["end_node"] for m in (bundle or {"models": {}})["models"].values()
-                for e in m["entries"] if e.get("end_node")}
         counts, misses, example = Counter(), Counter(), {}
-        for o in items:
-            q = fill(o["q"], v)
-            m = interpret(v, q)
-            s = score(o, m, ends)
+        for o, q, m, s, v in outcomes(graphs, resources, bundle, items):
             counts[(o["model"], s)] += 1
             if s == "refused":
                 why = reason(m, v.models)
