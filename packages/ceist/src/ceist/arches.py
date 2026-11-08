@@ -296,16 +296,25 @@ class ArchesVocabulary:
                 targets = self._targets(n)
                 forms = {str(n.get("name") or "").lower(), n["alias"].replace("_", " ").lower()}
                 forms |= {f.lower() for f in self.relation_forms.get(n["alias"], [])}
-                forms |= {f.lower() for f in self._bundle_forms.get((m.name, n["alias"]), [])}
+                said = {f.lower() for f in self._bundle_forms.get((m.name, n["alias"]), [])}
+                forms |= said
                 r = by_alias.setdefault(n["alias"], {"forms": set(), "domain": set(), "range": set(),
-                                                    "ends": set()})
+                                                    "ends": set(), "said": set(), "by_model": {}})
                 r["forms"] |= forms
+                r["said"] |= said
+                r["by_model"][m.name] = forms
                 r["ends"].add((m.name, targets or self._crm_targets(m.name, n["alias"])))
                 r["domain"].add(m.name)
                 r["range"] |= targets
-        out = [Relation(alias, tuple(sorted(f for f in r["forms"] if f)), frozenset(r["domain"]),
-                        frozenset(r["range"]), style="field", ends=frozenset(r["ends"]))
-               for alias, r in by_alias.items()]
+        out = []
+        for alias, r in by_alias.items():
+            # a bundle phrase is said of its own model's link: "part of" on one
+            # model's record_or_registry must not reach another model's
+            owners = {f: frozenset(m for m, fs in r["by_model"].items() if f in fs) for f in r["said"]}
+            out.append(Relation(alias, tuple(sorted(f for f in r["forms"] if f)), frozenset(r["domain"]),
+                                frozenset(r["range"]), style="field", ends=frozenset(r["ends"]),
+                                form_owners=frozenset((f, o) for f, o in owners.items()
+                                                      if o != r["domain"])))
         self._load_groups()
         return out + self._qualified
 
