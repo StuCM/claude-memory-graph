@@ -483,6 +483,37 @@ def test_find_leading_a_question_is_the_command_not_a_value():
     assert m.direct is None and "couldn't place 'surname'" in m.refused
 
 
+
+# every word the grounder once threw away as filler: placed, or refused by name, never the bare record
+@pytest.mark.parametrize("q, word", [
+    ("when was the Clock Tower made?", "made"),
+    ("what did Ada Lovelace make?", "make"),
+    ("when was the Clock Tower got?", "got"),
+    ("where is the Clock Tower kept?", "kept"),
+    ("who will keep the Clock Tower?", "keep"),
+    ("is the Clock Tower currently listed?", "currently"),
+    ("what does Ada Lovelace use?", "use"),
+    ("what did Ada Lovelace get?", "get"),
+    ("where is the Clock Tower set?", "set"),
+    ("what does the Clock Tower need?", "need"),
+    ("what did Ada Lovelace want?", "want"),
+    ("who did Ada Lovelace know?", "know"),
+    ("what is before the Clock Tower?", "before"),
+    ("what is after the Clock Tower?", "after"),
+])
+def test_a_content_word_is_never_dropped_as_filler(q, word):
+    m = interpret(Toy(), q)
+    assert m.direct is None and m.plan is None
+    assert m.refused.startswith(f"couldn't place '{word}'"), m.refused
+
+
+def test_a_yes_no_question_about_a_record_is_not_the_record():
+    m = interpret(Toy(), "is the Clock Tower listed?")
+    assert m.direct is None
+    assert m.refused == ("asks whether Building 'Clock Tower' is 'listed'; "
+                         "a yes/no question about one record isn't supported yet")
+    assert interpret(Toy(), "what is the Clock Tower?").direct.id == "b-1"
+
 BRONZE = Value("bronze age", "period", "c-ba", "Bronze Age", frozenset({"Building"}))
 
 
@@ -525,9 +556,9 @@ def test_a_relation_phrase_outside_the_longer_value_still_grounds():
 def test_a_value_only_one_model_holds_implies_that_model():
     m = interpret(Ages(), "how many raths are there?")
     assert narrate(m.plan) == "Count Buildings whose type is Rath."
-    # a question about one thing's attribute names no subject: "made of" would be dropped
+    # "made of" names nothing here, and is never dropped
     m = interpret(Ages(), "what's the raths made of?")
-    assert m.plan is None and m.refused == "no queryable subject"
+    assert m.plan is None and m.refused.startswith("couldn't place 'made'")
     # grounded with a relation, the relation's own variable is still the subject
     m = interpret(Ages(), "which raths are on site Leeds Dock?")
     assert narrate(m.plan) == "Find Buildings that on site Site 'Leeds Dock' and whose type is Rath."

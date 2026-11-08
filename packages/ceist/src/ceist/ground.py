@@ -38,9 +38,10 @@ RECENT = {"recent", "recently", "latest", "newest"}
 # commands that ask a question: "list all decisions", "show me patterns"
 IMPERATIVE = {"list", "show", "find", "give", "tell", "name"}
 # words that shape a question but name nothing: never a text filter
-FILLER = {"me", "all", "every", "please", "made", "make", "been", "exist", "exists",
-          "there", "we", "us", "our", "i", "you", "about", "ever", "currently", "have",
-          "got", "keep", "kept"}
+FILLER = {"me", "all", "every", "please", "been", "exist", "exists",
+          "there", "we", "us", "our", "i", "you", "about", "ever", "have"}
+# stopwords elsewhere, but a question can turn on them: "what did X make?" must not become "X"
+MEANINGFUL = {"make", "use", "get", "set", "need", "want", "know", "before", "after"}
 # "what do we know about X", "tell me about X": the answer is X itself, and the
 # verb ("know") must not ground as a relation
 ABOUT_RE = re.compile(r"^\s*(?:what\s+(?:do|does|did)\s+(?:we|i|you)\s+(?:know|have|remember)"
@@ -283,7 +284,7 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
     raw = text.lower().replace("\u2019", "'").replace("non-", "non ")
     words = [(i, m.start(), m.end(), m.group())
              for i, m in enumerate(WORD_RE.finditer(raw))]
-    terms = {w for _, w in terms_pos(text)}
+    terms = {w for _, w in terms_pos(text)} | (MEANINGFUL & set(re.findall(r"[a-z0-9]+", raw)))
     consumed: set[int] = set()
     taken: list[tuple[int, int]] = []
 

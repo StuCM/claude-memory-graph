@@ -216,6 +216,12 @@ def interpret(vocab: Vocabulary, text: str, today=None, matcher=None) -> Interpr
         return out
     if g.anchor is not None and g.anchor.entity.extra.get("recallable", True) and (
             g.subject is None or (not g.edges and g.subject.type == g.anchor.type)):
+        said = [x.phrase for x in (*g.values, *g.dates, *g.groups)] + ([g.contains] if g.contains else [])
+        if said:
+            # "is Navan Fort scheduled?": the record alone would drop 'scheduled'
+            out.refused = (f"asks whether {g.anchor.type} '{g.anchor.name}' is {_quoted(said)}; "
+                           "a yes/no question about one record isn't supported yet")
+            return out
         out.direct = g.anchor.entity
         return out
     if g.subject is None:
@@ -309,7 +315,7 @@ def _detail(vocab: Vocabulary, g: Grounding) -> "Detail | str | None":
             or g.dates or g.groups or g.contains or g.name or g.count
             or any(n.type != a.type for n in g.vars())):
         return None
-    words = set(terms(g.text)) - set(a.match_terms)
+    words = (set(terms(g.text)) | set(g.uncovered)) - set(a.match_terms)
     if g.wh == "when":
         # "when was Navan Fort built?": the one date of its type a form names exactly
         dates = {(d.field, d.label) for d in vocab.date_fields()

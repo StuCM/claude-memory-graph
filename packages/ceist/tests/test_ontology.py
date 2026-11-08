@@ -59,9 +59,9 @@ def data(tmp_path_factory):
     return root, info
 
 
-def layers(tmp_path, base_entries=()):
+def layers(tmp_path, base_entries=(), ontology=ONTOLOGY):
     (tmp_path / "ontology" / "cidoc-crm").mkdir(parents=True)
-    (tmp_path / "ontology" / "cidoc-crm" / "phrases.json").write_text(json.dumps(ONTOLOGY))
+    (tmp_path / "ontology" / "cidoc-crm" / "phrases.json").write_text(json.dumps(ontology))
     base = tmp_path / "base" / fx.BUILDING
     base.mkdir(parents=True)
     (base / "architect.json").write_text(json.dumps({"model": "Building", "nodegroup": "architect",
@@ -69,9 +69,9 @@ def layers(tmp_path, base_entries=()):
     return tmp_path / "base"
 
 
-def vocab(data, tmp_path, base_entries=()):
+def vocab(data, tmp_path, base_entries=(), ontology=ONTOLOGY):
     graphs = [graph_doc(p) for p in sorted((data[0] / "graphs").glob("*.json"))]
-    bundle, report = layered(graphs, layers(tmp_path, base_entries))
+    bundle, report = layered(graphs, layers(tmp_path, base_entries, ontology))
     return ArchesVocabulary.from_data_dir(data[0], bundle=bundle), bundle, report
 
 
@@ -107,3 +107,21 @@ def test_who_built_follows_the_production_path_and_reads_back(data, tmp_path):
     m = interpret(v, "who built the Clock Tower?")
     assert narrate(m.plan) == "Find Makers that are the actor of Building 'Clock Tower'."
     assert evaluate(m.plan, Tiles(v)) == {data[1]["ids"]["ada"]}
+
+
+def test_when_was_it_made_is_the_production_date_or_names_made(data, tmp_path):
+    made = dict(ONTOLOGY, entries=[{"path": "P108i E12 P4", "kind": "date", "phrases": ["made"]}])
+    v, _, _ = vocab(data, tmp_path / "made", ontology=made)
+    m = interpret(v, "when was the Clock Tower made?")
+    assert m.direct is None and narrate(m.detail) == "Show the production date of Building 'Clock Tower'."
+    v, _, _ = vocab(data, tmp_path / "plain")
+    m = interpret(v, "when was the Clock Tower made?")
+    assert m.direct is None and m.detail is None
+    assert m.refused.startswith("couldn't place 'made'"), m.refused
+
+
+def test_a_dropped_verb_beside_a_record_with_fields_is_named(data, tmp_path):
+    v, _, _ = vocab(data, tmp_path)
+    m = interpret(v, "what does the Clock Tower need?")
+    assert m.direct is None and m.detail is None
+    assert m.refused.startswith("couldn't place 'need'"), m.refused
