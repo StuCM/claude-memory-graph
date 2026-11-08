@@ -1,7 +1,7 @@
 ---
 id: 027
 slug: richer-ontology-vocab
-status: approved
+status: done
 branch: crew/027-richer-ontology-vocab
 model: opus
 env: laptop
@@ -9,6 +9,10 @@ work: ceist-ontology
 files:
   - packages/ceist/
   - vocabularies/
+gate: pass
+gateSha: abe720c724d7cfc52687a3619921caef0e4d503c
+gateAt: 2026-11-08T12:00:31.263Z
+rounds: 2
 ---
 
 # A tool that builds a much richer CIDOC-CRM vocabulary layer, ready for one live run
@@ -49,6 +53,47 @@ Stu, 2026-11-08: "Let's continue and run the richer ontology pipeline." Task 026
 
 ## Worker notes
 
+### Live run for Stu (from the worktree root, after merge or here)
+```sh
+G=/home/stuart/.cache/tmp-003/arches-her/arches_her/pkg/graphs/resource_models
+C=/home/stuart/git/fat/arches/catalina/catalina-graphs/output/graphs/resource_models
+L=/home/stuart/git/fat/arches/arches-lingo/arches_lingo/pkg/graphs/resource_models
+D=/home/stuart/git/personal/starches-demo/ask/data/graphs
+.venv-ceist/bin/ceist vocab ontology $G $C $L $D -o /home/stuart/.cache/ceist-ontology-run --model opus
+# review vocabularies/ontology/cidoc-crm/proposed.json: edit phrases, set "reviewed": true
+.venv-ceist/bin/ceist vocab ontology --accept      # gate → phrases.json; verdict per proposal in proposed.json
+# a machine without the demo or HER checkout: --skip demo / --skip her (otherwise the gate fails, merging nothing)
+```
+- **Calls:** 113 paths (475 nodes) → **12 calls** of 10 paths, at most 24 with retries; `--max-calls 300` default. A re-run pays only for paths not yet answered (cached per path in `-o …/cache`); `audit.jsonl` there holds every prompt.
+- **Cost:** a prompt is ~12.6k chars (~3.5k tokens in, ~1–3k out with thinking). At Opus 5.5 API rates ($4/$20 per M) ~$0.08 a call, **~$1 for the run, ~$2 worst case**; Sonnet 5.5 about half. On Stu's subscription it is just usage.
+- **Accept** takes ~7 min for a handful of proposals on this machine (bench ~1–2 min, demo bank twice ~30 s, HER describe+assemble+plans ~5 min). Per-proposal bench time scales with the number reviewed.
+
+### What changed
+- `src/ceist/ontology_vocab.py` (new): `definitions` (labels + scope notes from the RDFS; an inverse property takes its forward's note; CRMsci has no labels, so the name gives it), `path_of`/`collect` (unphrased link/date paths keyed as phrases.json keys them, ranked by nodes then graphs; codes outside CRM+CRMsci skipped and counted; concept/reference property nodes listed for 025), `prompt`/`check`/`propose` (batches of 10 through `pipeline.Runner`, per-path cache, `proposed.json` keeps a reviewer's edits on re-run), `accept`/`merge`/`write_phrases`.
+- `bench/ontology/gate.py` (new): the gate `--accept` runs. Each candidate alone on the bench sets vs phrases.json (must add a right, make nothing worse: no right/right refusal lost, no new wrong reading or wrong); then the passing ones together on the bench and on the demo bank (output compared before/after), dropping those whose phrase is in a changed question; then HER plans 2.0. Verdict JSON on the last line.
+- `bench/ontology/run.py`: scoring split into `layer_bundles` and `outcomes` so the gate reuses it; `load_ontology` takes a dir.
+- `src/ceist/bundle.py` `layered`: reads `.get("entries", [])` so `proposed.json` beside `phrases.json` isn't read as phrases (it was a KeyError).
+- `src/ceist/cli.py`: `ceist vocab ontology`.
+- `vocabularies/ontology/cidoc-crm/source/`: `cidoc_crm_v6.2.xml` + `CRMsci_v1.2.3.rdfs.xml`, copied from the local arches-her clone (9f6a113): the exact files the graphs' URIs come from (v6.2 with Arches' "Human-Made" names). No network fetch was needed. README notes version, sha256 and licence (CC BY 4.0 per cidoc-crm.org; the files carry no licence text: worth a check).
+- `tests/test_ontology_vocab.py`: the five DoD tests. The wrong-reading test is real: "construction date" on the production path reads the fixture's other date field; mutation-checked by dropping the wrong/wrong-reading clause in `judge` (fails).
+
+### Dry run (stub LLM, real ranked paths)
+`ceist vocab ontology <4 dirs> -o … --ontology <copy> --llm-cmd <stub>` printed `113 paths (475 nodes), 0 cached: 12 calls, up to 24 with retries`, wrote 113 proposals; the re-run made 0 calls. Top paths: `P4 E52 P86i` date 44, `P140i E13 P4` date 37, `P140i E13 P141` 23, `P1 E33 P67i` 21, `P9 E7 P4` 20, `P140i E17 P17` 18. Not proposed: 240 nodes already phrased, 380 outside CRM+CRMsci (CRMdig, CRMgeo, Catalina's Z-classes, rdm/aaao). Property-node paths for 025: 199 (top `P2 E55 P2` 2763 nodes, `P1 E41 P2`, `P4 E52 P2`, `P72 E56 P2`, `P141 E55 P2`), all listed in proposed.json `property_nodes`.
+A real gate run on 3 hand candidates (temp copy, not merged): `P140i E13 P4` and `E7 P15` passed; `P9 E7 P4` ["took place", "carried out"] was rejected ("when was Keldrith carried out?" worse on HER); demo bank unchanged; HER plans 125/125.
+
+### Spec notes / limits
+- Path keys are up to three tokens, matching phrases.json; dates key on the event before the time-span, so `P4 E52 P86i` (a span within a span) is generic: the LLM is asked to skip such paths.
+- The per-candidate bench only re-asks questions sharing a word with its phrases (`ponytail:` in gate.py); the together run re-asks all, so nothing is lost.
+- The demo-bank and together checks reject by phrase occurrence in the changed questions, else all passing: coarse, but never merges a change.
+- HER plans can't change from phrases.json (HER uses the assembled bundle, not `layered`); the check is run because the spec asks.
+- No change to ground/plan/crm; nothing reaches `memory_ask`.
+- After review round 1: a failed demo-bank run (no tally line, or exit other than 0/1) or a missing demo/HER checkout fails the gate instead of passing vacuously; skipping needs `--skip demo|her`. Verdicts are keyed `"<kind> <path>"`.
+- Gate passed on abe720c: root 610 passed (51 skipped, 1 deselected); Ceist 306 passed. Not rebased on 295659f (spec-only commit; the dirty task file blocks a rebase).
+
 ## Graph writes proposed
+- Decision: CIDOC-CRM scope notes for Ceist's ontology vocab come from `vocabularies/ontology/cidoc-crm/source/` (v6.2 + CRMsci, copied from arches-her: the encoding Arches graphs use). Proposals go to `proposed.json` and reach `phrases.json` only via `ceist vocab ontology --accept`, gated by `bench/ontology/gate.py` (bench alone + together, demo bank, HER plans).
+- Pattern: CRMsci's RDFS has no labels or comments and redeclares some CRM properties bare; when merging RDFS files, never let an empty redeclaration overwrite a CRM label/note.
 
 ## Review rounds
+- Round 1 (abe720c's parent 5e7e3ba): CHANGES. (1) demo bank failure read as "unchanged"; (2) missing demo/HER checkout skipped silently and still merged; (3) verdicts keyed by path not (kind, path). All three fixed in abe720c (amended; a test asserts a missing checkout fails).
+- Round 2 (abe720c): PASS. All three findings confirmed fixed; tests 5 passed.
