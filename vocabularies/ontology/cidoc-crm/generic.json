@@ -1,0 +1,7 @@
+{
+ "format": "ceist.ontology-generic/1",
+ "how": "phrasings too generic to carry a CRM path on their own; `ceist vocab ontology --review` drops them from proposals",
+ "phrases": ["used", "use", "has", "have", "of", "in", "on", "at", "by", "with", "about", "subject", "motivation",
+             "was at", "involved in", "events held", "activities held", "type", "kind", "sort", "category",
+             "classification", "material"]
+}

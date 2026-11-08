@@ -1,0 +1,3915 @@
+{
+ "format": "ceist.ontology-proposals/1",
+ "how": "review each proposal: edit its phrases, set \"reviewed\": true, then `ceist vocab ontology --accept`",
+ "proposals": [
+  {
+   "path": "P104 E30 P2",
+   "kind": "property",
+   "nodes": 32,
+   "graphs": 18,
+   "phrases": [
+    "licensed under",
+    "rights status",
+    "type of rights"
+   ],
+   "reason": "the kind of legal right or licence the thing is subject to",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'licence': a bare noun, and the path reaches several fields in a model; 'license': a bare noun, and the path reaches several fields in a model",
+    "dropped": {
+     "licence": "a bare noun, and the path reaches several fields in a model",
+     "license": "a bare noun, and the path reaches several fields in a model"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P126 E57 P2",
+   "kind": "property",
+   "nodes": 20,
+   "graphs": 8,
+   "phrases": [
+    "material type",
+    "type of material",
+    "material category",
+    "class of material"
+   ],
+   "reason": "the broader category of the material used in the activity",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P106 E33 P72",
+   "kind": "property",
+   "nodes": 17,
+   "graphs": 11,
+   "phrases": [
+    "language",
+    "written in",
+    "in the language"
+   ],
+   "reason": "The language of the text that the thing is composed of.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "O18i E11 P126",
+   "kind": "property",
+   "nodes": 14,
+   "graphs": 4,
+   "phrases": [
+    "built of",
+    "built from",
+    "constructed of"
+   ],
+   "reason": "The material used in building or altering the thing.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'material': too generic",
+    "dropped": {
+     "material": "too generic"
+    }
+   },
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "O18i E11 P33",
+   "kind": "property",
+   "nodes": 14,
+   "graphs": 4,
+   "phrases": [
+    "construction technique",
+    "building technique",
+    "construction method",
+    "built using"
+   ],
+   "reason": "The specific technique or plan used in building or altering the thing.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "P8i E7 P2",
+   "kind": "property",
+   "nodes": 12,
+   "graphs": 6,
+   "phrases": [
+    "event type",
+    "activity type"
+   ],
+   "reason": "the kind of activity or event that took place on or within the object, such as a building or ship",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'events held': too generic; 'activities held': too generic",
+    "dropped": {
+     "events held": "too generic",
+     "activities held": "too generic"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P40 E54 P2",
+   "kind": "property",
+   "nodes": 11,
+   "graphs": 4,
+   "phrases": [
+    "dimension type",
+    "type of measurement",
+    "dimension measured"
+   ],
+   "reason": "Which dimension was measured, such as height, width or weight.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E7 P2",
+   "kind": "property",
+   "nodes": 10,
+   "graphs": 2,
+   "phrases": [
+    "type of activity",
+    "kind of activity"
+   ],
+   "reason": "The kind of activity the record describes.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'activity type': shared by 4 sibling paths; kept on P8i E7 P2",
+    "dropped": {
+     "activity type": "shared by 4 sibling paths; kept on P8i E7 P2"
+    }
+   },
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "E74 P2",
+   "kind": "property",
+   "nodes": 8,
+   "graphs": 4,
+   "phrases": [
+    "organisation type",
+    "organization type",
+    "type of organisation",
+    "kind of group"
+   ],
+   "reason": "The kind of group or organisation, such as a society, company or council.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E33 P67i",
+   "kind": "link",
+   "nodes": 7,
+   "graphs": 5,
+   "phrases": [
+    "referenced in"
+   ],
+   "reason": "A text that is mentioned or cited by another document.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'referred to in': shared by 2 sibling paths; kept on P67i; 'cited in': shared by 2 sibling paths; kept on P67i; 'references': clash: already on P67i E73",
+    "dropped": {
+     "referred to in": "shared by 2 sibling paths; kept on P67i",
+     "cited in": "shared by 2 sibling paths; kept on P67i",
+     "references": "clash: already on P67i E73"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "O18i E11 P2",
+   "kind": "property",
+   "nodes": 7,
+   "graphs": 4,
+   "phrases": [
+    "modification type",
+    "alteration type",
+    "type of alteration",
+    "type of work"
+   ],
+   "reason": "The kind of modification or alteration carried out on the thing, such as restoration or extension.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E33 P72",
+   "kind": "property",
+   "nodes": 6,
+   "graphs": 4,
+   "phrases": [
+    "language",
+    "written in",
+    "in the language"
+   ],
+   "reason": "The language a text or other linguistic object is expressed in.",
+   "reviewed": false,
+   "review": {
+    "verdict": "dropped",
+    "reason": "'language': shared by 2 sibling paths; kept on P106 E33 P72; 'written in': shared by 2 sibling paths; kept on P106 E33 P72; 'in the language': shared by 2 sibling paths; kept on P106 E33 P72",
+    "dropped": {
+     "language": "shared by 2 sibling paths; kept on P106 E33 P72",
+     "written in": "shared by 2 sibling paths; kept on P106 E33 P72",
+     "in the language": "shared by 2 sibling paths; kept on P106 E33 P72"
+    }
+   }
+  },
+  {
+   "path": "O18i E11 P10",
+   "kind": "link",
+   "nodes": 6,
+   "graphs": 3,
+   "phrases": [
+    "built during",
+    "constructed during",
+    "construction period"
+   ],
+   "reason": "The period or wider span within which the thing's building or alteration took place.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E21 P11i",
+   "kind": "link",
+   "nodes": 6,
+   "graphs": 2,
+   "phrases": [
+    "participant in"
+   ],
+   "reason": "An event that the person took part in.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'involved in': too generic; 'took part in': shared by 2 sibling paths; kept on P11i; 'participated in': shared by 2 sibling paths; kept on P11i",
+    "dropped": {
+     "involved in": "too generic",
+     "took part in": "shared by 2 sibling paths; kept on P11i",
+     "participated in": "shared by 2 sibling paths; kept on P11i"
+    }
+   },
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "E24 P2",
+   "kind": "property",
+   "nodes": 6,
+   "graphs": 2,
+   "phrases": [
+    "object type",
+    "type of object",
+    "kind of object"
+   ],
+   "reason": "The classification of the human-made thing itself.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E24 P8i",
+   "kind": "link",
+   "nodes": 6,
+   "graphs": 2,
+   "phrases": [
+    "witnessed",
+    "scene of",
+    "site of"
+   ],
+   "reason": "An event or period that took place on or within the physical thing, such as a building or ship.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "O19i S19 P32",
+   "kind": "property",
+   "nodes": 6,
+   "graphs": 2,
+   "phrases": [
+    "recovery method",
+    "method of recovery",
+    "found using",
+    "discovery method",
+    "recovered by"
+   ],
+   "reason": "The technique used when the object was found or recovered, such as metal detecting or excavation.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "P108i E12 P32",
+   "kind": "property",
+   "nodes": 6,
+   "graphs": 2,
+   "phrases": [
+    "production technique",
+    "made using",
+    "method of manufacture"
+   ],
+   "reason": "The technique or method used to make the thing, such as casting or weaving.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'technique': a bare noun, and the path reaches several fields in a model",
+    "dropped": {
+     "technique": "a bare noun, and the path reaches several fields in a model"
+    }
+   },
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "E33 P129i",
+   "kind": "link",
+   "nodes": 5,
+   "graphs": 3,
+   "phrases": [
+    "subject of",
+    "discussed in",
+    "written about in"
+   ],
+   "reason": "A work whose subject is this text.",
+   "reviewed": false,
+   "review": {
+    "verdict": "dropped",
+    "reason": "'subject of': shared by 10 sibling paths; kept on P129i; 'discussed in': shared by 2 sibling paths; kept on P129i; 'written about in': shared by 6 sibling paths; kept on P129i",
+    "dropped": {
+     "subject of": "shared by 10 sibling paths; kept on P129i",
+     "discussed in": "shared by 2 sibling paths; kept on P129i",
+     "written about in": "shared by 6 sibling paths; kept on P129i"
+    }
+   }
+  },
+  {
+   "path": "E53 P129i",
+   "kind": "link",
+   "nodes": 5,
+   "graphs": 3,
+   "phrases": [
+    "described in",
+    "subject of",
+    "the subject of",
+    "documented in"
+   ],
+   "reason": "A place that is the main subject of a document or other propositional object.",
+   "reviewed": false,
+   "review": {
+    "verdict": "dropped",
+    "reason": "'subject of': shared by 10 sibling paths; kept on P129i; 'described in': shared by 6 sibling paths; kept on P129i; 'the subject of': shared by 6 sibling paths; kept on P129i; 'documented in': shared by 6 sibling paths; kept on P129i",
+    "dropped": {
+     "subject of": "shared by 10 sibling paths; kept on P129i",
+     "described in": "shared by 6 sibling paths; kept on P129i",
+     "the subject of": "shared by 6 sibling paths; kept on P129i",
+     "documented in": "shared by 6 sibling paths; kept on P129i"
+    }
+   }
+  },
+  {
+   "path": "E53 P2",
+   "kind": "property",
+   "nodes": 5,
+   "graphs": 3,
+   "phrases": [
+    "place type",
+    "type of place",
+    "site type",
+    "kind of place"
+   ],
+   "reason": "The classification of the place itself, such as settlement or hillfort.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "O18i E11 P32",
+   "kind": "property",
+   "nodes": 5,
+   "graphs": 3,
+   "phrases": [
+    "construction technique",
+    "construction method",
+    "building technique",
+    "built using"
+   ],
+   "reason": "The technique used to build or alter the structure, such as dry-stone or timber-framed.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "rejected: bench: worse on 2, e.g. her: what is the construction method of Mavdrith?"
+  },
+  {
+   "path": "P31 E24 P2",
+   "kind": "property",
+   "nodes": 5,
+   "graphs": 3,
+   "phrases": [
+    "type of object modified",
+    "kind of thing altered",
+    "modified object type"
+   ],
+   "reason": "The type of the physical thing that this modification changed.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P31 E24 P45",
+   "kind": "property",
+   "nodes": 5,
+   "graphs": 3,
+   "phrases": [
+    "material of object modified",
+    "material altered",
+    "modified object material"
+   ],
+   "reason": "The material of the physical thing that this modification changed.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P45 E57 P2",
+   "kind": "property",
+   "nodes": 5,
+   "graphs": 3,
+   "phrases": [
+    "kind of material"
+   ],
+   "reason": "The broader category of the material the thing consists of.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'material type': shared by 2 sibling paths; kept on P126 E57 P2; 'material category': shared by 2 sibling paths; kept on P126 E57 P2",
+    "dropped": {
+     "material type": "shared by 2 sibling paths; kept on P126 E57 P2",
+     "material category": "shared by 2 sibling paths; kept on P126 E57 P2"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P94i E65 P16",
+   "kind": "link",
+   "nodes": 5,
+   "graphs": 3,
+   "phrases": [
+    "based on",
+    "drawn from",
+    "made using",
+    "source material"
+   ],
+   "reason": "A thing that was used essentially in conceiving a work, such as a source or model it was created from.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E27 P129i",
+   "kind": "link",
+   "nodes": 5,
+   "graphs": 2,
+   "phrases": [
+    "described in",
+    "subject of",
+    "the subject of",
+    "documented in"
+   ],
+   "reason": "A site that is the main subject of a document or other propositional object.",
+   "reviewed": false,
+   "review": {
+    "verdict": "dropped",
+    "reason": "'subject of': shared by 10 sibling paths; kept on P129i; 'described in': shared by 6 sibling paths; kept on P129i; 'the subject of': shared by 6 sibling paths; kept on P129i; 'documented in': shared by 6 sibling paths; kept on P129i",
+    "dropped": {
+     "subject of": "shared by 10 sibling paths; kept on P129i",
+     "described in": "shared by 6 sibling paths; kept on P129i",
+     "the subject of": "shared by 6 sibling paths; kept on P129i",
+     "documented in": "shared by 6 sibling paths; kept on P129i"
+    }
+   }
+  },
+  {
+   "path": "E33 P103",
+   "kind": "property",
+   "nodes": 4,
+   "graphs": 3,
+   "phrases": [
+    "intended for",
+    "intended use",
+    "purpose",
+    "meant for"
+   ],
+   "reason": "The kind of use a text or linguistic object was intended for.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E33 P67",
+   "kind": "link",
+   "nodes": 4,
+   "graphs": 3,
+   "phrases": [
+    "refers to",
+    "makes reference to"
+   ],
+   "reason": "Things a text refers to in passing, as distinct from its primary subject.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'mentions': clash: already on P129 E18",
+    "dropped": {
+     "mentions": "clash: already on P129 E18"
+    }
+   },
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "E18 P129i",
+   "kind": "link",
+   "nodes": 4,
+   "graphs": 2,
+   "phrases": [
+    "described in",
+    "subject of",
+    "the subject of",
+    "documented in"
+   ],
+   "reason": "A physical thing that is the main subject of a document or other propositional object.",
+   "reviewed": false,
+   "review": {
+    "verdict": "dropped",
+    "reason": "'subject of': shared by 10 sibling paths; kept on P129i; 'described in': shared by 6 sibling paths; kept on P129i; 'the subject of': shared by 6 sibling paths; kept on P129i; 'documented in': shared by 6 sibling paths; kept on P129i",
+    "dropped": {
+     "subject of": "shared by 10 sibling paths; kept on P129i",
+     "described in": "shared by 6 sibling paths; kept on P129i",
+     "the subject of": "shared by 6 sibling paths; kept on P129i",
+     "documented in": "shared by 6 sibling paths; kept on P129i"
+    }
+   }
+  },
+  {
+   "path": "E22 P129i",
+   "kind": "link",
+   "nodes": 4,
+   "graphs": 2,
+   "phrases": [
+    "described in",
+    "subject of",
+    "the subject of",
+    "documented in"
+   ],
+   "reason": "A human-made object that is the main subject of a document or other propositional object.",
+   "reviewed": false,
+   "review": {
+    "verdict": "dropped",
+    "reason": "'subject of': shared by 10 sibling paths; kept on P129i; 'described in': shared by 6 sibling paths; kept on P129i; 'the subject of': shared by 6 sibling paths; kept on P129i; 'documented in': shared by 6 sibling paths; kept on P129i",
+    "dropped": {
+     "subject of": "shared by 10 sibling paths; kept on P129i",
+     "described in": "shared by 6 sibling paths; kept on P129i",
+     "the subject of": "shared by 6 sibling paths; kept on P129i",
+     "documented in": "shared by 6 sibling paths; kept on P129i"
+    }
+   }
+  },
+  {
+   "path": "E24 P67i",
+   "kind": "link",
+   "nodes": 4,
+   "graphs": 2,
+   "phrases": [
+    "mentioned in"
+   ],
+   "reason": "A document or text that makes reference to a human-made thing.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'referred to in': shared by 2 sibling paths; kept on P67i; 'cited in': shared by 2 sibling paths; kept on P67i",
+    "dropped": {
+     "referred to in": "shared by 2 sibling paths; kept on P67i",
+     "cited in": "shared by 2 sibling paths; kept on P67i"
+    }
+   },
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "E7 P15",
+   "kind": "link",
+   "nodes": 4,
+   "graphs": 2,
+   "phrases": [
+    "influenced by",
+    "inspired by",
+    "influence"
+   ],
+   "reason": "An activity in the record's history that was influenced by another thing, person or work.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P107 E21 P2",
+   "kind": "property",
+   "nodes": 4,
+   "graphs": 2,
+   "phrases": [
+    "member type",
+    "type of member",
+    "kind of member"
+   ],
+   "reason": "The type or category of the people who are members of the group.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "P12i E13 P32",
+   "kind": "property",
+   "nodes": 4,
+   "graphs": 2,
+   "phrases": [
+    "analysis technique",
+    "method of analysis",
+    "analysed using",
+    "examination method"
+   ],
+   "reason": "The technique used in an assessment or analysis carried out on the thing.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E4 P2",
+   "kind": "property",
+   "nodes": 4,
+   "graphs": 1,
+   "phrases": [
+    "period type",
+    "type of period",
+    "kind of period"
+   ],
+   "reason": "The classification of a period record itself, such as cultural, political or geological.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "P129i E29 P2",
+   "kind": "property",
+   "nodes": 4,
+   "graphs": 1,
+   "phrases": [
+    "plan type",
+    "type of plan",
+    "design type",
+    "kind of plan"
+   ],
+   "reason": "The type of a documented plan or procedure about the thing, such as a conservation or management plan.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "P17 E33 P2",
+   "kind": "property",
+   "nodes": 4,
+   "graphs": 1,
+   "phrases": [
+    "motivated by",
+    "prompted by"
+   ],
+   "reason": "The type of the text or document that prompted an activity, such as a planning condition or brief.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'motivation': too generic; 'reason': a bare noun, and the path reaches several fields in a model",
+    "dropped": {
+     "motivation": "too generic",
+     "reason": "a bare noun, and the path reaches several fields in a model"
+    }
+   },
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "P7 E53 P2",
+   "kind": "property",
+   "nodes": 4,
+   "graphs": 1,
+   "phrases": [
+    "location type"
+   ],
+   "reason": "The type of the place where the event or period took place.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'place type': shared by 2 sibling paths; kept on E53 P2; 'type of place': shared by 2 sibling paths; kept on E53 P2; 'kind of place': shared by 2 sibling paths; kept on E53 P2",
+    "dropped": {
+     "place type": "shared by 2 sibling paths; kept on E53 P2",
+     "type of place": "shared by 2 sibling paths; kept on E53 P2",
+     "kind of place": "shared by 2 sibling paths; kept on E53 P2"
+    }
+   },
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "P93i E81 P2",
+   "kind": "property",
+   "nodes": 4,
+   "graphs": 1,
+   "phrases": [
+    "transformation type",
+    "type of transformation",
+    "transformed into",
+    "converted into"
+   ],
+   "reason": "The kind of transformation event that ended the thing's existence by turning it into something else.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "P94 E33 P2",
+   "kind": "property",
+   "nodes": 4,
+   "graphs": 1,
+   "phrases": [
+    "text type",
+    "type of text",
+    "kind of text"
+   ],
+   "reason": "The type of the linguistic object (text) produced by a creation event.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'genre': a bare noun, and the path reaches several fields in a model",
+    "dropped": {
+     "genre": "a bare noun, and the path reaches several fields in a model"
+    }
+   },
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "E33 P129",
+   "kind": "link",
+   "nodes": 3,
+   "graphs": 3,
+   "phrases": [
+    "on the subject of",
+    "deals with"
+   ],
+   "reason": "A text that has another record as its subject.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'about': too generic; 'subject': too generic",
+    "dropped": {
+     "about": "too generic",
+     "subject": "too generic"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E18 P12i",
+   "kind": "link",
+   "nodes": 3,
+   "graphs": 2,
+   "phrases": [
+    "took part in",
+    "witnessed"
+   ],
+   "reason": "A physical thing that was present at an event.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'was at': too generic; 'present at': shared by 3 sibling paths; kept on P12i",
+    "dropped": {
+     "was at": "too generic",
+     "present at": "shared by 3 sibling paths; kept on P12i"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E18 P16i",
+   "kind": "link",
+   "nodes": 3,
+   "graphs": 2,
+   "phrases": [
+    "used in",
+    "used during",
+    "employed in"
+   ],
+   "reason": "A physical thing that was used as a tool or material in an activity.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'used for': shared by 2 sibling paths; kept on P16i",
+    "dropped": {
+     "used for": "shared by 2 sibling paths; kept on P16i"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E18 P2",
+   "kind": "property",
+   "nodes": 3,
+   "graphs": 2,
+   "phrases": [
+    "type of thing"
+   ],
+   "reason": "The classification of the physical thing itself.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'object type': shared by 3 sibling paths; kept on E24 P2; 'type of object': shared by 3 sibling paths; kept on E24 P2; 'kind of object': shared by 3 sibling paths; kept on E24 P2",
+    "dropped": {
+     "object type": "shared by 3 sibling paths; kept on E24 P2",
+     "type of object": "shared by 3 sibling paths; kept on E24 P2",
+     "kind of object": "shared by 3 sibling paths; kept on E24 P2"
+    }
+   },
+   "gate": "rejected: bench: worse on 2, e.g. catalina: what is the type of Mavquorn?"
+  },
+  {
+   "path": "E22 P12i",
+   "kind": "link",
+   "nodes": 3,
+   "graphs": 2,
+   "phrases": [
+    "present at",
+    "was at",
+    "featured in"
+   ],
+   "reason": "an object was present at an event, such as a ceremony or treaty signing",
+   "reviewed": false,
+   "review": {
+    "verdict": "dropped",
+    "reason": "'was at': too generic; 'present at': shared by 3 sibling paths; kept on P12i; 'featured in': shared by 2 sibling paths; kept on P12i",
+    "dropped": {
+     "was at": "too generic",
+     "present at": "shared by 3 sibling paths; kept on P12i",
+     "featured in": "shared by 2 sibling paths; kept on P12i"
+    }
+   }
+  },
+  {
+   "path": "E22 P2",
+   "kind": "property",
+   "nodes": 3,
+   "graphs": 2,
+   "phrases": [
+    "object classification"
+   ],
+   "reason": "The classification of the human-made object itself.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'object type': shared by 3 sibling paths; kept on E24 P2; 'type of object': shared by 3 sibling paths; kept on E24 P2; 'kind of object': shared by 3 sibling paths; kept on E24 P2",
+    "dropped": {
+     "object type": "shared by 3 sibling paths; kept on E24 P2",
+     "type of object": "shared by 3 sibling paths; kept on E24 P2",
+     "kind of object": "shared by 3 sibling paths; kept on E24 P2"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E27 P12i",
+   "kind": "link",
+   "nodes": 3,
+   "graphs": 2,
+   "phrases": [
+    "scene of",
+    "site of",
+    "venue for"
+   ],
+   "reason": "a site was the location where an event took place",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E27 P16i",
+   "kind": "link",
+   "nodes": 3,
+   "graphs": 2,
+   "phrases": [
+    "used for",
+    "used as",
+    "use"
+   ],
+   "reason": "a site was used for a particular activity",
+   "reviewed": false,
+   "review": {
+    "verdict": "dropped",
+    "reason": "'use': too generic; 'used for': shared by 2 sibling paths; kept on P16i; 'used as': clash: already on P12i E5 P41i E17 P42",
+    "dropped": {
+     "use": "too generic",
+     "used for": "shared by 2 sibling paths; kept on P16i",
+     "used as": "clash: already on P12i E5 P41i E17 P42"
+    }
+   }
+  },
+  {
+   "path": "E27 P59i",
+   "kind": "link",
+   "nodes": 3,
+   "graphs": 2,
+   "phrases": [
+    "located on",
+    "found on"
+   ],
+   "reason": "a site lies on or within a larger physical thing, such as an island or estate",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E74 P11i",
+   "kind": "link",
+   "nodes": 3,
+   "graphs": 2,
+   "phrases": [
+    "took part in",
+    "participated in",
+    "involved in"
+   ],
+   "reason": "a group participated in an event",
+   "reviewed": false,
+   "review": {
+    "verdict": "dropped",
+    "reason": "'involved in': too generic; 'took part in': shared by 2 sibling paths; kept on P11i; 'participated in': shared by 2 sibling paths; kept on P11i",
+    "dropped": {
+     "involved in": "too generic",
+     "took part in": "shared by 2 sibling paths; kept on P11i",
+     "participated in": "shared by 2 sibling paths; kept on P11i"
+    }
+   }
+  },
+  {
+   "path": "P11i E7 P2",
+   "kind": "property",
+   "nodes": 3,
+   "graphs": 2,
+   "phrases": [
+    "took part in",
+    "participated in"
+   ],
+   "reason": "The kind of activity the person or group took part in.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'activity type': shared by 4 sibling paths; kept on P8i E7 P2; 'type of activity': shared by 3 sibling paths; kept on E7 P2",
+    "dropped": {
+     "activity type": "shared by 4 sibling paths; kept on P8i E7 P2",
+     "type of activity": "shared by 3 sibling paths; kept on E7 P2"
+    }
+   },
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "P128 E34 P72",
+   "kind": "property",
+   "nodes": 3,
+   "graphs": 2,
+   "phrases": [
+    "inscription language",
+    "language of the inscription",
+    "inscribed in",
+    "inscription in"
+   ],
+   "reason": "The language of an inscription carried by the object.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P34i E14 P4",
+   "kind": "date",
+   "nodes": 3,
+   "graphs": 2,
+   "phrases": [
+    "assessed",
+    "condition assessed",
+    "date of assessment",
+    "surveyed"
+   ],
+   "reason": "when the condition of a physical thing was assessed",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P35 E3 P2",
+   "kind": "property",
+   "nodes": 3,
+   "graphs": 2,
+   "phrases": [
+    "condition",
+    "state of preservation",
+    "condition state",
+    "state"
+   ],
+   "reason": "The physical condition observed for the object in a condition assessment.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P73 E33 P72",
+   "kind": "property",
+   "nodes": 3,
+   "graphs": 2,
+   "phrases": [
+    "translated into",
+    "translation language",
+    "language of translation"
+   ],
+   "reason": "The language that the record's translation is written in.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "E24 P129i",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 2,
+   "phrases": [
+    "subject of",
+    "described in",
+    "written about in",
+    "documented in"
+   ],
+   "reason": "A human-made thing is the subject of a document or text.",
+   "reviewed": false,
+   "review": {
+    "verdict": "dropped",
+    "reason": "'subject of': shared by 10 sibling paths; kept on P129i; 'written about in': shared by 6 sibling paths; kept on P129i; 'described in': shared by 6 sibling paths; kept on P129i; 'documented in': shared by 6 sibling paths; kept on P129i",
+    "dropped": {
+     "subject of": "shared by 10 sibling paths; kept on P129i",
+     "written about in": "shared by 6 sibling paths; kept on P129i",
+     "described in": "shared by 6 sibling paths; kept on P129i",
+     "documented in": "shared by 6 sibling paths; kept on P129i"
+    }
+   }
+  },
+  {
+   "path": "E7 P129i",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 2,
+   "phrases": [
+    "subject of",
+    "described in",
+    "written about in",
+    "documented in"
+   ],
+   "reason": "An activity is the subject of a document or text.",
+   "reviewed": false,
+   "review": {
+    "verdict": "dropped",
+    "reason": "'subject of': shared by 10 sibling paths; kept on P129i; 'written about in': shared by 6 sibling paths; kept on P129i; 'described in': shared by 6 sibling paths; kept on P129i; 'documented in': shared by 6 sibling paths; kept on P129i",
+    "dropped": {
+     "subject of": "shared by 10 sibling paths; kept on P129i",
+     "written about in": "shared by 6 sibling paths; kept on P129i",
+     "described in": "shared by 6 sibling paths; kept on P129i",
+     "documented in": "shared by 6 sibling paths; kept on P129i"
+    }
+   }
+  },
+  {
+   "path": "E24 P12i",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "phrases": [
+    "used at"
+   ],
+   "reason": "A human-made thing was present at, or took part in, an event.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'involved in': too generic; 'present at': shared by 3 sibling paths; kept on P12i; 'featured in': shared by 2 sibling paths; kept on P12i",
+    "dropped": {
+     "involved in": "too generic",
+     "present at": "shared by 3 sibling paths; kept on P12i",
+     "featured in": "shared by 2 sibling paths; kept on P12i"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E27 P2",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "phrases": [
+    "type of site",
+    "kind of site"
+   ],
+   "reason": "The classification of a site, such as a hillfort or a settlement.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'site type': shared by 2 sibling paths; kept on E53 P2",
+    "dropped": {
+     "site type": "shared by 2 sibling paths; kept on E53 P2"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E33 P106i",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "phrases": [
+    "excerpt from",
+    "extract from"
+   ],
+   "reason": "A text is a fragment or excerpt of a larger text or symbolic work.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'forms part of': clash: already on P46i",
+    "dropped": {
+     "forms part of": "clash: already on P46i"
+    }
+   },
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "E4 P10",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "phrases": [
+    "sub-period of",
+    "phase of"
+   ],
+   "reason": "A period falls wholly within a larger period.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'falls within': clash: already on E53 P89 E53",
+    "dropped": {
+     "falls within": "clash: already on E53 P89 E53"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E4 P4",
+   "kind": "date",
+   "nodes": 2,
+   "graphs": 1,
+   "phrases": [
+    "date range",
+    "spanned",
+    "lasted",
+    "period dates"
+   ],
+   "reason": "The time-span over which a period lasted.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "E53 P53i",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "phrases": [
+    "location of",
+    "site of",
+    "home to",
+    "houses"
+   ],
+   "reason": "A place is the former or current location of a physical thing.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E53 P7i",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "phrases": [
+    "witnessed",
+    "scene of",
+    "setting of",
+    "periods witnessed"
+   ],
+   "reason": "The periods or eras that took place at this place.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E7 P118",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "phrases": [
+    "overlapped with",
+    "overlaps in time with",
+    "concurrent with",
+    "contemporary with"
+   ],
+   "reason": "Another activity whose time-span overlaps this activity's.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E7 P16",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "phrases": [
+    "tools used",
+    "equipment used",
+    "used in the activity",
+    "instruments used"
+   ],
+   "reason": "The objects or tools used to carry out an activity.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E7 P17",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "phrases": [
+    "reason for"
+   ],
+   "reason": "The thing that motivated this activity.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'motivation': too generic; 'motivated by': shared by 2 sibling paths; kept on P17; 'prompted by': shared by 2 sibling paths; kept on P17",
+    "dropped": {
+     "motivation": "too generic",
+     "motivated by": "shared by 2 sibling paths; kept on P17",
+     "prompted by": "shared by 2 sibling paths; kept on P17"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E7 P17i",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "phrases": [
+    "motivated",
+    "prompted",
+    "led to"
+   ],
+   "reason": "Other activities that this activity motivated.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P25 E19 P2",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "phrases": [
+    "object moved",
+    "type of object moved",
+    "moved object type"
+   ],
+   "reason": "The kind of physical object that a move event relocated.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P41i E17 P42",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "phrases": [
+    "classified as"
+   ],
+   "reason": "The type the record itself was classified as by a type assignment.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'type': too generic; 'kind': too generic; 'classification': too generic; 'category': too generic",
+    "dropped": {
+     "type": "too generic",
+     "kind": "too generic",
+     "classification": "too generic",
+     "category": "too generic"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P9 E7 P11",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "phrases": [
+    "participant",
+    "participants",
+    "attended by",
+    "with participation of"
+   ],
+   "reason": "The people or groups who took part in an activity within the period.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "rejected: bench: worse on 1, e.g. her: which consultations were attended by Brynquorn?"
+  },
+  {
+   "path": "P93i E81 P4",
+   "kind": "date",
+   "nodes": 2,
+   "graphs": 1,
+   "phrases": [
+    "transformed",
+    "converted",
+    "date transformed",
+    "transformation date"
+   ],
+   "reason": "When the thing ceased to exist by being transformed into something else.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P93i E81 P92",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "phrases": [
+    "transformed into",
+    "converted into",
+    "turned into",
+    "became"
+   ],
+   "reason": "The new thing that was created when this thing was transformed.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E21 P129i",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "biography"
+   ],
+   "reason": "A work whose primary subject is this person.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'subject of': shared by 10 sibling paths; kept on P129i; 'written about in': shared by 6 sibling paths; kept on P129i; 'the subject of': shared by 6 sibling paths; kept on P129i",
+    "dropped": {
+     "subject of": "shared by 10 sibling paths; kept on P129i",
+     "written about in": "shared by 6 sibling paths; kept on P129i",
+     "the subject of": "shared by 6 sibling paths; kept on P129i"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E33 P129",
+   "kind": "property",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "topic",
+    "subject matter"
+   ],
+   "reason": "What the record's text is about.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'subject': too generic; 'about': too generic",
+    "dropped": {
+     "subject": "too generic",
+     "about": "too generic"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E4 P129i",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "subject of",
+    "written about in",
+    "the subject of",
+    "discussed in"
+   ],
+   "reason": "A work whose primary subject is this period.",
+   "reviewed": false,
+   "review": {
+    "verdict": "dropped",
+    "reason": "'subject of': shared by 10 sibling paths; kept on P129i; 'discussed in': shared by 2 sibling paths; kept on P129i; 'written about in': shared by 6 sibling paths; kept on P129i; 'the subject of': shared by 6 sibling paths; kept on P129i",
+    "dropped": {
+     "subject of": "shared by 10 sibling paths; kept on P129i",
+     "discussed in": "shared by 2 sibling paths; kept on P129i",
+     "written about in": "shared by 6 sibling paths; kept on P129i",
+     "the subject of": "shared by 6 sibling paths; kept on P129i"
+    }
+   }
+  },
+  {
+   "path": "E5 P16",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "made use of",
+    "instruments used"
+   ],
+   "reason": "Objects or tools used in a way essential to the event.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'used': too generic; 'objects used': shared by 2 sibling paths; kept on P16",
+    "dropped": {
+     "used": "too generic",
+     "objects used": "shared by 2 sibling paths; kept on P16"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E5 P17",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "occasioned by",
+    "reason"
+   ],
+   "reason": "What gave rise to or was the reason for the event.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'motivation': too generic; 'motivated by': shared by 2 sibling paths; kept on P17; 'prompted by': shared by 2 sibling paths; kept on P17",
+    "dropped": {
+     "motivation": "too generic",
+     "motivated by": "shared by 2 sibling paths; kept on P17",
+     "prompted by": "shared by 2 sibling paths; kept on P17"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E5 P4",
+   "kind": "date",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "happened",
+    "took place",
+    "occurred",
+    "event date"
+   ],
+   "reason": "The time-span of an event that is itself the record, meaning when it happened.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E5 P67i",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "documented in",
+    "described in",
+    "recorded in"
+   ],
+   "reason": "A document or source that refers to the event.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E7 P14",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "carried out by",
+    "conducted by",
+    "undertaken by",
+    "led by"
+   ],
+   "reason": "The actor who carried out an activity that is itself the record.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E7 P16",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "equipment used"
+   ],
+   "reason": "An object or tool used in carrying out the activity.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'used': too generic; 'made use of': shared by 3 sibling paths; kept on E5 P16; 'objects used': shared by 2 sibling paths; kept on P16",
+    "dropped": {
+     "used": "too generic",
+     "made use of": "shared by 3 sibling paths; kept on E5 P16",
+     "objects used": "shared by 2 sibling paths; kept on P16"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "E74 P129i",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "featured in"
+   ],
+   "reason": "A document or work whose subject is the group.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'subject of': shared by 10 sibling paths; kept on P129i; 'written about in': shared by 6 sibling paths; kept on P129i",
+    "dropped": {
+     "subject of": "shared by 10 sibling paths; kept on P129i",
+     "written about in": "shared by 6 sibling paths; kept on P129i"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "O18i E11 P10",
+   "kind": "property",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "altered during",
+    "modified during",
+    "period of alteration"
+   ],
+   "reason": "The period within which an alteration of the thing took place.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "rejected: bench: adds no right answer"
+  },
+  {
+   "path": "P100i E69 P117",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "died during",
+    "death during"
+   ],
+   "reason": "The event or period during which the person's death occurred.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P100i E69 P2",
+   "kind": "property",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "manner of death",
+    "type of death",
+    "kind of death",
+    "died of"
+   ],
+   "reason": "The type of the person's death event, i.e. how they died.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P100i E69 P67i",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "death recorded in",
+    "death documented in",
+    "death mentioned in"
+   ],
+   "reason": "A source or document that refers to the person's death.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P100i E69 P7",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "died in",
+    "died at",
+    "place of death"
+   ],
+   "reason": "The place where the person's death took place.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P129i E30 P2",
+   "kind": "property",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "type of right",
+    "rights type",
+    "copyright status"
+   ],
+   "reason": "The type of right (copyright, licence) that applies to the thing.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'licence': shared by 2 sibling paths; kept on P104 E30 P2; 'license': shared by 2 sibling paths; kept on P104 E30 P2",
+    "dropped": {
+     "licence": "shared by 2 sibling paths; kept on P104 E30 P2",
+     "license": "shared by 2 sibling paths; kept on P104 E30 P2"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P14i E7 P117",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "active during",
+    "worked during"
+   ],
+   "reason": "The actor carried out activities within the span of another event or period, such as a war.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P14i E7 P16",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "used",
+    "made use of"
+   ],
+   "reason": "The actor carried out an activity that used this specific object.",
+   "reviewed": false,
+   "review": {
+    "verdict": "dropped",
+    "reason": "'used': too generic; 'made use of': shared by 3 sibling paths; kept on E5 P16",
+    "dropped": {
+     "used": "too generic",
+     "made use of": "shared by 3 sibling paths; kept on E5 P16"
+    }
+   }
+  },
+  {
+   "path": "P14i E7 P2",
+   "kind": "property",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "activity",
+    "activities"
+   ],
+   "reason": "The type of activity the actor carried out.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'activity type': shared by 4 sibling paths; kept on P8i E7 P2; 'type of activity': shared by 3 sibling paths; kept on E7 P2",
+    "dropped": {
+     "activity type": "shared by 4 sibling paths; kept on P8i E7 P2",
+     "type of activity": "shared by 3 sibling paths; kept on E7 P2"
+    }
+   },
+   "gate": "rejected: bench: worse on 2, e.g. catalina: what is the activities of Mavzabel?"
+  },
+  {
+   "path": "P14i E7 P32",
+   "kind": "property",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "techniques used",
+    "works in",
+    "practised technique",
+    "practiced technique"
+   ],
+   "reason": "The general technique the actor used in activities they performed.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'technique': shared by 2 sibling paths; kept on P108i E12 P32",
+    "dropped": {
+     "technique": "shared by 2 sibling paths; kept on P108i E12 P32"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P14i E7 P4",
+   "kind": "date",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "active",
+    "flourished",
+    "date active",
+    "period of activity"
+   ],
+   "reason": "The time-span of the actor's activities.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P14i E7 P7",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "active in",
+    "worked in",
+    "place of activity"
+   ],
+   "reason": "The place where an actor carried out an activity they performed.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P98i E67 P117",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "born during",
+    "born in the period",
+    "period of birth"
+   ],
+   "reason": "The period during which a person was born.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P98i E67 P2",
+   "kind": "property",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "type of birth",
+    "birth type",
+    "kind of birth"
+   ],
+   "reason": "The type of the person's birth event.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P98i E67 P67i",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "birth recorded in",
+    "birth record",
+    "birth certificate"
+   ],
+   "reason": "A document that records a person's birth.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P98i E67 P7",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "phrases": [
+    "born in",
+    "born at",
+    "place of birth",
+    "birthplace"
+   ],
+   "reason": "The place where a person was born.",
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P67i",
+   "kind": "link",
+   "nodes": 22,
+   "graphs": 5,
+   "phrases": [
+    "referred to in"
+   ],
+   "reason": "the phrasings its start-class variants shared",
+   "from": [
+    "E24 P67i",
+    "E33 P67i"
+   ],
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "trimmed",
+    "reason": "'cited in': clash: already on P67i E73",
+    "dropped": {
+     "cited in": "clash: already on P67i E73"
+    }
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P11i",
+   "kind": "link",
+   "nodes": 18,
+   "graphs": 2,
+   "phrases": [
+    "took part in",
+    "participated in"
+   ],
+   "reason": "the phrasings its start-class variants shared",
+   "from": [
+    "E21 P11i",
+    "E74 P11i"
+   ],
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P129i",
+   "kind": "link",
+   "nodes": 112,
+   "graphs": 3,
+   "phrases": [
+    "subject of",
+    "discussed in",
+    "written about in",
+    "described in",
+    "the subject of",
+    "documented in"
+   ],
+   "reason": "the phrasings its start-class variants shared",
+   "from": [
+    "E18 P129i",
+    "E21 P129i",
+    "E22 P129i",
+    "E24 P129i",
+    "E27 P129i",
+    "E33 P129i",
+    "E4 P129i",
+    "E53 P129i",
+    "E7 P129i",
+    "E74 P129i"
+   ],
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "rejected: bench: worse on 7, e.g. catalina: how many heritage stories are subject of Sendrith?"
+  },
+  {
+   "path": "P12i",
+   "kind": "link",
+   "nodes": 13,
+   "graphs": 2,
+   "phrases": [
+    "present at",
+    "featured in"
+   ],
+   "reason": "the phrasings its start-class variants shared",
+   "from": [
+    "E18 P12i",
+    "E22 P12i",
+    "E24 P12i"
+   ],
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P16i",
+   "kind": "link",
+   "nodes": 6,
+   "graphs": 2,
+   "phrases": [
+    "used for"
+   ],
+   "reason": "the phrasings its start-class variants shared",
+   "from": [
+    "E18 P16i",
+    "E27 P16i"
+   ],
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P17",
+   "kind": "link",
+   "nodes": 6,
+   "graphs": 1,
+   "phrases": [
+    "motivated by",
+    "prompted by"
+   ],
+   "reason": "the phrasings its start-class variants shared",
+   "from": [
+    "E5 P17",
+    "E7 P17"
+   ],
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  },
+  {
+   "path": "P16",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "phrases": [
+    "objects used"
+   ],
+   "reason": "the phrasings its start-class variants shared",
+   "from": [
+    "E5 P16",
+    "E7 P16"
+   ],
+   "reviewed": "auto",
+   "checks": [
+    "not generic",
+    "not shared with a sibling path",
+    "no clash with phrases.json",
+    "a bare noun only where the path reaches one field"
+   ],
+   "review": {
+    "verdict": "kept",
+    "reason": "passed every check",
+    "dropped": {}
+   },
+   "gate": "merged"
+  }
+ ],
+ "skipped": [
+  {
+   "path": "P2 E55 P2",
+   "kind": "property",
+   "nodes": 2763,
+   "graphs": 33,
+   "skip": "The type of a type term is vocabulary housekeeping, not something people ask about the thing."
+  },
+  {
+   "path": "P1 E41 P2",
+   "kind": "property",
+   "nodes": 918,
+   "graphs": 26,
+   "skip": "The type of a name (primary, alternative, etc.) is record-keeping about how the record names the thing."
+  },
+  {
+   "path": "P4 E52 P2",
+   "kind": "property",
+   "nodes": 240,
+   "graphs": 25,
+   "skip": "The type of a time-span qualifies the date entry (e.g. its precision); nobody asks about it directly."
+  },
+  {
+   "path": "P106 E41 P2",
+   "kind": "property",
+   "nodes": 237,
+   "graphs": 15,
+   "skip": "The type of a part of a name or appellation is structural cataloguing metadata."
+  },
+  {
+   "path": "P67i E33 P2",
+   "kind": "property",
+   "nodes": 191,
+   "graphs": 33,
+   "skip": "The type of a text referring to the thing (description, note type) is a statement about the record, not the thing."
+  },
+  {
+   "path": "P72 E56 P2",
+   "kind": "property",
+   "nodes": 174,
+   "graphs": 26,
+   "skip": "This is the type of the language term, not the language itself, so it is vocabulary metadata."
+  },
+  {
+   "path": "P141 E55 P2",
+   "kind": "property",
+   "nodes": 173,
+   "graphs": 14,
+   "skip": "The type of an attribute assigned in an attribute assignment is too general to mean any one thing."
+  },
+  {
+   "path": "P129i E33 P2",
+   "kind": "property",
+   "nodes": 135,
+   "graphs": 24,
+   "skip": "The type of a text about the thing classifies the record's own statements, not the thing."
+  },
+  {
+   "path": "P37 E42 P2",
+   "kind": "property",
+   "nodes": 126,
+   "graphs": 23,
+   "skip": "The type of an assigned identifier (inventory or registration number scheme) is record-keeping metadata."
+  },
+  {
+   "path": "P106 E73 P2",
+   "kind": "property",
+   "nodes": 80,
+   "graphs": 17,
+   "skip": "The type of a component of an information object is structural metadata that is too general to mean one thing."
+  },
+  {
+   "path": "P129i E33 P72",
+   "kind": "property",
+   "nodes": 71,
+   "graphs": 22,
+   "skip": "Language of a text written about the record (e.g. a description); this is documentation metadata, not something people ask about the thing itself."
+  },
+  {
+   "path": "P67i E33 P72",
+   "kind": "property",
+   "nodes": 65,
+   "graphs": 17,
+   "skip": "Language of a text that refers to the record; this is a property of the referring text, not of the thing."
+  },
+  {
+   "path": "P1 E42 P2",
+   "kind": "property",
+   "nodes": 63,
+   "graphs": 27,
+   "skip": "Type of identifier (inventory number, registration code); this is record-keeping metadata."
+  },
+  {
+   "path": "P67i E73 P2",
+   "kind": "property",
+   "nodes": 61,
+   "graphs": 22,
+   "skip": "Type of a document that refers to the record; too general to mean one thing and describes the source rather than the thing."
+  },
+  {
+   "path": "P32 E55 P2",
+   "kind": "property",
+   "nodes": 55,
+   "graphs": 8,
+   "skip": "Type assigned to a technique term; this is thesaurus structure, not a property people ask about directly."
+  },
+  {
+   "path": "P140i E13 P141",
+   "kind": "property",
+   "nodes": 50,
+   "graphs": 11,
+   "skip": "Any attribute assigned to the record by an attribution act; too general to carry one meaning."
+  },
+  {
+   "path": "P140i E13 P2",
+   "kind": "property",
+   "nodes": 45,
+   "graphs": 18,
+   "skip": "Type of the attribution act; this is audit or provenance metadata about the record's statements."
+  },
+  {
+   "path": "P141i E13 P141",
+   "kind": "property",
+   "nodes": 45,
+   "graphs": 9,
+   "skip": "Item assigned in an attribution act that itself assigned the record; this is a documentation chain with no single meaning."
+  },
+  {
+   "path": "P4 E52 P86i",
+   "kind": "date",
+   "nodes": 44,
+   "graphs": 12,
+   "skip": "Structural nesting of one time-span inside another; it is not a question about when anything happened, so it is too general to mean one thing."
+  },
+  {
+   "path": "P86i E52 P2",
+   "kind": "property",
+   "nodes": 44,
+   "graphs": 12,
+   "skip": "Type of a time-span contained in another; this is temporal modelling detail, not asked about."
+  },
+  {
+   "path": "P1 E41 P3",
+   "kind": "property",
+   "nodes": 38,
+   "graphs": 15,
+   "skip": "Note on a name or appellation; this is a statement about the naming record rather than the thing."
+  },
+  {
+   "path": "P89 E53 P2",
+   "kind": "property",
+   "nodes": 38,
+   "graphs": 11,
+   "skip": "the type of the larger place this place falls within describes the parent area rather than this place, and is too indirect for anyone to ask about"
+  },
+  {
+   "path": "P140i E13 P4",
+   "kind": "date",
+   "nodes": 37,
+   "graphs": 17,
+   "skip": "Date an attribute was assigned to the thing. That is record-keeping about an assessment, not about the thing itself."
+  },
+  {
+   "path": "P1 E42 P71i",
+   "kind": "property",
+   "nodes": 36,
+   "graphs": 22,
+   "skip": "the authority document that lists an identifier is record-keeping metadata about the identifier, not the thing"
+  },
+  {
+   "path": "P1 E33 P2",
+   "kind": "property",
+   "nodes": 32,
+   "graphs": 11,
+   "skip": "the type of a name is a statement about how the record names the thing, not about the thing"
+  },
+  {
+   "path": "P9 E7 P2",
+   "kind": "property",
+   "nodes": 23,
+   "graphs": 12,
+   "skip": "the type of some sub-activity within this one is too general to mean one thing"
+  },
+  {
+   "path": "P140i E13 P141",
+   "kind": "date",
+   "nodes": 23,
+   "graphs": 9,
+   "skip": "Any value assigned in a generic attribute assignment. Too general to mean one thing."
+  },
+  {
+   "path": "P140i E17 P141",
+   "kind": "property",
+   "nodes": 23,
+   "graphs": 7,
+   "skip": "a generic attribute assigned by a classification act can be anything, so it is too general to mean one thing"
+  },
+  {
+   "path": "P129 E52 P2",
+   "kind": "property",
+   "nodes": 22,
+   "graphs": 11,
+   "skip": "the type of a time-span that the thing is about is an abstract modelling artefact that nobody asks about"
+  },
+  {
+   "path": "P1 E33 P67i",
+   "kind": "link",
+   "nodes": 21,
+   "graphs": 3,
+   "skip": "A document that refers to the thing's name or identifier. That is a statement about the appellation rather than the thing, and it is covered by the more general cited-in path."
+  },
+  {
+   "path": "P1 E33 P72",
+   "kind": "property",
+   "nodes": 21,
+   "graphs": 3,
+   "skip": "the language of a name is metadata about the record's naming, not the thing"
+  },
+  {
+   "path": "P9 E7 P4",
+   "kind": "date",
+   "nodes": 20,
+   "graphs": 12,
+   "skip": "Time-span of some unspecified sub-activity of a period or event. Too general to mean one thing."
+  },
+  {
+   "path": "P42 E55 P2",
+   "kind": "property",
+   "nodes": 19,
+   "graphs": 7,
+   "skip": "the type of an assigned type is thesaurus housekeeping, not a property of the thing"
+  },
+  {
+   "path": "P33 E29 P2",
+   "kind": "property",
+   "nodes": 19,
+   "graphs": 6,
+   "skip": "The type of a plan or procedure document followed in an activity. It is too general to mean one thing, and people do not ask about it this way."
+  },
+  {
+   "path": "P41i E17 P141",
+   "kind": "property",
+   "nodes": 18,
+   "graphs": 7,
+   "skip": "A generic attribute value assigned in a classification act. It is too general to mean one thing, and P42 already covers the assigned type."
+  },
+  {
+   "path": "P140i E17 P17",
+   "kind": "date",
+   "nodes": 18,
+   "graphs": 5,
+   "skip": "What motivated a classification act. This is cataloguing provenance, not something people ask about the thing."
+  },
+  {
+   "path": "P106 E33 P2",
+   "kind": "property",
+   "nodes": 17,
+   "graphs": 11,
+   "skip": "The type of a text fragment that forms part of the record. It is too general to mean one thing."
+  },
+  {
+   "path": "P41i E17 P32",
+   "kind": "property",
+   "nodes": 17,
+   "graphs": 6,
+   "skip": "The technique used to classify the thing. This is how the record was made rather than a fact about the thing."
+  },
+  {
+   "path": "P140i E13 P140",
+   "kind": "link",
+   "nodes": 16,
+   "graphs": 10,
+   "skip": "Loops back to the item the attribute was assigned to (the record itself), so it carries no meaning a question would target."
+  },
+  {
+   "path": "P141 E33 P2",
+   "kind": "property",
+   "nodes": 15,
+   "graphs": 9,
+   "skip": "The type of a text assigned by an attribute assignment. This is record-keeping about an assertion."
+  },
+  {
+   "path": "P141 E33 P72",
+   "kind": "property",
+   "nodes": 15,
+   "graphs": 9,
+   "skip": "The language of a text assigned by an attribute assignment, such as a label or description. This is record-keeping metadata."
+  },
+  {
+   "path": "P141i E13 P141",
+   "kind": "date",
+   "nodes": 15,
+   "graphs": 9,
+   "skip": "Other values assigned in the same generic attribute assignment. This is audit metadata and too general."
+  },
+  {
+   "path": "P140i E13 P32",
+   "kind": "property",
+   "nodes": 14,
+   "graphs": 6,
+   "skip": "The technique behind an assertion made about the record. This is a statement about the documentation, and it is too general to mean one thing."
+  },
+  {
+   "path": "P141i E13 P2",
+   "kind": "property",
+   "nodes": 13,
+   "graphs": 6,
+   "skip": "the type of an attribute assignment that assigned the record; this is a statement about how something was documented, not about the thing"
+  },
+  {
+   "path": "P17 E52 P2",
+   "kind": "property",
+   "nodes": 13,
+   "graphs": 5,
+   "skip": "an activity motivated by a time-span, then the time-span's type; this is incoherent modelling, and nobody asks about it this way"
+  },
+  {
+   "path": "P140i E17 P12",
+   "kind": "link",
+   "nodes": 12,
+   "graphs": 7,
+   "skip": "Who or what was present at a classification act. This is record-keeping about the classification, not the thing."
+  },
+  {
+   "path": "P140i E17 P41",
+   "kind": "property",
+   "nodes": 12,
+   "graphs": 7,
+   "skip": "ends at the item a classification act classified, not at a term; this is record-keeping about classification"
+  },
+  {
+   "path": "P141 E52 P2",
+   "kind": "property",
+   "nodes": 12,
+   "graphs": 7,
+   "skip": "the type of a time-span assigned in an attribute assignment; this is audit metadata about an assertion"
+  },
+  {
+   "path": "P41 E55 P2",
+   "kind": "property",
+   "nodes": 12,
+   "graphs": 7,
+   "skip": "the type of the type that a classification act classified; too abstract to mean one thing"
+  },
+  {
+   "path": "P107 E74 P107",
+   "kind": "link",
+   "nodes": 12,
+   "graphs": 1,
+   "skip": "Members of a member group, two levels down. Nobody phrases a question this way, and any wording would fit the direct members path just as well."
+  },
+  {
+   "path": "P160 E52 P2",
+   "kind": "property",
+   "nodes": 11,
+   "graphs": 11,
+   "skip": "the type of a temporal projection's time-span; this is modelling metadata, and nobody asks about it"
+  },
+  {
+   "path": "P67 E74 P107",
+   "kind": "link",
+   "nodes": 11,
+   "graphs": 11,
+   "skip": "Reaches the members of a group the record merely refers to. That is too indirect to be a single relation anyone asks about."
+  },
+  {
+   "path": "P67 E74 P2",
+   "kind": "property",
+   "nodes": 11,
+   "graphs": 11,
+   "skip": "the type of a group that a document refers to; too indirect, and a question would ask about the group rather than its type"
+  },
+  {
+   "path": "P141 E41 P1i",
+   "kind": "property",
+   "nodes": 11,
+   "graphs": 6,
+   "skip": "what an appellation assigned in an attribute assignment identifies; this is record-keeping about naming assertions"
+  },
+  {
+   "path": "P141 E41 P2",
+   "kind": "property",
+   "nodes": 11,
+   "graphs": 6,
+   "skip": "the type of an appellation assigned in an attribute assignment; this is a statement about the assertion, not the thing"
+  },
+  {
+   "path": "P1i E55 P2",
+   "kind": "property",
+   "nodes": 11,
+   "graphs": 6,
+   "skip": "The type of an identifier is record-keeping metadata, not something asked about the thing."
+  },
+  {
+   "path": "E33 P2",
+   "kind": "property",
+   "nodes": 11,
+   "graphs": 5,
+   "skip": "The type of a piece of text, such as a description or note, is a statement about the record's documentation rather than the thing."
+  },
+  {
+   "path": "P140i E17 P2",
+   "kind": "property",
+   "nodes": 10,
+   "graphs": 6,
+   "skip": "The type of a classification act is audit metadata about how a type was assigned."
+  },
+  {
+   "path": "P91 E58 P2",
+   "kind": "property",
+   "nodes": 10,
+   "graphs": 6,
+   "skip": "The type of a measurement unit is technical metadata; nobody asks about it this way."
+  },
+  {
+   "path": "E21 P2",
+   "kind": "property",
+   "nodes": 10,
+   "graphs": 3,
+   "skip": "A bare type on a person is too general to mean one thing: it could be role, occupation, status or anything else."
+  },
+  {
+   "path": "P107 E74 P2",
+   "kind": "property",
+   "nodes": 10,
+   "graphs": 1,
+   "skip": "The type of a member group is too indirect and general to be asked about this way."
+  },
+  {
+   "path": "P9 E65 P2",
+   "kind": "property",
+   "nodes": 9,
+   "graphs": 2,
+   "skip": "The type of a creation event nested inside a period is too indirect and general to mean one thing."
+  },
+  {
+   "path": "P141i E13 P14",
+   "kind": "link",
+   "nodes": 8,
+   "graphs": 3,
+   "skip": "Names who made an attribute assignment. That is cataloguing provenance, a statement about the record rather than the thing."
+  },
+  {
+   "path": "P67 E53 P2",
+   "kind": "property",
+   "nodes": 8,
+   "graphs": 3,
+   "skip": "The type of a place the record refers to is too indirect a hop for anyone to ask about. Questions go to the place or to the record's own type."
+  },
+  {
+   "path": "P40 E54 P91",
+   "kind": "property",
+   "nodes": 7,
+   "graphs": 4,
+   "skip": "The unit a measurement was recorded in is record-keeping detail of the measurement, not something people ask about the object."
+  },
+  {
+   "path": "P141i E13 P16",
+   "kind": "link",
+   "nodes": 7,
+   "graphs": 2,
+   "skip": "Names the source or tool used in an attribute assignment. That is record-keeping evidence, not something asked about the thing."
+  },
+  {
+   "path": "P12i E5 P10",
+   "kind": "link",
+   "nodes": 6,
+   "graphs": 4,
+   "skip": "An event the thing was present at, placed within a wider spacetime volume. This is too general and indirect to mean one thing."
+  },
+  {
+   "path": "P12i E7 P2",
+   "kind": "property",
+   "nodes": 6,
+   "graphs": 4,
+   "skip": "This is the type of any activity the thing was present at. It is too general to mean one thing."
+  },
+  {
+   "path": "P1 E41 P3",
+   "kind": "link",
+   "nodes": 5,
+   "graphs": 5,
+   "skip": "A free-text note on one of the record's names or identifiers. It is descriptive metadata about the name, not a link anyone asks about."
+  },
+  {
+   "path": "P141 E42 P2",
+   "kind": "property",
+   "nodes": 5,
+   "graphs": 3,
+   "skip": "The type of an identifier assigned in an attribute assignment is record-keeping metadata about the record, not something people ask about the thing."
+  },
+  {
+   "path": "P141i E13 P140",
+   "kind": "link",
+   "nodes": 5,
+   "graphs": 3,
+   "skip": "Attribute-assignment bookkeeping that records who asserted what about the record. It is provenance of a statement, not a property of the thing."
+  },
+  {
+   "path": "P1 E42 P67i",
+   "kind": "link",
+   "nodes": 5,
+   "graphs": 2,
+   "skip": "A document referring to the record's identifier is a statement about the record's catalogue number, not about the thing."
+  },
+  {
+   "path": "P67i E33 P67i",
+   "kind": "link",
+   "nodes": 5,
+   "graphs": 1,
+   "skip": "A text referred to by another text that refers to the thing is too indirect to mean one thing in a question."
+  },
+  {
+   "path": "P103 E55 P2",
+   "kind": "property",
+   "nodes": 4,
+   "graphs": 3,
+   "skip": "A type assigned to an intended-usage term classifies the vocabulary, not the thing, and is too general to mean one thing."
+  },
+  {
+   "path": "P67 E7 P2",
+   "kind": "property",
+   "nodes": 4,
+   "graphs": 3,
+   "skip": "The type of an activity a record refers to is too general and overlaps the existing 'mentions' and 'refers to' phrasings."
+  },
+  {
+   "path": "E7 P4",
+   "kind": "date",
+   "nodes": 4,
+   "graphs": 2,
+   "skip": "This is the time-span of an unspecified activity. It is too general to mean one thing, and more specific event paths cover the dates people actually ask about."
+  },
+  {
+   "path": "E7 P67i",
+   "kind": "link",
+   "nodes": 4,
+   "graphs": 2,
+   "skip": "This is a document that refers to an unspecified activity. It is too general, and it overlaps with the existing 'cited in' path."
+  },
+  {
+   "path": "P12i E13 P141",
+   "kind": "date",
+   "nodes": 4,
+   "graphs": 2,
+   "skip": "This is the value assigned in an attribute-assignment act. It is a record-keeping statement about the record, not about the thing."
+  },
+  {
+   "path": "P12i E13 P4",
+   "kind": "date",
+   "nodes": 4,
+   "graphs": 2,
+   "skip": "This is the date an attribute assignment was made. It is audit metadata about the record."
+  },
+  {
+   "path": "P137 E55 P2",
+   "kind": "property",
+   "nodes": 4,
+   "graphs": 2,
+   "skip": "A type assigned to the type the thing exemplifies classifies the vocabulary rather than the thing, and is too general to mean one thing."
+  },
+  {
+   "path": "E7 P9i",
+   "kind": "link",
+   "nodes": 4,
+   "graphs": 1,
+   "skip": "P9i is a part-whole relation between periods, and here it hangs off an unspecified activity. It is too general to mean one thing."
+  },
+  {
+   "path": "P106 E42 P2",
+   "kind": "property",
+   "nodes": 4,
+   "graphs": 1,
+   "skip": "The type of an identifier embedded in a symbolic object is record-keeping metadata, not something people ask about the thing."
+  },
+  {
+   "path": "P132 E11 P2",
+   "kind": "property",
+   "nodes": 4,
+   "graphs": 1,
+   "skip": "The type of a modification that a period merely overlaps with is too indirect to mean one thing in a question."
+  },
+  {
+   "path": "P132 E11 P33",
+   "kind": "property",
+   "nodes": 4,
+   "graphs": 1,
+   "skip": "The technique of a modification that a period merely overlaps with is too indirect to mean one thing in a question."
+  },
+  {
+   "path": "P15i E13 P141",
+   "kind": "property",
+   "nodes": 4,
+   "graphs": 1,
+   "skip": "The value assigned in an attribute assignment that the thing influenced is a statement about recording, and too general to mean one thing."
+  },
+  {
+   "path": "P16i E9 P2",
+   "kind": "property",
+   "nodes": 4,
+   "graphs": 1,
+   "skip": "The type of a move that the thing was used for is too vague and obscure for people to ask about this way."
+  },
+  {
+   "path": "P17 E17 P141",
+   "kind": "property",
+   "nodes": 4,
+   "graphs": 1,
+   "skip": "The type assigned in a classification act that motivated an activity is a statement about the record's classification, not the thing."
+  },
+  {
+   "path": "P141i E13 P4",
+   "kind": "date",
+   "nodes": 3,
+   "graphs": 3,
+   "skip": "This is the date a value was assigned to the record. It is audit metadata, not something about the thing."
+  },
+  {
+   "path": "E21 P67i",
+   "kind": "link",
+   "nodes": 3,
+   "graphs": 2,
+   "skip": "P67i on a person is 'referred to by' any document; too general, and the existing P67i E73 phrasings (cited in, sources, references) already cover the useful sense"
+  },
+  {
+   "path": "E74 P67i",
+   "kind": "link",
+   "nodes": 3,
+   "graphs": 2,
+   "skip": "P67i on a group is 'referred to by' any document; too general, and the existing P67i E73 phrasings already cover the useful sense"
+  },
+  {
+   "path": "P106 E41 P3",
+   "kind": "property",
+   "nodes": 3,
+   "graphs": 2,
+   "skip": "A free-text note on a component of a name or appellation is record-keeping detail, not a list term people ask about."
+  },
+  {
+   "path": "P108i E12 P10",
+   "kind": "link",
+   "nodes": 3,
+   "graphs": 2,
+   "skip": "the production's spacetime volume falling within another is a structural modelling statement that is too abstract; the period of manufacture is reached through P4"
+  },
+  {
+   "path": "P130 E41 P2",
+   "kind": "property",
+   "nodes": 3,
+   "graphs": 2,
+   "skip": "Typing an appellation that a name shows features of is a cataloguing statement about names, not something people ask about."
+  },
+  {
+   "path": "P140i E13 P14",
+   "kind": "link",
+   "nodes": 3,
+   "graphs": 2,
+   "skip": "who made an attribute assignment is a record-keeping statement about the record's assertions rather than about the thing"
+  },
+  {
+   "path": "P35 E3 P129i",
+   "kind": "link",
+   "nodes": 3,
+   "graphs": 2,
+   "skip": "Links a condition state found in a condition assessment to a document about it. This is record-keeping about the assessment, not something people ask of the thing."
+  },
+  {
+   "path": "P43 E54 P91",
+   "kind": "property",
+   "nodes": 3,
+   "graphs": 2,
+   "skip": "The unit a dimension is recorded in is measurement metadata; people ask about the size, not the unit."
+  },
+  {
+   "path": "P73 E33 P2",
+   "kind": "property",
+   "nodes": 3,
+   "graphs": 2,
+   "skip": "The type of a translation's text is a cataloguing detail about the text, not something people ask about."
+  },
+  {
+   "path": "P8i E13 P140",
+   "kind": "link",
+   "nodes": 3,
+   "graphs": 2,
+   "skip": "An attribute assignment witnessed by the thing that assigns an attribute to something else. This is a modelling statement about assertions, not a relation people ask about."
+  },
+  {
+   "path": "P8i E13 P2",
+   "kind": "property",
+   "nodes": 3,
+   "graphs": 2,
+   "skip": "The type of an attribute assignment is a statement about how the record was documented, not about the thing itself."
+  },
+  {
+   "path": "P92 E55 P2",
+   "kind": "property",
+   "nodes": 3,
+   "graphs": 2,
+   "skip": "It is the type of a type that something brought into existence, which is too abstract to mean one thing."
+  },
+  {
+   "path": "P95i E66 P92",
+   "kind": "property",
+   "nodes": 3,
+   "graphs": 2,
+   "skip": "It points to whatever the formation brought into existence, which is the group itself, so it adds nothing anyone would ask about."
+  },
+  {
+   "path": "E53 P17i",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "A place that motivated an activity is too abstract and loose to mean one thing people ask about."
+  },
+  {
+   "path": "E55 P2",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "A type classifying a type is too general to mean one thing."
+  },
+  {
+   "path": "O18i E11 P17",
+   "kind": "date",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "Marked as a date, but the path ends at P17 'was motivated by', not at a time-span (P4), so no 'when' phrasing fits. As a link it is a rare, indirect question about why a thing was altered."
+  },
+  {
+   "path": "P108 E78 P2",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "The type of a collection that an event produced is an unusual modelling detail; nobody asks about it this way."
+  },
+  {
+   "path": "P11 E74 P107",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "Indirect: it reaches the members of a group that took part in an event. Nobody asks for events by the membership of a participating group."
+  },
+  {
+   "path": "P11i E7 P4",
+   "kind": "date",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "Too general: this is the date of any activity the actor took part in, so it has no single meaning a 'when' question could target."
+  },
+  {
+   "path": "P12 E19 P2",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "The type of any object present at an event is too general to mean one thing."
+  },
+  {
+   "path": "P125 E55 P2",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "The type of the object-type used in an activity is a classification of a vocabulary term, not something people ask about."
+  },
+  {
+   "path": "P127i E55 P2",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "The type of a narrower term in a type hierarchy is thesaurus housekeeping, not a question about the thing."
+  },
+  {
+   "path": "P129i E33 P165i",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "Indirect: it reaches whatever incorporates a text about the thing. That is a relation between information objects, not something people ask about the thing."
+  },
+  {
+   "path": "P132 E11 P117",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "A chain of spatio-temporal overlap and containment from a period through a modification. It is too indirect and general to mean one thing."
+  },
+  {
+   "path": "P132 E11 P126",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "The material used in a modification that overlaps this period is too indirect to mean one thing people ask about."
+  },
+  {
+   "path": "P132 E11 P4",
+   "kind": "date",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "The date of any modification that overlaps the period. It is too general and indirect for a 'when' question about the period."
+  },
+  {
+   "path": "P132 E5 P10",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "Indirect chain from a period to the place of an event it overlaps; nobody asks about a thing this way."
+  },
+  {
+   "path": "P132 E5 P4",
+   "kind": "date",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "Date of some event that overlaps the period. That is not a date of the thing itself and is too general to mean one thing."
+  },
+  {
+   "path": "P132 E7 P2",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "The type of an activity that overlaps this period is too general and indirect to mean one thing."
+  },
+  {
+   "path": "P140i E15 P14",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "Who assigned an identifier: record-keeping or audit metadata, not a question about the thing."
+  },
+  {
+   "path": "P141 E4 P4",
+   "kind": "date",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "Time-span of a period given in an attribute assignment: a statement about the record's assertion rather than about the thing."
+  },
+  {
+   "path": "P141 E55 P127i",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "The narrower terms of a type assigned in an attribute-assignment act are vocabulary structure and record-keeping."
+  },
+  {
+   "path": "P141 E55 P137i",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "The examples of a type assigned in an attribute-assignment act are a statement about the classification, not the thing."
+  },
+  {
+   "path": "P16 E55 P2",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "The type of a type-valued 'used object' is a classification of a vocabulary term, too meta for questions."
+  },
+  {
+   "path": "P16i E9 P17",
+   "kind": "date",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "Marked as a date, but it ends at P17 'motivated by', not at a time-span. The path is malformed and its meaning is obscure."
+  },
+  {
+   "path": "P16i E9 P4",
+   "kind": "date",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "When the thing was used in carrying out a move, such as a vehicle or tool used in transport. Too oblique, and easily confused with when the thing itself was moved."
+  },
+  {
+   "path": "P17 E17 P125",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "The object-type used in a classification act that motivated this activity is documentation provenance, not something people ask about."
+  },
+  {
+   "path": "P17 E17 P137",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "What a motivating classification act exemplifies is a statement about cataloguing, not the thing."
+  },
+  {
+   "path": "P17 E17 P32",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "The technique of a classification act that motivated this activity is record-keeping provenance, too indirect to ask about."
+  },
+  {
+   "path": "P17 E17 P42",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "The type assigned by a classification that motivated an activity. It is an indirect modelling detail, and nobody asks about it this way."
+  },
+  {
+   "path": "P17 E33 P67i",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "What refers to a text that motivated the activity: a doubly indirect chain nobody phrases as a question."
+  },
+  {
+   "path": "P17 E74 P107",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "Members of a group that motivated the activity: too indirect to carry a natural phrasing."
+  },
+  {
+   "path": "P17i E7 P4",
+   "kind": "date",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "Date of any activity this thing motivated: too general to mean one thing."
+  },
+  {
+   "path": "P41i E17 P137",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "The type that a classification act exemplifies. It is an ambiguous modelling detail, and the type a record is classified as is already covered by P41i E17 P42."
+  },
+  {
+   "path": "P41i E17 P16",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "Object or tool used in a classification or determination act: provenance-of-identification metadata, not a question about the thing."
+  },
+  {
+   "path": "P41i E17 P2",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "The type of the classification act itself. This is record-keeping about how the record was assessed, not about the thing."
+  },
+  {
+   "path": "P67i E29 P2",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "The type of a design or procedure that refers to the record. It describes the referring document rather than the thing."
+  },
+  {
+   "path": "P7i E5 P10",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "A place, then a generic event it witnessed, then whatever that event falls within. This is a spatiotemporal containment chain with no single meaning people ask about."
+  },
+  {
+   "path": "P7i E5 P4",
+   "kind": "date",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "The time-span of any unspecified event that happened at a place. It is too general to mean one thing, and phrasings like \"happened\" would fit any event date."
+  },
+  {
+   "path": "P9 E7 P67i",
+   "kind": "link",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "A document referring to an activity within a period is an indirect citation of a sub-event, not something people ask about the period itself."
+  },
+  {
+   "path": "P92 E18 P2",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "The type of the thing an existence-beginning event produced. It is too general to mean one thing."
+  },
+  {
+   "path": "P9i E7 P2",
+   "kind": "property",
+   "nodes": 2,
+   "graphs": 1,
+   "skip": "The type of a wider activity that the period forms part of. It is too indirect and general to be asked about."
+  },
+  {
+   "path": "E55 P67i",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "skip": "A reference to a vocabulary concept is a statement about the classification term, not about the thing, so nobody asks about it this way."
+  },
+  {
+   "path": "E55 P71i",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "skip": "Listing a type in an authority document is vocabulary record-keeping, not something people ask about."
+  },
+  {
+   "path": "P1 E41 P67i",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "skip": "A source that attests a name is citation metadata about the appellation, not about the thing."
+  },
+  {
+   "path": "P106 E33 P67i",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "skip": "This is a statement about a text fragment within the record's symbolic content, not about the thing. Nobody asks about it this way."
+  },
+  {
+   "path": "P108i E12 P15",
+   "kind": "date",
+   "nodes": 1,
+   "graphs": 1,
+   "skip": "P15 is not a time-span, so it cannot be a date path. 'Influenced by' on a production is also too general to mean one thing."
+  },
+  {
+   "path": "P129 E55 P2",
+   "kind": "property",
+   "nodes": 1,
+   "graphs": 1,
+   "skip": "Typing a type the record is about is a statement about the vocabulary, not the thing, and is too general to mean one thing."
+  },
+  {
+   "path": "P129i E73 P129i",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "skip": "This is a second-order chain: a document about a document about the thing. It says something about the documentation rather than the thing."
+  },
+  {
+   "path": "P140i E13 P16",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "skip": "This is record-keeping metadata: the object used in making an assertion about the record."
+  },
+  {
+   "path": "P14i E7 P15",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "skip": "This is a high-level 'influenced by' on any activity of the actor. It is too general to mean one thing."
+  },
+  {
+   "path": "P14i E7 P67i",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "skip": "This is a reference to a document about one of the actor's activities. It is too indirect and generic, and it overlaps the general 'cited in' path."
+  },
+  {
+   "path": "P15 E52 P2",
+   "kind": "property",
+   "nodes": 1,
+   "graphs": 1,
+   "skip": "Typing a time-span that influenced an activity is not a distinct question anyone asks and is too general to mean one thing."
+  },
+  {
+   "path": "P2 E56 P2",
+   "kind": "property",
+   "nodes": 1,
+   "graphs": 1,
+   "skip": "Typing the language used as the record's type is vocabulary metadata, not something people ask about."
+  },
+  {
+   "path": "P48 E42 P2",
+   "kind": "property",
+   "nodes": 1,
+   "graphs": 1,
+   "skip": "Identifier type is record-keeping metadata about the record, not the thing."
+  },
+  {
+   "path": "P67 E42 P2",
+   "kind": "property",
+   "nodes": 1,
+   "graphs": 1,
+   "skip": "The type of an identifier the record refers to is record-keeping metadata."
+  },
+  {
+   "path": "P67i E73 P129i",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "skip": "Points to a text about a document that mentions the record. That is too indirect for anyone to ask about it this way."
+  },
+  {
+   "path": "P94i E65 P33",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "skip": "Points to the design or procedure used in the act of conceiving a work. This is obscure and is not how people ask about creation."
+  },
+  {
+   "path": "P94i E65 P67i",
+   "kind": "link",
+   "nodes": 1,
+   "graphs": 1,
+   "skip": "A source that documents the creation event. This is a citation about the record's history, and the general 'cited in' path covers it just as well."
+  }
+ ],
+ "not_proposed": {
+  "already phrased": 220,
+  "outside CIDOC-CRM and CRMsci": 814
+ },
+ "needs_hand": [
+  {
+   "path": "P4 E52 P86i",
+   "kind": "date",
+   "nodes": 44
+  },
+  {
+   "path": "P140i E13 P4",
+   "kind": "date",
+   "nodes": 37
+  },
+  {
+   "path": "P140i E13 P141",
+   "kind": "date",
+   "nodes": 23
+  },
+  {
+   "path": "P9 E7 P4",
+   "kind": "date",
+   "nodes": 20
+  },
+  {
+   "path": "P140i E17 P17",
+   "kind": "date",
+   "nodes": 18
+  },
+  {
+   "path": "P141i E13 P141",
+   "kind": "date",
+   "nodes": 15
+  }
+ ]
+}

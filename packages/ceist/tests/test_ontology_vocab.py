@@ -72,6 +72,7 @@ def ontology_dir(tmp_path, entries=()) -> Path:
     d = tmp_path / "cidoc-crm"
     d.mkdir()
     (d / "source").symlink_to(SOURCE)
+    (d / ov.GENERIC).symlink_to(SOURCE.parent / ov.GENERIC)
     (d / "phrases.json").write_text(json.dumps({"format": "ceist.ontology/1", "entries": list(entries)}))
     return d
 
@@ -136,7 +137,8 @@ def test_accept_merges_only_the_reviewed_proposals_the_gate_passes(tmp_path):
         "import json, shutil, sys\nshutil.copy(sys.argv[2], sys.argv[1])\n"
         'print(json.dumps({"accepted": ["link P108i E12 P14", "link P51"], "rejected": {"link E22 P49": "bench: worse"}}))\n')
     sent = tmp_path / "sent.json"
-    assert ov.accept(onto, [sys.executable, str(tmp_path / "gate.py"), str(sent)], log=lambda _: None) == 0
+    verdict = ov.accept(onto, [sys.executable, str(tmp_path / "gate.py"), str(sent)], log=lambda _: None)
+    assert verdict["accepted"] == ["link P108i E12 P14", "link P51"]
     assert [c["path"] for c in json.loads(sent.read_text())] == ["P108i E12 P14", "P51", "E22 P49"]
     assert json.loads((onto / "phrases.json").read_text())["entries"] == [
         {"path": "P51", "kind": "link", "phrases": ["owned by", "owner"]},
@@ -173,3 +175,102 @@ def test_the_gate_rejects_a_proposal_that_adds_a_wrong_reading(data, tmp_path): 
     assert verdict["rejected"]["date P108i E12 P4"].startswith("bench: worse on 1, e.g. fixture: what is the construction")
     with pytest.raises(RuntimeError, match="no demo checkout"):
         gate.gate([good], onto, {"fixture": str(data[0] / "graphs")}, tmp_path / "nowhere", None)
+
+
+def _proposal(path, kind, phrases, nodes=1, graphs=1):
+    return {"path": path, "kind": kind, "phrases": phrases, "nodes": nodes, "graphs": graphs,
+            "reason": "r", "reviewed": False}
+
+
+def reviewed(tmp_path, proposals, entries=(), skipped=(), graphs=None) -> dict:
+    onto = ontology_dir(tmp_path, entries)
+    (onto / "proposed.json").write_text(json.dumps({"proposals": proposals, "skipped": list(skipped)}))
+    lines = ov.review(onto, [graphs or graphs_dir(tmp_path)], log=lambda _: None)
+    doc = json.loads((onto / "proposed.json").read_text())
+    doc["lines"] = lines
+    return doc
+
+
+def test_review_drops_generic_phrasings(tmp_path):
+    doc = reviewed(tmp_path, [_proposal("E22 P12i", "link", ["was at", "present at"]),
+                              _proposal("E5 P16", "link", ["used", "use"])])
+    kept, gone = doc["proposals"]
+    assert (kept["phrases"], kept["reviewed"], kept["review"]["verdict"]) == (["present at"], "auto", "trimmed")
+    assert kept["review"]["dropped"] == {"was at": "too generic"}
+    assert kept["checks"] == list(ov.CHECKS)
+    assert (gone["reviewed"], gone["review"]["verdict"]) == (False, "dropped")
+
+
+def test_review_drops_a_clash_but_keeps_a_strict_extension(tmp_path):
+    entries = [{"path": "P67i E73", "kind": "link", "phrases": ["cited in", "sources"]}]
+    doc = reviewed(tmp_path, [_proposal("E33 P67i", "link", ["cited in", "referenced in"]),
+                              _proposal("E22 P67i E73", "link", ["cited in"])], entries)
+    clash, extension = doc["proposals"]
+    assert clash["phrases"] == ["referenced in"]
+    assert clash["review"]["dropped"] == {"cited in": "clash: already on P67i E73"}
+    assert (extension["phrases"], extension["review"]["verdict"]) == (["cited in"], "kept")
+
+
+def test_review_keeps_a_shared_phrase_on_one_sibling_path(tmp_path):
+    doc = reviewed(tmp_path, [
+        _proposal("E33 P129i", "link", ["subject of", "discussed in"], nodes=5),
+        _proposal("E53 P129i", "link", ["subject of"], nodes=3),
+        _proposal("E24 P2", "property", ["object type"], nodes=6),
+        _proposal("E22 P2", "property", ["object type", "object classification"], nodes=3)])
+    by = {p["path"]: p for p in doc["proposals"]}
+    # a link's start class doesn't change the question: the phrase moves to the path without it
+    assert (by["P129i"]["phrases"], by["P129i"]["nodes"], by["P129i"]["from"]) == (
+        ["subject of"], 8, ["E33 P129i", "E53 P129i"])
+    assert by["E33 P129i"]["phrases"] == ["discussed in"]
+    assert by["E53 P129i"]["review"] == {"verdict": "dropped", "reason": by["E53 P129i"]["review"]["reason"],
+                                         "dropped": {"subject of": "shared by 2 sibling paths; kept on P129i"}}
+    # an object type's start class does: it stays on the path reaching the most nodes
+    assert by["E24 P2"]["phrases"] == ["object type"]
+    assert by["E22 P2"]["phrases"] == ["object classification"]
+
+
+def test_review_drops_a_bare_noun_unless_its_field_is_unique(tmp_path):
+    d = graphs_dir(tmp_path)
+    (d / "c.json").write_text(json.dumps(_graph("g-c", "Twofold", [
+        ("two_a", "concept", ["P45_consists_of", "E57_Material"]),
+        ("two_b", "concept", ["P45_consists_of", "E57_Material"])])))
+    doc = reviewed(tmp_path, [_proposal("E22 P2", "property", ["genre", "object genre"]),
+                              _proposal("E22 P45", "property", ["fabric", "made out of"])], graphs=d)
+    unique, twice = doc["proposals"]
+    assert unique["phrases"] == ["genre", "object genre"]
+    assert twice["phrases"] == ["made out of"]
+    assert twice["review"]["dropped"] == {"fabric": "a bare noun, and the path reaches several fields in a model"}
+
+
+def test_review_lists_skipped_high_use_date_paths(tmp_path):
+    skipped = [{"path": "P4 E52 P86i", "kind": "date", "nodes": 44, "graphs": 9, "skip": "generic"},
+               {"path": "P9 E7 P4", "kind": "date", "nodes": 3, "graphs": 1, "skip": "generic"},
+               {"path": "P1 E41 P2", "kind": "property", "nodes": 900, "graphs": 9, "skip": "record-keeping"}]
+    doc = reviewed(tmp_path, [_proposal("E22 P12i", "link", ["present at"])], skipped=skipped)
+    assert doc["needs_hand"] == [{"path": "P4 E52 P86i", "kind": "date", "nodes": 44}]
+    assert "| P4 E52 P86i | 44 | generic |" in doc["lines"]
+
+
+def test_build_runs_end_to_end_with_a_stub_llm(tmp_path):
+    onto, graphs, cmd = ontology_dir(tmp_path), graphs_dir(tmp_path), stub(tmp_path)
+    assert ov.build([graphs], onto, tmp_path / "out", cmd, max_calls=0, log=lambda _: None) == 2
+    assert not (tmp_path / "calls.txt").exists()
+    (tmp_path / "gate.py").write_text(
+        "import json, sys\nc = json.load(open(sys.argv[1]))\n"
+        'print(json.dumps({"accepted": ["link P108i E12 P14"], "rejected": {"date P108i E12 P4": "bench: worse on 1"},'
+        ' "checks": ["bench: 1 pass"], "bench": {"before": {"s": {"ontology": [1, 0, 2, 0, 0]}},'
+        ' "after": {"s": {"ontology": [2, 0, 1, 0, 0]}}}, "demo": {"before": "{1}", "after": "{1}"}}))\n')
+    gate = [sys.executable, str(tmp_path / "gate.py")]
+    assert ov.build([graphs], onto, tmp_path / "out", cmd, gate_cmd=gate, log=lambda _: None) == 0
+    assert (tmp_path / "calls.txt").read_text() == "call\n"
+    assert json.loads((onto / "phrases.json").read_text())["entries"] == [
+        {"path": "P108i E12 P14", "kind": "link", "phrases": ["phrase p14"]}]
+    doc = json.loads((onto / "proposed.json").read_text())
+    assert {p["path"]: (p["reviewed"], p["gate"]) for p in doc["proposals"]} == {
+        "P108i E12 P14": ("auto", "merged"), "E22 P2": ("auto", "rejected: ?"),
+        "P108i E12 P4": ("auto", "rejected: bench: worse on 1")}
+    report = (onto / "build-report.md").read_text()
+    assert "| link | P108i E12 P14 | phrase p14 |" in report
+    assert "| date | P108i E12 P4 | phrase p4 | bench: worse on 1 |" in report
+    assert "| s | ontology | 1 / 0 / 2 / 0 / 0 | 2 / 0 / 1 / 0 / 0 |" in report
+    assert "## Cost" in report and "| ontology | 1 | 0 |" in report

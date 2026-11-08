@@ -172,6 +172,9 @@ clarify_min = 0.15
 
 ### Building a project's vocabulary, and measuring it
 
+The LLM-built route (ontology layer, graph base, question set, client layer, refine loop, cost and
+experiments), with the exact commands in order, is in [VOCAB-TRAINING.md](VOCAB-TRAINING.md). By hand:
+
 ```
 ceist vocab describe <graphs dir> descriptions/ --reference <reference_data dir>   # read the models (Alizarin)
 ceist vocab prompt descriptions/ Monument > prompt.txt                               # the instruction, with the schema inline
