@@ -1,7 +1,7 @@
 """`ceist vocab ontology`: phrasings for the CIDOC-CRM paths real graphs reach,
 proposed by an LLM from the public CRM definitions, reviewed, gated, then merged.
 
-    collect   the link and date paths of the graphs that no phrasing reaches yet,
+    collect   the link, date and controlled-field paths of the graphs that no phrasing reaches yet,
               ranked by how many nodes each reaches
     propose   per batch of paths, the CRM labels and scope notes along them and the
               existing phrasings as seeds → <ontology>/proposed.json, for review
@@ -41,8 +41,10 @@ A path is CRM classes and properties read from the record outward, ending at the
 the field. A "link" path ends at another record (a person, a place, a document): its phrasings fit \
 "which objects were <p> X?", "which objects are <p> X?" or "which objects have X as <p>?". A \
 "date" path ends at the time-span (P4) of an event: its phrasings fit "when was X <p>?", or are a \
-noun such as "date of birth". "P108i E12 P14" is the producer of a thing; "P108i E12 P4" when \
-it was made.
+noun such as "date of birth". A "property" path ends at a field holding a term from a list (a \
+type, a material): its phrasings name the field, and fit "what is the <p> of X?" or "which objects \
+have <p> bronze?". "P108i E12 P14" is the producer of a thing; "P108i E12 P4" when it was made; \
+"P108i E12 P126" what it was made of. A path that starts with "^" starts at the record itself.
 
 For each path give either
 - "phrases": 2 to 6 short lowercase phrasings people use in questions: a verb phrase ("made by", \
@@ -102,27 +104,24 @@ def graph_docs(dirs) -> list[dict]:
     return [json.loads(p.read_text()) for d in dirs for p in sorted(Path(d).glob("*.json"))]
 
 
-def collect(graphs: list[dict], ontology: dict, known: dict) -> tuple[list[dict], list[dict], Counter]:
-    """(candidates, property-node paths, skipped reasons): the link and date paths no
+def collect(graphs: list[dict], ontology: dict, known: dict) -> tuple[list[dict], Counter]:
+    """(candidates, skipped reasons): the link, date and controlled-field paths no
     phrasing reaches, each with the nodes and graphs it reaches, most nodes first.
     A path with a code outside `known` (CRMdig, CRMgeo, an extension) is skipped."""
-    nodes, graphs_of, props, skipped = Counter(), {}, Counter(), Counter()
+    nodes, graphs_of, skipped = Counter(), {}, Counter()
     for doc in graphs:
         g = doc["graph"][0] if "graph" in doc else doc
         chains = crm.chains(g)
         phrased = {e["node"] for e in crm.ontology_entries(g, ontology)}
         for n in g["nodes"]:
             tokens = chains.get(n.get("alias") or "")
-            if not tokens or n["datatype"] == "semantic":
-                continue
             kind = _bundle.kind_of(n)
-            path = path_of(tokens, "link" if kind == "property" else kind)
+            if not tokens or n["datatype"] == "semantic" or (kind == "property" and not crm.is_controlled(n)):
+                continue
+            path = path_of(tokens, kind)
             if path is None:
                 continue
-            if kind == "property":
-                if "concept" in n["datatype"] or n["datatype"] == "reference":
-                    props[path] += 1
-            elif n["alias"] in phrased:
+            if n["alias"] in phrased:
                 skipped["already phrased"] += 1
             elif any(t not in known for t in path.split()):
                 skipped["outside CIDOC-CRM and CRMsci"] += 1
@@ -131,8 +130,7 @@ def collect(graphs: list[dict], ontology: dict, known: dict) -> tuple[list[dict]
                 graphs_of.setdefault((path, kind), set()).add(g["graphid"])
     ranked = sorted(nodes, key=lambda k: (-nodes[k], -len(graphs_of[k]), k))
     return ([{"path": p, "kind": k, "nodes": nodes[(p, k)], "graphs": len(graphs_of[(p, k)])}
-             for p, k in ranked],
-            [{"path": p, "nodes": n} for p, n in props.most_common()], skipped)
+             for p, k in ranked], skipped)
 
 
 def prompt(batch: list[dict], ontology: dict, defs: dict) -> str:
@@ -177,7 +175,7 @@ def propose(graph_dirs, ontology_dir: Path, out: Path, llm_cmd: str | None = Non
     ontology_dir = Path(ontology_dir)
     ontology = load(ontology_dir)
     defs = definitions(ontology_dir / "source")
-    cands, props, skipped = collect(graph_docs(graph_dirs), ontology, defs)
+    cands, skipped = collect(graph_docs(graph_dirs), ontology, defs)
     cands = cands[:top] if top else cands
     run = Runner(Path(out), llm_cmd, model)
     answered = {}
@@ -220,7 +218,6 @@ def propose(graph_dirs, ontology_dir: Path, out: Path, llm_cmd: str | None = Non
            "how": 'review each proposal: edit its phrases, set "reviewed": true, then '
                   "`ceist vocab ontology --accept`",
            "proposals": proposals, "skipped": skips,
-           "property_nodes": props,
            "not_proposed": dict(skipped)}
     (ontology_dir / "proposed.json").write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n")
     log(f"{len(proposals)} proposals, {len(skips)} skipped by the LLM → {ontology_dir / 'proposed.json'}; "

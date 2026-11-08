@@ -44,6 +44,8 @@ def data(tmp_path_factory):
             _tag(nodes["associated_actor"], "E12_Production", "P108i_was_produced_by")
             _tag(nodes["actor"], "E39_Actor", "P14_carried_out_by")
             _tag(nodes["architect"], "E39_Actor", "P14_carried_out_by")
+            _tag(nodes["heritage_status"], "E55_Type", "P2_has_type")
+            _tag(nodes["site"], "E53_Place", "P53_has_former_or_current_location")
             span = dict(fx._node(fx.BUILDING, "production_time", "Production time", "semantic"),
                         nodegroup_id=nodes["associated_actor"]["nodeid"])
             made = dict(fx._node(fx.BUILDING, "production_date", "Production date", "date",
@@ -103,7 +105,8 @@ def test_who_means_the_e39_model_whatever_it_is_named(data):
 def test_who_built_follows_the_production_path_and_reads_back(data, tmp_path):
     from ceist.alizarin import Tiles, evaluate
     v, bundle, _ = vocab(data, tmp_path)
-    assert {"kind": "link", "node": "actor", "phrases": ["who built"]} in bundle["models"]["Building"]["entries"]
+    assert {"kind": "link", "node": "actor", "phrases": ["who built"], "layer": "ontology"} in (
+        bundle["models"]["Building"]["entries"])
     m = interpret(v, "who built the Clock Tower?")
     assert narrate(m.plan) == "Find Makers that are the actor of Building 'Clock Tower'."
     assert evaluate(m.plan, Tiles(v)) == {data[1]["ids"]["ada"]}
@@ -223,7 +226,7 @@ def _graph(*nodes):
 
 def test_membership_is_only_the_records_own():
     from ceist.crm import ontology_entries
-    members = {"entries": [{"path": "P107", "kind": "link", "phrases": ["members"]}]}
+    members = {"entries": [{"path": "^ P107", "kind": "link", "phrases": ["members"]}]}
     group = _graph(("group", "E74", None, None, "semantic"),
                    ("associated_actors", "E39", "P107", "group", "resource-instance-list"))
     assert ontology_entries(group, members) == [
@@ -257,3 +260,66 @@ def test_a_phrase_no_relation_it_names_can_take_refuses(data):
     v.free_text = True
     m = interpret(v, "which makers are part of Leeds Dock?")
     assert narrate(m.plan) == "Find Makers linked to or from Site 'Leeds Dock'."
+
+
+# ── fields by CRM path: "what kind of", "made of", "where" (task 025)
+
+FIELDS = {"format": "ceist.ontology/1", "entries": [
+    {"path": "P2", "kind": "property", "phrases": ["kind"]},
+    {"path": "^ P45", "kind": "property", "phrases": ["made of", "material"]}]}
+
+
+def _consists_of(data, tmp_path):
+    """The fixture with heritage status as what a Building is made of (P45 E57)."""
+    import shutil
+    root = tmp_path / "p45"
+    shutil.copytree(data[0], root)
+    for path in (root / "graphs").glob("*.json"):
+        doc = json.loads(path.read_text())
+        for n in doc["graph"][0]["nodes"]:
+            if n["alias"] == "heritage_status":
+                _tag(n, "E57_Material", "P45_consists_of")
+        path.write_text(json.dumps(doc))
+    return (root, data[1])
+
+
+def test_a_field_phrase_holds_the_value_after_it_to_that_field(data, tmp_path):
+    v, bundle, _ = vocab(_consists_of(data, tmp_path), tmp_path, ontology=FIELDS)
+    assert {"kind": "property", "node": "heritage_status", "phrases": ["made of", "material"],
+            "layer": "ontology"} in bundle["models"]["Building"]["entries"]
+    m = interpret(v, "which buildings are made of candidate?")
+    assert narrate(m.plan) == "Find Buildings whose heritage status is Candidate."
+    assert check(m.plan, read_back(compile_plan(m.plan, v), v)).ok
+    # a value of another field: the phrase can't hold it, so it places nothing
+    m = interpret(v, "which buildings are made of architect?")
+    assert m.plan is None and m.refused.startswith("couldn't place 'made'"), m.refused
+
+
+def test_what_kind_of_x_is_y_is_its_type(data, tmp_path):
+    v, _, _ = vocab(data, tmp_path, ontology=FIELDS)
+    for q in ("what kind of building is the Clock Tower?", "what kind is the Clock Tower?"):
+        m = interpret(v, q)
+        assert narrate(m.detail) == "Show the heritage status of Building 'Clock Tower'.", (q, m.refused)
+    from ceist.questions import templated
+    by_q = {o["q"]: o for o in templated(v, FIELDS)}
+    assert by_q["what is the kind of {Building}?"]["target"]["detail"] == ["heritage_status"]
+
+
+def test_what_is_x_made_of_is_its_material_or_names_made(data, tmp_path):
+    v, _, _ = vocab(_consists_of(data, tmp_path), tmp_path / "p45", ontology=FIELDS)
+    m = interpret(v, "what is the Clock Tower made of?")
+    assert narrate(m.detail) == "Show the heritage status of Building 'Clock Tower'."
+    v, _, _ = vocab(data, tmp_path / "p2", ontology=FIELDS)       # heritage status is P2: no P45
+    m = interpret(v, "what is the Clock Tower made of?")
+    assert m.detail is None and m.refused.startswith("couldn't place 'made'"), m.refused
+
+
+def test_where_is_x_gives_its_links_to_a_place_or_refuses(data, tmp_path):
+    from ceist.rosmadair import compile_detail, read_back_detail
+    v, _, _ = vocab(data, tmp_path)
+    m = interpret(v, "where is the Clock Tower?")
+    assert m.direct is None and narrate(m.detail) == "Show the site of Building 'Clock Tower'."
+    assert check(m.detail, read_back_detail(compile_detail(m.detail, v), v)).ok
+    m = interpret(v, "where is Ada Lovelace?")
+    assert m.detail is None and m.direct is None
+    assert m.refused == "'where': a Maker has no link to a place to answer it from"

@@ -399,6 +399,8 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
         g.notes.append(f"'{phrase}' → value of "
                        + " / ".join(sorted({c.field for c in cands})))
 
+    _field_phrases(g, vocab, raw, words, taken, names, consume_span, parts_of)
+
     # ── "near X", "within 5 km of X": where the vocabulary has locations
     if getattr(vocab, "geometry_fields", None):
         m = next((m for m in NEAR_RE.finditer(raw)
@@ -614,6 +616,28 @@ _LEAD_WORDS = {"which", "what", "who", "whose", "the", "a", "an", "any", "all", 
 # the text before a phrase ends where a question names its subject
 _SUBJECT_LEAD = re.compile(r"(^|\b(which|what|how many|show me|list|find|any|all|are there))"
                            r"(\s+(the|any|all|of the))?\s*$", re.I)
+
+
+def _field_phrases(g: Grounding, vocab: Vocabulary, raw: str, words, taken, names, consume_span,
+                   parts_of) -> None:
+    """A phrase naming a controlled field ("made of", "monument type") holds the value
+    that follows it to that field. With no such value after it, it places nothing."""
+    by_phrase: dict[str, set] = {}
+    for phrase, model, alias in getattr(vocab, "field_phrases", lambda: [])():
+        by_phrase.setdefault(phrase, set()).add((model, alias))
+    for phrase, owners, m in _phrase_spans(raw, list(by_phrase.items()), list(taken), names):
+        last = max(i for i, s, e, _w in words if s >= m.start() and e <= m.end())
+        vm = min((v for v in g.values if v.pos > last), key=lambda v: v.pos, default=None)
+        if vm is None or any(parts_of(w) for i, _s, _e, w in words if last < i < vm.pos):
+            continue
+        fit = [v for v in vm.candidates if any(v.field == a and (not v.owners or t in v.owners)
+                                               for t, a in owners)]
+        if not fit:
+            continue
+        vm.candidates = fit
+        taken.append((m.start(), m.end()))
+        consume_span(m.start(), m.end())
+        g.notes.append(f"'{phrase}' → field {' / '.join(sorted({v.field for v in fit}))} of '{vm.phrase}'")
 
 
 def _match_leftovers(g: Grounding, matcher, words, consumed, parts_of, relations,

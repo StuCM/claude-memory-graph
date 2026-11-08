@@ -279,18 +279,19 @@ def layered(graphs: list[dict], base_dir: str | Path, client_dir: str | Path | N
 
 
 def _add_ontology(name: str, model: dict, entries: list[dict]) -> list[str]:
-    """Add the ontology layer's entries beneath a model's base: a phrase the base
-    already uses is the base's; one that fits several nodes is left out, as a guess."""
+    """Add the ontology layer's entries beneath a model's base, marked "layer": "ontology":
+    a phrase the base already uses for something else is the base's; one that fits
+    several nodes is left out, as a guess."""
     taken, report = _meanings(model), []
     nodes_of: dict[str, set] = {}
     for e in entries:
         for p in e["phrases"]:
             nodes_of.setdefault(p.strip().lower(), set()).add(e["node"])
     for e in entries:
-        phrases = [p for p in e["phrases"] if p.strip().lower() not in taken
-                   and len(nodes_of[p.strip().lower()]) == 1]
+        phrases = [p for p in e["phrases"] if len(nodes_of[p.strip().lower()]) == 1
+                   and taken.get(p.strip().lower(), _entry_meaning(e)) == _entry_meaning(e)]
         if phrases:
-            model["entries"].append(dict(e, phrases=phrases))
+            model["entries"].append(dict(e, phrases=phrases, layer="ontology"))
     for p, nodes in sorted(nodes_of.items()):
         if len(nodes) > 1 and p not in taken:
             report.append(f"{name}: ontology phrase '{p}' fits {', '.join(sorted(nodes))}; not applied")

@@ -11,8 +11,8 @@
   {"path": "P74i", "kind": "link", "phrases": ["kept by", "held by", "repository"]},
   {"path": "P49", "kind": "link", "phrases": ["held by", "in the keeping of", "archive holder"]},
   {"path": "P51", "kind": "link", "phrases": ["owned by", "owner"]},
-  {"path": "P107", "kind": "link", "phrases": ["members", "member"]},
-  {"path": "P107i", "kind": "link", "phrases": ["member of", "parent organisation", "parent organization"]},
+  {"path": "^ P107", "kind": "link", "phrases": ["members", "member"]},
+  {"path": "^ P107i", "kind": "link", "phrases": ["member of", "parent organisation", "parent organization"]},
   {"path": "P46i", "kind": "link", "phrases": ["part of", "forms part of"]},
   {"path": "P148i", "kind": "link", "phrases": ["part of", "comes from"]},
   {"path": "P67 E4", "kind": "link", "phrases": ["set in", "set in the period"]},
@@ -28,6 +28,11 @@
   {"path": "P100i E69 P4", "kind": "date", "phrases": ["died", "date of death", "death date"]},
   {"path": "P95i E66 P4", "kind": "date", "phrases": ["founded", "formed", "established"]},
   {"path": "P12i E5 P4", "kind": "date", "phrases": ["in use", "used", "occupied"]},
-  {"path": "E65 P4", "kind": "date", "phrases": ["created", "written"]}
+  {"path": "E65 P4", "kind": "date", "phrases": ["created", "written"]},
+  {"path": "O18i E11 P41i E17 P42", "kind": "property", "phrases": ["type", "kind", "sort", "classification"]},
+  {"path": "P108i E12 P41i E17 P42", "kind": "property", "phrases": ["type", "kind", "sort", "classification"]},
+  {"path": "P12i E5 P41i E17 P42", "kind": "property", "phrases": ["function", "functional type", "used as"]},
+  {"path": "^ P45", "kind": "property", "phrases": ["material", "made of", "made from", "consists of"]},
+  {"path": "P108i E12 P126", "kind": "property", "phrases": ["material", "made of", "made from"]}
  ]
 }
