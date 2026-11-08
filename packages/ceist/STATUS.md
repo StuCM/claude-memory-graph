@@ -78,10 +78,21 @@ One picture of the system, what is proven, what isn't, and the plan we work from
 - **The cost-estimate fix** (the `claude -p` overhead and cache writes, calibrated from the cost record).
 - UI guidance (suggestions as you type, a refusal that offers a plain-form question) waits for the TypeScript port.
 
-**Decision point:** after A and B, score the realistic set and the awkward hold-out. If the realistic set's unseen answer rate is still well below about 60%, revisit the hybrid (a rewriter in front of Ceist, still checked by it).
+**Decision point:** after A and B, score the realistic set and the awkward hold-out. If the realistic set's unseen answer rate is still well below about 60%, bring the capture loop forward: learn from real refused questions at build time. There is no LLM at question time; it would be too slow in the browser.
+
+**When vocabulary work ends:**
+1. The coverage checklist is at 100%, or each remaining item has a recorded reason. The list is finite: it is bounded by the schema, not by English.
+2. Some things are not vocabulary's job:
+   - topics the data doesn't record (refusing them is right);
+   - filler words and question shapes (they belong to B);
+   - misspelt or partial names (they belong to name matching).
+3. Results level off: a round that adds fewer than about 2 right answers on the hold-out set stops.
+4. Live: repeated in-scope refusals (the same phrase 3 or more times in the capture log) stay under an agreed rate.
+
+After that, builds run only when the schema changes or the capture log repeats a phrase, and they run automatically. Work on the ontology layer carries across every site.
 
 ## 6. Parked (deliberately not now)
-- the TypeScript / browser port (spike done; waits for A and B);
+- the TypeScript / browser port (spike done; waits for A and B; leave bge out of the browser build, or load it only after a refusal for "did you mean");
 - the question-capture loop (designed);
 - the experiment matrix (budget pending; will be re-costed after the estimator fix);
 - 008 (value inflections; folded into A);
