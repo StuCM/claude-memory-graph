@@ -25,6 +25,15 @@ out = [{"path": p["path"], "skip": "audit metadata"} if p["path"].endswith("P49"
        else {"path": p["path"], "phrases": ["Phrase " + p["path"].split()[-1]], "reason": "r"} for p in paths]
 print(json.dumps({"paths": out}))
 '''
+# the first call replies with nonsense, so its batch is retried; then it is STUB
+FLAKY = '''import os, runpy, sys
+stub = sys.argv.pop(2)
+if os.path.exists(sys.argv[1] + ".failed"):
+    runpy.run_path(stub)
+else:
+    open(sys.argv[1] + ".failed", "w").close()
+    print("nonsense")
+'''
 
 
 def _graph(gid: str, name: str, chains: list[tuple[str, str, list[str]]]) -> dict:
@@ -201,6 +210,15 @@ def test_review_drops_generic_phrasings(tmp_path):
     assert (gone["reviewed"], gone["review"]["verdict"]) == (False, "dropped")
 
 
+def test_a_second_review_keeps_the_first_reviews_drop_reasons(tmp_path):
+    doc = reviewed(tmp_path, [_proposal("E22 P12i", "link", ["was at", "present at"]),
+                              _proposal("E5 P16", "link", ["used", "use"])])
+    ov.review(tmp_path / "cidoc-crm", [tmp_path / "graphs"], log=lambda _: None)
+    again = json.loads((tmp_path / "cidoc-crm" / "proposed.json").read_text())
+    assert again["proposals"] == doc["proposals"]
+    assert again["proposals"][0]["review"]["dropped"] == {"was at": "too generic"}
+
+
 def test_review_drops_a_clash_but_keeps_a_strict_extension(tmp_path):
     entries = [{"path": "P67i E73", "kind": "link", "phrases": ["cited in", "sources"]}]
     doc = reviewed(tmp_path, [_proposal("E33 P67i", "link", ["cited in", "referenced in"]),
@@ -273,4 +291,20 @@ def test_build_runs_end_to_end_with_a_stub_llm(tmp_path):
     assert "| link | P108i E12 P14 | phrase p14 |" in report
     assert "| date | P108i E12 P4 | phrase p4 | bench: worse on 1 |" in report
     assert "| s | ontology | 1 / 0 / 2 / 0 / 0 | 2 / 0 / 1 / 0 / 0 |" in report
+    assert "Generated: 3 paths with phrasings; 1 skipped by the LLM; LLM calls 1;" in report
     assert "## Cost" in report and "| ontology | 1 | 0 |" in report
+    assert "This build made no LLM calls" not in report
+    assert ov.build([graphs], onto, tmp_path / "out", cmd, gate_cmd=gate, log=lambda _: None) == 0
+    report = (onto / "build-report.md").read_text()
+    assert "LLM calls 0;" in report and "This build made no LLM calls" in report
+
+
+def test_the_report_counts_the_calls_when_retries_hit_max_calls(tmp_path, monkeypatch):
+    monkeypatch.setattr(ov, "BATCH", 1)
+    onto, graphs = ontology_dir(tmp_path), graphs_dir(tmp_path)
+    (tmp_path / "flaky.py").write_text(FLAKY)
+    (tmp_path / "stub.py").write_text(STUB)
+    cmd = f"{sys.executable} {tmp_path / 'flaky.py'} {tmp_path / 'calls.txt'} {tmp_path / 'stub.py'}"
+    assert ov.build([graphs], onto, tmp_path / "out", cmd, max_calls=4, review_only=True, log=lambda _: None) == 0
+    report = (onto / "build-report.md").read_text()
+    assert "Generated: 2 paths with phrasings; 1 skipped by the LLM; LLM calls 4;" in report

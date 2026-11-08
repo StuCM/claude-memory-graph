@@ -170,3 +170,9 @@ def test_the_report_runs_over_a_results_file(tmp_path):
     assert "| rounds-1 | rounds 1 | 40/50 (2 wrong) | 60/87 | 120/125 |  | 9 | $3.20 |" in lines
     assert "| rounds-1 | base | 8 | $3.00 | 4 nodegroup | 2.00 | $0.750 |" in lines
     assert "| rounds-1 | refine | 1 | $0.20 | 1 round | 1.00 | $0.200 |" in lines
+
+
+def test_an_audit_line_from_before_the_ledger_counts_as_its_step():
+    assert cost.stage_of({"step": "ontology"}) == "ontology"
+    assert cost.stage_of({"kind": "values", "step": "ontology"}) == "data"
+    assert cost.stage_of({"kind": "group"}) == "base"

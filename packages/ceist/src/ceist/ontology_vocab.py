@@ -224,7 +224,7 @@ def propose(graph_dirs, ontology_dir: Path, out: Path, llm_cmd: str | None = Non
             continue
         p = dict(c, phrases=[s.strip().lower() for s in x["phrases"]], reason=x["reason"], reviewed=False)
         prev = old.get((c["path"], c["kind"])) or {}
-        for k in ("phrases", "reviewed", "gate"):
+        for k in ("phrases", "reviewed", "gate", "review", "checks"):
             if k in prev:
                 p[k] = prev[k]
         proposals.append(p)
@@ -374,7 +374,8 @@ def review(ontology_dir: Path, graph_dirs, log=print) -> list[str]:
             existing.setdefault(ph, set()).add(e["path"])
     todo = [p for p in doc.get("proposals", []) if p.get("reviewed") is not True and p.get("gate") != "merged"]
     graphs = [d["graph"][0] if "graph" in d else d for d in graph_docs(graph_dirs)]
-    dropped: dict[int, dict] = {}
+    # a re-run sees only the phrases an earlier review kept: carry its reasons for the rest
+    dropped = {id(p): dict(p.get("review", {}).get("dropped", {})) for p in todo}
     for p in todo:
         for ph in p["phrases"]:
             if ph in generic:
@@ -439,16 +440,20 @@ def build(graph_dirs, ontology_dir: Path, out: Path, llm_cmd: str | None = None,
     def note(line: str) -> None:
         said.append(line)
         log(line)
+    audit = out / "audit.jsonl"
+    seen = len(audit.read_text().splitlines()) if audit.exists() else 0
     rc = propose(graph_dirs, ontology_dir, out, llm_cmd, model, max_calls, log=note)
     if rc:
         log("the proposals are incomplete; fix that and re-run (answered paths are cached)")
         return rc
     doc = read_proposed(ontology_dir)
+    this_run = audit.read_text().splitlines()[seen:] if audit.exists() else []
+    calls = sum(1 for line in this_run if not json.loads(line)["cached"])
     lines = ["# Ontology build report", "",
              f"Graphs: {', '.join(str(d) for d in graph_dirs)}.", "",
-             f"Estimate: {said[0]}", "", f"Generated: {said[1]}", "",
-             f"Proposed: {len(doc['proposals'])} paths with phrasings; {len(doc['skipped'])} skipped by the LLM; "
-             f"not proposed: {', '.join(f'{n} {k}' for k, n in doc.get('not_proposed', {}).items())}.", ""]
+             f"Estimate: {said[0]}", "",
+             f"Generated: {len(doc['proposals'])} paths with phrasings; {len(doc['skipped'])} skipped by the LLM; "
+             f"LLM calls {calls}; not proposed: {', '.join(f'{n} {k}' for k, n in doc.get('not_proposed', {}).items())}.", ""]
     lines += review(ontology_dir, graph_dirs, log) + [""]
     if not review_only:
         verdict = accept(ontology_dir, gate_cmd, skip, log)
@@ -470,6 +475,8 @@ def build(graph_dirs, ontology_dir: Path, out: Path, llm_cmd: str | None = None,
         lines += [f"- {c}" for c in verdict.get("checks", [])] + [""]
     runs = cost.read_runs([out]) if (out / "audit.jsonl").exists() else []
     lines += cost.summary([r for run in runs for r in run["spent"]])
+    if not calls:
+        lines += ["", "This build made no LLM calls: every answer came from the cache, so it cost $0."]
     if any(run["prompts"] for run in runs):
         lines += [""] + cost.against(runs)
     report = ontology_dir / "build-report.md"
