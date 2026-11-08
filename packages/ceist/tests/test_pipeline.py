@@ -26,8 +26,8 @@ elif prompt.startswith("You are checking"):
                                 for it in payload]
 elif prompt.startswith("You name the types"):
     key, reply = "model:" + payload["model"], {"type_words": [], "links": {}}
-elif prompt.startswith("You extend") and "labels" in payload:
-    key, reply = "values:" + payload["node"]["alias"] + ":" + payload["labels"][0], {"values": {}}
+elif prompt.startswith("You extend") and "lists" in payload:
+    key, reply = "values:" + "+".join(k + ":" + x["labels"][0] for k, x in payload["lists"].items()), {}
 elif prompt.startswith("You extend"):
     key, reply = "phrases:" + payload["model"]["model"], {"phrases": {}}
 elif prompt.startswith("You refine"):
@@ -613,9 +613,9 @@ def test_the_data_layer_batches_labels_and_writes_only_client_entries(tmp_path, 
     from ceist.plan import interpret
     monkeypatch.setattr(pipeline, "BATCH", 2)
     canned = {
-        "values:heritage_status:Candidate": {"values": {"Candidate": ["hopefuls", "candidate"]}},
-        "values:heritage_status:Listed": {"values": {"Listed": ["listed buildings"]}},
-        "values:actor_role:Architect": {"values": {"Engineer": ["engineers"]}},
+        "values:heritage_status:Candidate": {"values": {"heritage_status": {"Candidate": ["hopefuls", "candidate"]}}},
+        "values:heritage_status:Listed": {"values": {"heritage_status": {"Listed": ["listed buildings"]}}},
+        "values:actor_role:Architect": {"values": {"actor_role": {"Engineer": ["engineers"]}}},
         "phrases:Building": {"phrases": {"architect": ["drew up"]},
                              "doubts": [{"node": "site", "phrase": "near", "why": "vague"}]}}
     data, ref, cmd, ids = project(tmp_path, canned)
@@ -648,12 +648,13 @@ def test_the_data_layer_batches_labels_and_writes_only_client_entries(tmp_path, 
     audit = [json.loads(x) for x in (out / "audit.jsonl").read_text().splitlines()]
     batches = [json.JSONDecoder().raw_decode(a["prompt"].split("INPUT:\n", 1)[1])[0]
                for a in audit if a["kind"] == "values"]
-    assert [b["labels"] for b in batches if b["node"]["alias"] == "actor_role"] == [["Architect", "Builder"]] * 2
-    assert [b["labels"] for b in batches if b["node"]["alias"] == "heritage_status"] == [
-        ["Candidate", "Grade II"], ["Listed"]]
-    candidate = next(b for b in batches if b["labels"][0] == "Candidate")
-    assert candidate["seed"] == {"Candidate": ["shortlisted"]}
-    assert set(candidate) == {"model", "about", "node", "labels", "others", "seed", "questions"}
+    lists = [x for b in batches for x in b["lists"].items()]
+    assert [x["labels"] for k, x in lists if k == "actor_role"] == [["Architect", "Builder"]] * 2
+    assert [x["labels"] for k, x in lists if k == "heritage_status"] == [["Candidate", "Grade II"], ["Listed"]]
+    candidate = next(b for b in batches if "heritage_status" in b["lists"])
+    assert candidate["lists"]["heritage_status"]["seed"] == {"Candidate": ["shortlisted"]}
+    assert set(candidate) == {"model", "about", "lists", "others", "questions"}
+    assert set(candidate["lists"]["heritage_status"]) == {"fields", "labels", "seed"}
 
     # privacy: labels and masked questions go out, never a record
     sent = (out / "audit.jsonl").read_text()
@@ -684,6 +685,95 @@ def test_the_data_layer_batches_labels_and_writes_only_client_entries(tmp_path, 
     vocab = ArchesVocabulary.from_data_dir(data, bundle=bundle)
     m = interpret(vocab, "how many hopefuls are there?", matcher=config.chain(config.load(None)))
     assert narrate(m.plan) == "Count Buildings whose heritage status is Candidate."
+
+
+class Canned(pipeline.Runner):
+    """Answers each values call by its list keys, and keeps the payloads sent."""
+
+    def __init__(self, out, replies):
+        super().__init__(out)
+        self.replies, self.sent = replies, []
+
+    def ask(self, key, prompt, check, what):
+        payload, _ = json.JSONDecoder().raw_decode(prompt.split("INPUT:\n", 1)[1])
+        self.sent.append(payload)
+        reply = self.replies.get(",".join(payload["lists"]), {})
+        assert check(reply) == []
+        return reply
+
+
+MONUMENT = {"name": "Monument", "nodes": [
+    {"alias": "monument_type", "nodegroup": "type", "values": ["Fort", "Rath"]},
+    {"alias": "period", "nodegroup": "type", "values": ["Medieval", "Modern"]},
+    {"alias": "former_type", "nodegroup": "former", "values": ["Fort", "Rath"]},
+    {"alias": "material", "nodegroup": "fabric", "values": ["Stone", "Timber", "Turf"]}]}
+
+
+def test_a_list_two_fields_share_is_sent_once_and_its_variants_reach_both(tmp_path):
+    run = Canned(tmp_path, {"monument_type,period,material": {
+        "values": {"monument_type": {"Fort": ["forts"]}},
+        "combos": [{"phrases": ["Medieval raths"], "set": {"monument_type": "Rath", "period": "Medieval"}}]}})
+    client = {"type": {"group": {"combos": [{"phrases": ["dun"], "set": {"monument_type": "Fort"}}]}}}
+    out = pipeline.value_variants(run, MONUMENT, client, [])
+    assert len(run.sent) == 1
+    lists = run.sent[0]["lists"]
+    assert [f["alias"] for f in lists["monument_type"]["fields"]] == ["monument_type", "former_type"]
+    assert lists["monument_type"]["seed"] == {"Fort": ["dun"]}
+    assert out == {
+        "type": [{"phrases": ["dun", "forts"], "set": {"monument_type": "Fort"}},
+                 {"phrases": ["medieval raths"], "set": {"monument_type": "Rath", "period": "Medieval"}}],
+        "former": [{"phrases": ["forts"], "set": {"former_type": "Fort"}}]}
+    # a combo across nodegroups is refused
+    across = {"combos": [{"phrases": ["medieval forts"], "set": {"former_type": "Fort", "period": "Medieval"}}]}
+    assert pipeline.check_values(across, lists, {}, {n["alias"]: n["nodegroup"] for n in MONUMENT["nodes"]}) == [
+        "combos[0]: its fields are not all in one nodegroup"]
+
+
+def test_small_lists_are_packed_to_the_budget_and_a_long_one_is_split(tmp_path, monkeypatch):
+    def keys():
+        run = Canned(tmp_path, {})
+        pipeline.value_variants(run, MONUMENT, {}, [])
+        return [(list(p["lists"]), [x["labels"] for x in p["lists"].values()]) for p in run.sent]
+
+    assert keys() == [(["monument_type", "period", "material"],
+                       [["Fort", "Rath"], ["Medieval", "Modern"], ["Stone", "Timber", "Turf"]])]
+    monkeypatch.setattr(pipeline, "BATCH", 2)
+    monkeypatch.setattr(pipeline, "VALUE_BUDGET", 60)
+    assert keys() == [(["material"], [["Stone", "Timber"]]), (["material"], [["Turf"]]),
+                      (["monument_type", "period"], [["Fort", "Rath"], ["Medieval", "Modern"]])]
+    # siblings not in the call go as "others", for combos
+    run = Canned(tmp_path, {})
+    monkeypatch.setattr(pipeline, "VALUE_BUDGET", 1)
+    pipeline.value_variants(run, MONUMENT, {}, [])
+    period = next(x for x in run.sent if list(x["lists"]) == ["period"])
+    assert period["others"] == {"monument_type": ["Fort", "Rath"]}
+
+
+def test_a_base_run_where_every_call_fails_fails_and_writes_nothing(tmp_path):
+    data, ref, _, _ = project(tmp_path)
+    base, out = tmp_path / "base", tmp_path / "out"
+    assert pipeline.run(data / "graphs", out, ref, llm_cmd="false", layer="base", base=base,
+                        log=lambda _: None) == 1
+    assert not base.exists()
+    report = (out / "report.md").read_text()
+    assert "failed: every LLM call failed (" in report
+    assert "## Failed calls" in report and "- group Building" in report
+
+
+def test_a_data_run_where_every_call_fails_fails_and_writes_nothing(tmp_path):
+    data, ref, _, _ = project(tmp_path)
+    client, out = tmp_path / "client", tmp_path / "out"
+    (client / "Building").mkdir(parents=True)
+    (client / "Building" / "site.json").write_text(json.dumps(
+        {"model": "Building", "nodegroup": "site", "entries": [{"phrases": ["near"], "kind": "link", "node": "site"}],
+         "group": {"phrases": [], "nodes": {}, "combos": [
+             {"phrases": ["shortlisted"], "set": {"heritage_status": "Candidate"}}]}}))
+    before = _tree(client)
+    assert pipeline.run(data / "graphs", out, ref, llm_cmd="false", layer="data", client=client,
+                        log=lambda _: None) == 1
+    assert _tree(client) == before
+    report = (out / "report.md").read_text()
+    assert "Every LLM call failed (" in report and "- values Building.actor_role,heritage_status" in report
 
 
 ERECTED = {"q": "which buildings were erected before 1900?", "phrase": "erected", "slot": "date",

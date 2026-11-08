@@ -18,8 +18,9 @@ Layers (`--layer`, see bundle.layered):
     base   the schema's vocabulary into <base>/<graph id>/ (group files and a manifest),
            extending what is there; written only when the gate passes. No real questions.
     data   a client layer into <client>/<Model>/<nodegroup>.json from the client's
-           reference data and masked questions: each list's value variants and combos,
-           its labels sent in batches of BATCH, and the field phrasings the questions use.
+           reference data and masked questions: each distinct list's value variants and
+           combos (small lists packed into one call, a long one in batches of BATCH labels),
+           and the field phrasings the questions use.
 
 Privacy: the LLM sees the schema description (and the CRM roles derived from
 it), never a record. Real questions (`--questions`) are masked with `learn`'s
@@ -46,6 +47,7 @@ from .text import plurals
 
 PROMPT_VERSION = "2"
 BATCH = 100
+VALUE_BUDGET = 1500   # tokens (characters / 4) of small lists packed into one values call
 LAYER_MODELS = {"base": "opus", "data": "sonnet"}
 INTENTS = ("filter", "list", "count", "when", "who", "where", "which kind")
 CLAUDE = ["claude", "-p", "--output-format", "json", "--tools", "", "--strict-mcp-config",
@@ -218,21 +220,23 @@ INPUT:
 """
 
 VALUE_PROMPT = """You extend one site's search vocabulary over the Arches model "{model}" with the \
-words its users say for the values of one field. At question time only exact phrase lookup runs, \
-so the variants must be written now. You see the field and a batch of its list's labels, never \
-records. The site's real questions are given with names and numbers masked.
+words its users say for the values of its listed fields. At question time only exact phrase lookup \
+runs, so the variants must be written now. You see some of the model's lists, each keyed by its first \
+field with every field that uses it and a batch of its labels, never records. The site's real \
+questions are given with names and numbers masked.
 
-1. "values": for labels in "labels" that people say differently, their everyday variants: \
-plurals, short forms, synonyms ("forts" for Fort, "portal tombs" for Portal Tomb). Only labels \
-from this batch, and only variants that name that value alone.
-2. "combos": common phrasings that set this field together with other fields of its record entry \
-("medieval raths": cultural_period Medieval and monument_type Rath). Every combo sets this field; \
-use only labels from "labels" and from "others".
-3. "seed" lists variants already in use. They stay whatever you reply: add to them, and list any \
-you think wrong under "doubts" instead of leaving them out.
+1. "values": for each list in "lists", the labels people say differently and their everyday \
+variants: plurals, short forms, synonyms ("forts" for Fort, "portal tombs" for Portal Tomb). Only \
+labels from that list's "labels", and only variants that name that value alone.
+2. "combos": common phrasings that set two or more fields of one record entry (one nodegroup) \
+together ("medieval raths": cultural_period Medieval and monument_type Rath). Every combo sets a \
+field from "lists"; use only aliases from the lists' "fields" and from "others", each with a label \
+of its own list.
+3. A list's "seed" holds variants already in use. They stay whatever you reply: add to them, and \
+list any you think wrong under "doubts" instead of leaving them out.
 
 Reply with ONLY one JSON object:
-{{"values": {{"<label>": ["<lowercase variant>", ...]}},
+{{"values": {{"<list key>": {{"<label>": ["<lowercase variant>", ...]}}}},
  "combos": [{{"phrases": ["..."], "set": {{"<alias>": "<label>"}}}}],
  "doubts": [{{"node": "<alias>", "phrase": "<seed>", "why": "…"}}]}}
 Check that your reply parses as JSON.
@@ -289,7 +293,7 @@ class Runner:
         self.argv = shlex.split(llm_cmd) if llm_cmd else CLAUDE + (["--model", model] if model else [])
         self.claude = llm_cmd is None
         self.model = model or ""
-        self.calls = self.hits = 0
+        self.calls = self.hits = self.answered = 0
         self.failures: list[dict] = []
         self.ledger: list[dict] = []
 
@@ -360,12 +364,17 @@ class Runner:
                 reply, errors = None, [f"not JSON: {e}"]
             if not errors:
                 hit.write_text(json.dumps(reply, ensure_ascii=False))
+                self.answered += 1
                 return reply
             text = (prompt + "\n\nYour previous reply was rejected:\n- " + "\n- ".join(errors[:20])
                     + "\nReply again, in full, with these fixed.")
         what["errors"] = errors
         self.failures.append(what)
         return None
+
+    def all_failed(self) -> bool:
+        """Calls were asked and none came back, from the LLM or the cache."""
+        return bool(self.failures) and not (self.answered or self.hits)
 
 
 def check_group(reply, d: dict, group: str, roles: dict | None = None) -> list[str]:
@@ -1077,31 +1086,41 @@ def write_base(descriptions: dict, vocab_dir: Path, manifest: dict, base: Path) 
         (dest / _bundle.MANIFEST).write_text(json.dumps(listed, indent=1, ensure_ascii=False) + "\n")
 
 
-def check_values(reply, node: dict, labels: list[str], others: dict[str, list[str]]) -> list[str]:
-    """The schema of a value-variants reply, against the labels sent."""
+def check_values(reply, lists: dict[str, dict], others: dict[str, list[str]],
+                 group_of: dict[str, str | None]) -> list[str]:
+    """The schema of a value-variants reply, against the lists and labels sent."""
     if not isinstance(reply, dict):
         return ["the reply is not a JSON object"]
     errors = []
     values = reply.get("values", {})
     if not isinstance(values, dict):
-        errors.append('"values" must be an object keyed by label')
+        errors.append('"values" must be an object keyed by list')
         values = {}
-    for label, vs in values.items():
-        if label not in labels:
-            errors.append(f"values: '{label}' is not one of the labels given")
-        elif not _strings(vs):
-            errors.append(f"values.{label}: needs a list of phrases")
+    for key, by_label in values.items():
+        if key not in lists:
+            errors.append(f"values: '{key}' is not one of the lists given")
+        elif not isinstance(by_label, dict):
+            errors.append(f"values.{key}: must be an object keyed by label")
+        else:
+            for label, vs in by_label.items():
+                if label not in lists[key]["labels"]:
+                    errors.append(f"values.{key}: '{label}' is not one of the labels given")
+                elif not _strings(vs):
+                    errors.append(f"values.{key}.{label}: needs a list of phrases")
+    sent = {f["alias"]: x["labels"] for x in lists.values() for f in x["fields"]}
     for i, c in enumerate(reply.get("combos") or []):
         if not (isinstance(c, dict) and _strings(c.get("phrases")) and c.get("phrases")
-                and isinstance(c.get("set"), dict) and node["alias"] in c["set"]):
-            errors.append(f"combos[{i}]: needs phrases and a set that holds {node['alias']}")
+                and isinstance(c.get("set"), dict) and set(c["set"]) & set(sent)):
+            errors.append(f"combos[{i}]: needs phrases and a set that holds a field of the lists")
             continue
         for a, v in c["set"].items():
-            known = labels if a == node["alias"] else others.get(a)
+            known = sent.get(a, others.get(a))
             if known is None:
                 errors.append(f"combos[{i}]: '{a}' is not one of the fields given")
             elif v not in known:
                 errors.append(f"combos[{i}]: '{v}' is not a value of {a} given")
+        if len({group_of.get(a) for a in c["set"]}) > 1:
+            errors.append(f"combos[{i}]: its fields are not all in one nodegroup")
     return errors + _check_doubts(reply)
 
 
@@ -1109,11 +1128,43 @@ def _lower(phrases: list[str]) -> list[str]:
     return _union([p.strip().lower() for p in phrases if p.strip()])
 
 
+def value_calls(d: dict, seeds: dict[tuple, list[str]]) -> list[dict]:
+    """The model's distinct lists, each once with every field that uses it, as the values
+    calls' {list key: {fields, labels, seed}}: small lists packed up to VALUE_BUDGET,
+    a long one in batches of BATCH labels."""
+    lists: dict[tuple, list[dict]] = {}
+    for n in d["nodes"]:
+        if isinstance(n.get("values"), list):
+            lists.setdefault(tuple(n["values"]), []).append(n)
+
+    def entry(labels, fields):
+        return {"fields": [{k: n[k] for k in ("alias", "name", "label", "card", "crm") if n.get(k)}
+                           for n in fields],
+                "labels": labels,
+                "seed": {v: _union(*(seeds[(n["alias"], v)] for n in fields if (n["alias"], v) in seeds))
+                         for v in labels if any((n["alias"], v) in seeds for n in fields)}}
+
+    calls, packed, size = [], {}, 0
+    for labels, fields in lists.items():
+        key = fields[0]["alias"]
+        if len(labels) > BATCH:
+            calls += [{key: entry(list(labels[i:i + BATCH]), fields)} for i in range(0, len(labels), BATCH)]
+            continue
+        e = entry(list(labels), fields)
+        tokens = len(json.dumps(e, ensure_ascii=False)) // 4
+        if packed and size + tokens > VALUE_BUDGET:
+            calls.append(packed)
+            packed, size = {}, 0
+        packed[key] = e
+        size += tokens
+    return calls + ([packed] if packed else [])
+
+
 def value_variants(run: Runner, d: dict, client_files: dict, masked: list[str],
                    jobs: int = 1, doubts: list | None = None) -> dict[str, list[dict]]:
-    """Each listed field's labels to the LLM in batches, for their variants and
-    combos: {nodegroup: [combo]}. A label's seeds (the client's one-value
-    combos) go with it and stay."""
+    """Each distinct list's labels to the LLM once, for their variants and combos, written
+    for every field that uses it: {nodegroup: [combo]}. A label's seeds (the client's
+    one-value combos) go with it and stay."""
     seeds: dict[tuple, list[str]] = {}
     for f in client_files.values():
         for c in (f.get("group") or {}).get("combos") or []:
@@ -1123,42 +1174,35 @@ def value_variants(run: Runner, d: dict, client_files: dict, masked: list[str],
     group_of = {n["alias"]: n.get("nodegroup") for n in d["nodes"]}
     small = {n["alias"]: n["values"] for n in d["nodes"]
              if isinstance(n.get("values"), list) and len(n["values"]) <= BATCH}
-    jobs_ = []
-    for n in d["nodes"]:
-        labels = n.get("values")
-        if not isinstance(labels, list):
-            continue
-        others = {a: v for a, v in small.items()
-                  if a != n["alias"] and group_of[a] == n.get("nodegroup")}
-        for i in range(0, len(labels), BATCH):
-            batch = labels[i:i + BATCH]
-            field = {k: n[k] for k in ("alias", "name", "label", "card", "crm") if n.get(k)}
-            jobs_.append((n, batch, {"model": d["name"], "about": d.get("description", ""),
-                                     "node": field, "labels": batch, "others": others,
-                                     "seed": {v: seeds[(n["alias"], v)] for v in batch
-                                              if (n["alias"], v) in seeds},
-                                     "questions": masked}))
 
-    def one(job):
-        n, batch, payload = job
+    def one(lists):
+        mine = {f["alias"] for x in lists.values() for f in x["fields"]}
+        groups = {group_of[a] for a in mine}
+        others = {a: v for a, v in small.items() if a not in mine and group_of[a] in groups}
+        payload = {"model": d["name"], "about": d.get("description", ""), "lists": lists,
+                   "others": others, "questions": masked}
         prompt = VALUE_PROMPT.format(model=d["name"],
                                      payload=json.dumps(payload, ensure_ascii=False, indent=1))
         key = _key("values", d["name"], json.dumps(payload, sort_keys=True))
-        what = {"kind": "values", "model": d["name"], "node": n["alias"], "labels": len(batch)}
-        return n, payload, run.ask(key, prompt,
-                                   lambda r: check_values(r, n, batch, payload["others"]), what)
+        what = {"kind": "values", "model": d["name"], "node": ",".join(lists),
+                "labels": sum(len(x["labels"]) for x in lists.values())}
+        return lists, run.ask(key, prompt, lambda r: check_values(r, lists, others, group_of), what)
 
     out: dict[str, list[dict]] = {}
     with ThreadPoolExecutor(max(jobs, 1)) as pool:
-        for n, payload, reply in pool.map(one, jobs_):
-            combos = out.setdefault(n.get("nodegroup") or "", [])
-            for v in payload["labels"]:
-                said = (reply or {}).get("values", {}).get(v) or []
-                phrases = [p for p in _lower(payload["seed"].get(v, []) + said) if p != v.lower()]
-                if phrases:
-                    combos.append({"phrases": phrases, "set": {n["alias"]: v}})
+        for lists, reply in pool.map(one, value_calls(d, seeds)):
+            said = (reply or {}).get("values") or {}
+            for key, x in lists.items():
+                for n in x["fields"]:
+                    a = n["alias"]
+                    for v in x["labels"]:
+                        phrases = [p for p in _lower(seeds.get((a, v), []) + (said.get(key) or {}).get(v, []))
+                                   if p != v.lower()]
+                        if phrases:
+                            out.setdefault(group_of[a] or "", []).append({"phrases": phrases, "set": {a: v}})
             for c in (reply or {}).get("combos") or []:
-                combos.append({"phrases": _lower(c["phrases"]), "set": c["set"]})
+                g = group_of[next(iter(c["set"]))] or ""
+                out.setdefault(g, []).append({"phrases": _lower(c["phrases"]), "set": c["set"]})
             if doubts is not None:
                 doubts += [dict(x, model=d["name"]) for x in (reply or {}).get("doubts") or []]
     return out
@@ -1449,6 +1493,7 @@ def run_data(graphs: Path, out: Path, client: Path, reference=None, questions=No
     llm = Runner(out, llm_cmd, model)
     doubts: list[dict] = []
     lines = ["# ceist vocab pipeline --layer data", ""]
+    writes = []
     for name, d in sorted(descriptions.items()):
         files = {p.stem: json.loads(p.read_text()) for p in sorted((client / name).glob("*.json"))}
         combos = value_variants(llm, d, files, masked, jobs, doubts)
@@ -1462,9 +1507,14 @@ def run_data(graphs: Path, out: Path, client: Path, reference=None, questions=No
             if combos.get(g):
                 new["group"] = {"phrases": [], "nodes": {}, "combos": combos[g]}
             if entries or combos.get(g):
-                _write_group(client / name / f"{g}.json", new)
+                writes.append((client / name / f"{g}.json", new))
         lines.append(f"- {name}: {sum(len(c) for c in combos.values())} value combos, "
                      f"{sum(1 for ps in phrases.values() if ps)} fields with phrasings")
+    if llm.all_failed():
+        lines += ["", f"**Every LLM call failed ({len(llm.failures)}): nothing written to {client}.**"]
+        return _data_report(out, lines, llm, doubts, log)
+    for path, new in writes:
+        _write_group(path, new)
     listed = _bundle._manifest(client)
     listed.setdefault("format", _bundle.LAYOUT)
     for name, d in descriptions.items():
@@ -1481,6 +1531,10 @@ def run_data(graphs: Path, out: Path, client: Path, reference=None, questions=No
     if base is not None:
         _, merge = _bundle.layered(docs, base, client)
         lines += ["", "## Merge report (not applied)", ""] + [f"- {x}" for x in merge or ["(none)"]]
+    return _data_report(out, lines, llm, doubts, log)
+
+
+def _data_report(out: Path, lines: list[str], llm: Runner, doubts: list[dict], log) -> int:
     if doubts:
         lines += ["", "## Seeds the LLM doubts (kept)", ""] + [
             f"- {x['model']}.{x.get('node')} '{x['phrase']}': {x.get('why', '')}" for x in doubts]
@@ -1579,6 +1633,8 @@ def run(graphs: str | Path, out: str | Path, reference=None, questions=None, llm
     phrase = evaluate(bundle_path, cases_path, cfg)
     planner = planner_run(graphs, Path(reference) if reference else None, b, cases, cfg)
     gate = [f"bundle: {e}" for e in errors]
+    if llm.all_failed():
+        gate.append(f"every LLM call failed ({len(llm.failures)})")
     if not cases:
         if min_right is not None or max_dangerous is not None:
             gate.append("no acceptance cases")
