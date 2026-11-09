@@ -93,5 +93,8 @@
    "parent": null,
    "description_sha256": "cbe39420f1ae501284a6a480952e8063e8685e1c870a4e5ef7631a262abfa053"
   }
- }
+ },
+ "type_words": [
+  "people"
+ ]
 }

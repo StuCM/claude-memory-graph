@@ -1,0 +1,767 @@
+{
+ "format": "ceist.vocab-rules/1",
+ "graphs": [
+  "/home/stuart/.cache/tmp-003/arches-her/arches_her/pkg/graphs/resource_models"
+ ],
+ "reasons": {
+  "property P89i": {
+   "contains": "review: could name two elements: already link Area.associated_monument_area_or_artefact, link Historic Landscape Characterization.monument_area_or_artefact"
+  },
+  "property P9i": {
+   "forms part of": "review: could name two elements: already link Monument.parent_monument_or_area"
+  },
+  "property P106i": {
+   "forms part of": "review: could name two elements: already link Monument.parent_monument_or_area"
+  },
+  "property P129": {
+   "about": "review: too generic"
+  },
+  "property P148i": {
+   "component of": "review: could name two elements: already link Monument.parent_monument_or_area"
+  },
+  "link Artefact.copyright_holder": {
+   "holds copyright": "review: could name two elements: also proposed for link Artefact.copyright_holder_n1",
+   "hold copyright": "review: could name two elements: also proposed for link Artefact.copyright_holder_n1",
+   "copyright held by": "review: could name two elements: also proposed for link Artefact.copyright_holder_n1",
+   "who holds copyright": "review: could name two elements: also proposed for link Artefact.copyright_holder_n1"
+  },
+  "link Artefact.copyright_holder_n1": {
+   "holds copyright": "review: could name two elements: also proposed for link Artefact.copyright_holder",
+   "hold copyright": "review: could name two elements: also proposed for link Artefact.copyright_holder",
+   "copyright held by": "review: could name two elements: also proposed for link Artefact.copyright_holder",
+   "who holds copyright": "review: could name two elements: also proposed for link Artefact.copyright_holder"
+  },
+  "class E4": {
+   "period": "gate: bench: adds no right answer",
+   "periods": "gate: bench: adds no right answer"
+  },
+  "class E27": {
+   "site": "gate: bench: worse on 1, e.g. her: what is the site type of Golquorn?",
+   "sites": "gate: bench: worse on 1, e.g. her: what is the site type of Golquorn?"
+  },
+  "class E22": {
+   "human-made object": "gate: bench: worse on 2, e.g. catalina: what is the object classification of Ruvdrith?",
+   "human-made objects": "gate: bench: worse on 2, e.g. catalina: what is the object classification of Ruvdrith?"
+  },
+  "property P140": {
+   "assigned attribute to": "gate: bench: worse on 10, e.g. catalina: how many artefacts have Mavzabel as assigned attribute to?"
+  },
+  "property P129i": {
+   "subject of": "gate: bench: worse on 2, e.g. catalina: how many heritage stories are subject of Sendrith?"
+  },
+  "property P67": {
+   "refers to": "gate: bench: adds no right answer"
+  }
+ },
+ "accepted": [
+  {
+   "key": "class E21",
+   "layer": "ontology",
+   "phrases": [
+    "person",
+    "people"
+   ],
+   "rule": [
+    "class word"
+   ]
+  },
+  {
+   "key": "class E18",
+   "layer": "ontology",
+   "phrases": [
+    "physical thing",
+    "physical things"
+   ],
+   "rule": [
+    "class word"
+   ]
+  },
+  {
+   "key": "class E74",
+   "layer": "ontology",
+   "phrases": [
+    "group",
+    "groups"
+   ],
+   "rule": [
+    "class word"
+   ]
+  },
+  {
+   "key": "property P67i",
+   "layer": "ontology",
+   "phrases": [
+    "referred to by"
+   ],
+   "rule": [
+    "forward"
+   ]
+  },
+  {
+   "key": "property P14",
+   "layer": "ontology",
+   "phrases": [
+    "who performed"
+   ],
+   "rule": [
+    "inverse"
+   ]
+  },
+  {
+   "key": "property P75i",
+   "layer": "ontology",
+   "phrases": [
+    "possessed by",
+    "who possesses"
+   ],
+   "rule": [
+    "forward",
+    "inverse"
+   ]
+  },
+  {
+   "key": "property P10",
+   "layer": "ontology",
+   "phrases": [
+    "falls within"
+   ],
+   "rule": [
+    "forward"
+   ]
+  },
+  {
+   "key": "property P107",
+   "layer": "ontology",
+   "phrases": [
+    "current or former member"
+   ],
+   "rule": [
+    "forward"
+   ]
+  },
+  {
+   "key": "property P49",
+   "layer": "ontology",
+   "phrases": [
+    "former or current keeper"
+   ],
+   "rule": [
+    "forward"
+   ]
+  },
+  {
+   "key": "property P59i",
+   "layer": "ontology",
+   "phrases": [
+    "located on or within"
+   ],
+   "rule": [
+    "forward"
+   ]
+  },
+  {
+   "key": "property P165i",
+   "layer": "ontology",
+   "phrases": [
+    "incorporated in"
+   ],
+   "rule": [
+    "forward"
+   ]
+  },
+  {
+   "key": "property P122",
+   "layer": "ontology",
+   "phrases": [
+    "borders with"
+   ],
+   "rule": [
+    "forward"
+   ]
+  },
+  {
+   "key": "property P11",
+   "layer": "ontology",
+   "phrases": [
+    "had participant",
+    "who participated in"
+   ],
+   "rule": [
+    "forward",
+    "inverse"
+   ]
+  },
+  {
+   "key": "property P92",
+   "layer": "ontology",
+   "phrases": [
+    "brought into existence"
+   ],
+   "rule": [
+    "forward"
+   ]
+  },
+  {
+   "key": "property P117",
+   "layer": "ontology",
+   "phrases": [
+    "occurs during"
+   ],
+   "rule": [
+    "forward"
+   ]
+  },
+  {
+   "key": "property P16",
+   "layer": "ontology",
+   "phrases": [
+    "used specific object"
+   ],
+   "rule": [
+    "forward"
+   ]
+  },
+  {
+   "key": "property P51",
+   "layer": "ontology",
+   "phrases": [
+    "former or current owner"
+   ],
+   "rule": [
+    "forward"
+   ]
+  },
+  {
+   "key": "property P96",
+   "layer": "ontology",
+   "phrases": [
+    "by mother",
+    "who gave birth"
+   ],
+   "rule": [
+    "forward",
+    "inverse"
+   ]
+  },
+  {
+   "key": "property P97",
+   "layer": "ontology",
+   "phrases": [
+    "from father"
+   ],
+   "rule": [
+    "forward"
+   ]
+  },
+  {
+   "key": "link Activity.archive_holder",
+   "layer": "base",
+   "phrases": [
+    "holds archive",
+    "hold archive",
+    "who holds archive"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "date Activity.date_of_last_update",
+   "layer": "base",
+   "phrases": [
+    "last update date",
+    "updated"
+   ],
+   "rule": [
+    "other order",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Activity.repository_owner",
+   "layer": "base",
+   "phrases": [
+    "owns repository",
+    "own repository",
+    "repository owned by",
+    "who owns repository"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "date Application Area.date_of_last_update",
+   "layer": "base",
+   "phrases": [
+    "last update date",
+    "updated"
+   ],
+   "rule": [
+    "other order",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Area.archive_holder",
+   "layer": "base",
+   "phrases": [
+    "holds archive",
+    "hold archive",
+    "who holds archive"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Area.copyright_holder",
+   "layer": "base",
+   "phrases": [
+    "holds copyright",
+    "hold copyright",
+    "copyright held by",
+    "who holds copyright"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "date Area.date_of_last_update",
+   "layer": "base",
+   "phrases": [
+    "last update date",
+    "updated"
+   ],
+   "rule": [
+    "other order",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Artefact.repository_owner",
+   "layer": "base",
+   "phrases": [
+    "owns repository",
+    "own repository",
+    "repository owned by",
+    "who owns repository"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "date Artefact.date_of_last_update",
+   "layer": "base",
+   "phrases": [
+    "last update date",
+    "updated"
+   ],
+   "rule": [
+    "other order",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Artefact.producer",
+   "layer": "base",
+   "phrases": [
+    "produces",
+    "produce",
+    "who produces"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Bibliographic Source.copyright_holder",
+   "layer": "base",
+   "phrases": [
+    "holds copyright",
+    "hold copyright",
+    "copyright held by",
+    "who holds copyright"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "date Bibliographic Source.date_of_last_update",
+   "layer": "base",
+   "phrases": [
+    "last update date",
+    "updated"
+   ],
+   "rule": [
+    "other order",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Consultation.copyright_holder",
+   "layer": "base",
+   "phrases": [
+    "holds copyright",
+    "hold copyright",
+    "copyright held by",
+    "who holds copyright"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Consultation.owner",
+   "layer": "base",
+   "phrases": [
+    "owns",
+    "own",
+    "who owns"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "date Consultation.date_of_last_update",
+   "layer": "base",
+   "phrases": [
+    "last update date",
+    "updated"
+   ],
+   "rule": [
+    "other order",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Digital Object.creator",
+   "layer": "base",
+   "phrases": [
+    "creates",
+    "create",
+    "who creates"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "date Digital Object.date_of_last_update",
+   "layer": "base",
+   "phrases": [
+    "last update date",
+    "updated"
+   ],
+   "rule": [
+    "other order",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Digital Object.copyright_holder",
+   "layer": "base",
+   "phrases": [
+    "holds copyright",
+    "hold copyright",
+    "copyright held by",
+    "who holds copyright"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Heritage Story.copyright_holder",
+   "layer": "base",
+   "phrases": [
+    "holds copyright",
+    "hold copyright",
+    "copyright held by",
+    "who holds copyright"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "date Heritage Story.date_of_last_update",
+   "layer": "base",
+   "phrases": [
+    "last update date",
+    "updated"
+   ],
+   "rule": [
+    "other order",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Historic Aircraft.copyright_holder",
+   "layer": "base",
+   "phrases": [
+    "holds copyright",
+    "hold copyright",
+    "copyright held by",
+    "who holds copyright"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Historic Aircraft.archive_holder",
+   "layer": "base",
+   "phrases": [
+    "holds archive",
+    "hold archive",
+    "who holds archive"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "date Historic Aircraft.date_of_last_update",
+   "layer": "base",
+   "phrases": [
+    "last update date",
+    "updated"
+   ],
+   "rule": [
+    "other order",
+    "verb"
+   ]
+  },
+  {
+   "key": "date Historic Landscape Characterization.date_of_last_update",
+   "layer": "base",
+   "phrases": [
+    "last update date",
+    "updated"
+   ],
+   "rule": [
+    "other order",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Maritime Vessel.copyright_holder",
+   "layer": "base",
+   "phrases": [
+    "holds copyright",
+    "hold copyright",
+    "copyright held by",
+    "who holds copyright"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Maritime Vessel.archive_holder",
+   "layer": "base",
+   "phrases": [
+    "holds archive",
+    "hold archive",
+    "who holds archive"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Maritime Vessel.owner",
+   "layer": "base",
+   "phrases": [
+    "owns",
+    "own",
+    "who owns"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Maritime Vessel.builder",
+   "layer": "base",
+   "phrases": [
+    "builds",
+    "build",
+    "who builds"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "date Maritime Vessel.date_of_last_update",
+   "layer": "base",
+   "phrases": [
+    "last update date",
+    "updated"
+   ],
+   "rule": [
+    "other order",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Monument.copyright_holder",
+   "layer": "base",
+   "phrases": [
+    "holds copyright",
+    "hold copyright",
+    "copyright held by",
+    "who holds copyright"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "date Monument.date_of_last_update",
+   "layer": "base",
+   "phrases": [
+    "last update date",
+    "updated"
+   ],
+   "rule": [
+    "other order",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Monument.archive_holder",
+   "layer": "base",
+   "phrases": [
+    "holds archive",
+    "hold archive",
+    "who holds archive"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Organization.copyright_holder",
+   "layer": "base",
+   "phrases": [
+    "holds copyright",
+    "hold copyright",
+    "copyright held by",
+    "who holds copyright"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "date Organization.date_of_last_update",
+   "layer": "base",
+   "phrases": [
+    "last update date",
+    "updated"
+   ],
+   "rule": [
+    "other order",
+    "verb"
+   ]
+  },
+  {
+   "key": "date Period.date_of_last_update",
+   "layer": "base",
+   "phrases": [
+    "last update date",
+    "updated"
+   ],
+   "rule": [
+    "other order",
+    "verb"
+   ]
+  },
+  {
+   "key": "type Person",
+   "layer": "base",
+   "phrases": [
+    "people"
+   ],
+   "rule": [
+    "type word"
+   ]
+  },
+  {
+   "key": "date Person.date_of_death",
+   "layer": "base",
+   "phrases": [
+    "die"
+   ],
+   "rule": [
+    "verb"
+   ]
+  },
+  {
+   "key": "date Person.date_of_last_update",
+   "layer": "base",
+   "phrases": [
+    "last update date",
+    "updated"
+   ],
+   "rule": [
+    "other order",
+    "verb"
+   ]
+  },
+  {
+   "key": "link Person.copyright_holder",
+   "layer": "base",
+   "phrases": [
+    "holds copyright",
+    "hold copyright",
+    "copyright held by",
+    "who holds copyright"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  },
+  {
+   "key": "date Place.date_of_last_update",
+   "layer": "base",
+   "phrases": [
+    "last update date",
+    "updated"
+   ],
+   "rule": [
+    "other order",
+    "verb"
+   ]
+  }
+ ]
+}

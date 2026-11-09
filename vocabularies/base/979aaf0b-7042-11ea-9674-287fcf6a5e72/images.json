@@ -7,7 +7,11 @@
     "image copyright holder",
     "who owns the copyright",
     "copyright owner",
-    "image rights holder"
+    "image rights holder",
+    "holds copyright",
+    "hold copyright",
+    "copyright held by",
+    "who holds copyright"
    ],
    "kind": "link",
    "node": "copyright_holder"

@@ -272,6 +272,7 @@ def layered(graphs: list[dict], base_dir: str | Path, client_dir: str | Path | N
             if type_words.setdefault(w, name) != name:
                 report.append(f"type word '{w}' names {type_words[w]} already, {name} in the client; "
                               "not applied")
+    report += _add_class_words(graphs, models, ontology, type_words)
     bundle = {"format": FORMAT, "models": models}
     if type_words:
         bundle["extra_type_words"] = type_words
@@ -295,6 +296,29 @@ def _add_ontology(name: str, model: dict, entries: list[dict]) -> list[str]:
     for p, nodes in sorted(nodes_of.items()):
         if len(nodes) > 1 and p not in taken:
             report.append(f"{name}: ontology phrase '{p}' fits {', '.join(sorted(nodes))}; not applied")
+    return report
+
+
+def _add_class_words(graphs: list[dict], models: dict, ontology: dict, type_words: dict) -> list[str]:
+    """The ontology layer's class words ("class" entries) as type words of the one model whose
+    root is that class; under the base's and client's, and never another model's own name."""
+    from . import crm
+    from .text import plurals
+    roots: dict[str, list[str]] = {}
+    for g, name in zip(graphs, models):
+        roots.setdefault(crm.root_class(g), []).append(name)
+    names = {w for name in models for w in plurals(name)}
+    report = []
+    for e in ontology["entries"]:
+        if e["kind"] != "class" or e["path"] not in roots:
+            continue
+        owners = roots[e["path"]]
+        if len(owners) > 1:
+            report.append(f"class words {', '.join(e['phrases'])} ({e['path']}) fit {', '.join(owners)}; not applied")
+            continue
+        for w in e["phrases"]:
+            if w not in names:
+                type_words.setdefault(w, owners[0])
     return report
 
 

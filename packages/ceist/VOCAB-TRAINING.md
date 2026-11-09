@@ -156,3 +156,59 @@ Add to step 4:
   with `baseline,no-ontology` (~$28, the base paid once).
 - **Look at:** `report.md`: the scores per run, and the cost against size.
 - **Don't:** run it without `--estimate` first.
+
+## 7. Coverage: `vocab coverage`, then the rules, then the directed fill
+
+```sh
+H=/home/stuart/.cache/tmp-003/arches-her/arches_her/pkg
+.venv-ceist/bin/ceist vocab coverage $D/data/graphs --client packages/ceist/bench/demo/vocab \
+    --reference $D/data/vocabularies -o vocabularies/coverage --name demo
+.venv-ceist/bin/ceist vocab coverage $H/graphs/resource_models --reference $H/reference_data -o vocabularies/coverage --name her
+.venv-ceist/bin/ceist vocab generate <same graphs and options> -o vocabularies/coverage --name <set>   # rules, no LLM
+.venv-ceist/bin/ceist vocab fill <same graphs and options> -o vocabularies/coverage --name <set> --estimate
+.venv-ceist/bin/ceist vocab fill <same graphs and options> -o vocabularies/coverage --name <set>       # after the estimate
+```
+
+Run it after steps 1, 2 and 4, and again whenever the schema changes. One graph set at a time: the demo
+and HER both have a model called Monument.
+
+- **The checklist** (`coverage`, no LLM, seconds). For each element, the items a complete layer holds:
+  - ontology: class words from each CRM class's label (a class word names the one model whose root is
+    that class), the CRM label of each property into a link, "who" + its inverse's label where the link
+    points at an actor, and a phrasing for each CRM path;
+  - base: per model its type words, plus its base graph's name when the graph is renamed; per link its
+    label, verb, noun and inverse forms; per date its label's other order and its event's verbs;
+  - client: per controlled value its plural and its alternative labels.
+
+  Each item is present, missing, or set aside with a reason (no model has that root class; an inverse
+  phrasing would read backwards; not a count noun; audit metadata; or what review or the gate decided).
+  `<set>.md` and `<set>.json` hold the percentages per layer and the missing items, heaviest first.
+- **The rules** (`generate`, no LLM). Missing items a rule can phrase: CRM labels, plurals with an
+  irregulars list, agent nouns to verbs ("copyright holder" → "holds copyright"), event nouns to verbs
+  ("date of death" → "died"), base graph names, label splitting. Review drops a generic phrase, and one
+  that could name two elements (already said of another in the same model, or proposed for two). Then
+  the gate (`bench/ontology/gate.py`), as in step 1: alone on the bench, then together on the bench, the
+  demo bank and the HER plans. Client value variants are not read by any bench set: they are gated on the
+  demo bank only. What passes is written to its layer: ontology `phrases.json` (class words as
+  `"kind": "class"`), the base graph's `manifest.json` `type_words` or nodegroup file, the client's group
+  combos. `rules-<set>.md` lists what was accepted, rejected and dropped, and why; `rules-<set>.json`
+  keeps the reasons, so the next `coverage` counts them as set aside.
+- **The directed fill** (`fill`, LLM). Only the items no rule could phrase: CRM paths go through
+  `vocab ontology build` (step 1), base and client elements through one prompt per 20 elements (labels
+  and the kinds of phrasing they lack; no record data), then the same review and gate. `--estimate`
+  prints the calls and dollars and sends nothing.
+- **Wh-words:** none are generated. "who" is already the model whose root is an E39 Actor
+  (`implied_types`), and "where" asks for a Detail of a record's E53 links (`plan._detail`); the grammar
+  uses neither as a type word elsewhere.
+
+## When vocabulary work is done
+
+1. **The checklist is at 100% explained:** every item present, or set aside with a recorded reason.
+   It is bounded by the schema, not by English.
+2. **Not vocabulary's job:** topics the data doesn't record (refusing them is right), filler words and
+   question shapes (the grammar's), misspelt or partial names (name matching's).
+3. **Results level off:** stop when a round adds fewer than about 2 right answers on the hold-out set.
+4. **Later, live:** a phrase refused in scope 3 or more times in the capture log is a gap; keep those
+   under an agreed rate.
+
+After that, builds run only when the schema changes or the capture log repeats a phrase.

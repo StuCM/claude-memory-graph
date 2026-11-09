@@ -40,7 +40,10 @@
     "owned by",
     "owners",
     "property owner",
-    "freeholder"
+    "freeholder",
+    "owns",
+    "own",
+    "who owns"
    ],
    "kind": "link",
    "node": "owner"

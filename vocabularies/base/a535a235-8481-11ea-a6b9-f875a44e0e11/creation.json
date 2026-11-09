@@ -41,7 +41,10 @@
     "who wrote it",
     "drawn by",
     "written by",
-    "photographed by"
+    "photographed by",
+    "creates",
+    "create",
+    "who creates"
    ],
    "kind": "link",
    "node": "creator"

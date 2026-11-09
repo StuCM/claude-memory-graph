@@ -23,6 +23,12 @@
     ceist vocab ontology --accept [--skip demo|her]   # the reviewed proposals, gated → phrases.json
     ceist vocab ontology build <graphs dir> [<graphs dir> …] -o <out dir> [--review-only]
                          [--max-calls N] [--skip demo|her]   # estimate, propose, review, gate, accept, report
+    ceist vocab coverage <graphs dir> [<graphs dir> …] [--base <dir>] [--client <dir>] [--reference <dir>]
+                         [-o <dir> --name N]   # the checklist per element: present, set aside, missing
+    ceist vocab generate <graphs dir> [<graphs dir> …] [--base …] [--client …] [--reference …] -o <dir> --name N
+                         [--review-only] [--skip demo|her]   # rules (no LLM) → review → gate → the layers
+    ceist vocab fill <graphs dir> [<graphs dir> …] [as generate] [--estimate] [--llm-cmd CMD] [--model M]
+                     [--max-calls N]   # the LLM on the gaps the rules left, then generate's review and gate
     ceist vocab profile <graphs dir> [--reference <dir>] [--json]   # the sizes that drive LLM cost
     ceist vocab estimate <graphs dir> --stages base,data,questions,ontology [--model M] [--rounds N]
                          [--ledger <run dir> …] [--json]   # calls, tokens and dollars before a run
@@ -264,6 +270,30 @@ def _ontology(a):
     return ov.propose(a.graphs, a.ontology, a.out, a.llm_cmd, a.model, a.max_calls, a.top)
 
 
+def _layers(a):
+    from .vocab_rules import Layers
+    return Layers(a.graphs, a.base, a.client, a.ontology, a.reference)
+
+
+def _coverage(a):
+    from . import vocab_rules as vr
+    elements = vr.checklist(_layers(a), vr.read_reasons(Path(a.out) / f"rules-{a.name}.json") if a.out else None)
+    if a.out:
+        vr.write_report(elements, Path(a.out), a.name, a.name)
+    print(vr.report_md(elements, a.name))
+    return 0
+
+
+def _generate(a):
+    from . import vocab_rules as vr
+    return vr.generate(_layers(a), Path(a.out), a.name, a.review_only, a.skip or ())
+
+
+def _fill(a):
+    from . import vocab_rules as vr
+    return vr.fill(_layers(a), Path(a.out), a.name, a.llm_cmd, a.model, a.max_calls, a.estimate, a.skip or ())
+
+
 def _profile(a):
     from . import cost
     p = cost.profile(a.graphs, a.reference, a.ontology)
@@ -447,6 +477,25 @@ def main(argv=None):
     p.add_argument("--review", action="store_true", help="review proposed.json automatically")
     p.add_argument("--review-only", action="store_true", help="build: stop after the review")
     p.set_defaults(fn=_ontology)
+
+    for cmd, fn, help_ in (("coverage", _coverage, "the vocabulary checklist per element and layer"),
+                           ("generate", _generate, "fill the checklist by rule (no LLM), reviewed and gated"),
+                           ("fill", _fill, "an LLM on the checklist's remaining gaps, reviewed and gated")):
+        p = vocab.add_parser(cmd, help=help_)
+        p.add_argument("graphs", nargs="+", help="graphs/resource_models dirs: one graph set")
+        p.add_argument("--base", default="vocabularies/base")
+        p.add_argument("--client", help="the client layer (a site's vocab dir)")
+        p.add_argument("--ontology", help="default: ontology/cidoc-crm beside --base")
+        p.add_argument("--reference", help="reference data (SKOS XML, collection JSON): the values")
+        p.add_argument("-o", "--out", required=cmd != "coverage", help="the reports' dir")
+        p.add_argument("--name", default="coverage", help="the graph set's name in the report files")
+        p.add_argument("--skip", action="append", choices=["demo", "her"])
+        p.add_argument("--review-only", action="store_true")
+        p.add_argument("--estimate", action="store_true", help="fill: print the estimate, send nothing")
+        p.add_argument("--llm-cmd")
+        p.add_argument("--model")
+        p.add_argument("--max-calls", type=int, default=300)
+        p.set_defaults(fn=fn)
 
     p = vocab.add_parser("profile", help="the sizes that drive a build's LLM cost, per graph")
     p.add_argument("graphs")

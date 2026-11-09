@@ -30,7 +30,11 @@
     "copyright holder",
     "photo copyright holder",
     "who owns the copyright",
-    "photo credit"
+    "photo credit",
+    "holds copyright",
+    "hold copyright",
+    "copyright held by",
+    "who holds copyright"
    ],
    "kind": "link",
    "node": "copyright_holder"

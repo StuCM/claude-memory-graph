@@ -9,7 +9,10 @@
     "who holds the archive",
     "where is the archive",
     "archive repository",
-    "records held by"
+    "records held by",
+    "holds archive",
+    "hold archive",
+    "who holds archive"
    ],
    "kind": "link",
    "node": "archive_holder"

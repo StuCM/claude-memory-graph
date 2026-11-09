@@ -24,6 +24,7 @@ from pathlib import Path
 from . import cost, crm
 from .ground import PREPS
 from .pipeline import Runner, _a_value, _key, model_roles, outline
+from .text import plurals
 
 SHAPES = ("value", "date", "link", "on-tile", "negation", "or", "group-by", "near", "name match",
           "record detail", "chain", "backlink")
@@ -387,10 +388,12 @@ def _link_question(p: str, many: str, other: str) -> str:
     return f"which {many} have {{{other}}} as {p}?"
 
 
-def templated(vocab, ontology: dict) -> list[dict]:
+def templated(vocab, ontology: dict, bundle: dict | None = None, only: set | None = None) -> list[dict]:
     """A question bank from the ontology layer alone, with no LLM: for each link, date or
     field node a graph's CRM paths give a phrase, template questions using it, each with its
     target, plus refusals ("why", and "who <verb>" where the event has no one actor).
+    With a bundle, also "how many <w> are there?" for its type words, and the same templates
+    for its base and client link and date phrasings on the (model, node) pairs in `only`.
     A text with two targets is left out: the layer drops that phrase, so the reading
     rests on node labels, which no target here can predict."""
     who = vocab.implied_types().get("who")
@@ -401,8 +404,14 @@ def templated(vocab, ontology: dict) -> list[dict]:
         x = {"q": q, "model": model, "shape": shape, "wording": "template"}
         found.setdefault(q, []).append(dict(x, refuse=refuse) if refuse else dict(x, target=target))
 
+    for w, name in sorted(((bundle or {}).get("extra_type_words") or {}).items()):
+        if name in vocab.models and w not in plurals(name):
+            add(f"how many {w} are there?", name, "count", {"model": name, "count": True, "conditions": []})
     for name in sorted(vocab.models):
         entries = crm.ontology_entries(vocab.models[name].doc, ontology)
+        mine = ((bundle or {}).get("models") or {}).get(name) or {"entries": []}
+        entries += [e for e in mine["entries"] if e.get("layer") != "ontology" and not e.get("qualifier")
+                    and e["kind"] in ("link", "date") and (name, e["node"]) in (only or ())]
         many, said = _plural(name), {p for e in entries for p in e["phrases"]}
         for e in entries:
             node = e["node"]

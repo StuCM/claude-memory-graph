@@ -16,7 +16,11 @@
     "curated by",
     "which museum",
     "where is it now",
-    "held in"
+    "held in",
+    "owns repository",
+    "own repository",
+    "repository owned by",
+    "who owns repository"
    ],
    "kind": "link",
    "node": "repository_owner"

@@ -1,0 +1,86 @@
+{
+ "format": "ceist.vocab-rules/1",
+ "graphs": [
+  "/home/stuart/git/personal/starches-demo/ask/data/graphs"
+ ],
+ "reasons": {
+  "property P89": {
+   "falls within": "review: could name two elements: already link Monument.use_phase_period, link Object.cultural_period, link Site.part_of"
+  },
+  "property P129": {
+   "about": "review: too generic"
+  },
+  "property P148i": {
+   "component of": "review: could name two elements: already link Monument.parent_monument_or_area"
+  },
+  "class E53": {
+   "place": "gate: bench: adds no right answer",
+   "places": "gate: bench: adds no right answer"
+  },
+  "class E22": {
+   "human-made object": "gate: bench: worse on 2, e.g. catalina: what is the object classification of Ruvdrith?",
+   "human-made objects": "gate: bench: worse on 2, e.g. catalina: what is the object classification of Ruvdrith?"
+  },
+  "property P140": {
+   "assigned attribute to": "gate: bench: worse on 10, e.g. catalina: how many artefacts have Mavzabel as assigned attribute to?"
+  },
+  "property P129i": {
+   "subject of": "gate: bench: worse on 2, e.g. catalina: how many heritage stories are subject of Sendrith?"
+  },
+  "property P67": {
+   "refers to": "gate: bench: adds no right answer"
+  },
+  "type Group": {
+   "organization": "gate: bench: adds no right answer",
+   "organizations": "gate: bench: adds no right answer"
+  },
+  "type Object": {
+   "artefact": "gate: bench: adds no right answer",
+   "artefacts": "gate: bench: adds no right answer"
+  },
+  "link Site.part_of": {
+   "parts of": "gate: bench: adds no right answer"
+  },
+  "type Tale": {
+   "heritage story": "gate: bench: adds no right answer",
+   "heritage stories": "gate: bench: adds no right answer"
+  }
+ },
+ "accepted": [
+  {
+   "key": "class E33",
+   "layer": "ontology",
+   "phrases": [
+    "linguistic object",
+    "linguistic objects"
+   ],
+   "rule": [
+    "class word"
+   ]
+  },
+  {
+   "key": "property P89i",
+   "layer": "ontology",
+   "phrases": [
+    "contains"
+   ],
+   "rule": [
+    "forward"
+   ]
+  },
+  {
+   "key": "link Object.copyright_holder_n1",
+   "layer": "base",
+   "phrases": [
+    "holds copyright",
+    "hold copyright",
+    "copyright held by",
+    "who holds copyright"
+   ],
+   "rule": [
+    "inverse",
+    "verb"
+   ]
+  }
+ ]
+}

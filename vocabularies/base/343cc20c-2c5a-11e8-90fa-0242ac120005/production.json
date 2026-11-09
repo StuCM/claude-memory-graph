@@ -38,7 +38,10 @@
     "craftsman",
     "producer",
     "crafted by",
-    "potter"
+    "potter",
+    "produces",
+    "produce",
+    "who produces"
    ],
    "kind": "link",
    "node": "producer"
