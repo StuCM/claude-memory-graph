@@ -1,7 +1,7 @@
 ---
 id: 042
 slug: ts-ground
-status: approved
+status: draft
 branch: crew/042-ts-ground
 model: opus
 env: laptop
@@ -9,6 +9,8 @@ work: ceist-port
 files:
   - packages/ceist-js/
 ---
+
+> Held (Stu, 2026-11-09) until the schema-assembly prototype (049) is measured: if it wins, this spec is rewritten for the new design.
 
 # TypeScript ground: text, dates, exact matching and the ground passes, equal to Python on every golden grounding
 

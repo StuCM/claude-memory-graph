@@ -1,7 +1,7 @@
 ---
 id: 044
 slug: ts-rosmadair-browser
-status: approved
+status: draft
 branch: crew/044-ts-rosmadair-browser
 model: opus
 env: laptop
@@ -10,6 +10,8 @@ files:
   - packages/ceist-js/
   - packages/ceist-web/
 ---
+
+> Held (Stu, 2026-11-09) until the schema-assembly prototype (049) is measured: if it wins, this spec is rewritten for the new design.
 
 # TypeScript compile to Rós Madair, and Ceist answering in the browser from the frozen vocabulary
 

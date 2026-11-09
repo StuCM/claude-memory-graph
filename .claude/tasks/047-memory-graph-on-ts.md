@@ -1,7 +1,7 @@
 ---
 id: 047
 slug: memory-graph-on-ts
-status: approved
+status: draft
 branch: crew/047-memory-graph-on-ts
 model: opus
 env: laptop
@@ -11,6 +11,8 @@ files:
   - claude_memory_graph/
   - packages/ceist/
 ---
+
+> Held (Stu, 2026-11-09) until the schema-assembly prototype (049) is measured: if it wins, this spec is rewritten for the new design.
 
 # The memory graph asks through the TypeScript runtime; Python's question-time runtime retires
 

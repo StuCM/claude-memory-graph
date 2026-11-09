@@ -1,7 +1,7 @@
 ---
 id: 045
 slug: fallback-config-and-suggestions
-status: approved
+status: draft
 branch: crew/045-fallback-config-and-suggestions
 model: opus
 env: laptop
@@ -10,6 +10,8 @@ files:
   - packages/ceist-js/
   - packages/ceist/
 ---
+
+> Held (Stu, 2026-11-09) until the schema-assembly prototype (049) is measured: if it wins, this spec is rewritten for the new design.
 
 # Fallbacks off by default and switched on per site; every suggestion clearly marked as not a match
 

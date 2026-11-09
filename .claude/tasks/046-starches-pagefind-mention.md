@@ -1,7 +1,7 @@
 ---
 id: 046
 slug: starches-pagefind-mention
-status: approved
+status: draft
 branch: crew/046-starches-pagefind-mention
 model: opus
 env: laptop
@@ -10,6 +10,8 @@ files:
   - packages/ceist-js/
   - packages/ceist-web/
 ---
+
+> Held (Stu, 2026-11-09) until the schema-assembly prototype (049) is measured: if it wins, this spec is rewritten for the new design.
 
 # In Starches, leftover words become a labelled Pagefind mention on top of the structured answer
 
