@@ -139,11 +139,12 @@ class Scan:
         return said.domain | said.range
 
 
-def _scan(vocab: Vocabulary, text: str) -> Scan:
+def _scan(vocab: Vocabulary, text: str, filler: frozenset[str] = frozenset()) -> Scan:
     # same length, so spans stay aligned: "non-listed" → "non listed"
     raw = text.lower().replace("\u2019", "'").replace("non-", "non ")
     words = [Word(i, m.start(), m.end(), m.group()) for i, m in enumerate(WORD_RE.finditer(raw))]
     terms = {w for _, w in terms_pos(text)} | (MEANINGFUL & set(re.findall(ALNUM + "+", raw)))
+    terms -= filler
     groups = list(getattr(vocab, "groups", lambda: [])())
     group_forms: dict[str, list] = {}
     for grp in groups:

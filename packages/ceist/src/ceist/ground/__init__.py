@@ -31,16 +31,29 @@ from .model import (DateGround, Edge, GroupGround, Grounding, NameGround, NearGr
 from .nodes import _anchors, _fit_relations, _imply_model, _words
 from .phrases import (_dates, _field_phrases, _group_by, _near, _relations, _shape,
                       _tile_phrases, _values)
-from .scan import AUX, DATE_WORDS, IMPERATIVE, MILE_KM, NEG, PREPS, WH, WORD_RE, _scan, is_question
+from .scan import (AUX, DATE_WORDS, IMPERATIVE, MILE_KM, NEG, PREPS, WH, WORD_RE, Scan, _scan,
+                   is_question)
 from .wire import _or, _scope_negations, _subject, _wire
 
 __all__ = ["AUX", "DATE_WORDS", "IMPERATIVE", "MILE_KM", "NEG", "PREPS", "WH", "WORD_RE",
            "DateGround", "Edge", "GroupGround", "Grounding", "NameGround", "NearGround", "Node",
-           "ValueMatch", "ground", "is_question"]
+           "ValueMatch", "ground", "is_question", "pieces"]
 
 
 def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
-    s = _scan(vocab, text)
+    s = pieces(vocab, text, today, matcher)
+    if _or(s) or _wire(s):             # each says whether it refused
+        return s.g
+    _subject(s)
+    _scope_negations(s)   # after subject: a negator never targets the subject
+    return s.g
+
+
+def pieces(vocab: Vocabulary, text: str, today=None, matcher=None, fit: bool = True,
+           filler: frozenset[str] = frozenset()) -> Scan:
+    """Every pass up to coverage. Without `fit`, each link phrase keeps all its relations
+    unchosen (schema assembly chooses); `filler` words are ignored, never placed."""
+    s = _scan(vocab, text, filler)
     _shape(s)             # first: "Find" is no value, "how many" no group, "about X" no relation
     _relations(s)         # a longer group or value phrase beats a relation inside it, "bronze age"
     _group_by(s)          # before anchors: it removes the "by county" edge the anchor cap counts
@@ -51,15 +64,12 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
     _dates(s, today)      # after relations: "built by" beats the date-field word "built"
     _words(s)             # after dates: a date word is shape only once a date grounded
     _anchors(s)           # after words: ranks leftovers only; edges and near set its role and cap
-    _fit_relations(s)     # after anchors: fitting needs both ends named
+    if fit:
+        _fit_relations(s)  # after anchors: fitting needs both ends named
     _imply_model(s)
     if matcher is not None and not s.g.about:
         _match_leftovers(s, matcher)   # after fit (edges removed) and imply model (types it adds)
     _fill_groups(s)       # after the matcher: it fills the groups the matcher adds
     _text_filter(s)       # after fill groups: words held in a group's clause stay out
     _coverage(s)          # after every pass that consumes
-    if _or(s) or _wire(s):             # each says whether it refused
-        return s.g
-    _subject(s)
-    _scope_negations(s)   # after subject: a negator never targets the subject
-    return s.g
+    return s
