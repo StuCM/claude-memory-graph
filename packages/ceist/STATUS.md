@@ -25,6 +25,15 @@ One picture of the system, what is proven, what isn't, and the plan we work from
 | **Graph base** (per graph, e.g. HER) | `vocabularies/base/<graph id>/` | nodegroup, field and link phrasings | **type words** (none at all: "people" for Person was lost); base-graph names for renamed graphs; inverse and noun forms of links |
 | **Client** (per site) | the site's `vocab/` | the demo's extras, period combos, confirmed overrides | plural values ("townlands"), synonyms; the data-layer LLM run made things worse once (rejected) |
 
+**CRM-first (053).** The ontology layer is now the default home for a phrasing; the graph and client
+layers hold the exceptions, each with a reason (`vocabularies/coverage/crm-first.json`, shown by `vocab
+coverage`). `vocab crm-first` moved 1,474 base phrasings (152 CRM paths, gated) and 148 copies the ontology
+already gave into `phrases.json`; plain fields (`"kind": "field"`) and time-span ends are now ontology
+paths. Across HER the ontology gives 31% of a graph's phrasings (was 7%); the rest is each graph's delta:
+3,326 on an ambiguous path, 962 on a path the gate rejected, 799 site-specific (value combos), 791 clashes,
+2 non-CRM. Rules compose a path's base meaning from its CRM labels ("P108i E12 P4" → "date of
+production"), and review gives a phrase to the path rather than the node it reaches.
+
 **The core problem:** each layer was built ad hoc (an LLM pass, seeds, fixes), with **no definition of what a complete layer contains**. Gaps only show when a question fails.
 
 ## 3. How we measure: the benchmarks

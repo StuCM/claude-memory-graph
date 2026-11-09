@@ -28,6 +28,12 @@ for the graphs in hand, because they change with the graphs.
 - **No record data goes to an LLM.** The prompts hold the schema, CRM text and masked questions.
   `audit.jsonl` in each out dir holds every prompt that was sent, in full.
 - A re-run pays only for prompts not answered yet: each out dir has a `cache/`.
+- **CRM-first.** The ontology layer is a phrasing's default home: whatever a step proposes (rules, LLM
+  fill, a person's review) goes on its CIDOC-CRM path first, so every graph that uses the path gets it.
+  A phrasing lands in a graph (base) or client layer only for one of these reasons: the path is
+  ambiguous (no CRM path reaches one node per model), the property is not standard CRM, the term is
+  site-specific (a value-qualified combo, a local word), or the gate rejected the path form. Step 8 moves
+  what an older layer holds and records the reason for each phrasing left behind.
 
 ## 0. Cost first: `vocab profile` and `vocab estimate`
 
@@ -197,9 +203,43 @@ and HER both have a model called Monument.
   `vocab ontology build` (step 1), base and client elements through one prompt per 20 elements (labels
   and the kinds of phrasing they lack; no record data), then the same review and gate. `--estimate`
   prints the calls and dollars and sends nothing.
+- **CRM-first in the rules:** a CRM path's base meaning is composed from the labels along it, through the
+  event it ends in (`composed`): `P108i E12 P4` gives "made", "date of production", "production date";
+  `… E12 P14` "made by"; `… E12 P7` "place of production"; `… E12 P2` "production type". An event class too
+  general to say what happened (E5, E7, E13 and the assignments) gives none. When a base node and an
+  ontology path that reaches it are proposed the same phrase, review keeps the path's and drops the
+  node's ("CRM-first: path … carries it"): a node's own phrasings are only the delta its name adds.
 - **Wh-words:** none are generated. "who" is already the model whose root is an E39 Actor
   (`implied_types`), and "where" asks for a Detail of a record's E53 links (`plan._detail`); the grammar
   uses neither as a type word elsewhere.
+
+## 8. CRM-first: `vocab crm-first`, moving what a CRM path can carry
+
+```sh
+.venv-ceist/bin/ceist vocab crm-first $H/graphs/resource_models $D/data/graphs \
+    <catalina resource_models> <arches-lingo resource_models> \
+    --client packages/ceist/bench/demo/vocab -o vocabularies/coverage     # --review-only: classify, no gate
+```
+
+The base layer's graphs come first: a base folder is matched to the first graph with its id. Every
+set given is one a path must mean one thing in.
+
+- **Model:** none.
+- **What it does:** classifies every base and client phrasing (`packages/ceist/CRM-FIRST-CHECK.md` §7):
+  *promotable* on the shortest CRM path (from the 3-token key, never shorter) that reaches at most one
+  node of its kind in every model of every set, else *ambiguous path*; *non-CRM* (a nodegroup phrase, or
+  a property outside standard CRM); *site-specific* (a value-qualified combo, a local term); *clash*
+  (generic, already on another path, or promoted on a sibling path that reaches more); *already in
+  ontology*. A plain field goes on a `"kind": "field"` path, which a `"property"` path (written for a
+  controlled field) never reaches; a date's end is keyed by the path to that end (`… E52 P82b`).
+  The promotable ones go to the gate, one candidate per (path, kind). What passes is merged into
+  `phrases.json`, and only then removed from its layer; a removal the layered bundles would notice
+  (the ontology drops the phrase as fitting two nodes, or the base keeps it for another node) is put back.
+- **Look at:** `vocabularies/coverage/crm-first.md` (per layer and graph, and the gate's verdict per path)
+  and `crm-first.json` (every phrasing left in a layer with its one-line reason). `vocab coverage` shows
+  both: per graph how much of its vocabulary is base meaning (from the ontology) and how much is delta
+  (its own layers), and per layer why the rest lives where it does.
+- **Cost:** no LLM; the gate takes about as long as step 1's.
 
 ## When vocabulary work is done
 
