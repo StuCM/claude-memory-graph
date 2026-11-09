@@ -55,7 +55,9 @@ EVENTS = {"death": ["died", "die"], "birth": ["born"], "construction": ["built",
           "demolition": ["demolished"], "acquisition": ["acquired"], "designation": ["designated"],
           "compilation": ["compiled"], "modification": ["modified"], "recording": ["recorded"],
           "survey": ["surveyed"], "update": ["updated"],
-          "loss": ["lost"], "repair": ["repaired"], "restoration": ["restored"], "burial": ["buried"]}
+          "loss": ["lost"], "repair": ["repaired"], "restoration": ["restored"], "burial": ["buried"],
+          "transformation": ["transformed"], "assessment": ["assessed"], "move": ["moved"],
+          "measurement": ["measured"], "transfer": ["transferred"]}
 AUX = ("is ", "was ", "were ", "are ")
 LAYERS = ("ontology", "base", "client")
 NO_INVERSE = ("a link's phrasings read both ways in Ceist, so an inverse phrasing would read backwards "
@@ -146,6 +148,28 @@ def date_forms(label: str) -> tuple[list[str], list[str]]:
         return [], []
     swap = f"{event} date" if low.startswith("date of") else f"date of {event}"
     return [swap], list(EVENTS.get(event) or EVENTS.get(event.split()[-1]) or [])
+
+
+def composed(path: str, kind: str, defs: dict) -> list[str]:
+    """A path's base meaning from its CRM labels, when it ends in an event EVENTS knows:
+    "P108i E12 P4" → "made", "date of production", "production date"; "… E12 P14" → "made by";
+    "… E12 P7" → "place of production"; "… E12 P2" → "production type"."""
+    t = path.split()
+    if len(t) < 3 or not defs.get(t[-2]):
+        return []
+    event = defs[t[-2]]["label"].lower().strip()
+    verbs = EVENTS.get(event.split()[-1])
+    if not verbs:
+        return []
+    if kind == "date" and t[-1] == "P4":
+        return verbs[:1] + [f"date of {event}", f"{event} date"]
+    if kind == "link" and t[-1] == "P14":
+        return [f"{verbs[0]} by"]
+    if kind == "link" and t[-1] == "P7":
+        return [f"place of {event}"]
+    if kind == "property" and t[-1] == "P2":
+        return [f"{event} type", f"type of {event}"]
+    return []
 
 
 # ── the layers, read once ────────────────────────────────────────────────────
@@ -305,9 +329,12 @@ def _ontology_elements(L: Layers) -> list[dict]:
         key = f"{kind} {path}"
         outside = any(t not in known for t in path.split() if t != "^")
         why = "outside CIDOC-CRM and CRMsci" if outside else why_path.get(key, "")
+        items = [_item("phrasing", None, phrased[(path, kind)] > 0, why)]
+        # a path the LLM skipped or the gate turned down can still take its CRM labels' meaning
+        items += [_item("composed", p, p in have.get(key, ()), "outside CIDOC-CRM and CRMsci" if outside else "")
+                  for p in composed(path, kind, L.defs)]
         out.append({"layer": "ontology", "key": f"path {key}", "weight": n,
-                    "target": {"layer": "ontology", "path": path, "kind": kind},
-                    "items": [_item("phrasing", None, phrased[(path, kind)] > 0, why)]})
+                    "target": {"layer": "ontology", "path": path, "kind": kind}, "items": items})
     return out
 
 
@@ -459,9 +486,44 @@ def report_md(elements: list[dict], title: str, limit: int = 40) -> str:
     return "\n".join(lines) + "\n"
 
 
-def write_report(elements: list[dict], out: Path, name: str, title: str) -> None:
+def where(L: Layers) -> dict[str, Counter]:
+    """{model: {"ontology": n, "own": n}}: the phrasings the layered bundle gives each graph from the
+    ontology layer (its paths' base meaning) and from its own base and client layers (the delta)."""
+    L.vocab()
+    out = {}
+    for model, m in L.bundle["models"].items():
+        n = Counter()
+        for e in m["entries"]:
+            n["ontology" if e.get("layer") == "ontology" else "own"] += len(e["phrases"])
+        for b in m["groups"].values():
+            n["own"] += len(b.get("phrases") or []) + sum(len(c["phrases"]) for c in b.get("combos") or [])
+        out[model] = n
+    return out
+
+
+def where_md(L: Layers, ledger_path: Path | None) -> str:
+    """Where the phrasings live: per graph, base meaning (ontology) against delta (own layers); and,
+    from a `vocab crm-first` ledger, per layer, why each phrasing left in a graph or client layer is there."""
+    from .crm_first import CLASSES
+    lines = ["", "## Where the phrasings live", "",
+             "Per graph: phrasings the bundle takes from the ontology layer (the CRM path's base meaning) "
+             "and from the graph's own base and client layers (the delta its node names add).", "",
+             "| graph | ontology | own | ontology % |", "| --- | --- | --- | --- |"]
+    for model, n in sorted(where(L).items()):
+        total = n["ontology"] + n["own"]
+        lines.append(f"| {model} | {n['ontology']} | {n['own']} | {round(100 * n['ontology'] / total, 1) if total else 0} |")
+    if ledger_path and ledger_path.exists():
+        doc = json.loads(ledger_path.read_text())
+        lines += ["", f"Every base and client phrasing, by where `vocab crm-first` left it ({ledger_path.name}):", "",
+                  "| layer | " + " | ".join(CLASSES) + " |", "| --- " * (len(CLASSES) + 1) + "|"]
+        lines += [f"| {layer} | " + " | ".join(str(n.get(c, 0)) for c in CLASSES) + " |"
+                  for layer, n in doc["summary"].items()]
+    return "\n".join(lines) + "\n"
+
+
+def write_report(elements: list[dict], out: Path, name: str, title: str, tail: str = "") -> None:
     out.mkdir(parents=True, exist_ok=True)
-    (out / f"{name}.md").write_text(report_md(elements, title))
+    (out / f"{name}.md").write_text(report_md(elements, title) + tail)
     (out / f"{name}.json").write_text(json.dumps({"summary": summary(elements), "elements": elements},
                                                  ensure_ascii=False, indent=1) + "\n")
 
@@ -484,8 +546,26 @@ def candidates(elements: list[dict]) -> list[dict]:
 
 def review(cands: list[dict], v, generic: set[str]) -> dict[str, dict[str, str]]:
     """{element key: {phrase: why dropped}}: generic, no content word, or a phrase that could
-    name two elements of one slot (already said of another, or proposed for two)."""
+    name two elements of one slot (already said of another, or proposed for two). CRM-first: a
+    phrase proposed both for a base node and for an ontology path that reaches it is the path's."""
     index = _phrase_index(v)
+    by_key = {c["key"]: c for c in cands}
+
+    keys: dict[str, dict] = {}
+
+    def carries(o: dict, c: dict) -> bool:
+        if o["layer"] != "ontology" or c["layer"] != "base" or not c.get("node") or c["model"] not in v.models:
+            return False
+        if c["model"] not in keys:
+            keys[c["model"]] = crm.keyed(v.models[c["model"]].doc)
+        kind, tokens = keys[c["model"]].get(c["node"], (None, []))
+        return kind == o["kind"] and crm._ends_with(tokens, o["path"].split())
+
+    def said_of(key: str) -> dict:
+        """An index key ("date Monument.built") as the base element it names."""
+        kind, _, rest = key.partition(" ")
+        model, _, node = rest.partition(".")
+        return {"layer": "base", "kind": kind, "model": model, "node": node}
     roots = {}
     for name, (root, _) in v._crm.items():
         roots.setdefault(root, []).append(name)
@@ -507,9 +587,14 @@ def review(cands: list[dict], v, generic: set[str]) -> dict[str, dict[str, str]]
     for c in cands:
         mine = dropped.setdefault(c["key"], {})
         for p in c["phrases"]:
-            others = sorted(k for s_, k in index.get(p, ()) if s_ == _slot(c) and k != c["key"] and near(c, k))
-            twice = sorted(k for k in proposed[(p, _slot(c))] - {c["key"]} if near(c, k))
-            if p in generic:
+            others = sorted(k for s_, k in index.get(p, ()) if s_ == _slot(c) and k != c["key"] and near(c, k)
+                            and not carries(c, said_of(k)))
+            twice = sorted(k for k in proposed[(p, _slot(c))] - {c["key"]} if near(c, k)
+                           and not carries(c, by_key[k]))
+            path = next((k for k in twice if carries(by_key[k], c)), None)
+            if path:
+                mine[p] = f"CRM-first: {path} carries it"
+            elif p in generic:
                 mine[p] = "too generic"
             elif not terms_pos(p):
                 mine[p] = "no content word"
