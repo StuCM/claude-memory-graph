@@ -10,6 +10,7 @@ files:
   - packages/ceist/src/ceist/
   - packages/ceist/tests/
   - packages/ceist/bench/assembly/
+  - packages/ceist/PRIOR-ART.md
 ---
 
 # Prototype: assemble a question from its pieces by the schema, not by sentence shape, and answer only when exactly one reading fits
@@ -36,6 +37,7 @@ This is a prototype of PRECISE-style assembly (Popescu, Etzioni and Kautz, 2003:
    - every piece used exactly once, and every named record connected to the subject.
 
    The pieces are few, so a plain bounded search is fine; mark its ceiling with a `ponytail:` comment. Position is only a tie-break hint where the schema allows two subjects (the wh-word's noun, then the first type word). Negation scope stays as it is today.
+   **Use PRECISE's formulation** (`packages/ceist/PRIOR-ART.md`). Pose "is there exactly one consistent reading" as a matching between pieces and schema elements, the way PRECISE does, rather than as a hand-written search. Read the paper, and record which parts you followed and which you departed from in Worker notes and in PRIOR-ART.md's row. If the paper's details differ from the summary there, correct the row and remove its *(not checked against the paper)* mark.
 3. **Decide:**
    - **exactly one reading** → the plan;
    - **several** → refuse, with each reading narrated as a "did you mean";
@@ -54,6 +56,7 @@ This is a prototype of PRECISE-style assembly (Popescu, Etzioni and Kautz, 2003:
 - **Fresh-graph bench** in assembly mode.
 - **A reorder set,** `bench/assembly/reorder.json`. Write 30 variants of demo-bank questions that are currently right: clauses moved, fragments ("monuments in Down built before 1900"), and filler added. Write them **from the demo bank only, never from the generated sets**, so the hold-out stays unseen. Score both modes on it.
 - **Time per question** in both modes, median and worst.
+- **Tractable %** in both modes: the share of questions whose pieces have exactly one consistent reading (PRECISE's measure), reported per set beside right / wrong / refused.
 
 ## Background
 - **Read first:** `packages/ceist/STATUS.md`, `packages/ceist/PORT-AUDIT.md`, and 040's Worker notes (its passes and the `Scan` state are what you build on).
@@ -62,6 +65,7 @@ This is a prototype of PRECISE-style assembly (Popescu, Etzioni and Kautz, 2003:
   - run it from `/home/stuart/git/personal/starches-demo/ask` with that directory's `.venv/bin/python` and `PYTHONPATH=<worktree>/packages/ceist/src`;
   - the bank is `bench/demo/run_bank.py`;
   - the generated sets are `~/.cache/ceist-questions-demo/{train,holdout}.json`.
+- **Credit:** the module that implements the assembly names PRECISE in one docstring line pointing to `PRIOR-ART.md`. No longer citations in the code.
 - **Run `ponytail-review`** on your diff before the review round. Follow Stu's code style rules in `~/.claude/CLAUDE.md`.
 - **No `claude -p` or live LLM runs.**
 - 040 must be merged first.

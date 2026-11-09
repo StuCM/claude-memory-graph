@@ -243,3 +243,5 @@ CI runs this pipeline on the real Arches HER models: it clones arches-her, descr
 ## The grammar, honestly
 
 The grammar covers questions with one subject type and up to two hops. Each question can have up to two named records, any number of controlled values and dates, and "not" in front of any of them. It can ask to count, or for the most recent. It does not handle numeric ranges, "or", or comparisons between records ("older than the Clock Tower"). Questions using those are refused or relaxed, and never half-answered without a note.
+
+Prior art and credits: [PRIOR-ART.md](PRIOR-ART.md).
