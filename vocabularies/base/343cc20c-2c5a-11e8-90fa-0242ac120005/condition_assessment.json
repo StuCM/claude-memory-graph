@@ -1,47 +1,5 @@
 {
  "model": "Artefact",
  "nodegroup": "condition_assessment",
- "entries": [
-  {
-   "phrases": [
-    "condition assessed",
-    "condition assessment date",
-    "when was its condition assessed",
-    "date of assessment",
-    "assessed",
-    "inspected",
-    "when was it inspected",
-    "condition checked"
-   ],
-   "kind": "date",
-   "node": "date_of_assessment_start",
-   "end_node": "date_of_assessment_end"
-  },
-  {
-   "phrases": [
-    "condition report file",
-    "condition documents",
-    "condition photos"
-   ],
-   "kind": "link",
-   "node": "digital_file_s__n1"
-  },
-  {
-   "phrases": [
-    "condition",
-    "state",
-    "state of preservation",
-    "preservation",
-    "damaged",
-    "how well preserved",
-    "condition rating",
-    "intact",
-    "what condition",
-    "broken",
-    "condition state"
-   ],
-   "kind": "property",
-   "node": "condition_type"
-  }
- ]
+ "entries": []
 }

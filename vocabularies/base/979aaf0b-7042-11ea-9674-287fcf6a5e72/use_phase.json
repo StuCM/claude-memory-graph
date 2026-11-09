@@ -4,11 +4,8 @@
  "entries": [
   {
    "phrases": [
-    "used",
-    "in use",
     "when was it used",
     "period of use",
-    "occupied",
     "occupation",
     "inhabited",
     "active",
@@ -26,22 +23,8 @@
   },
   {
    "phrases": [
-    "period of use era",
-    "used during period",
-    "use period",
-    "period when used",
-    "era of use"
-   ],
-   "kind": "link",
-   "node": "use_phase_period"
-  },
-  {
-   "phrases": [
-    "function",
-    "used as",
     "purpose",
     "what was it used for",
-    "functional type",
     "use",
     "role",
     "what was it for"

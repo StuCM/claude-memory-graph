@@ -4,18 +4,14 @@
  "entries": [
   {
    "phrases": [
-    "radiocarbon dated",
     "carbon dated",
-    "carbon-dated",
     "scientifically dated",
     "scientific date",
     "scientific dating",
     "c14 date",
     "radiocarbon date",
     "dendro date",
-    "tree-ring date",
     "dendrochronological date",
-    "luminescence date",
     "calibrated date",
     "absolute date"
    ],
@@ -29,8 +25,7 @@
     "when was the sample dated",
     "when was the date determined",
     "analysis date",
-    "date of analysis",
-    "lab analysis date"
+    "date of analysis"
    ],
    "kind": "date",
    "node": "when_determined_start_date",
@@ -43,10 +38,6 @@
     "radiocarbon",
     "dendrochronology",
     "scientific dating method",
-    "carbon dating",
-    "tree-ring dating",
-    "luminescence",
-    "archaeomagnetism",
     "method of dating"
    ],
    "kind": "property",

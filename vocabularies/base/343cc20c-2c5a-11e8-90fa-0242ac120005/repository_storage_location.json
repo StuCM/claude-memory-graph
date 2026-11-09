@@ -4,23 +4,8 @@
  "entries": [
   {
    "phrases": [
-    "held by",
-    "museum",
-    "repository",
-    "where is it kept",
-    "who holds it",
-    "in the collection of",
-    "collection",
     "owned by",
-    "owner",
-    "curated by",
-    "which museum",
-    "where is it now",
-    "held in",
-    "owns repository",
-    "own repository",
-    "repository owned by",
-    "who owns repository"
+    "owner"
    ],
    "kind": "link",
    "node": "repository_owner"

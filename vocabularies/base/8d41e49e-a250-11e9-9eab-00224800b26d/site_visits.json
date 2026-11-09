@@ -4,15 +4,7 @@
  "entries": [
   {
    "phrases": [
-    "site visit",
-    "visited",
-    "visit date",
-    "date of visit",
-    "inspected",
-    "went on site",
-    "when was the site visited",
-    "site inspection",
-    "site meeting"
+    "inspected"
    ],
    "kind": "date",
    "node": "date_of_visit",

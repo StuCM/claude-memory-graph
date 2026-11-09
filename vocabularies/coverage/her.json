@@ -1,12 +1,12 @@
 {
  "summary": {
   "ontology": {
-   "items": 452,
-   "present": 837,
-   "set aside": 10758,
-   "missing": 7,
-   "percent": 7.2,
-   "explained": 99.9
+   "items": 496,
+   "present": 1097,
+   "set aside": 10565,
+   "missing": 5,
+   "percent": 9.4,
+   "explained": 100.0
   },
   "base": {
    "items": 1189,
@@ -17,12 +17,12 @@
    "explained": 87.6
   },
   "overall": {
-   "items": 1641,
-   "present": 1064,
-   "set aside": 423,
-   "missing": 154,
-   "percent": 64.8,
-   "explained": 90.6
+   "items": 1685,
+   "present": 1141,
+   "set aside": 392,
+   "missing": 152,
+   "percent": 67.7,
+   "explained": 91.0
   }
  },
  "elements": [
@@ -2555,8 +2555,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Language of a text written about the record (e.g. a description); this is documentation metadata, not something people ask about the thing itself."
+     "status": "present"
     }
    ]
   },
@@ -2627,8 +2626,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Any attribute assigned to the record by an attribution act; too general to carry one meaning."
+     "status": "present"
     }
    ]
   },
@@ -2681,8 +2679,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Type of the attribution act; this is audit or provenance metadata about the record's statements."
+     "status": "present"
     }
    ]
   },
@@ -2788,8 +2785,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Date an attribute was assigned to the thing. That is record-keeping about an assessment, not about the thing itself."
+     "status": "present"
     }
    ]
   },
@@ -2806,8 +2802,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: the authority document that lists an identifier is record-keeping metadata about the identifier, not the thing"
+     "status": "present"
     }
    ]
   },
@@ -2824,8 +2819,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Note on a name or appellation; this is a statement about the naming record rather than the thing."
+     "status": "present"
     }
    ]
   },
@@ -2842,8 +2836,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "outside CIDOC-CRM and CRMsci"
+     "status": "present"
     }
    ]
   },
@@ -2912,8 +2905,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: the type of some sub-activity within this one is too general to mean one thing"
+     "status": "present"
     }
    ]
   },
@@ -2948,8 +2940,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Any value assigned in a generic attribute assignment. Too general to mean one thing."
+     "status": "present"
     }
    ]
   },
@@ -3019,8 +3010,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: A generic attribute value assigned in a classification act. It is too general to mean one thing, and P42 already covers the assigned type."
+     "status": "present"
     }
    ]
   },
@@ -3107,8 +3097,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: The technique used to classify the thing. This is how the record was made rather than a fact about the thing."
+     "status": "present"
     }
    ]
   },
@@ -3390,8 +3379,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: ends at the item a classification act classified, not at a term; this is record-keeping about classification"
+     "status": "present"
     }
    ]
   },
@@ -3408,8 +3396,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Who or what was present at a classification act. This is record-keeping about the classification, not the thing."
+     "status": "present"
     }
    ]
   },
@@ -3444,8 +3431,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: The technique behind an assertion made about the record. This is a statement about the documentation, and it is too general to mean one thing."
+     "status": "present"
     }
    ]
   },
@@ -3462,8 +3448,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Loops back to the item the attribute was assigned to (the record itself), so it carries no meaning a question would target."
+     "status": "present"
     }
    ]
   },
@@ -3549,8 +3534,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: The type of a classification act is audit metadata about how a type was assigned."
+     "status": "present"
     }
    ]
   },
@@ -3637,6 +3621,16 @@
      "aspect": "phrasing",
      "phrase": null,
      "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "modification type",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "type of modification",
+     "status": "present"
     }
    ]
   },
@@ -3653,8 +3647,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: The unit a measurement was recorded in is record-keeping detail of the measurement, not something people ask about the object."
+     "status": "present"
     }
    ]
   },
@@ -3691,6 +3684,18 @@
      "phrase": null,
      "status": "set aside",
      "reason": "the LLM skipped it: The type of a creation event nested inside a period is too indirect and general to mean one thing."
+    },
+    {
+     "aspect": "composed",
+     "phrase": "creation type",
+     "status": "set aside",
+     "reason": "gate: bench: adds no right answer"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "type of creation",
+     "status": "set aside",
+     "reason": "gate: bench: adds no right answer"
     }
    ]
   },
@@ -3864,8 +3869,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the gate rejected: bench: worse on 2, e.g. her: what is the construction method of Mavdrith?"
+     "status": "present"
     }
    ]
   },
@@ -3933,6 +3937,21 @@
     {
      "aspect": "phrasing",
      "phrase": null,
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "modified",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "date of modification",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "modification date",
      "status": "present"
     }
    ]
@@ -4038,6 +4057,21 @@
     {
      "aspect": "phrasing",
      "phrase": null,
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "made",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "date of production",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "production date",
      "status": "present"
     }
    ]
@@ -4197,8 +4231,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Structural nesting of one time-span inside another; it is not a question about when anything happened, so it is too general to mean one thing."
+     "status": "present"
     }
    ]
   },
@@ -4234,6 +4267,12 @@
      "aspect": "phrasing",
      "phrase": null,
      "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "created by",
+     "status": "set aside",
+     "reason": "review: could name two elements: already link Digital Object.creator"
     }
    ]
   },
@@ -4337,8 +4376,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the gate rejected: bench: adds no right answer"
+     "status": "present"
     }
    ]
   },
@@ -4357,6 +4395,18 @@
      "phrase": null,
      "status": "set aside",
      "reason": "the gate rejected: bench: worse on 6, e.g. catalina: how many historic aircrafts have Taldrith as transformed into?"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "transformation type",
+     "status": "set aside",
+     "reason": "gate: bench: adds no right answer"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "type of transformation",
+     "status": "set aside",
+     "reason": "gate: bench: adds no right answer"
     }
    ]
   },
@@ -4411,6 +4461,18 @@
      "phrase": null,
      "status": "set aside",
      "reason": "the LLM skipped it: The type of a modification that a period merely overlaps with is too indirect to mean one thing in a question."
+    },
+    {
+     "aspect": "composed",
+     "phrase": "modification type",
+     "status": "set aside",
+     "reason": "gate: bench: adds no right answer"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "type of modification",
+     "status": "set aside",
+     "reason": "gate: bench: adds no right answer"
     }
    ]
   },
@@ -4427,8 +4489,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: This is the value assigned in an attribute-assignment act. It is a record-keeping statement about the record, not about the thing."
+     "status": "present"
     }
    ]
   },
@@ -4462,8 +4523,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: This is the date an attribute assignment was made. It is audit metadata about the record."
+     "status": "present"
     }
    ]
   },
@@ -4534,8 +4594,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Attribute-assignment bookkeeping that records who asserted what about the record. It is provenance of a statement, not a property of the thing."
+     "status": "present"
     }
    ]
   },
@@ -4554,6 +4613,18 @@
      "phrase": null,
      "status": "set aside",
      "reason": "the LLM skipped it: The type of a move that the thing was used for is too vague and obscure for people to ask about this way."
+    },
+    {
+     "aspect": "composed",
+     "phrase": "move type",
+     "status": "set aside",
+     "reason": "gate: bench: adds no right answer"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "type of move",
+     "status": "set aside",
+     "reason": "gate: bench: adds no right answer"
     }
    ]
   },
@@ -4692,8 +4763,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: The type of a collection that an event produced is an unusual modelling detail; nobody asks about it this way."
+     "status": "present"
     }
    ]
   },
@@ -4744,8 +4814,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: A place that motivated an activity is too abstract and loose to mean one thing people ask about."
+     "status": "present"
     }
    ]
   },
@@ -4848,7 +4917,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "missing"
+     "status": "present"
     }
    ]
   },
@@ -4950,6 +5019,21 @@
     {
      "aspect": "phrasing",
      "phrase": null,
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "assessed",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "date of condition assessment",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "condition assessment date",
      "status": "present"
     }
    ]
@@ -5122,8 +5206,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Links a condition state found in a condition assessment to a document about it. This is record-keeping about the assessment, not something people ask of the thing."
+     "status": "present"
     }
    ]
   },
@@ -5158,6 +5241,11 @@
     {
      "aspect": "phrasing",
      "phrase": null,
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "made by",
      "status": "present"
     }
    ]
@@ -5212,6 +5300,24 @@
      "aspect": "phrasing",
      "phrase": null,
      "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "created",
+     "status": "set aside",
+     "reason": "review: could name two elements: already date Artefact.from_date, date Digital Object.start_date, date Organization.start_date"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "date of creation",
+     "status": "set aside",
+     "reason": "review: could name two elements: already date Digital Object.start_date"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "creation date",
+     "status": "set aside",
+     "reason": "review: could name two elements: already date Activity.creation_date, date Application Area.creation_date, date Area.creation_date"
     }
    ]
   },
@@ -5228,8 +5334,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Date of any activity this thing motivated: too general to mean one thing."
+     "status": "present"
     }
    ]
   },
@@ -5282,6 +5387,12 @@
      "aspect": "phrasing",
      "phrase": null,
      "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "created by",
+     "status": "set aside",
+     "reason": "review: could name two elements: already link Digital Object.creator"
     }
    ]
   },
@@ -5417,8 +5528,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: The type of a design or procedure that refers to the record. It describes the referring document rather than the thing."
+     "status": "present"
     }
    ]
   },
@@ -5557,7 +5667,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "missing"
+     "status": "present"
     }
    ]
   },
@@ -5608,8 +5718,24 @@
     {
      "aspect": "phrasing",
      "phrase": null,
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "modified",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "date of modification",
      "status": "set aside",
-     "reason": "the LLM skipped it: The date of any modification that overlaps the period. It is too general and indirect for a 'when' question about the period."
+     "reason": "review: could name two elements: already date Area.construction_phase_start_date, date Monument.construction_phase_start_date"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "modification date",
+     "status": "set aside",
+     "reason": "review: could name two elements: already date Area.construction_phase_start_date, date Monument.construction_phase_start_date"
     }
    ]
   },
@@ -5626,8 +5752,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: The type assigned by a classification that motivated an activity. It is an indirect modelling detail, and nobody asks about it this way."
+     "status": "present"
     }
    ]
   },
@@ -5644,8 +5769,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: The technique of a classification act that motivated this activity is record-keeping provenance, too indirect to ask about."
+     "status": "present"
     }
    ]
   },
@@ -5697,8 +5821,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: The object-type used in a classification act that motivated this activity is documentation provenance, not something people ask about."
+     "status": "present"
     }
    ]
   },
@@ -5733,8 +5856,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: The type of any object present at an event is too general to mean one thing."
+     "status": "present"
     }
    ]
   },
@@ -5751,8 +5873,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: The type of the thing an existence-beginning event produced. It is too general to mean one thing."
+     "status": "present"
     }
    ]
   },
@@ -5804,8 +5925,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: What a motivating classification act exemplifies is a statement about cataloguing, not the thing."
+     "status": "present"
     }
    ]
   },
@@ -5822,6 +5942,21 @@
     {
      "aspect": "phrasing",
      "phrase": null,
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "transformed",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "date of transformation",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "transformation date",
      "status": "present"
     }
    ]
@@ -5873,8 +6008,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: The material used in a modification that overlaps this period is too indirect to mean one thing people ask about."
+     "status": "present"
     }
    ]
   },
@@ -5926,8 +6060,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: The narrower terms of a type assigned in an attribute-assignment act are vocabulary structure and record-keeping."
+     "status": "present"
     }
    ]
   },
@@ -5961,8 +6094,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: The type of the classification act itself. This is record-keeping about how the record was assessed, not about the thing."
+     "status": "present"
     }
    ]
   },
@@ -6013,8 +6145,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Too general: this is the date of any activity the actor took part in, so it has no single meaning a 'when' question could target."
+     "status": "present"
     }
    ]
   },
@@ -6031,8 +6162,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: The type that a classification act exemplifies. It is an ambiguous modelling detail, and the type a record is classified as is already covered by P41i E17 P42."
+     "status": "present"
     }
    ]
   },
@@ -6049,8 +6179,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Marked as a date, but it ends at P17 'motivated by', not at a time-span. The path is malformed and its meaning is obscure."
+     "status": "present"
     }
    ]
   },
@@ -6118,8 +6247,22 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: When the thing was used in carrying out a move, such as a vehicle or tool used in transport. Too oblique, and easily confused with when the thing itself was moved."
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "moved",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "date of move",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "move date",
+     "status": "present"
     }
    ]
   },
@@ -6154,6 +6297,11 @@
      "aspect": "phrasing",
      "phrase": null,
      "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "modified by",
+     "status": "present"
     }
    ]
   },
@@ -6170,8 +6318,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Marked as a date, but the path ends at P17 'was motivated by', not at a time-span (P4), so no 'when' phrasing fits. As a link it is a rare, indirect question about why a thing was altered."
+     "status": "present"
     }
    ]
   },
@@ -6308,8 +6455,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: It points to whatever the formation brought into existence, which is the group itself, so it adds nothing anyone would ask about."
+     "status": "present"
     }
    ]
   },
@@ -6361,6 +6507,21 @@
     {
      "aspect": "phrasing",
      "phrase": null,
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "formed",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "date of formation",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "formation date",
      "status": "present"
     }
    ]
@@ -6446,8 +6607,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Time-span of a period given in an attribute assignment: a statement about the record's assertion rather than about the thing."
+     "status": "present"
     }
    ]
   },
@@ -6482,6 +6642,21 @@
     {
      "aspect": "phrasing",
      "phrase": null,
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "died",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "date of death",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "death date",
      "status": "present"
     }
    ]
@@ -6588,8 +6763,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: An attribute assignment witnessed by the thing that assigns an attribute to something else. This is a modelling statement about assertions, not a relation people ask about."
+     "status": "present"
     }
    ]
   },
@@ -6606,6 +6780,21 @@
     {
      "aspect": "phrasing",
      "phrase": null,
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "born",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "date of birth",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "birth date",
      "status": "present"
     }
    ]

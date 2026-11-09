@@ -13,16 +13,6 @@
   },
   {
    "phrases": [
-    "area status date",
-    "area status since",
-    "when was the area status assigned"
-   ],
-   "kind": "date",
-   "node": "area_status_start_date",
-   "end_node": "area_status_end_date"
-  },
-  {
-   "phrases": [
     "area reference",
     "area assignment reference",
     "area reference note"

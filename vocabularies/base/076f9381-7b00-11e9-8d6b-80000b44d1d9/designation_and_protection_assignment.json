@@ -38,16 +38,6 @@
   },
   {
    "phrases": [
-    "designation documents",
-    "listing documents",
-    "listing description file",
-    "list entry document"
-   ],
-   "kind": "link",
-   "node": "digital_file_s_"
-  },
-  {
-   "phrases": [
     "designation",
     "designations",
     "protection",
@@ -89,17 +79,7 @@
   },
   {
    "phrases": [
-    "at risk",
-    "heritage at risk",
-    "risk status",
-    "is it at risk",
-    "endangered",
-    "threatened",
-    "condition",
-    "state of repair",
-    "under threat",
-    "risk register",
-    "vulnerable"
+    "condition"
    ],
    "kind": "property",
    "node": "risk_status"
@@ -114,18 +94,6 @@
    ],
    "kind": "property",
    "node": "designation_name"
-  },
-  {
-   "phrases": [
-    "local list criteria",
-    "local heritage list criteria",
-    "why locally listed",
-    "reasons for local listing",
-    "local listing criteria",
-    "selection criteria"
-   ],
-   "kind": "property",
-   "node": "local_heritage_list_criteria_type"
   },
   {
    "phrases": [

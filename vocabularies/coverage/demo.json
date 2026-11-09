@@ -1,12 +1,12 @@
 {
  "summary": {
   "ontology": {
-   "items": 313,
-   "present": 317,
-   "set aside": 3557,
-   "missing": 4,
-   "percent": 8.2,
-   "explained": 99.9
+   "items": 338,
+   "present": 382,
+   "set aside": 3514,
+   "missing": 7,
+   "percent": 9.8,
+   "explained": 99.8
   },
   "base": {
    "items": 443,
@@ -25,12 +25,12 @@
    "explained": 100.0
   },
   "overall": {
-   "items": 1747,
-   "present": 1387,
-   "set aside": 302,
-   "missing": 58,
-   "percent": 79.4,
-   "explained": 96.7
+   "items": 1772,
+   "present": 1428,
+   "set aside": 283,
+   "missing": 61,
+   "percent": 80.6,
+   "explained": 96.6
   }
  },
  "elements": [
@@ -2287,8 +2287,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Type of the attribution act; this is audit or provenance metadata about the record's statements."
+     "status": "present"
     }
    ]
   },
@@ -2305,8 +2304,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Date an attribute was assigned to the thing. That is record-keeping about an assessment, not about the thing itself."
+     "status": "present"
     }
    ]
   },
@@ -2341,8 +2339,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: the authority document that lists an identifier is record-keeping metadata about the identifier, not the thing"
+     "status": "present"
     }
    ]
   },
@@ -2359,8 +2356,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Any value assigned in a generic attribute assignment. Too general to mean one thing."
+     "status": "present"
     }
    ]
   },
@@ -2500,8 +2496,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: The technique behind an assertion made about the record. This is a statement about the documentation, and it is too general to mean one thing."
+     "status": "present"
     }
    ]
   },
@@ -2518,8 +2513,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: The technique used to classify the thing. This is how the record was made rather than a fact about the thing."
+     "status": "present"
     }
    ]
   },
@@ -2588,8 +2582,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "outside CIDOC-CRM and CRMsci"
+     "status": "present"
     }
    ]
   },
@@ -2606,8 +2599,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Note on a name or appellation; this is a statement about the naming record rather than the thing."
+     "status": "present"
     }
    ]
   },
@@ -2728,8 +2720,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Loops back to the item the attribute was assigned to (the record itself), so it carries no meaning a question would target."
+     "status": "present"
     }
    ]
   },
@@ -2854,8 +2845,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: A generic attribute value assigned in a classification act. It is too general to mean one thing, and P42 already covers the assigned type."
+     "status": "present"
     }
    ]
   },
@@ -3119,6 +3109,21 @@
      "aspect": "phrasing",
      "phrase": null,
      "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "died",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "date of death",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "death date",
+     "status": "present"
     }
    ]
   },
@@ -3224,8 +3229,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: An attribute assignment witnessed by the thing that assigns an attribute to something else. This is a modelling statement about assertions, not a relation people ask about."
+     "status": "present"
     }
    ]
   },
@@ -3242,6 +3246,21 @@
     {
      "aspect": "phrasing",
      "phrase": null,
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "born",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "date of birth",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "birth date",
      "status": "present"
     }
    ]
@@ -3294,8 +3313,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Attribute-assignment bookkeeping that records who asserted what about the record. It is provenance of a statement, not a property of the thing."
+     "status": "present"
     }
    ]
   },
@@ -3312,8 +3330,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: It points to whatever the formation brought into existence, which is the group itself, so it adds nothing anyone would ask about."
+     "status": "present"
     }
    ]
   },
@@ -3365,6 +3382,21 @@
     {
      "aspect": "phrasing",
      "phrase": null,
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "formed",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "date of formation",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "formation date",
      "status": "present"
     }
    ]
@@ -3557,8 +3589,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: ends at the item a classification act classified, not at a term; this is record-keeping about classification"
+     "status": "present"
     }
    ]
   },
@@ -3575,8 +3606,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Who or what was present at a classification act. This is record-keeping about the classification, not the thing."
+     "status": "present"
     }
    ]
   },
@@ -3611,8 +3641,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: The type of a classification act is audit metadata about how a type was assigned."
+     "status": "present"
     }
    ]
   },
@@ -3630,6 +3659,16 @@
      "aspect": "phrasing",
      "phrase": null,
      "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "modification type",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "type of modification",
+     "status": "present"
     }
    ]
   },
@@ -3646,6 +3685,21 @@
     {
      "aspect": "phrasing",
      "phrase": null,
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "modified",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "date of modification",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "modification date",
      "status": "present"
     }
    ]
@@ -3801,8 +3855,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the gate rejected: bench: worse on 2, e.g. her: what is the construction method of Mavdrith?"
+     "status": "present"
     }
    ]
   },
@@ -3888,6 +3941,21 @@
      "aspect": "phrasing",
      "phrase": null,
      "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "assessed",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "date of condition assessment",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "condition assessment date",
+     "status": "present"
     }
    ]
   },
@@ -3955,8 +4023,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: The unit a measurement was recorded in is record-keeping detail of the measurement, not something people ask about the object."
+     "status": "present"
     }
    ]
   },
@@ -4113,6 +4180,21 @@
      "aspect": "phrasing",
      "phrase": null,
      "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "made",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "date of production",
+     "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "production date",
+     "status": "present"
     }
    ]
   },
@@ -4146,8 +4228,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "set aside",
-     "reason": "the LLM skipped it: Links a condition state found in a condition assessment to a document about it. This is record-keeping about the assessment, not something people ask of the thing."
+     "status": "present"
     }
    ]
   },
@@ -4183,6 +4264,11 @@
      "aspect": "phrasing",
      "phrase": null,
      "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "made by",
+     "status": "present"
     }
    ]
   },
@@ -4217,6 +4303,11 @@
      "aspect": "phrasing",
      "phrase": null,
      "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "created by",
+     "status": "missing"
     }
    ]
   },
@@ -4234,6 +4325,21 @@
      "aspect": "phrasing",
      "phrase": null,
      "status": "present"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "created",
+     "status": "missing"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "date of creation",
+     "status": "missing"
+    },
+    {
+     "aspect": "composed",
+     "phrase": "creation date",
+     "status": "missing"
     }
    ]
   },
@@ -4423,7 +4529,7 @@
     {
      "aspect": "phrasing",
      "phrase": null,
-     "status": "missing"
+     "status": "present"
     }
    ]
   },

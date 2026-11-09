@@ -4,25 +4,7 @@
  "entries": [
   {
    "phrases": [
-    "built",
-    "constructed",
-    "erected",
-    "put up",
-    "construction",
-    "construction date",
-    "date built",
-    "when was it built",
-    "year built",
-    "built in",
-    "building date",
-    "date of construction",
-    "originally built",
-    "first built",
     "founded",
-    "how old",
-    "age of the building",
-    "dated",
-    "dates from",
     "construction phase"
    ],
    "kind": "date",
@@ -31,32 +13,12 @@
   },
   {
    "phrases": [
-    "period",
-    "what period",
-    "which period",
-    "era",
-    "cultural period",
-    "historic period",
-    "period of construction",
-    "date period",
-    "age",
-    "epoch",
-    "archaeological period",
-    "time period"
-   ],
-   "kind": "link",
-   "node": "cultural_period"
-  },
-  {
-   "phrases": [
-    "type",
     "what type",
     "monument type",
     "site type",
     "kind of monument",
     "what kind of",
     "what is it",
-    "classification",
     "class",
     "category",
     "type of site",
@@ -132,20 +94,6 @@
   },
   {
    "phrases": [
-    "phase type",
-    "type of phase",
-    "construction phase type",
-    "building phase",
-    "phases",
-    "phase",
-    "building phases",
-    "development phases"
-   ],
-   "kind": "property",
-   "node": "construction_phase_type"
-  },
-  {
-   "phrases": [
     "display date",
     "date text",
     "approximate date",
@@ -154,36 +102,6 @@
    ],
    "kind": "property",
    "node": "construction_phase_display_date"
-  },
-  {
-   "phrases": [
-    "evidence",
-    "evidence type",
-    "type of evidence",
-    "what survives",
-    "surviving evidence",
-    "form of evidence",
-    "remains",
-    "what remains",
-    "survival",
-    "earthwork or cropmark",
-    "extant",
-    "does it survive"
-   ],
-   "kind": "property",
-   "node": "construction_phase_evidence_type"
-  },
-  {
-   "phrases": [
-    "confidence of interpretation",
-    "interpretation certainty",
-    "how certain is the interpretation",
-    "certainty",
-    "how sure is the identification",
-    "confidence in identification"
-   ],
-   "kind": "property",
-   "node": "phase_certainty"
   },
   {
    "phrases": [
@@ -206,6 +124,13 @@
    ],
    "kind": "property",
    "node": "phase_description"
+  },
+  {
+   "phrases": [
+    "building phase"
+   ],
+   "kind": "property",
+   "node": "construction_phase_type"
   }
  ],
  "group": {

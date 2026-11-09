@@ -10,9 +10,7 @@
     "settlement",
     "which place",
     "place name",
-    "located in",
-    "located at",
-    "situated in"
+    "located at"
    ],
    "kind": "link",
    "node": "named_location"

@@ -4,32 +4,6 @@
  "entries": [
   {
    "phrases": [
-    "scientifically dated",
-    "scientific date",
-    "radiocarbon date",
-    "dendro date",
-    "dendrochronological date",
-    "carbon dated",
-    "c14 date",
-    "scientific dating result"
-   ],
-   "kind": "date",
-   "node": "scientific_date_start_date",
-   "end_node": "scientific_date_end_date"
-  },
-  {
-   "phrases": [
-    "date determined",
-    "when was it dated",
-    "when was the sample dated",
-    "date of analysis"
-   ],
-   "kind": "date",
-   "node": "when_determined_start_date",
-   "end_node": "when_determined_end_date"
-  },
-  {
-   "phrases": [
     "dating method",
     "how was it dated",
     "dendrochronology",

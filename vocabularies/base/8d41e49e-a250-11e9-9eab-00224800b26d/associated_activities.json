@@ -4,14 +4,11 @@
  "entries": [
   {
    "phrases": [
-    "related activities",
     "fieldwork",
     "excavations",
     "investigations",
-    "archaeological work carried out",
     "associated activities",
-    "events",
-    "surveys carried out"
+    "events"
    ],
    "kind": "link",
    "node": "associated_activities"

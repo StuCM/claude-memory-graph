@@ -4,13 +4,9 @@
  "entries": [
   {
    "phrases": [
-    "made",
-    "produced",
-    "manufactured",
     "when was it made",
     "production date",
     "date of manufacture",
-    "date made",
     "year made",
     "dates from",
     "how old",
@@ -25,26 +21,6 @@
    "kind": "date",
    "node": "from_date",
    "end_node": "to_date"
-  },
-  {
-   "phrases": [
-    "made by",
-    "maker",
-    "manufacturer",
-    "produced by",
-    "who made it",
-    "manufactured by",
-    "workshop",
-    "craftsman",
-    "producer",
-    "crafted by",
-    "potter",
-    "produces",
-    "produce",
-    "who produces"
-   ],
-   "kind": "link",
-   "node": "producer"
   },
   {
    "phrases": [
@@ -65,33 +41,16 @@
   },
   {
    "phrases": [
-    "type",
     "object type",
-    "artefact type",
-    "artifact type",
     "kind of object",
-    "what kind",
-    "classification",
-    "category",
-    "what sort of object",
-    "what type",
-    "find type",
-    "object category"
+    "category"
    ],
    "kind": "property",
    "node": "artefact_type"
   },
   {
    "phrases": [
-    "material",
-    "made of",
-    "what is it made of",
-    "made from",
-    "composition",
-    "what material",
-    "material type",
-    "metal",
-    "constructed from"
+    "material type"
    ],
    "kind": "property",
    "node": "material"

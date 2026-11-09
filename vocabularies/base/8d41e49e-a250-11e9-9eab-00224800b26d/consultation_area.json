@@ -4,19 +4,6 @@
  "entries": [
   {
    "phrases": [
-    "application area",
-    "application site",
-    "red line boundary",
-    "site boundary",
-    "development site",
-    "application boundary",
-    "site area"
-   ],
-   "kind": "link",
-   "node": "related_application_area"
-  },
-  {
-   "phrases": [
     "location",
     "where is it",
     "site location",

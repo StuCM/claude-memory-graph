@@ -7,30 +7,10 @@
     "crew",
     "crew member",
     "crew members",
-    "who flew it",
-    "pilot",
-    "pilots",
-    "aircrew",
-    "who was on board",
-    "airmen",
-    "flown by",
-    "who was flying",
-    "navigator",
-    "gunner",
     "crewed by"
    ],
    "kind": "link",
    "node": "crew_member"
-  },
-  {
-   "phrases": [
-    "crew role",
-    "crew position",
-    "role on board",
-    "position in crew"
-   ],
-   "kind": "property",
-   "node": "crew_role"
   }
  ],
  "group": {

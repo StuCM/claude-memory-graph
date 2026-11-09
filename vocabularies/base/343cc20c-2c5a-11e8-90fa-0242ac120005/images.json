@@ -36,16 +36,6 @@
    ],
    "kind": "property",
    "node": "caption_note"
-  },
-  {
-   "phrases": [
-    "image copyright",
-    "image licence",
-    "photo copyright",
-    "image rights"
-   ],
-   "kind": "property",
-   "node": "copyright_type_n1"
   }
  ]
 }

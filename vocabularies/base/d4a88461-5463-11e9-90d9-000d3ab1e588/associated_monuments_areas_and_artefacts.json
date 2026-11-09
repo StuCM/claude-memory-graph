@@ -4,20 +4,6 @@
  "entries": [
   {
    "phrases": [
-    "sites",
-    "heritage assets",
-    "associated sites",
-    "buildings",
-    "associated monuments",
-    "wrecks",
-    "artefacts",
-    "what sites"
-   ],
-   "kind": "link",
-   "node": "monument_area_or_artefact"
-  },
-  {
-   "phrases": [
     "association type",
     "type of association"
    ],

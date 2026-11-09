@@ -1,18 +1,5 @@
 {
  "model": "Historic Landscape Characterization",
  "nodegroup": "coordinate_system",
- "entries": [
-  {
-   "phrases": [
-    "coordinate system",
-    "projection",
-    "crs",
-    "spatial reference system",
-    "osgb36",
-    "wgs84"
-   ],
-   "kind": "property",
-   "node": "coordinate_system_value"
-  }
- ]
+ "entries": []
 }

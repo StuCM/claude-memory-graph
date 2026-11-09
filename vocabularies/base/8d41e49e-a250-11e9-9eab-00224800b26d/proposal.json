@@ -16,18 +16,6 @@
    ],
    "kind": "property",
    "node": "proposal_text"
-  },
-  {
-   "phrases": [
-    "proposal documents",
-    "proposal files",
-    "plans",
-    "drawings",
-    "submitted plans",
-    "application documents"
-   ],
-   "kind": "link",
-   "node": "digital_file_s__n1"
   }
  ]
 }

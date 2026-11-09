@@ -4,35 +4,39 @@ Present: the vocabulary holds the item. Set aside: it doesn't, with a recorded r
 
 | layer | items | present % | explained % |
 | --- | --- | --- | --- |
-| ontology | 313 | 8.2 | 99.9 |
+| ontology | 338 | 9.8 | 99.8 |
 | base | 443 | 74.7 | 87.8 |
 | client | 991 | 97.8 | 100.0 |
-| overall | 1747 | 79.4 | 96.7 |
+| overall | 1772 | 80.6 | 96.6 |
 
 ## ontology
 
 | element | item | present | set aside | missing |
 | --- | --- | --- | --- | --- |
 | class | class word | 8 | 108 | 0 |
-| path | phrasing | 61 | 82 | 4 |
+| path | composed | 21 | 0 | 4 |
+| path | phrasing | 81 | 63 | 3 |
 | property | forward | 15 | 11 | 0 |
 | property | inverse | 3 | 21 | 0 |
 
-Missing (4, heaviest first; the first 4):
+Missing (7, heaviest first; the first 7):
 
 - path link E18 P129i (1): phrasing
 - path link E22 P129i (1): phrasing
+- path link P94i E65 P14 (1): composed 'created by'
+- path date P94i E65 P4 (1): composed 'created'
+- path date P94i E65 P4 (1): composed 'date of creation'
+- path date P94i E65 P4 (1): composed 'creation date'
 - path property E33 P72 (1): phrasing
-- path link E33 P129i (1): phrasing
 
 Set aside, by reason:
 
 - 78: no model's root is this class
-- 62: the LLM skipped it
-- 20: outside CIDOC-CRM and CRMsci
+- 45: the LLM skipped it
+- 19: outside CIDOC-CRM and CRMsci
 - 18: label splitting
 - 16: a link's phrasings read both ways in Ceist, so an inverse phrasing would read backwards on the same link; only an actor's "who …" form is safe
-- 10: the gate rejected
+- 9: the gate rejected
 - 7: gate
 - 5: the inverse's CRM label is not a plain verb
 - 3: a CRM label too long to be said in a question
@@ -110,3 +114,23 @@ Set aside, by reason:
 Set aside, by reason:
 
 - 22: not a count noun
+
+## Where the phrasings live
+
+Per graph: phrasings the bundle takes from the ontology layer (the CRM path's base meaning) and from the graph's own base and client layers (the delta its node names add).
+
+| graph | ontology | own | ontology % |
+| --- | --- | --- | --- |
+| Figure | 116 | 365 | 24.1 |
+| Group | 121 | 201 | 37.6 |
+| Monument | 330 | 834 | 28.4 |
+| Object | 234 | 470 | 33.2 |
+| Site | 37 | 0 | 100.0 |
+| Tale | 131 | 337 | 28.0 |
+
+Every base and client phrasing, by where `vocab crm-first` left it (crm-first.json):
+
+| layer | promotable | promotable longer path | ambiguous path | non-CRM | site-specific | clash | gate-rejected | not applied | already in ontology |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| base | 846 | 628 | 3326 | 2 | 799 | 791 | 962 | 4 | 147 |
+| client | 1 | 0 | 18 | 0 | 34 | 3 | 0 | 0 | 1 |

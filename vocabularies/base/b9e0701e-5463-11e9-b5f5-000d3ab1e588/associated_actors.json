@@ -15,9 +15,6 @@
   },
   {
    "phrases": [
-    "associated with",
-    "involved",
-    "people involved",
     "organisations involved",
     "who was involved",
     "who took part",
@@ -31,10 +28,7 @@
   },
   {
    "phrases": [
-    "role",
-    "role type",
-    "what role",
-    "in what capacity"
+    "role"
    ],
    "kind": "property",
    "node": "role_type"

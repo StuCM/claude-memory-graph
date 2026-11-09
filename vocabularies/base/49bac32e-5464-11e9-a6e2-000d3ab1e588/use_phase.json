@@ -5,16 +5,9 @@
   {
    "phrases": [
     "in use",
-    "in service",
     "used",
     "operated",
-    "service life",
-    "in commission",
-    "active service",
-    "when was it in service",
-    "period of use dates",
-    "working life",
-    "decommissioned"
+    "period of use dates"
    ],
    "kind": "date",
    "node": "use_phase_start_date",
@@ -23,9 +16,7 @@
   {
    "phrases": [
     "period of use",
-    "period in use",
-    "used in which period",
-    "period of service"
+    "period in use"
    ],
    "kind": "link",
    "node": "use_phase_period"

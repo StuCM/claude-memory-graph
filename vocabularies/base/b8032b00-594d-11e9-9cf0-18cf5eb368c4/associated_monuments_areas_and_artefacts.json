@@ -6,14 +6,8 @@
    "phrases": [
     "related monuments",
     "associated sites",
-    "linked monuments",
-    "related artefacts",
-    "associated areas",
     "associated monuments",
-    "related sites",
-    "related wrecks",
-    "related aircraft",
-    "linked records"
+    "related sites"
    ],
    "kind": "link",
    "node": "associated_monument_area_or_artefact"

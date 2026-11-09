@@ -4,21 +4,6 @@
  "entries": [
   {
    "phrases": [
-    "borough",
-    "district",
-    "parish",
-    "administrative area",
-    "local authority area",
-    "council area",
-    "which borough",
-    "what borough",
-    "which district"
-   ],
-   "kind": "property",
-   "node": "area_name"
-  },
-  {
-   "phrases": [
     "area type",
     "type of administrative area",
     "kind of area"

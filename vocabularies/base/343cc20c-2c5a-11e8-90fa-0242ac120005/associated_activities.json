@@ -5,14 +5,8 @@
   {
    "phrases": [
     "activities",
-    "excavation project",
     "fieldwork",
-    "recovered during",
-    "investigation",
-    "found during",
-    "which excavation",
-    "events",
-    "survey"
+    "events"
    ],
    "kind": "link",
    "node": "associated_activities"

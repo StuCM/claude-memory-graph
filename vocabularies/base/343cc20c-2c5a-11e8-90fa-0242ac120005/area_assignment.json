@@ -4,16 +4,6 @@
  "entries": [
   {
    "phrases": [
-    "area status date",
-    "status since",
-    "status assigned"
-   ],
-   "kind": "date",
-   "node": "area_status_start_date",
-   "end_node": "area_status_end_date"
-  },
-  {
-   "phrases": [
     "area status",
     "land status",
     "status of the area",

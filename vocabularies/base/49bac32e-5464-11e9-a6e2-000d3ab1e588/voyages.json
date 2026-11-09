@@ -4,76 +4,11 @@
  "entries": [
   {
    "phrases": [
-    "sank",
-    "sunk",
-    "wrecked",
-    "lost",
-    "went down",
-    "date of loss",
-    "when did it sink",
-    "when was it lost",
-    "when was it wrecked",
-    "shipwrecked",
-    "year of loss",
-    "date wrecked",
-    "date of sinking"
-   ],
-   "kind": "date",
-   "node": "date_of_loss_start",
-   "end_node": "date_of_loss_end"
-  },
-  {
-   "phrases": [
-    "sailed",
-    "departed",
-    "set sail",
-    "voyage date",
-    "when did it sail",
-    "voyage",
-    "left port",
-    "date of departure",
-    "put to sea"
+    "departed"
    ],
    "kind": "date",
    "node": "date_of_departure",
    "end_node": "date_of_arrival"
-  },
-  {
-   "phrases": [
-    "arrived",
-    "arrival date",
-    "date of arrival",
-    "reached port",
-    "docked",
-    "when did it arrive",
-    "came into port"
-   ],
-   "kind": "date",
-   "node": "date_of_arrival"
-  },
-  {
-   "phrases": [
-    "expected arrival",
-    "due to arrive",
-    "expected date of arrival",
-    "eta"
-   ],
-   "kind": "date",
-   "node": "expected_date_of_arrival"
-  },
-  {
-   "phrases": [
-    "cargo",
-    "carrying",
-    "what was it carrying",
-    "freight",
-    "load",
-    "goods carried",
-    "cargo type",
-    "laden with"
-   ],
-   "kind": "property",
-   "node": "cargo_type"
   },
   {
    "phrases": [
@@ -91,33 +26,6 @@
    ],
    "kind": "property",
    "node": "manner_of_loss"
-  },
-  {
-   "phrases": [
-    "departed from",
-    "sailed from",
-    "port of departure",
-    "origin port",
-    "leaving from",
-    "where did it sail from",
-    "from which port"
-   ],
-   "kind": "property",
-   "node": "place_of_departure_name"
-  },
-  {
-   "phrases": [
-    "bound for",
-    "destination",
-    "heading to",
-    "sailing to",
-    "en route to",
-    "where was it going",
-    "port of destination",
-    "going to"
-   ],
-   "kind": "property",
-   "node": "place_of_destination_name"
   },
   {
    "phrases": [

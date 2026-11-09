@@ -4,31 +4,6 @@
  "entries": [
   {
    "phrases": [
-    "scientifically dated",
-    "scientific date",
-    "radiocarbon date",
-    "scientific dating",
-    "absolute date",
-    "dated scientifically"
-   ],
-   "kind": "date",
-   "node": "scientific_date_start_date",
-   "end_node": "scientific_date_end_date"
-  },
-  {
-   "phrases": [
-    "date determined",
-    "when was the date determined",
-    "when was it analysed",
-    "analysis date",
-    "when was the sample dated"
-   ],
-   "kind": "date",
-   "node": "when_determined_start_date",
-   "end_node": "when_determined_end_date"
-  },
-  {
-   "phrases": [
     "dating method",
     "how was it dated",
     "scientific dating method",

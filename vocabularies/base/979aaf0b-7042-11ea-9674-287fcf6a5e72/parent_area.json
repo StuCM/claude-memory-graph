@@ -4,13 +4,8 @@
  "entries": [
   {
    "phrases": [
-    "parent area",
     "part of",
-    "within area",
-    "larger area",
-    "belongs to",
-    "parent site",
-    "wider area"
+    "belongs to"
    ],
    "kind": "link",
    "node": "parent_area"

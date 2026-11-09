@@ -1,18 +1,5 @@
 {
  "model": "Heritage Story",
  "nodegroup": "associated_activities",
- "entries": [
-  {
-   "phrases": [
-    "activities",
-    "associated activities",
-    "events",
-    "projects",
-    "related events",
-    "investigations"
-   ],
-   "kind": "link",
-   "node": "associated_activities"
-  }
- ]
+ "entries": []
 }

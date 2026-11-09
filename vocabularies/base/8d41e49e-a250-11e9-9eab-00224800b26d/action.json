@@ -4,21 +4,6 @@
  "entries": [
   {
    "phrases": [
-    "action",
-    "action type",
-    "required action",
-    "mitigation",
-    "what work is required",
-    "archaeological requirement",
-    "type of action",
-    "what archaeology is required",
-    "work required"
-   ],
-   "kind": "property",
-   "node": "action_type"
-  },
-  {
-   "phrases": [
     "action notes",
     "action details",
     "action text",
