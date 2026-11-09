@@ -99,6 +99,7 @@ After that, builds run only when the schema changes or the capture log repeats a
 ## 5b. Direction: an ontology base, with graphs as the delta (Stu, 2026-11-09)
 - **The ontology gives the base meaning.** A path's meaning is composed from the labels along it, across several hops, not one link. Anything built on that ontology starts with it.
 - **A graph adds only its delta,** through its node structure and names. The graph and client layers hold what the ontology can't say, each with a reason (task 053).
+- **One vocabulary per ontology** (`vocabularies/ontology/<name>/`), each built and gated on its own. An extension or profile (CRMsci, Linked Art) holds only what it adds, and names the parent it builds on. A site declares its ontology, and at build time Ceist stacks that site's layers into one runtime vocabulary: ontology (with its parent) → graph delta → site terms.
 - **Ontologies are pluggable.** CIDOC-CRM is the first. The same machinery can build a base vocabulary for any RDFS or OWL ontology (task 054, draft), so Ceist works for any domain whose data sits on a shared ontology, not only heritage.
 
 ## 6. Parked (deliberately not now)
