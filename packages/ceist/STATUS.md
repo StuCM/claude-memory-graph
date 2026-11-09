@@ -1,4 +1,4 @@
-# Ceist: where we are (2026-11-08)
+# Ceist: where we are (2026-11-09)
 
 One picture of the system, what is proven, what isn't, and the plan we work from. New work starts from here, not from the latest experiment.
 
@@ -8,12 +8,12 @@ One picture of the system, what is proven, what isn't, and the plan we work from
 
 | Stage | What it does | State |
 | --- | --- | --- |
-| Front end | decides it's a question; tokenises | **weak**: refuses search-box fragments ("stories that mention X") outright |
+| Front end | tokenises; a fragment is answered when it assembles, else labelled a statement | fixed by schema assembly (051): "medieval raths in County Down" answers |
 | Vocabulary | phrases → models, fields, links, values (three layers, below) | **thin**: the main gap |
-| Grounding and plan | places every word, or refuses; builds the plan | strong; has a known list of grammar gaps |
+| Grounding and plan | places every word, or refuses; schema assembly (the default since 051) builds every reading the schema allows and answers only when exactly one fits | strong; has a known list of grammar gaps |
 | Read-back | the plan is narrated, and the query must read back to the same words | strong |
 | Rós Madair | runs the query (Parquet/DuckDB; WASM in the browser) | strong; chains and backlinks work |
-| Fallback | partial match from what grounded (038) | works, but rarely fires (10 of 109 refusals) |
+| Fallback | partial match from what grounded (038), offered only when every refused reading gives the same one | works, but rarely fires (17 of 98 refusals on the generated set) |
 
 **The rule that holds throughout: never guess.** A word Ceist can't place means a refusal. In every test so far, **wrong answers stayed at or near 0.**
 
@@ -31,10 +31,11 @@ One picture of the system, what is proven, what isn't, and the plan we work from
 
 | Benchmark | What it is | Use | Latest |
 | --- | --- | --- | --- |
-| Demo bank (`bench/demo/questions.json`, 89 questions) | hand-written, near Ceist's phrasing | **regression only**, not coverage | 71 right, 0 wrong |
-| Generated demo set (`~/.cache/ceist-questions-demo`, 144 questions, 34 held out) | LLM-written from the schema, **deliberately awkward** | stress test | hold-out **2 of 34 right**, 0 wrong |
+| Demo bank (`bench/demo/questions.json`, 90 questions) | hand-written, near Ceist's phrasing | **regression only**, not coverage | 71 right, 7 right refusals, 0 wrong |
+| Generated demo set (`~/.cache/ceist-questions-demo`, 144 questions, 34 held out) | LLM-written from the schema, **deliberately awkward** | stress test | hold-out **4 of 34 right** (strict 2), 2 wrong readings (as strict) |
 | Fresh-graph bench (`bench/ontology/run.py`) | template questions built from the ontology layer's own phrases | does the ontology layer ground correctly | 0 wrong readings; flatters coverage |
-| HER plans (`bench/her_plans.py`) | 125 pinned plans | regression | 125/125 |
+| Reorder set (`bench/assembly/reorder.json`, 30) | right demo-bank questions, reordered or as fragments | does assembly read word order freely | 30 right, 0 wrong (strict 9) |
+| HER plans (`bench/her_plans.py`) | 125 pinned plans | regression | 125/125 (3 re-pinned to refusals in 051) |
 
 **Missing: a realistic visitor question set,** and **one command that runs every benchmark** and prints one table.
 
@@ -50,6 +51,7 @@ One picture of the system, what is proven, what isn't, and the plan we work from
 | Type-word synonyms (people → Figure, stories → Tale) | most of the 7 → 22 gain on train | **cheap, big**, and belongs in the vocabulary |
 | bge-small on the words the awkward set leaves unplaced (no LLM; `~/.cache/tmp-demo/bgecheck/`) | 74 words in 41 refused questions: right and confident 3, right but too close to call 13, wrong or no right candidate near 58; would fix 2 questions. Wrong picks score as high as right ones (0.84–0.91 vs 0.65–0.75) | **disproven** as a question-time fix; looser thresholds would bring wrongs. A weak build-time hint (top pick right about 1 time in 4) |
 | Loosening: drop the unplaced words, accept fragments (`~/.cache/tmp-demo/bgecheck/loosen.py`) | of 109 refusals: 10 right, 11 right but wider, **26 wrong**, 62 still refused; demo bank: "which tales are about love?" answers with every tale | **disproven** as answers (wrong outnumber right); possible as a labelled "closest I can do" suggestion, an extension of 038 |
+| Schema assembly as the default (049–051) | demo bank unchanged (78 right incl. refusals, 0 wrong); reorder 9 → 30 of 30; train 10 → 16 right; hold-out 2 → 4; fresh-graph catalina 729 → 746, independent 74 → 95, HER 595 → 589; 0 wrong throughout; median time ~120 ms, worst cut from 822 to 174 ms on the bank | **proven**: the design to port |
 | Cost estimates | about 5–7 times low for small calls: `claude -p` writes ~33k tokens of system prompt per call | estimator needs fixing |
 
 ## 5. The plan: three workstreams, in order
@@ -91,8 +93,11 @@ One picture of the system, what is proven, what isn't, and the plan we work from
 
 After that, builds run only when the schema changes or the capture log repeats a phrase, and they run automatically. Work on the ontology layer carries across every site.
 
-## 5a. Schema assembly (049): decisions
-- **Adopted as the design** to port, once 050 wins back same-type links. Reordered and fragment questions: 9 → 28 of 30 right, 0 wrong.
+## 5a. Schema assembly (049–051): decisions
+- **The default since 051**, and the only mode the TypeScript port carries. Strict wiring stays behind `assembly="strict"` / `CEIST_ASSEMBLY=strict` for comparison until the port. Reordered and fragment questions: 9 → 30 of 30 right, 0 wrong.
+- **It does everything strict did:** the partial match (only when every refused reading gives the same one), the `statement` label (a non-question that doesn't assemble), the memory graph's loose listing (free text only), and strict's refusal wording.
+- **An implicit end opposite a type needs a role or a value to name it.** "Which airmen flew in the Lancaster?" answers (the Lancaster names an Aircraft); "which monuments are in County Nowhere?" still refuses. A bare preposition orders its ends: "what is in Clock Tower" never reads as what holds it.
+- **Known cost:** "which groups have people associated with them?" now refuses (an implicit end opposite a type, no value). HER: "architects died before 1800" and "areas surveyed by Historic England" ask between 5 and 4 readings; "buildings in Southwark" refuses rather than answer about Heritage Stories.
 - **A value held by several fields means any of them** (Stu, 2026-11-09). "rath" is monument type *or* functional type, and the narration says so. This replaces strict mode's silent first-field pick.
 - **Word order decides direction only for links between two records of the same type** (a tale's parent tale, a figure's father). The schema can't tell those apart.
 
