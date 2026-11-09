@@ -11,13 +11,17 @@ is scored alone against the layers: it passes if it adds a right answer and make
 template question worse (a right one lost, a wrong reading or a wrong added). A client
 candidate, which no bench set reads, goes straight on. Then the passing ones together,
 on the bench and on the demo question bank: a question that turns worse rejects the
-candidates whose phrases it holds. Then the HER plans, which must not change. A missing
-checkout fails the gate unless its option is "skip". Prints the verdict as JSON on its
-last line, each candidate as "<kind> <path>" (or its "key"):
+candidates whose phrases it holds; if it holds none, the passing set is halved until the
+candidates that make it worse on their own are found. Then the HER plans, which must not
+change (they read bench/her/vocab, not the candidates, so a failure rejects them all). The
+bench sets run two processes at a time. A missing checkout fails the gate unless its option
+is "skip". Prints the verdict as JSON on its last line, each candidate as "<kind> <path>"
+(or its "key"):
 {"accepted": [key], "rejected": {key: why}, "checks": [line],
  "bench": {"before"|"after": {set: {mode: [n per score]}}}, "demo": {"before"|"after": tally}}.
 """
 
+import hashlib
 import json
 import os
 import re
@@ -25,6 +29,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -33,6 +38,11 @@ import run  # noqa: E402
 BAD = ("wrong reading", "wrong")
 DEMO = Path("/home/stuart/git/personal/starches-demo/ask")
 HER_PLANS = run.REPO / "packages" / "ceist" / "bench" / "her_plans.py"
+# Stu's machine-load limit
+PROCESSES = 2
+# grounding compiles a pattern per phrase per question; the bench's ~1,400 overflow re's 512 and
+# recompiling was two thirds of the gate's time
+re._MAXCACHE = 4096
 
 
 def key(c: dict) -> str:
@@ -106,9 +116,10 @@ def counts(scored: dict) -> dict:
 
 
 def one_set(name: str, path: str, base: list[dict], cands: list[dict], together: bool,
-            base_dir: Path = run.BASE) -> dict:
+            base_dir: Path = run.BASE, cache: Path | None = None) -> dict:
     """Alone: {key: [gained, worse]} per candidate. Together: {"*": [gained, worse],
-    "tally": {"before": counts, "after": counts}}."""
+    "tally": {"before": counts, "after": counts}}. `cache`: a directory keeping the "before"
+    scores between calls."""
     from ceist.arches import ArchesVocabulary
     graphs = run.graph_docs(path)
     resources = run.synthetic(graphs)
@@ -116,7 +127,13 @@ def one_set(name: str, path: str, base: list[dict], cands: list[dict], together:
     ids = {g["graphid"]: run.name_of(g) for g in graphs}
     only = {(ids[c["graphid"]], c["node"]) for c in cands if _layer(c) == "base" and c.get("node") in
             {n.get("alias") for g in graphs if g["graphid"] == c["graphid"] for n in g["nodes"]}}
-    before = scores(name, graphs, resources, vocab, base, base_dir=base_dir, only=only)
+    saved = cache and cache / hashlib.sha1(json.dumps([name, sorted(only)]).encode()).hexdigest()
+    if saved and saved.exists():
+        before = {(m, q): s for m, q, s in json.loads(saved.read_text())}
+    else:
+        before = scores(name, graphs, resources, vocab, base, base_dir=base_dir, only=only)
+        if saved:
+            saved.write_text(json.dumps([[m, q, s] for (m, q), s in before.items()]))
     if together:
         after = scores(name, graphs, resources, vocab, base, cands=cands, base_dir=base_dir, only=only)
         return {"*": judge(before, after), "tally": {"before": counts(before), "after": counts(after)}}
@@ -129,19 +146,26 @@ def one_set(name: str, path: str, base: list[dict], cands: list[dict], together:
     return out
 
 
-def bench(sets: dict, base: list[dict], cands: list[dict], together: bool = False, base_dir: Path = run.BASE) -> dict:
+def bench(sets: dict, base: list[dict], cands: list[dict], together: bool = False, base_dir: Path = run.BASE,
+          cache: Path | None = None) -> dict:
     """one_set over every set, each in its own process (Alizarin registers graphs by id);
     together, also {"tally": {name: tally}}."""
     out = {"tally": {}} if together else {}
     with tempfile.TemporaryDirectory() as d:
         Path(d, "in.json").write_text(json.dumps({"base": base, "cands": cands, "together": together,
-                                                  "base_dir": str(base_dir)}))
-        for name, path in sets.items():
+                                                  "base_dir": str(base_dir), "cache": cache and str(cache)}))
+
+        def one(name: str, path: str) -> dict:
             res = subprocess.run([sys.executable, __file__, "--one", f"{name}={path}", str(Path(d, "in.json"))],
                                  capture_output=True, text=True)
             if res.returncode:
                 raise RuntimeError(f"{name}: {res.stderr[-2000:]}")
-            got = json.loads(res.stdout.splitlines()[-1])
+            return json.loads(res.stdout.splitlines()[-1])
+
+        with ThreadPoolExecutor(PROCESSES) as pool:
+            done = {name: pool.submit(one, name, path) for name, path in sets.items()}
+        for name, job in done.items():
+            got = job.result()
             if together:
                 out["tally"][name] = got.pop("tally")
             for k, (gained, worse) in got.items():
@@ -154,6 +178,21 @@ def holding(cands: list[dict], questions: list[str]) -> list[dict]:
     """The candidates with a phrase in one of these questions."""
     text = " ".join(f" {q.lower()} " for q in questions)
     return [c for c in cands if any(f" {p} " in text for p in c["phrases"])]
+
+
+def culprits(cands: list[dict], worse, lines: list[str]) -> list[tuple[dict, list[str]]]:
+    """(candidate, the questions it makes worse) for each of `cands` that makes a question
+    worse on its own, by halving: `worse(subset)` lists the questions a subset makes worse,
+    `lines` those all of `cands` do. If neither half is worse alone, it takes them together,
+    and every one of `cands` is returned."""
+    if len(cands) == 1:
+        return [(cands[0], lines)]
+    out = []
+    for half in (cands[:len(cands) // 2], cands[len(cands) // 2:]):
+        got = worse(half)
+        if got:
+            out += culprits(half, worse, got)
+    return out or [(c, lines) for c in cands]
 
 
 def demo_bank(demo: Path, base_dir: Path, client_dir: Path | None = None) -> str:
@@ -212,9 +251,15 @@ def gate(cands: list[dict], ontology_dir: Path, sets: dict, demo: Path | None, h
             raise RuntimeError(f"no {what} checkout at {d}: give its path, or skip")
     if not sets:
         raise RuntimeError("no bench graph sets")
+    with tempfile.TemporaryDirectory() as cache:
+        return _gate(cands, ontology_dir, sets, demo, her, base_dir, client_dir, Path(cache))
+
+
+def _gate(cands: list[dict], ontology_dir: Path, sets: dict, demo: Path | None, her: Path | None,
+          base_dir: Path, client_dir: Path | None, cache: Path) -> dict:
     base = run.load_ontology(ontology_dir)["entries"]
-    rejected, checks = {}, []
-    for k, (gained, worse) in bench(sets, base, cands, base_dir=base_dir).items():
+    rejected, checks, runs = {}, [], {}
+    for k, (gained, worse) in bench(sets, base, cands, base_dir=base_dir, cache=cache).items():
         if k in {key(c) for c in cands if _layer(c) == "client"}:
             continue
         if worse:
@@ -223,32 +268,38 @@ def gate(cands: list[dict], ontology_dir: Path, sets: dict, demo: Path | None, h
             rejected[k] = "bench: adds no right answer"
     passing = [c for c in cands if key(c) not in rejected]
 
-    def drop(questions: list[str], why: str) -> bool:
-        """Reject the passing candidates these questions hold; all of them if none."""
-        hit = holding(passing, questions) or list(passing)
-        for c in hit:
-            rejected[key(c)] = f"{why}: {questions[0]}"
+    def together(cs: list[dict]) -> dict:
+        ks = tuple(sorted(key(c) for c in cs))
+        if ks not in runs:
+            runs[ks] = bench(sets, base, cs, together=True, base_dir=base_dir, cache=cache)
+        return runs[ks]
+
+    def drop(questions: list[str], why: str, worse) -> bool:
+        """Reject the passing candidates these questions hold; if none, those `worse` finds by halving."""
+        hit = [(c, questions) for c in holding(passing, questions)] or culprits(list(passing), worse, questions)
+        for c, lines in hit:
+            rejected[key(c)] = f"{why}: {lines[0]}"
             passing.remove(c)
         return bool(passing)
 
     while passing:
-        _, worse = bench(sets, base, passing, together=True, base_dir=base_dir)["*"]
-        if not worse or not drop(worse, "bench, together"):
+        _, worse = together(passing)["*"]
+        if not worse or not drop(worse, "bench, together", lambda cs: together(cs)["*"][1]):
             break
     checks.append(f"bench: {len(passing)} pass alone and together")
     demo_tally = {}
     if passing and demo:
-        with tempfile.TemporaryDirectory() as d:
-            _, b, c = layers(Path(d), base, [], base_dir, client_dir)
-            was = demo_bank(demo, b, c)
+        def bank(cs: list[dict]) -> str:
+            with tempfile.TemporaryDirectory() as d:
+                _, b, c = layers(Path(d), base, cs, base_dir, client_dir)
+                return demo_bank(demo, b, c)
+        was = bank([])
         demo_tally["before"] = demo_tally["after"] = tally_line(was)
         while passing:
-            with tempfile.TemporaryDirectory() as d:
-                _, b, c = layers(Path(d), base, passing, base_dir, client_dir)
-                now = demo_bank(demo, b, c)
+            now = bank(passing)
             lines = worse_lines(was, now)
             demo_tally["after"] = tally_line(now)
-            if not lines or not drop(lines, "demo bank worse"):
+            if not lines or not drop(lines, "demo bank worse", lambda cs: worse_lines(was, bank(cs))):
                 break
         checks.append(f"demo bank: nothing worse with the {len(passing)} passing")
     else:
@@ -263,7 +314,7 @@ def gate(cands: list[dict], ontology_dir: Path, sets: dict, demo: Path | None, h
         checks.append(f"HER plans: {said.splitlines()[-1] if said else ''}")
     else:
         checks.append("HER plans: not run (skipped, or nothing passed)")
-    tally = bench(sets, base, passing, together=True, base_dir=base_dir)["tally"]
+    tally = together(passing)["tally"]
     return {"accepted": [key(c) for c in passing], "rejected": rejected, "checks": checks,
             "bench": {"before": {n: t["before"] for n, t in tally.items()},
                       "after": {n: t["after"] for n, t in tally.items()}},
@@ -274,7 +325,8 @@ def main(argv: list[str]) -> int:
     if argv[:1] == ["--one"]:
         name, path = argv[1].split("=", 1)
         x = json.loads(Path(argv[2]).read_text())
-        print(json.dumps(one_set(name, path, x["base"], x["cands"], x["together"], Path(x["base_dir"]))))
+        cache = x["cache"] and Path(x["cache"])
+        print(json.dumps(one_set(name, path, x["base"], x["cands"], x["together"], Path(x["base_dir"]), cache)))
         return 0
     opts = {"--ontology": str(run.ONTOLOGY), "--demo": str(DEMO), "--her": str(Path(run.SETS["her"]).parents[1]),
             "--base": str(run.BASE), "--client": ""}
