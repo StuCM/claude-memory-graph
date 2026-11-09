@@ -4,12 +4,13 @@ word order, and answered only when exactly one reading fits. After PRECISE (PRIO
 from dataclasses import replace
 from itertools import product
 
-from .ground import Grounding, Node, pieces
+from .ground import Grounding, Node, is_question, pieces
 from .ground.model import _edge
+from .ground.nodes import _wrong_end
 from .ground.scan import Scan
 from .ground.wire import _check_anchors, _or, _scope_negations, _subject
 from .narrate import narrate
-from .plan import Interpretation, _finish, _unplaced
+from .plan import Interpretation, Partial, _finish, _partial, _unplaced
 from .text import terms_pos
 from .vocabulary import Relation, Vocabulary
 
@@ -30,7 +31,23 @@ def interpret(vocab: Vocabulary, text: str, today=None, matcher=None) -> Interpr
         s.g.suggestions.append(("the question", said))
         return Interpretation(s.g, refused=f"{len(said)} readings fit; did you mean "
                               + " or ".join(f"'{x}'" for x in said) + "?")
-    return outs[0] if outs else Interpretation(s.g, refused=_none(s))
+    if not outs:
+        outs = [Interpretation(s.g, refused=_none(s))]
+        _subject(s)
+    out = outs[0]
+    # a fragment that assembles is answered; one that doesn't is a statement, as without assembly
+    out.statement = not is_question(text)
+    if not out.statement:
+        out.partial = _agreed(vocab, outs)
+    return out
+
+
+def _agreed(vocab: Vocabulary, outs: list[Interpretation]) -> Partial | None:
+    """The partial match every refused reading gives, or None when they differ: one of
+    them would be a guess."""
+    found = [_partial(vocab, o.grounding) for o in outs]
+    keys = {(narrate(p.plan, canonical=True), tuple(p.unused)) if p else None for p in found}
+    return found[0] if len(keys) == 1 else None
 
 
 def assemble(vocab: Vocabulary, text: str, today=None, matcher=None, filler=FILLER):
@@ -62,12 +79,19 @@ def _key(o: Interpretation) -> str:
 
 
 def _none(s: Scan) -> str:
+    """Why no reading fits, as strict wiring says it. Sets `refuse`, as strict does, so a
+    partial match drops the links and the memory graph logs the ask as refused."""
     g = s.g
-    if g.uncovered:
+    if g.uncovered and not g.refuse:
         return _unplaced(g)
-    types = " and ".join(sorted({n.type for n in g.nodes})) or "nothing named"
-    forms = ", ".join(f"'{e.form}'" for e in g.edges)
-    return f"no reading fits the schema: {forms or 'no link'} can't join {types}"
+    if not g.refuse:
+        forms = ", ".join(f"'{e.form}'" for e in g.edges)
+        g.refuse = f"no reading fits the schema: {forms or 'no link'} can't join {_types(g)}"
+    return f"out of grammar ({g.refuse})"
+
+
+def _types(g: Grounding) -> str:
+    return " and ".join(sorted({n.type for n in g.nodes})) or "nothing named"
 
 
 def readings(s: Scan) -> list[Grounding] | None:
@@ -116,6 +140,7 @@ def readings(s: Scan) -> list[Grounding] | None:
                                          product(*(_date_options(d, wired) for d in g.dates))):
                 r = replace(wired, values=list(values), dates=list(dates),
                             groups=[replace(x) for x in g.groups], notes=list(wired.notes),
+                            uncovered=list(g.uncovered),
                             near=replace(g.near) if g.near else None,
                             name=replace(g.name) if g.name else None)
                 _scope_negations(replace(s, g=r))
@@ -135,26 +160,70 @@ def _link_options(s: Scan, e, every: list[Relation]) -> list:
     both = [(r, a, b) for r in rels for a in nodes for b in nodes
             if a is not b and r.joins(a.type, b.type)
             and (a.type != b.type or _in_order(s, e, a, b) == (a, b))]
+    g = s.g
     if both:
         return both
     if len(nodes) >= 2:
         # "which monuments are in Belfast", Belfast a Monument: not set aside, it would
         # answer with the record itself
-        same = any(a.type == v.type for a in s.g.anchors for v in s.g.vars())
-        return [] if same or terms_pos(e.form) else [None]
+        same = next((a for a in g.anchors for v in g.vars() if a.type == v.type), None)
+        if same is not None:
+            g.refuse = _wrong_end(same, e.form, {t for r in rels for t in r.targets()})
+        elif terms_pos(e.form) and len(names) < 2:
+            g.refuse = f"'{e.form}' ({e.relation}) can't join {_types(g)}"
+        elif terms_pos(e.form) and not s.free_text:
+            g.refuse = f"'{e.form}' can't join {_types(g)}"
+        else:
+            return [None]
+        return []
+    valued = _valued(g)
+    # a bare preposition orders its ends as a self-link does: "what is in Clock Tower" asks
+    # what Clock Tower holds, never what holds it
+    ordered = not terms_pos(e.form)
     out = []
     for r in rels:
-        # an implicit end opposite a variable says something only when the link has a
-        # role: "architects", "surveyed by"; "in County Nowhere" must not become "in any Site"
-        ends = nodes if r.qualifier else s.g.anchors
-        for x in ends:
+        for x in nodes:
+            # an implicit end opposite a variable says something only when the link has a
+            # role ("architects", "surveyed by") or a value names it ("flew in the
+            # Lancaster"); "in County Nowhere" must not become "in any Site"
+            only = None if r.qualifier or x.kind == "anchor" else valued
             leads = x.pos <= e.pos and not _after_as(s, e)
             out += [(r, x, t) for t in sorted(r.targets(x.type))
-                    if r.joins(x.type, t) and (t != x.type or leads)]
+                    if r.joins(x.type, t) and (only is None or t in only)
+                    and (leads or t != x.type and not ordered)]
             out += [(r, t, x) for t in sorted(r.domain)
-                    if r.joins(t, x.type) and (t != x.type or not leads)]
+                    if r.joins(t, x.type) and (only is None or t in only)
+                    and (not leads or t != x.type and not ordered)]
         if not nodes and r.qualifier:
             out += [(r, a, b) for a in sorted(r.domain) for b in sorted(r.targets(a))]
+    if out:
+        return out
+    x = g.vars()[0] if g.vars() and not g.anchors else None
+    if s.free_text and x is not None and all(
+            x.type in (r.range if x.pos <= e.pos else r.domain) for r in rels):
+        # "which projects are under active development?": by word order the link's other
+        # end is the variable itself, so it is set aside and the type listed, saying so
+        g.loose = ", ".join(f for f in (g.loose, f"'{e.form}'") if f)
+        return [None]
+    if g.uncovered:
+        return []
+    if g.anchors:
+        g.refuse = _wrong_end(g.anchors[0], e.form, {t for r in rels for t in r.targets()})
+    else:
+        g.refuse = f"cannot resolve both ends of relation {e.relation}"
+    return []
+
+
+def _valued(g: Grounding) -> set[str]:
+    """The types a value names that no type named in the question can hold: "the
+    Lancaster", an Aircraft's function, when only Persons are named."""
+    named = {n.type for n in g.nodes}
+    out = set()
+    for vm in g.values:
+        if all(c.owners for c in vm.candidates):
+            owners = set().union(*(c.owners for c in vm.candidates))
+            if not owners & named:
+                out |= owners
     return out
 
 

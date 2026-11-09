@@ -1,6 +1,6 @@
 """Schema assembly (ceist.assemble): pieces put together by the schema, not word order."""
 
-from test_ceist import Toy
+from test_ceist import Fleet, Toy
 
 from ceist import Relation, Value, interpret, narrate
 
@@ -36,6 +36,8 @@ def test_a_reordered_question_reads_as_the_plain_one():
 def test_a_fragment_is_a_question_once_it_names_a_subject():
     assert strict(Toy(), "listed buildings on site Leeds Dock").statement
     assert narrate(schema(Toy(), "listed buildings on site Leeds Dock").plan) == LISTED_ON_DOCK
+    assert narrate(interpret(Toy(), "listed buildings on site Leeds Dock").plan) == LISTED_ON_DOCK
+    assert schema(Toy(), "refactor the loader").statement
 
 
 def test_a_filler_word_is_ignored():
@@ -70,6 +72,36 @@ def test_two_readings_ask_which():
         "Find Buildings that owner Person 'Ada Lovelace'."]
 
 
+def test_readings_that_refuse_differently_offer_no_partial_match():
+    m = schema(Toy(), "which wonky buildings are designed by Ada Lovelace?")
+    assert narrate(m.partial) == ("Partial match: Find Buildings that designed by Person "
+                                  "'Ada Lovelace'. Couldn't use 'wonky'.")
+    m = schema(Owned(), "which wonky buildings are designed by Ada Lovelace?")
+    assert m.refused.startswith("couldn't place 'wonky'") and m.partial is None
+
+
+def test_an_implicit_end_opposite_a_type_needs_a_value_to_name_it():
+    assert narrate(schema(Fleet(), "Which airmen flew in the Lancaster?").plan) == (
+        "Find Persons that flew any Aircraft whose aircraft function is Lancaster.")
+    m = schema(Fleet(), "Which airmen flew?")
+    assert m.refused == "out of grammar (cannot resolve both ends of relation flew)"
+
+
+class Within(Toy):
+    """'in' joins a person or a building to a site; the person's reading is listed first."""
+
+    def relations(self):
+        return [Relation("works_at", ("in",), frozenset({"Person"}), frozenset({"Site"})),
+                Relation("site", ("in",), frozenset({"Building"}), frozenset({"Site"}))]
+
+
+def test_a_reading_that_cannot_place_a_word_leaves_the_others_alone():
+    m = schema(Within(), "what listed is in Leeds Dock?")
+    assert narrate(m.plan) == ("Find Buildings that in Site 'Leeds Dock' and whose heritage "
+                               "status is Listed.")
+    assert m.grounding.uncovered == []
+
+
 class Designated(Toy):
     """Toy, where 'listed' is also a value of a second field on buildings."""
 
@@ -89,8 +121,8 @@ def test_no_reading_refuses():
     # 'designed by' joins a building to its architect, never a site
     m = schema(Toy(), "which sites are designed by Ada Lovelace?")
     assert m.plan is None
-    assert m.refused == ("no reading fits the schema: 'designed by' can't join "
-                         "Person and Site")
+    assert m.refused == "out of grammar ('designed by' (architect) can't join Person and Site)"
+    assert m.refused == strict(Toy(), "which sites are designed by Ada Lovelace?").refused
 
 
 def test_an_unknown_content_word_still_refuses():
