@@ -4,20 +4,7 @@
  "entries": [
   {
    "phrases": [
-    "founded",
-    "established",
-    "formed",
-    "set up",
-    "when was it founded",
-    "incorporated",
-    "founding date",
-    "date founded",
-    "year established",
-    "started",
-    "created",
-    "in existence",
-    "active dates",
-    "operating dates"
+    "created"
    ],
    "kind": "date",
    "node": "start_date",
@@ -25,29 +12,9 @@
   },
   {
    "phrases": [
-    "dissolved",
-    "closed",
-    "wound up",
-    "ceased",
-    "disbanded",
-    "shut down",
-    "when did it close",
-    "defunct since",
-    "ceased trading"
-   ],
-   "kind": "date",
-   "node": "end_date"
-  },
-  {
-   "phrases": [
     "type",
-    "kind of organisation",
     "organisation type",
-    "organization type",
-    "what sort of organisation",
-    "sector",
-    "what type of organisation",
-    "kind of body"
+    "organization type"
    ],
    "kind": "property",
    "node": "organization_type"

@@ -7,21 +7,11 @@
     "buildings",
     "sites",
     "associated sites",
-    "associated buildings",
     "associated monuments",
-    "works",
-    "what did he build",
-    "what did she build",
-    "what did he design",
-    "what did she design",
-    "buildings designed",
-    "places associated",
     "artefacts",
     "related sites",
     "heritage assets",
-    "where did he work",
-    "projects",
-    "known for building"
+    "projects"
    ],
    "kind": "link",
    "node": "monument_area_or_artefact"

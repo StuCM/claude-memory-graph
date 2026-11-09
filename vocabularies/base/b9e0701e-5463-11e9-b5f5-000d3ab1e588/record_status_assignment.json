@@ -4,11 +4,7 @@
  "entries": [
   {
    "phrases": [
-    "record status",
-    "status",
-    "published status",
-    "backlog",
-    "skeleton record"
+    "record status"
    ],
    "kind": "property",
    "node": "record_status"

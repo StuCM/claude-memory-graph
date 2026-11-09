@@ -5,14 +5,8 @@
   {
    "phrases": [
     "part of",
-    "parent period",
-    "sub-period of",
     "within",
-    "broader period",
-    "belongs to",
-    "subdivision of",
-    "larger period",
-    "main period"
+    "belongs to"
    ],
    "kind": "link",
    "node": "parent_period"

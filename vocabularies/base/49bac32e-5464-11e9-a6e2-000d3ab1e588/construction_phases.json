@@ -11,59 +11,12 @@
     "year built",
     "build date",
     "construction date",
-    "launched",
-    "when was it launched",
-    "completed",
-    "laid down",
-    "shipbuilding date",
     "when was it made",
     "construction phase"
    ],
    "kind": "date",
    "node": "construction_phase_start_date",
    "end_node": "construction_phase_end_date"
-  },
-  {
-   "phrases": [
-    "phase type",
-    "construction phase type",
-    "type of phase"
-   ],
-   "kind": "property",
-   "node": "construction_phase_type"
-  },
-  {
-   "phrases": [
-    "built by",
-    "builder",
-    "shipbuilder",
-    "shipyard",
-    "who built it",
-    "constructed by",
-    "shipwright",
-    "yard",
-    "building yard",
-    "builds",
-    "build",
-    "who builds"
-   ],
-   "kind": "link",
-   "node": "builder"
-  },
-  {
-   "phrases": [
-    "period",
-    "era",
-    "age",
-    "what period",
-    "cultural period",
-    "historical period",
-    "built in which period",
-    "archaeological period",
-    "from what period"
-   ],
-   "kind": "link",
-   "node": "cultural_period"
   },
   {
    "phrases": [
@@ -81,19 +34,6 @@
    ],
    "kind": "property",
    "node": "maritime_vessel_type"
-  },
-  {
-   "phrases": [
-    "rigging",
-    "rig",
-    "rigged",
-    "sail plan",
-    "type of rigging",
-    "rigged as",
-    "how was it rigged"
-   ],
-   "kind": "property",
-   "node": "type_of_rigging"
   },
   {
    "phrases": [
@@ -194,15 +134,7 @@
   },
   {
    "phrases": [
-    "evidence",
-    "evidence type",
-    "what survives",
-    "surviving remains",
-    "remains",
     "condition",
-    "state of remains",
-    "survival",
-    "how much survives",
     "state of preservation"
    ],
    "kind": "property",

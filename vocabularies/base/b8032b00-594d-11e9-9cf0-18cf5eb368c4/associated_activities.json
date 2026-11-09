@@ -11,8 +11,7 @@
     "excavations",
     "surveys",
     "associated activities",
-    "archaeological work",
-    "recovery operation"
+    "archaeological work"
    ],
    "kind": "link",
    "node": "associated_activities"

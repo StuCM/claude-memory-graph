@@ -15,16 +15,6 @@
    ],
    "kind": "property",
    "node": "dimension_value"
-  },
-  {
-   "phrases": [
-    "unit",
-    "measurement unit",
-    "units",
-    "measured in"
-   ],
-   "kind": "property",
-   "node": "dimension_measurement_unit"
   }
  ],
  "group": {

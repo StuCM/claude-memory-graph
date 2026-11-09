@@ -69,30 +69,6 @@
   },
   {
    "phrases": [
-    "at risk",
-    "risk",
-    "risk status",
-    "heritage at risk",
-    "is it at risk",
-    "under threat",
-    "endangered"
-   ],
-   "kind": "property",
-   "node": "risk_status"
-  },
-  {
-   "phrases": [
-    "local list criteria",
-    "local listing criteria",
-    "reasons for local listing",
-    "criteria",
-    "why locally listed"
-   ],
-   "kind": "property",
-   "node": "local_heritage_list_criteria_type"
-  },
-  {
-   "phrases": [
     "list entry link",
     "designation link",
     "designation url",
@@ -100,16 +76,6 @@
    ],
    "kind": "property",
    "node": "reference_url"
-  },
-  {
-   "phrases": [
-    "designation document",
-    "listing document",
-    "protection document",
-    "designation file"
-   ],
-   "kind": "link",
-   "node": "digital_file_s_"
   }
  ]
 }

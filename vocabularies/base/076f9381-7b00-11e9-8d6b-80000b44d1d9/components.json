@@ -4,17 +4,6 @@
  "entries": [
   {
    "phrases": [
-    "component material",
-    "material of components",
-    "material of the parts",
-    "fittings material",
-    "element materials"
-   ],
-   "kind": "property",
-   "node": "component_material"
-  },
-  {
-   "phrases": [
     "components",
     "component",
     "parts",
@@ -28,24 +17,6 @@
    ],
    "kind": "property",
    "node": "component_type"
-  },
-  {
-   "phrases": [
-    "component construction technique",
-    "how were the parts made",
-    "component technique"
-   ],
-   "kind": "property",
-   "node": "construction_technique_n1"
-  },
-  {
-   "phrases": [
-    "component evidence",
-    "evidence for components",
-    "component evidence type"
-   ],
-   "kind": "property",
-   "node": "component_evidence_type"
   }
  ]
 }

@@ -1,15 +1,5 @@
 {
  "model": "Consultation",
  "nodegroup": "coordinate_system",
- "entries": [
-  {
-   "phrases": [
-    "coordinate system",
-    "projection",
-    "crs"
-   ],
-   "kind": "property",
-   "node": "coordinate_system_value"
-  }
- ]
+ "entries": []
 }

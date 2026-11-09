@@ -1,20 +1,5 @@
 {
  "model": "Consultation",
  "nodegroup": "associated_consultations",
- "entries": [
-  {
-   "phrases": [
-    "related consultations",
-    "previous consultations",
-    "linked cases",
-    "other applications",
-    "related cases",
-    "associated consultations",
-    "earlier applications",
-    "previous applications"
-   ],
-   "kind": "link",
-   "node": "associated_consultations"
-  }
- ]
+ "entries": []
 }

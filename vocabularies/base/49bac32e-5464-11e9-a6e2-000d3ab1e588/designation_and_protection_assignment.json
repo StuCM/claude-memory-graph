@@ -66,27 +66,6 @@
   },
   {
    "phrases": [
-    "at risk",
-    "heritage at risk",
-    "risk status",
-    "in danger",
-    "threatened",
-    "on the at risk register"
-   ],
-   "kind": "property",
-   "node": "risk_status"
-  },
-  {
-   "phrases": [
-    "local list criteria",
-    "why locally listed",
-    "local heritage criteria"
-   ],
-   "kind": "property",
-   "node": "local_heritage_list_criteria_type"
-  },
-  {
-   "phrases": [
     "list entry link",
     "designation link",
     "designation url"

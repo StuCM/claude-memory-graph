@@ -1,22 +1,7 @@
 {
  "model": "Heritage Story",
  "nodegroup": "audience_type",
- "entries": [
-  {
-   "phrases": [
-    "audience",
-    "intended audience",
-    "who is it for",
-    "target audience",
-    "suitable for",
-    "aimed at",
-    "readership",
-    "audience type"
-   ],
-   "kind": "property",
-   "node": "audience_type"
-  }
- ],
+ "entries": [],
  "group": {
   "phrases": [],
   "nodes": {

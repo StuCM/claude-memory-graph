@@ -29,7 +29,6 @@
   },
   {
    "phrases": [
-    "copyright holder",
     "copyright owner",
     "image copyright owned by",
     "photo credit",
@@ -42,21 +41,6 @@
    ],
    "kind": "link",
    "node": "copyright_holder"
-  },
-  {
-   "phrases": [
-    "copyright",
-    "copyright type",
-    "licence",
-    "license",
-    "image licence",
-    "rights",
-    "reuse rights",
-    "creative commons",
-    "crown copyright"
-   ],
-   "kind": "property",
-   "node": "copyright_type"
   },
   {
    "phrases": [

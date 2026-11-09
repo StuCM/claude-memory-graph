@@ -323,3 +323,23 @@ def test_where_is_x_gives_its_links_to_a_place_or_refuses(data, tmp_path):
     m = interpret(v, "where is Ada Lovelace?")
     assert m.detail is None and m.direct is None
     assert m.refused == "'where': a Maker has no link to a place to answer it from"
+
+
+def test_a_plain_field_takes_only_a_field_path_and_an_end_date_only_its_own():
+    from ceist.crm import ontology_entries
+    g = _graph(("thing", "E22", None, None, "semantic"),
+               ("making", "E12", "P108i", "thing", "semantic"),
+               ("making_type", "E55", "P2", "making", "concept"),
+               ("making_note", "E55", "P2", "making", "string"),
+               ("span", "E52", "P4", "making", "semantic"),
+               ("began", "E61", "P82a", "span", "date"),
+               ("ended", "E61", "P82b", "span", "date"))
+    onto = {"entries": [{"path": "P108i E12 P2", "kind": "property", "phrases": ["production type"]},
+                        {"path": "P108i E12 P2", "kind": "field", "phrases": ["production note"]},
+                        {"path": "P108i E12 P4", "kind": "date", "phrases": ["made"]},
+                        {"path": "E12 P4 E52 P82b", "kind": "date", "phrases": ["finished"]}]}
+    assert ontology_entries(g, onto) == [
+        {"kind": "property", "node": "making_type", "phrases": ["production type"]},
+        {"kind": "property", "node": "making_note", "phrases": ["production note"]},
+        {"kind": "date", "node": "began", "end_node": "ended", "phrases": ["made"]},
+        {"kind": "date", "node": "ended", "phrases": ["finished"]}]

@@ -4,13 +4,10 @@
  "entries": [
   {
    "phrases": [
-    "born",
     "birth",
-    "date of birth",
     "when was he born",
     "when was she born",
     "when were they born",
-    "birth date",
     "birthday",
     "year of birth",
     "dob",
@@ -37,36 +34,6 @@
    ],
    "kind": "property",
    "node": "birth_place"
-  },
-  {
-   "phrases": [
-    "father",
-    "dad",
-    "his father",
-    "her father",
-    "father's name",
-    "paternal",
-    "who was his father",
-    "who was her father",
-    "fathered by"
-   ],
-   "kind": "link",
-   "node": "father"
-  },
-  {
-   "phrases": [
-    "mother",
-    "mum",
-    "mom",
-    "his mother",
-    "her mother",
-    "mother's name",
-    "maternal",
-    "who was his mother",
-    "who was her mother"
-   ],
-   "kind": "link",
-   "node": "mother"
   }
  ]
 }

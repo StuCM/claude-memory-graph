@@ -4,16 +4,6 @@
  "entries": [
   {
    "phrases": [
-    "land use assessed",
-    "land use assessment date",
-    "date of land use assessment"
-   ],
-   "kind": "date",
-   "node": "land_use_assessment_start_date",
-   "end_node": "land_use_assessment_end_date"
-  },
-  {
-   "phrases": [
     "geology",
     "underlying geology",
     "bedrock",

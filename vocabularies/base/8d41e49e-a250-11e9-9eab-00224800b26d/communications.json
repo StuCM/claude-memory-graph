@@ -68,29 +68,6 @@
    ],
    "kind": "property",
    "node": "follow_on_actions_n1"
-  },
-  {
-   "phrases": [
-    "communication file",
-    "email attachment",
-    "communication attachment",
-    "correspondence file"
-   ],
-   "kind": "link",
-   "node": "digital_file_s_"
-  },
-  {
-   "phrases": [
-    "participants",
-    "who was contacted",
-    "communication participants",
-    "spoke to",
-    "who was spoken to",
-    "who was in the conversation",
-    "contacted person"
-   ],
-   "kind": "link",
-   "node": "attendees_n1"
   }
  ]
 }

@@ -39,12 +39,7 @@
   },
   {
    "phrases": [
-    "copyright",
-    "licence",
-    "license",
-    "rights",
-    "copyright status",
-    "reuse rights"
+    "copyright status"
    ],
    "kind": "property",
    "node": "copyright_type"

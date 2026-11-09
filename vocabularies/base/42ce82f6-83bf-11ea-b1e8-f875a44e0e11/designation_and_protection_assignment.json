@@ -43,33 +43,12 @@
   },
   {
    "phrases": [
-    "at risk",
-    "risk",
-    "risk status",
-    "heritage at risk",
-    "is it at risk",
-    "under threat"
-   ],
-   "kind": "property",
-   "node": "risk_status"
-  },
-  {
-   "phrases": [
     "designation link",
     "list entry link",
     "designation url"
    ],
    "kind": "property",
    "node": "reference_url"
-  },
-  {
-   "phrases": [
-    "designation document",
-    "designation file",
-    "protection document"
-   ],
-   "kind": "link",
-   "node": "digital_file_s__n1"
   }
  ]
 }

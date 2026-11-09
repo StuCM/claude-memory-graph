@@ -4,15 +4,11 @@
  "entries": [
   {
    "phrases": [
-    "sources",
     "bibliography",
-    "references",
     "published in",
     "literature",
-    "cited in",
     "publications",
-    "further reading",
-    "reports on"
+    "further reading"
    ],
    "kind": "link",
    "node": "bibliographic_source_citation"

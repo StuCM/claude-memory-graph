@@ -153,7 +153,13 @@ def test_generate_writes_what_the_gate_passes_and_records_why_not(data, tmp_path
     manifest = json.loads((L.base_dir / fx.PERSON / "manifest.json").read_text())
     assert manifest["type_words"] == ["person", "people"]
     entry = json.loads((L.base_dir / fx.BUILDING / "associated_actor.json").read_text())["entries"]
-    assert entry == [{"phrases": ["date of production", "made", "produced"], "kind": "date", "node": "production_date"}]
+    # CRM-first: the path's composed meaning goes to the ontology layer, the base keeps the rest
+    assert entry == [{"phrases": ["produced"], "kind": "date", "node": "production_date"}]
+    made = next(e for e in phrases if e["path"] == "P108i E12 P4")
+    assert {"made", "date of production"} <= set(made["phrases"])
+    assert json.loads((out / "rules-fx.json").read_text())["reasons"]["date Building.production_date"] == {
+        "made": "review: CRM-first: path date P108i E12 P4 carries it",
+        "date of production": "review: CRM-first: path date P108i E12 P4 carries it"}
     reasons = json.loads((out / "rules-fx.json").read_text())["reasons"]
     assert reasons["property P14"] == {"carried out by": "gate: bench: adds no right answer",
                                        "who performed": "gate: bench: adds no right answer"}
@@ -217,3 +223,15 @@ def test_fill_sends_only_the_gaps_the_rules_left_and_nothing_with_estimate(data,
     assert entries == [{"phrases": ["zz site"], "kind": "link", "node": "site"}]
     reasons = json.loads((out / "rules-fx.json").read_text())["reasons"]
     assert reasons["link Building.architect"][""] == "the LLM skipped it: nobody asks"
+
+
+def test_a_paths_base_meaning_is_composed_from_its_crm_labels():
+    from ceist.ontology_vocab import definitions
+    defs = definitions(SOURCE)
+    assert vr.composed("P108i E12 P4", "date", defs) == ["made", "date of production", "production date"]
+    assert vr.composed("P94i E65 P4", "date", defs) == ["created", "date of creation", "creation date"]
+    assert vr.composed("P108i E12 P14", "link", defs) == ["made by"]
+    assert vr.composed("P108i E12 P7", "link", defs) == ["place of production"]
+    assert vr.composed("P41i E17 P2", "property", defs) == []    # no event EVENTS knows
+    assert vr.composed("P31 E24 P2", "property", defs) == []
+    assert vr.composed("P9 E7 P4", "date", defs) == []

@@ -6,15 +6,8 @@
    "phrases": [
     "activities",
     "investigations",
-    "fieldwork",
-    "excavations",
     "surveys",
-    "events",
-    "archaeological work",
-    "work carried out",
-    "what investigations",
-    "was it excavated",
-    "evaluation"
+    "events"
    ],
    "kind": "link",
    "node": "associated_activities"

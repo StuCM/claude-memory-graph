@@ -35,15 +35,6 @@
   },
   {
    "phrases": [
-    "land use assessed",
-    "land use assessment date"
-   ],
-   "kind": "date",
-   "node": "land_use_assessment_start_date",
-   "end_node": "land_use_assessment_end_date"
-  },
-  {
-   "phrases": [
     "land use notes",
     "land use note"
    ],

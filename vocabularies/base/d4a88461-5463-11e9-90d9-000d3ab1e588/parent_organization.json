@@ -4,16 +4,9 @@
  "entries": [
   {
    "phrases": [
-    "parent organisation",
-    "parent organization",
     "part of",
-    "subsidiary of",
-    "parent company",
     "belongs to",
-    "department of",
-    "branch of",
-    "owned by",
-    "umbrella organisation"
+    "owned by"
    ],
    "kind": "link",
    "node": "parent_organization"

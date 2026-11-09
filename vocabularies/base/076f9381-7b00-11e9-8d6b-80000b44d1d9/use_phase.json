@@ -4,11 +4,9 @@
  "entries": [
   {
    "phrases": [
-    "in use",
     "was in use",
     "used from",
     "used until",
-    "occupied",
     "occupation",
     "in operation",
     "operated",
@@ -29,24 +27,16 @@
   },
   {
    "phrases": [
-    "period of use",
-    "use period",
-    "used during",
-    "occupation period",
-    "period in use",
-    "period when used"
+    "used during"
    ],
    "kind": "link",
    "node": "use_phase_period"
   },
   {
    "phrases": [
-    "function",
-    "used as",
     "use",
     "what was it used for",
     "purpose",
-    "functional type",
     "what is it used for",
     "original use",
     "current use",

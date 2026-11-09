@@ -9,8 +9,6 @@
     "radiocarbon date",
     "carbon dated",
     "c14 date",
-    "calibrated date",
-    "lab date",
     "absolute date"
    ],
    "kind": "date",
@@ -21,9 +19,7 @@
    "phrases": [
     "when was the date determined",
     "date determined",
-    "date of analysis",
-    "when was it sampled",
-    "when was it tested"
+    "date of analysis"
    ],
    "kind": "date",
    "node": "when_determined_start_date",

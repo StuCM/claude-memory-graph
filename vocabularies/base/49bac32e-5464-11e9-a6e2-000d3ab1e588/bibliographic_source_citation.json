@@ -4,21 +4,6 @@
  "entries": [
   {
    "phrases": [
-    "sources",
-    "bibliography",
-    "references",
-    "published in",
-    "literature",
-    "publications",
-    "books",
-    "cited in",
-    "reading list"
-   ],
-   "kind": "link",
-   "node": "bibliographic_source_citation"
-  },
-  {
-   "phrases": [
     "page number",
     "pages",
     "which page"

@@ -39,37 +39,16 @@
   },
   {
    "phrases": [
-    "broad type",
-    "broad character",
-    "broad class",
-    "broad category",
-    "general category",
-    "category",
-    "broad classification",
-    "general type",
-    "broad character type",
-    "high level type"
+    "category"
    ],
    "kind": "property",
    "node": "broad_type"
   },
   {
    "phrases": [
-    "hlc type",
-    "character type",
-    "landscape type",
     "type",
     "what type",
-    "land use type",
-    "what kind of landscape",
-    "classification",
-    "historic land use",
-    "landscape character",
-    "townscape type",
-    "kind of area",
-    "what kind of area",
-    "character type classification",
-    "land use"
+    "classification"
    ],
    "kind": "property",
    "node": "hlc_type"
@@ -82,7 +61,6 @@
     "which period",
     "what period",
     "time period",
-    "of what period",
     "cultural period",
     "archaeological period"
    ],
@@ -96,7 +74,6 @@
     "interpretation certainty",
     "certainty",
     "how sure",
-    "confidence in classification",
     "confidence"
    ],
    "kind": "property",
@@ -113,25 +90,6 @@
    ],
    "kind": "property",
    "node": "confidence_of_dating"
-  },
-  {
-   "phrases": [
-    "historic map",
-    "historic maps",
-    "old map",
-    "map source",
-    "which map",
-    "based on map",
-    "map evidence",
-    "ordnance survey map",
-    "tithe map",
-    "early map",
-    "first edition os",
-    "cartographic source",
-    "source map"
-   ],
-   "kind": "link",
-   "node": "historic_map"
   },
   {
    "phrases": [

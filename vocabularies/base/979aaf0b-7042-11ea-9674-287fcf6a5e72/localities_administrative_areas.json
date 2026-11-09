@@ -4,21 +4,6 @@
  "entries": [
   {
    "phrases": [
-    "borough",
-    "local authority",
-    "council",
-    "administrative area",
-    "which borough",
-    "district",
-    "council area",
-    "london borough",
-    "local council"
-   ],
-   "kind": "property",
-   "node": "area_name"
-  },
-  {
-   "phrases": [
     "administrative area type",
     "type of administrative area",
     "area level"

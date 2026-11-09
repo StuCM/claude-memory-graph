@@ -24,16 +24,6 @@
   },
   {
    "phrases": [
-    "cross reference source",
-    "reference source",
-    "source of reference",
-    "which database"
-   ],
-   "kind": "property",
-   "node": "external_cross_reference_source"
-  },
-  {
-   "phrases": [
     "url",
     "website",
     "web link",

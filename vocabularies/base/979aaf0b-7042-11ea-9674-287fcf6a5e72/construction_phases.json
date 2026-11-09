@@ -4,23 +4,8 @@
  "entries": [
   {
    "phrases": [
-    "built",
-    "constructed",
-    "erected",
-    "put up",
-    "when was it built",
-    "date built",
-    "construction date",
-    "year built",
-    "when was it constructed",
-    "laid out",
     "founded",
-    "established",
-    "dates from",
-    "date of construction",
-    "building date",
-    "origins",
-    "construction phase"
+    "established"
    ],
    "kind": "date",
    "node": "construction_phase_start_date",
@@ -28,29 +13,10 @@
   },
   {
    "phrases": [
-    "period",
-    "era",
-    "what period",
-    "which period",
-    "cultural period",
-    "historic period",
-    "epoch",
-    "date period",
-    "age",
-    "what era",
-    "dates to"
-   ],
-   "kind": "link",
-   "node": "cultural_period"
-  },
-  {
-   "phrases": [
-    "type",
     "site type",
     "what type",
     "kind of site",
     "what kind",
-    "classification",
     "monument type",
     "category",
     "what sort",
@@ -59,20 +25,6 @@
    ],
    "kind": "property",
    "node": "area_type"
-  },
-  {
-   "phrases": [
-    "evidence",
-    "evidence type",
-    "form of evidence",
-    "what survives",
-    "remains",
-    "survival",
-    "how is it evidenced",
-    "extant"
-   ],
-   "kind": "property",
-   "node": "construction_phase_evidence_type"
   },
   {
    "phrases": [
@@ -129,7 +81,6 @@
     "confidence of interpretation",
     "certainty",
     "how certain",
-    "interpretation confidence",
     "how sure"
    ],
    "kind": "property",

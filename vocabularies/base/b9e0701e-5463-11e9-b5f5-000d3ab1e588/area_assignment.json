@@ -15,16 +15,6 @@
   },
   {
    "phrases": [
-    "area status date",
-    "area status from",
-    "in the area since"
-   ],
-   "kind": "date",
-   "node": "area_status_start_date",
-   "end_node": "area_status_end_date"
-  },
-  {
-   "phrases": [
     "shine form",
     "form of feature",
     "above or below ground"

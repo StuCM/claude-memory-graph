@@ -4,17 +4,6 @@
  "entries": [
   {
    "phrases": [
-    "area status date",
-    "area status since",
-    "status since",
-    "status dates"
-   ],
-   "kind": "date",
-   "node": "area_status_start_date",
-   "end_node": "area_status_end_date"
-  },
-  {
-   "phrases": [
     "area status",
     "status of the area",
     "aonb",

@@ -14,16 +14,6 @@
    ],
    "kind": "property",
    "node": "dimension_value"
-  },
-  {
-   "phrases": [
-    "unit",
-    "units",
-    "unit of measurement",
-    "in metres or feet"
-   ],
-   "kind": "property",
-   "node": "dimension_measurement_unit"
   }
  ],
  "group": {

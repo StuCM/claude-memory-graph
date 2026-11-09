@@ -28,7 +28,6 @@
   },
   {
    "phrases": [
-    "copyright holder",
     "image copyright holder",
     "who owns the copyright",
     "photo credit",
@@ -44,13 +43,7 @@
   },
   {
    "phrases": [
-    "copyright",
-    "licence",
-    "license",
-    "copyright status",
-    "image rights",
-    "can i use the image",
-    "usage rights"
+    "copyright status"
    ],
    "kind": "property",
    "node": "copyright_type"

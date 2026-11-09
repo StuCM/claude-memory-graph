@@ -16,16 +16,6 @@
   },
   {
    "phrases": [
-    "reference source",
-    "cross reference source",
-    "source of external reference",
-    "which database"
-   ],
-   "kind": "property",
-   "node": "external_cross_reference_source"
-  },
-  {
-   "phrases": [
     "cross reference note",
     "external reference note"
    ],

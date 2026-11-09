@@ -8,16 +8,9 @@
     "constructed",
     "manufactured",
     "produced",
-    "assembled",
     "when was it built",
-    "when was it made",
     "year built",
-    "build date",
-    "date of manufacture",
-    "construction date",
-    "when manufactured",
-    "rolled off the production line",
-    "made in"
+    "construction date"
    ],
    "kind": "date",
    "node": "start_date",
@@ -77,14 +70,9 @@
   {
    "phrases": [
     "material",
-    "materials",
     "made of",
     "what is it made of",
-    "construction material",
-    "built from",
-    "what material",
-    "airframe material",
-    "fabric or metal"
+    "what material"
    ],
    "kind": "property",
    "node": "main_construction_material"
@@ -119,51 +107,24 @@
     "which period",
     "historic period",
     "date period",
-    "what era",
-    "from which era"
+    "what era"
    ],
    "kind": "link",
    "node": "period"
   },
   {
    "phrases": [
-    "aircraft type",
-    "type",
-    "type of aircraft",
-    "what kind of aircraft",
-    "what type of plane",
-    "kind of plane",
-    "aircraft model",
-    "model",
-    "what aircraft",
-    "plane type",
-    "make and model"
+    "type"
    ],
    "kind": "property",
    "node": "aircraft_type"
   },
   {
    "phrases": [
-    "aircraft form",
-    "form",
-    "configuration",
-    "monoplane or biplane",
-    "airframe type",
-    "shape of aircraft",
-    "wing configuration"
-   ],
-   "kind": "property",
-   "node": "aircraft_form"
-  },
-  {
-   "phrases": [
     "function",
-    "aircraft function",
     "purpose",
     "used for",
     "what was it used for",
-    "role of the aircraft",
-    "military role",
     "what did it do",
     "use"
    ],
@@ -213,7 +174,6 @@
     "what survives",
     "remains",
     "surviving remains",
-    "what evidence",
     "type of evidence"
    ],
    "kind": "property",

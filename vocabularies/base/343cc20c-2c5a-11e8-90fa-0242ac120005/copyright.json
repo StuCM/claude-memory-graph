@@ -4,10 +4,10 @@
  "entries": [
   {
    "phrases": [
-    "copyright holder",
     "copyright owner",
     "who owns the copyright",
-    "rights holder"
+    "rights holder",
+    "copyright holder"
    ],
    "kind": "link",
    "node": "copyright_holder"
