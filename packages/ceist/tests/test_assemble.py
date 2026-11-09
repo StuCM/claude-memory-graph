@@ -87,6 +87,21 @@ def test_an_implicit_end_opposite_a_type_needs_a_value_to_name_it():
     assert m.refused == "out of grammar (cannot resolve both ends of relation flew)"
 
 
+class Within(Toy):
+    """'in' joins a person or a building to a site; the person's reading is listed first."""
+
+    def relations(self):
+        return [Relation("works_at", ("in",), frozenset({"Person"}), frozenset({"Site"})),
+                Relation("site", ("in",), frozenset({"Building"}), frozenset({"Site"}))]
+
+
+def test_a_reading_that_cannot_place_a_word_leaves_the_others_alone():
+    m = schema(Within(), "what listed is in Leeds Dock?")
+    assert narrate(m.plan) == ("Find Buildings that in Site 'Leeds Dock' and whose heritage "
+                               "status is Listed.")
+    assert m.grounding.uncovered == []
+
+
 class Designated(Toy):
     """Toy, where 'listed' is also a value of a second field on buildings."""
 

@@ -140,6 +140,7 @@ def readings(s: Scan) -> list[Grounding] | None:
                                          product(*(_date_options(d, wired) for d in g.dates))):
                 r = replace(wired, values=list(values), dates=list(dates),
                             groups=[replace(x) for x in g.groups], notes=list(wired.notes),
+                            uncovered=list(g.uncovered),
                             near=replace(g.near) if g.near else None,
                             name=replace(g.name) if g.name else None)
                 _scope_negations(replace(s, g=r))
