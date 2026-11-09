@@ -24,7 +24,7 @@ def _match_leftovers(s: Scan, matcher) -> None:
             continue
         phrase = " ".join(w.text for w in run)
         items = [Item(f.field, tuple(f.forms) or (f.label,), f.label, f) for f in dm.fields]
-        res = matcher.resolve(phrase, items, g.text)
+        res = matcher.resolve(phrase, items)
         g.notes += res.notes
         if res.match:
             dm.fields = [res.match.item.payload]
@@ -53,7 +53,7 @@ def _match_leftovers(s: Scan, matcher) -> None:
             items = [Item(r.name, tuple(r.forms),
                           (r.path or r.name) + (f" ({r.qualifier[2]})" if r.qualifier else ""), r)
                      for r in fits]
-            res = matcher.resolve(phrase, items, g.text)
+            res = matcher.resolve(phrase, items)
             g.notes += res.notes
             if res.match:
                 rel = res.match.item.payload
@@ -87,7 +87,7 @@ def _match_leftovers(s: Scan, matcher) -> None:
              for (grp, preset), phrases in tiles.items()]
     for run in _leftover_runs(s):
         phrase = " ".join(w.text for w in run)
-        res = matcher.resolve(phrase, items, g.text)
+        res = matcher.resolve(phrase, items)
         g.notes += res.notes
         if res.match:
             g.groups.append(GroupGround(phrase, float(run[0].i), [w.i for w in run],

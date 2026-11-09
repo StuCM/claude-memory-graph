@@ -27,8 +27,10 @@ def test_exact_equal_and_covering():
 
 def test_exact_roots_and_direction():
     assert isinstance(Exact().decide("builds", [Item("b", ("build",))]), NoMatch)
-    for w in ("building", "builds", "build"):
+    for w in ("building", "builds", "build", "built"):
         assert isinstance(Exact(roots=True).decide(w, [Item("b", ("build",))]), Match)
+    assert isinstance(Exact(roots=True).decide("made by", [Item("m", ("make by",))]), Match)
+    assert isinstance(Exact(roots=True).decide("took place", [Item("t", ("take place",))]), Match)
     m = Exact().decide("sailing from", [FROM, TO])
     assert isinstance(m, Match) and m.item is FROM
     # a "from" phrase never matches a "to" phrasing, even partly
@@ -67,7 +69,7 @@ def test_config(tmp_path):
     assert cfg.bundle == tmp_path / "v.json" and cfg.layers == ["exact"] and cfg.roots
     ch = config.chain(cfg)
     assert [type(x).__name__ for x in ch.layers] == ["Exact"] and ch.clarify_top == 0
-    with pytest.raises(ValueError, match="not built yet"):
+    with pytest.raises(ValueError, match="unknown chooser 'local-llm' \\(use one of host, none\\)"):
         config.load(None, chooser="local-llm")
     with pytest.raises(ValueError, match="unknown matching layers"):
         config.load(None, layers=["exact", "magic"])

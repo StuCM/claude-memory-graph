@@ -24,7 +24,7 @@ from pathlib import Path
 from . import cost, crm
 from .ground import PREPS
 from .pipeline import Runner, _a_value, _key, model_roles, outline
-from .text import plurals
+from .text import plural, plurals
 
 SHAPES = ("value", "date", "link", "on-tile", "negation", "or", "group-by", "near", "name match",
           "record detail", "chain", "backlink")
@@ -371,10 +371,7 @@ _VERBS = {"involved", "mentions", "concerns"}
 
 
 def _plural(name: str) -> str:
-    from .text import plurals
-    low = name.replace("_", " ").lower()
-    irregular = plurals(low) - {low, low + "s"}
-    return irregular.pop() if irregular else low + "s"
+    return plural(name.replace("_", " ").lower())
 
 
 def _link_question(p: str, many: str, other: str) -> str:

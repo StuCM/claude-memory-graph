@@ -8,7 +8,7 @@
     layers = ["exact", "vectors"]         # in order; drop one to turn it off
 
     [matching.exact]
-    roots = true                          # built / build / building (simplemma if installed)
+    roots = true                          # built / build / building
     direction = true                      # "from" never matches "to"
 
     [matching.vectors]
@@ -40,7 +40,6 @@ from .matching import Chain, Exact, Vectors
 WORDLLAMA = "wordllama-256"
 MODEL_THRESHOLDS = {WORDLLAMA: (0.6, 0.08)}     # transformers: ceist.onnx.MODELS
 CHOOSERS = {"host", "none"}
-PLANNED_CHOOSERS = {"local-llm", "api"}      # designed for; not built yet
 
 
 @dataclass
@@ -86,11 +85,9 @@ def load(path: str | Path | None = None, **overrides) -> Config:
     unknown = set(cfg.layers) - {"exact", "vectors"}
     if unknown:
         raise ValueError(f"unknown matching layers: {', '.join(sorted(unknown))}")
-    if cfg.chooser in PLANNED_CHOOSERS:
-        raise ValueError(f"chooser '{cfg.chooser}' is designed for but not built yet; "
-                         f"use one of {', '.join(sorted(CHOOSERS))}")
     if cfg.chooser not in CHOOSERS:
-        raise ValueError(f"unknown chooser '{cfg.chooser}'")
+        raise ValueError(f"unknown chooser '{cfg.chooser}' "
+                         f"(use one of {', '.join(sorted(CHOOSERS))})")
     from .onnx import MODELS
     known = {WORDLLAMA: MODEL_THRESHOLDS[WORDLLAMA],
              **{n: (m["min"], m["gap"]) for n, m in MODELS.items()}}

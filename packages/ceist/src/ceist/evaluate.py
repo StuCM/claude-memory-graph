@@ -114,7 +114,7 @@ def evaluate(bundle_path, questions_path, cfg: _config.Config | None = None, enc
     for c in cases:
         model = b["models"].get(c["model"])
         items = items_for(model, c["slot"]) if model else []
-        r = chain.resolve(c["phrase"], items, c["q"])
+        r = chain.resolve(c["phrase"], items)
         key = r.match.item.key if r.match else None
         outcome = judge(c["expect"], key)
         res.counts[outcome] += 1

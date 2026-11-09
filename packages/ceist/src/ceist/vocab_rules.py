@@ -26,14 +26,11 @@ from pathlib import Path
 
 from . import bundle as _bundle
 from . import crm, ontology_vocab
-from .text import terms_pos
+from .text import PAST, terms_pos
 
 IRREGULAR = {"person": "people", "child": "children", "man": "men", "woman": "women", "foot": "feet",
              "mouse": "mice", "goose": "geese", "datum": "data", "criterion": "criteria",
              "phenomenon": "phenomena", "medium": "media", "analysis": "analyses", "thesis": "theses"}
-PAST = {"hold": "held", "make": "made", "build": "built", "write": "written", "find": "found",
-        "keep": "kept", "lead": "led", "draw": "drawn", "give": "given", "take": "taken",
-        "buy": "bought", "sell": "sold", "teach": "taught", "speak": "spoken", "lend": "lent"}
 # ponytail: agent nouns by list, not by suffix ("mother", "actor" aren't agents of a verb); add as graphs need
 AGENTS = {"holder": "hold", "owner": "own", "maker": "make", "builder": "build", "writer": "write",
           "designer": "design", "founder": "found", "creator": "create", "producer": "produce",
