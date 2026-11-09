@@ -15,6 +15,7 @@ files:
   - packages/ceist/pyproject.toml
   - packages/ceist/README.md
   - packages/ceist/PORT-AUDIT.md
+  - uv.lock
 ---
 
 # Pre-port clean-up: 040's leftovers, drop simplemma for a small irregulars table, and the small audit items
