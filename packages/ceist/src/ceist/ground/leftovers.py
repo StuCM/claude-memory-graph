@@ -24,22 +24,18 @@ def _match_leftovers(s: Scan, matcher) -> None:
             continue
         phrase = " ".join(w.text for w in run)
         items = [Item(f.field, tuple(f.forms) or (f.label,), f.label, f) for f in dm.fields]
-        res = matcher.resolve(phrase, items, g.text)
+        res = matcher.resolve(phrase, items)
         g.notes += res.notes
         if res.match:
             dm.fields = [res.match.item.payload]
             take(run)
             runs.remove(run)
         else:
-            if res.options:
-                g.suggestions.append((phrase, [o.label for o in res.options]))
+            _offer(g, phrase, res)
             owners = {o for f in dm.fields for o in f.owners}
-            g.unplaced.append({
-                "phrase": phrase, "slot": "date",
-                "model": next(iter(owners)) if len(owners) == 1 else
-                (g.subject.type if g.subject else ""),
-                "options": [{"node": o.payload.field, "qualifier": None, "end_node": None,
-                             "label": o.label} for o in res.options]})
+            model = (next(iter(owners)) if len(owners) == 1 else
+                     g.subject.type if g.subject else "")
+            _unplaced(g, phrase, "date", model, [(o, o.payload.field, None) for o in res.options])
     # two named things and no relation between them: the run between them
     nodes = sorted(g.nodes, key=lambda n: n.pos)
     if len(nodes) >= 2 and not g.edges:
@@ -53,24 +49,23 @@ def _match_leftovers(s: Scan, matcher) -> None:
             items = [Item(r.name, tuple(r.forms),
                           (r.path or r.name) + (f" ({r.qualifier[2]})" if r.qualifier else ""), r)
                      for r in fits]
-            res = matcher.resolve(phrase, items, g.text)
+            res = matcher.resolve(phrase, items)
             g.notes += res.notes
             if res.match:
                 rel = res.match.item.payload
                 g.edges.append(_edge(rel, float(run[0].i), form=phrase))
                 take(run)
             else:
-                if res.options:
-                    g.suggestions.append((phrase, [o.label for o in res.options]))
+                _offer(g, phrase, res)
                 domains = {d for r in fits for d in r.domain}
                 model = next(iter(domains)) if len(domains) == 1 else a.type
                 other = b.type if model == a.type else a.type
-                g.unplaced.append({
-                    "phrase": phrase, "slot": f"link:{other}", "model": model,
-                    "options": [{"node": o.payload.path or o.payload.name,
-                                 "qualifier": o.payload.qualifier[1] if o.payload.qualifier
-                                 else None, "end_node": None, "label": o.label}
-                                for o in res.options]})
+                options = []
+                for o in res.options:
+                    rel = o.payload
+                    qualifier = rel.qualifier[1] if rel.qualifier else None
+                    options.append((o, rel.path or rel.name, qualifier))
+                _unplaced(g, phrase, f"link:{other}", model, options)
     # any other run: the combos of the types named, one item per tile it describes. Not
     # a group's own name: a run near it would be read as naming the group and nothing on it
     named = {n.type for n in g.vars()}
@@ -87,14 +82,27 @@ def _match_leftovers(s: Scan, matcher) -> None:
              for (grp, preset), phrases in tiles.items()]
     for run in _leftover_runs(s):
         phrase = " ".join(w.text for w in run)
-        res = matcher.resolve(phrase, items, g.text)
+        res = matcher.resolve(phrase, items)
         g.notes += res.notes
         if res.match:
             g.groups.append(GroupGround(phrase, float(run[0].i), [w.i for w in run],
                                         [res.match.item.payload]))
             take(run)
-        elif res.options:
-            g.suggestions.append((phrase, [o.label for o in res.options]))
+        else:
+            _offer(g, phrase, res)
+
+
+def _offer(g, phrase: str, res) -> None:
+    if res.options:
+        g.suggestions.append((phrase, [o.label for o in res.options]))
+
+
+def _unplaced(g, phrase: str, slot: str, model: str, options: list[tuple]) -> None:
+    """A phrase the matcher couldn't place, for the learn log; `options` are
+    (item, node, qualifier)."""
+    g.unplaced.append({"phrase": phrase, "slot": slot, "model": model,
+                       "options": [{"node": node, "qualifier": q, "end_node": None,
+                                    "label": o.label} for o, node, q in options]})
 
 
 def _fill_groups(s: Scan) -> None:

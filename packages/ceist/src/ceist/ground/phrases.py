@@ -4,10 +4,10 @@ phrases, values, field phrases, "near" and dates."""
 import re
 
 from .. import dates
-from ..text import ALNUM
+from ..text import ALNUM, overlaps
 from .model import DateGround, GroupGround, NameGround, NearGround, ValueMatch, _edge
 from .scan import (ABOUT_RE, IMPERATIVE, MILE_KM, MOST, NAME_RES, NEAR_KM, NEAR_RE, WH, WORD_RE,
-                   _LEAD_WORDS, _SUBJECT_LEAD, Scan, _opens, _overlaps, _phrase_spans)
+                   _LEAD_WORDS, _SUBJECT_LEAD, Scan, _opens, _phrase_spans)
 
 
 def _shape(s: Scan) -> None:
@@ -25,7 +25,7 @@ def _shape(s: Scan) -> None:
         g.notes.append("'how many' → count")
     about = ABOUT_RE.match(s.text)
     if about:
-        g.about = True
+        s.about = True
         s.consumed.update(w.i for w in words if w.start < about.end())
         g.notes.append("'… about X' → X itself")
     if getattr(s.vocab, "name_match", False) and not about:
@@ -54,7 +54,7 @@ def _relations(s: Scan) -> None:
     shape = s.taken + [(w.start, w.end) for w in s.words if w.i in s.consumed]
     longer = [(m.start(), m.end()) for p in (*s.group_forms, *s.value_forms)
               for m in re.finditer(rf"(?<!{ALNUM}){re.escape(p)}(?!{ALNUM})", raw)
-              if not _overlaps(m.start(), m.end(), shape)]
+              if not overlaps(m.start(), m.end(), shape)]
     s.relations = {r.name: r for r in s.vocab.relations()}
     matched: set[str] = set()
     # A phrasing that is just a type's name ("monuments", for a link called
@@ -74,7 +74,7 @@ def _relations(s: Scan) -> None:
              if re.search(rf"(?<!{ALNUM}){re.escape(w)}(?!{ALNUM})", raw)}
     forms = sorted(((f, r.name) for r in s.relations.values() for f in r.forms),
                    key=lambda x: not s.types_of(*x) & named)
-    for form, rel, m in ([] if g.about else _phrase_spans(raw, forms, s.taken, s.names + longer)):
+    for form, rel, m in ([] if s.about else _phrase_spans(raw, forms, s.taken, s.names + longer)):
         subject = just_a_type(form) and (form.split()[0] in _LEAD_WORDS
                                          or _SUBJECT_LEAD.search(raw[:m.start()]))
         if subject or rel in matched:
@@ -162,7 +162,7 @@ def _near(s: Scan) -> None:
     if not getattr(s.vocab, "geometry_fields", None):
         return
     m = next((m for m in NEAR_RE.finditer(s.raw)
-              if not _overlaps(m.start(), m.end(), s.taken + s.names)), None)
+              if not overlaps(m.start(), m.end(), s.taken + s.names)), None)
     if m:
         s.taken.append((m.start(), m.end()))
         miles = bool(m[2]) and m[2].startswith("mile")

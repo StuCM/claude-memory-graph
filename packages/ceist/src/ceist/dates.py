@@ -22,6 +22,8 @@ import re
 from dataclasses import dataclass
 from datetime import date, timedelta
 
+from .text import overlaps
+
 _EPOCH = date(1970, 1, 1)
 OPEN = 10 ** 9                      # days: an open end, far outside any real date
 
@@ -126,7 +128,7 @@ def find(raw: str, taken: list[tuple[int, int]], today: date | None = None) -> l
     out = []
     for kind, pattern in _PATTERNS:
         for m in re.finditer(pattern, raw):
-            if any(m.start() < e and m.end() > s for s, e in taken):
+            if overlaps(m.start(), m.end(), taken):
                 continue
             if kind == "last_n":
                 lo, hi = _ago(today, int(m.group(1)), m.group(2)), today

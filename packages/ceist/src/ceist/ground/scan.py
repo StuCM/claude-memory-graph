@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass, field
 from typing import NamedTuple
 
-from ..text import ALNUM, terms_pos
+from ..text import ALNUM, overlaps, terms_pos
 from ..vocabulary import Group, Relation, Value, Vocabulary
 from .model import Grounding, Node
 
@@ -74,10 +74,6 @@ def _opens(word: str) -> bool:
     return word in WH or word in AUX or word in IMPERATIVE
 
 
-def _overlaps(start: int, end: int, spans) -> bool:
-    return any(start < e and end > s for s, e in spans)
-
-
 def _inside(start: int, end: int, spans) -> bool:
     return any(s <= start and end <= e for s, e in spans)
 
@@ -114,6 +110,7 @@ class Scan:
     negs: list[tuple[int, str]] = field(default_factory=list)
     held: set[int] = field(default_factory=set)        # words the text filter may not take
     contains_pos: float | None = None
+    about: bool = False                                 # "what do we know about X"
 
     def parts_of(self, word: str) -> set[str]:
         # raw words like "memory-graph" must meet terms ("memory", "graph")
@@ -128,10 +125,10 @@ class Scan:
         return float(at[0] if at else 0)
 
     def add_var(self, t: str, pos: float, why: str) -> Node:
-        node = Node("var", t, pos, var=f"?v{len(self.seen)}")
+        node = Node("var", t, pos)
         self.seen[t] = node
         self.g.nodes.append(node)
-        self.g.notes.append(f"{why} → typed variable {node.var} : {t}")
+        self.g.notes.append(f"{why} → typed variable : {t}")
         return node
 
     def types_of(self, form: str, rel: str) -> frozenset[str]:
@@ -172,7 +169,7 @@ def _phrase_spans(raw: str, phrases: list[tuple[str, object]], taken: list[tuple
         m = next((m for m in re.finditer(rf"(?<!{ALNUM}){re.escape(phrase)}(?!{ALNUM})", raw)
                   if not any(s <= m.start() and m.end() <= e and m.end() - m.start() < e - s
                              for s, e in names)), None)
-        if not m or _overlaps(m.start(), m.end(), taken):
+        if not m or overlaps(m.start(), m.end(), taken):
             continue
         taken.append((m.start(), m.end()))
         yield phrase, payload, m

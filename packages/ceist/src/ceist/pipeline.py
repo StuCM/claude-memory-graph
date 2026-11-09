@@ -630,7 +630,7 @@ def add_link_phrases(d: dict, vocab_dir: Path, phrases: dict[str, list[str]]) ->
 
 def _apart(entries: list[dict], targets: dict) -> bool:
     """Unqualified links whose targets don't overlap: the grounder picks
-    between them by the types a question names (ground._fit_relations)."""
+    between them by the types a question names (ground.nodes._fit_relations)."""
     if any(e["kind"] != "link" or e.get("qualifier") for e in entries):
         return False
     seen: set[str] = set()

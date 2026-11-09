@@ -25,7 +25,7 @@ Layers (configured per project, see ceist.config):
 import re
 from dataclasses import dataclass, field
 
-from .text import ALNUM
+from .text import ALNUM, PAST, UNPAST
 
 FROM = {"from", "leaving", "departing", "departed", "left", "out"}
 TO = {"to", "towards", "toward", "into", "bound", "arriving", "arrived", "reaching"}
@@ -86,14 +86,13 @@ def _light_root(w: str) -> str:
     return w
 
 
-def _rooter():
-    """Word roots: simplemma's lemma (built → build) when installed, then a
-    light suffix rule (building → build, which simplemma reads as a noun)."""
-    try:
-        import simplemma
-    except ImportError:                      # the light rule alone
-        return _light_root
-    return lambda w: _light_root(simplemma.lemmatize(w, lang="en"))
+_UNPAST = {**{past: verb for verb, past in PAST.items()}, **UNPAST}
+
+
+def _root(w: str) -> str:
+    """A word's root: an irregular past by table (built → build, took → take), then the
+    light suffix rule."""
+    return _light_root(_UNPAST.get(w, w))
 
 
 class Exact:
@@ -101,7 +100,7 @@ class Exact:
 
     def __init__(self, roots: bool = False, direction: bool = True):
         self.direction = direction
-        self.root = _rooter() if roots else (lambda w: w)
+        self.root = _root if roots else (lambda w: w)
 
     def norm(self, text: str) -> str:
         return " ".join(self.root(w) for w in words(text))
@@ -112,7 +111,7 @@ class Exact:
         phrasing "metal" doesn't claim "turned up by metal detectorists"."""
         return f" {inner} " in f" {outer} " and len(inner.split()) * 2 >= len(outer.split())
 
-    def decide(self, phrase: str, items: list[Item], context: str = ""):
+    def decide(self, phrase: str, items: list[Item]):
         p, pw = self.norm(phrase), set(words(phrase))
         best: dict[object, tuple[int, Item]] = {}
         for it in items:
@@ -151,7 +150,7 @@ class Vectors:
             self._cache[text] = self.enc.encode([text])[0]
         return self._cache[text]
 
-    def decide(self, phrase: str, items: list[Item], context: str = ""):
+    def decide(self, phrase: str, items: list[Item]):
         if not items:
             return NoMatch(layer=self.name)
         pv, pw = self.vec(phrase), set(words(phrase))
@@ -178,13 +177,13 @@ class Chain:
     def __init__(self, layers: list, clarify_top: int = 3, clarify_min: float = 0.3):
         self.layers, self.clarify_top, self.clarify_min = layers, clarify_top, clarify_min
 
-    def resolve(self, phrase: str, items: list[Item], context: str = "") -> Resolution:
+    def resolve(self, phrase: str, items: list[Item]) -> Resolution:
         out = Resolution()
         if not items:
             return out
         pool: list[tuple[float, Item]] = []
         for layer in self.layers:
-            d = layer.decide(phrase, items, context)
+            d = layer.decide(phrase, items)
             if isinstance(d, Match):
                 out.match = d
                 out.notes.append(f"'{phrase}' → {d.item.label or d.item.key} ({d.layer}"

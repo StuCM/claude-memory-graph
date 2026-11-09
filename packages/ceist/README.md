@@ -64,7 +64,7 @@ From that it builds a small, backend-neutral **plan**, and each **output** compi
 | output | module | runs | can't express (refused by name) |
 | --- | --- | --- | --- |
 | **Alizarin** | `ceist.alizarin` | in-process, straight over a data_dir's tiles | nothing in the plan |
-| **Rós Madair** | `ceist.rosmadair` | `compile_plan` / `to_query` produce the Query IR; `ask` runs it on a snapshot | a link walked backwards from one named record, a negated link inside a hop, free text |
+| **Rós Madair** | `ceist.rosmadair` | `compile_plan` produces the Query IR; `ask` runs it on a snapshot | a link walked backwards from one named record, a negated link inside a hop, free text |
 | **Arches Search** | `ceist.arches_search` | `to_payload` / `compile_checked` produce an advanced-search GroupPayload | concepts (unless `concept_operator=`), a link by any field |
 | **SPARQL** | in the memory graph (`claude_memory_graph.planner`) | Oxigraph | — |
 
@@ -112,8 +112,8 @@ vocab = ArchesVocabulary.from_data_dir(
 from ceist.alizarin import ask                      # no server
 print(ask("which sites have buildings designed by Isambard Brunel?", vocab))
 
-from ceist.rosmadair import to_query, ask as rm_ask # pip install ros-madair
-to_query(interpret(vocab, "how many listed buildings are on site Leeds Dock?").plan, vocab)
+from ceist.rosmadair import compile_plan, ask as rm_ask # pip install ros-madair
+compile_plan(interpret(vocab, "how many listed buildings are on site Leeds Dock?").plan, vocab).query
 # {"model": "<building graph id>", "measures": ["count_records"],
 #  "where": {"all": [{"has_link": {...}}, {"concept": {"op": "descendant_or_self_of", ...}}]}}
 
@@ -142,13 +142,13 @@ question → exact phrases (relations, values, dates, types, records)
   - a run just before a date can only be one of the date fields it could be.
   On the HER evaluation this narrowing is the biggest single gain.
 - **Layers** (`ceist.matching`):
-  - `exact`: equal or covering phrasings, optionally on word roots, and never "from" against "to";
+  - `exact`: equal or covering phrasings, optionally on word roots (a light suffix rule and a small table of irregular pasts: built → build), and never "from" against "to";
   - `vectors`: meaning-level matching against the vocabulary's phrasings, with a minimum score and a gap to the runner-up. The model is a choice:
     - `wordllama-256` (default): static word vectors, a 16 MB lookup table (`pip install ceist[vectors]`).
     - `bge-small-en-v1.5`: a small sentence transformer that reads the phrase as a whole, as 34 MB of int8 ONNX, the same file transformers.js runs in a browser (`pip install ceist[onnx]`, then `ceist vectors fetch bge-small-en-v1.5`). On HER, with thresholds tuned on half the questions, it gets 40/49 right with 1 dangerous on the half it never saw, against WordLlama's 36/49 with 3; on all 102 it gets 86 right, 2 dangerous, 96 within one click. Each new text costs a model run, so every vector is kept in the cache folder, and `ceist vectors embed <bundle>` embeds a vocabulary ahead of time (3,696 texts in about 3 s on CPU).
 
   The first layer to decide confidently wins, and every decision names its layer in the grounding notes.
-- **Fallback:** when no layer is sure, the closest items become suggestions. `chooser = "host"` hands them to the caller: a person in a UI, or Claude through `memory_ask`, which then asks again in the graph's own words. `chooser = "none"` refuses instead. `local-llm` and `api` are reserved for later.
+- **Fallback:** when no layer is sure, the closest items become suggestions. `chooser = "host"` hands them to the caller: a person in a UI, or Claude through `memory_ask`, which then asks again in the graph's own words. `chooser = "none"` refuses instead.
 
 ```toml
 # ceist.toml

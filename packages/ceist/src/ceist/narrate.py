@@ -5,14 +5,7 @@ from .dates import label as date_label
 from .ground import MILE_KM
 from .plan import (AnyOf, Contains, DateRange, Detail, EntityRef, HasValue, LinkTo, Mention,
                    NameMatch, Near, Not, OnTile, Partial, Plan)
-
-
-def _plural(t: str) -> str:
-    if t.endswith("y") and len(t) > 2 and t[-2].lower() not in "aeiou":
-        return t[:-1] + "ies"
-    if t.endswith(("s", "x", "ch", "sh")):
-        return t + "es"
-    return t + "s"
+from .text import plural
 
 
 def _target(c: LinkTo, forms: bool, canonical: bool) -> str:
@@ -121,7 +114,7 @@ def _any_of(c: AnyOf, forms: bool, canonical: bool, negated: bool) -> str:
 
 
 def _phrase(plan: Plan, forms: bool, canonical: bool, nested: bool = False) -> str:
-    head = f"any {plan.type}" if nested else _plural(plan.type)
+    head = f"any {plan.type}" if nested else plural(plan.type)
     parts = [_condition(c, forms, canonical) for c in plan.where]
     if canonical:
         parts.sort()              # order-free: a compiler may reorder conditions

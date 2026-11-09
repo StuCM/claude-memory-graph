@@ -16,8 +16,6 @@ vectors = [
 ]
 # small transformers for the "vectors" layer (ceist.onnx: bge-small, MiniLM)
 onnx = ["numpy", "onnxruntime>=1.17", "tokenizers>=0.15"]
-# word roots for the "exact" layer's roots option (a light suffix rule otherwise)
-roots = ["simplemma"]
 
 [project.scripts]
 ceist = "ceist.cli:main"
