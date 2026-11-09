@@ -187,9 +187,9 @@ class Interpretation:
 
 def interpret(vocab: Vocabulary, text: str, today=None, matcher=None,
               assembly: str | None = None) -> Interpretation:
-    """`assembly="schema"` (or CEIST_ASSEMBLY=schema) puts the question together by the
-    schema instead of by word order: ceist.assemble, a prototype."""
-    if (assembly or os.environ.get("CEIST_ASSEMBLY")) == "schema":
+    """The question put together by the schema (ceist.assemble). `assembly="strict"` (or
+    CEIST_ASSEMBLY=strict) wires it by word order instead, kept for comparison."""
+    if (assembly or os.environ.get("CEIST_ASSEMBLY") or "schema") != "strict":
         from .assemble import interpret as assembled
         return assembled(vocab, text, today, matcher)
     out = _interpret(vocab, text, today, matcher)
@@ -409,7 +409,8 @@ def _partial(vocab: Vocabulary, g: Grounding) -> Partial | None:
     g = replace(g, uncovered=list(g.uncovered), notes=list(g.notes))   # attaching appends to these
     unused = list(g.uncovered) + ([g.contains] if g.contains else [])
     plan = None
-    if not g.refuse:
+    # an edge left unwired would be dropped by _build without being named as unused
+    if not g.refuse and all(e.source is not None and e.target is not None for e in g.edges):
         try:
             plan = _build(g, s, None)
         except _Refuse:
