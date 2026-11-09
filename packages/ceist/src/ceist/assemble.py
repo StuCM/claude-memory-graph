@@ -133,7 +133,8 @@ def _link_options(s: Scan, e, every: list[Relation]) -> list:
     rels = [r.said_as(e.form) for r in every if r.name in names]
     nodes = s.g.nodes
     both = [(r, a, b) for r in rels for a in nodes for b in nodes
-            if a is not b and r.joins(a.type, b.type)]
+            if a is not b and r.joins(a.type, b.type)
+            and (a.type != b.type or _in_order(s, e, a, b) == (a, b))]
     if both:
         return both
     if len(nodes) >= 2:
@@ -147,11 +148,30 @@ def _link_options(s: Scan, e, every: list[Relation]) -> list:
         # role: "architects", "surveyed by"; "in County Nowhere" must not become "in any Site"
         ends = nodes if r.qualifier else s.g.anchors
         for x in ends:
-            out += [(r, x, t) for t in sorted(r.targets(x.type)) if r.joins(x.type, t)]
-            out += [(r, t, x) for t in sorted(r.domain) if r.joins(t, x.type)]
+            leads = x.pos <= e.pos and not _after_as(s, e)
+            out += [(r, x, t) for t in sorted(r.targets(x.type))
+                    if r.joins(x.type, t) and (t != x.type or leads)]
+            out += [(r, t, x) for t in sorted(r.domain)
+                    if r.joins(t, x.type) and (t != x.type or not leads)]
         if not nodes and r.qualifier:
             out += [(r, a, b) for a in sorted(r.domain) for b in sorted(r.targets(a))]
     return out
+
+
+def _in_order(s: Scan, e, a: Node, b: Node) -> tuple[Node, Node]:
+    """Two pieces of one type as source and target of the link between them, by word
+    order as _assign_edges reads it: the schema allows either way round."""
+    before = sorted((n for n in (a, b) if n.pos <= e.pos), key=lambda n: n.pos)
+    if len(before) == 2:
+        near, far = before[1], before[0]
+        return (far, near) if _after_as(s, e) else (near, far)   # "X as father": X the target
+    if before:
+        return (a, b) if before[0] is a else (b, a)
+    return (a, b) if a.pos > b.pos else (b, a)                 # both after: the farther leads
+
+
+def _after_as(s: Scan, e) -> bool:
+    return e.pos >= 1 and s.words[int(e.pos) - 1].text == "as"
 
 
 def _joins(s: Scan, nodes: list[Node], edges: list, every: list[Relation]) -> list[list]:
@@ -182,7 +202,7 @@ def _linked(edges: list, a: Node, b: Node) -> bool:
 
 def _value_options(vm, g: Grounding) -> list:
     """The value on each variable whose type holds one of its fields: one choice each.
-    Which of that type's fields stays plan._attach_values' choice, as without assembly."""
+    plan._attach_values reads it as any of that type's fields that hold it."""
     out = []
     for n in g.vars():
         def on(m):

@@ -540,9 +540,10 @@ def _attach_groups(g: Grounding, plan: Plan) -> str:
 
 
 def _attach_values(g: Grounding, plan: Plan) -> str:
-    """Each named value joins the plan whose type has that field: the subject
-    first, then any linked sub-plan. A value no type in the plan can hold
-    refuses, as a date does: ignoring it would answer a wider question."""
+    """Each named value joins the plan whose type has that field, or any of them when
+    it has several ("rath": monument type or functional type): the subject first, then
+    any linked sub-plan. A value no type in the plan can hold refuses, as a date does:
+    ignoring it would answer a wider question."""
     for vm in g.values:
         placed = False
         for p in _plans(plan):
@@ -555,7 +556,8 @@ def _attach_values(g: Grounding, plan: Plan) -> str:
                     return (f"'not' with 'or': couldn't tell whether it negates "
                             f"'{vm.phrase}' alone or both")
                 hvs = [HasValue(v.field, v.value, v.label, v.kind)
-                       for v in (next(x for x in f if x.field == shared[0]) for f in fits)]
+                       for name in dict.fromkeys(shared)
+                       for v in (next(x for x in f if x.field == name) for f in fits)]
                 hv = hvs[0] if len(hvs) == 1 else AnyOf(hvs)
                 p.where.append(Not(hv) if vm.negated else hv)
                 placed = True
