@@ -97,9 +97,6 @@ onnx = [
     { name = "onnxruntime" },
     { name = "tokenizers" },
 ]
-roots = [
-    { name = "simplemma" },
-]
 vectors = [
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
@@ -112,11 +109,10 @@ requires-dist = [
     { name = "numpy", marker = "extra == 'onnx'" },
     { name = "numpy", marker = "extra == 'vectors'" },
     { name = "onnxruntime", marker = "extra == 'onnx'", specifier = ">=1.17" },
-    { name = "simplemma", marker = "extra == 'roots'" },
     { name = "tokenizers", marker = "extra == 'onnx'", specifier = ">=0.15" },
     { name = "wordllama", marker = "(python_full_version < '3.14' and platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'vectors') or (python_full_version < '3.14' and platform_machine == 'AMD64' and sys_platform == 'win32' and extra == 'vectors') or (python_full_version < '3.14' and sys_platform == 'darwin' and extra == 'vectors')", specifier = ">=0.4,<0.5" },
 ]
-provides-extras = ["vectors", "onnx", "roots"]
+provides-extras = ["vectors", "onnx"]
 
 [[package]]
 name = "certifi"
@@ -1370,15 +1366,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/28/50/f203ff3a3ddfe19308efc83c5a3a29ed02bf786732ec35e68bf9162f3365/safetensors-0.8.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fd6f3f93c9a0a7cc2788ee63fb763353d4bd2e89b0751bc78fcf7dda00bea774", size = 516040, upload-time = "2026-06-09T07:52:16.29Z" },
     { url = "https://files.pythonhosted.org/packages/27/43/41c1621732edd934d868a00d1b891584c892a7b62a9aab82ea5a0a5623ee/safetensors-0.8.0-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:8e080062fcde23be189565e1c3305d16751a218ecf9412c8601e64204eb6f846", size = 722361, upload-time = "2026-06-09T07:52:23.924Z" },
     { url = "https://files.pythonhosted.org/packages/1b/6d/3fba214c1e5e0f69991677ec3bc17023f0421776975e1de0c682dca475e2/safetensors-0.8.0-cp310-abi3-win_amd64.whl", hash = "sha256:096ec1a98435df7beb08853bb5aa9081a84f23d0adc67ed1a0a10550f608373f", size = 355540, upload-time = "2026-06-09T07:52:27.832Z" },
-]
-
-[[package]]
-name = "simplemma"
-version = "2.0.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/09/bf/c5f923da5eb468c6d4a86c6b3250ef92470a0d31bb51cd7d2fbbea22b7c0/simplemma-2.0.0.tar.gz", hash = "sha256:03f9ba792aa51ebbe18a78fc3138c0c0087d81b284eefa534f6f2015233dcb8d", size = 19084504, upload-time = "2026-08-12T13:48:07.179Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e2/e4/078d18631ce1c012af0f25e753f473745c0b139757334175a76d6b910c82/simplemma-2.0.0-py3-none-any.whl", hash = "sha256:db33b15f5aed6485a748ce34d1f510ca760af2633289ab9a8493e2afa785c352", size = 18954708, upload-time = "2026-08-12T13:47:55.162Z" },
 ]
 
 [[package]]
