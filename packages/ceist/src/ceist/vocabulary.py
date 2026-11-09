@@ -50,6 +50,12 @@ class Relation:
         return replace(self, domain=self.domain & owners, ends=ends,
                        range=self.range & {t for _m, ts in ends for t in ts})
 
+    def targets(self, source: str | None = None) -> set[str]:
+        """The types it can point at (from `source`, if given); empty when unknown."""
+        if not self.ends:
+            return set(self.range)
+        return {t for m, ts in self.ends if source in (None, m) for t in ts}
+
     def joins(self, source: str, target: str) -> bool:
         """Whether this link can run from a `source` record to a `target` one."""
         if self.ends:

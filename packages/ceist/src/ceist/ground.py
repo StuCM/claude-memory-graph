@@ -207,8 +207,19 @@ class Grounding:
 def is_question(text: str) -> bool:
     stripped = text.strip()
     words = WORD_RE.findall(stripped.lower())
-    return bool(stripped.endswith("?")
-                or (words and (words[0] in WH or words[0] in AUX or words[0] in IMPERATIVE)))
+    return bool(stripped.endswith("?") or (words and _opens(words[0])))
+
+
+def _opens(word: str) -> bool:
+    return word in WH or word in AUX or word in IMPERATIVE
+
+
+def _overlaps(start: int, end: int, spans) -> bool:
+    return any(start < e and end > s for s, e in spans)
+
+
+def _inside(start: int, end: int, spans) -> bool:
+    return any(s <= start and end <= e for s, e in spans)
 
 
 def _phrase_spans(raw: str, phrases: list[tuple[str, object]], taken: list[tuple[int, int]],
@@ -219,7 +230,7 @@ def _phrase_spans(raw: str, phrases: list[tuple[str, object]], taken: list[tuple
         m = next((m for m in re.finditer(rf"(?<!{ALNUM}){re.escape(phrase)}(?!{ALNUM})", raw)
                   if not any(s <= m.start() and m.end() <= e and m.end() - m.start() < e - s
                              for s, e in names)), None)
-        if not m or any(m.start() < e and m.end() > s for s, e in taken):
+        if not m or _overlaps(m.start(), m.end(), taken):
             continue
         taken.append((m.start(), m.end()))
         yield phrase, payload, m
@@ -302,7 +313,7 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
 
     names = _record_spans(vocab, words, terms, parts_of)
 
-    if words and (words[0][3] in WH or words[0][3] in AUX or words[0][3] in IMPERATIVE):
+    if words and _opens(words[0][3]):
         if words[0][3] in WH:
             g.wh = words[0][3]
         elif words[0][3] in IMPERATIVE:
@@ -338,7 +349,7 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
     shape = taken + [(s, e) for i, s, e, _w in words if i in consumed]
     longer = [(m.start(), m.end()) for p in (*by_form, *by_phrase)
               for m in re.finditer(rf"(?<!{ALNUM}){re.escape(p)}(?!{ALNUM})", raw)
-              if not any(m.start() < e and m.end() > s for s, e in shape)]
+              if not _overlaps(m.start(), m.end(), shape)]
 
     # ── relations
     relations = {r.name: r for r in vocab.relations()}
@@ -368,11 +379,9 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
     forms = sorted(((f, r.name) for r in relations.values() for f in r.forms),
                    key=lambda x: not types_of(*x) & named)
     for form, rel, m in ([] if g.about else _phrase_spans(raw, forms, taken, names + longer)):
-        if just_a_type(form) and (form.split()[0] in _LEAD_WORDS
-                                  or _SUBJECT_LEAD.search(raw[:m.start()])):
-            taken.remove((m.start(), m.end()))
-            continue
-        if rel in matched:
+        subject = just_a_type(form) and (form.split()[0] in _LEAD_WORDS
+                                         or _SUBJECT_LEAD.search(raw[:m.start()]))
+        if subject or rel in matched:
             taken.remove((m.start(), m.end()))
             continue
         matched.add(rel)
@@ -404,7 +413,7 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
     # ── "near X", "within 5 km of X": where the vocabulary has locations
     if getattr(vocab, "geometry_fields", None):
         m = next((m for m in NEAR_RE.finditer(raw)
-                  if not any(m.start() < e and m.end() > s for s, e in taken + names)), None)
+                  if not _overlaps(m.start(), m.end(), taken + names)), None)
         if m:
             taken.append((m.start(), m.end()))
             miles = bool(m[2]) and m[2].startswith("mile")
@@ -566,7 +575,7 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
 
     # a plan is a conjunction: "raths or cairns" would be read as "raths and cairns"
     for i, ws, we, w in words:
-        if w != "or" or i in consumed or any(s <= ws and we <= e for s, e in names):
+        if w != "or" or i in consumed or _inside(ws, we, names):
             continue
         if not getattr(vocab, "any_of", False):
             g.refuse = "'or' isn't supported yet; ask one at a time"
@@ -574,7 +583,6 @@ def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
         g.refuse = _either_values(g, i)
         if g.refuse:
             return g
-        consumed.add(i)
 
     # ── grammar caps + wiring the relations to their ends
     if len(g.edges) > MAX_EDGES:
@@ -891,7 +899,7 @@ def _fit_relations(g: Grounding, relations: dict[str, Relation],
             if same is not None:
                 g.refuse = _wrong_end(same, edge.form, {
                     t for r in sharing.get(edge.form, [edge.relation])
-                    for t in _targets(relations[r])})
+                    for t in relations[r].targets()})
                 return
             if terms_pos(edge.form) and not free_text:
                 g.refuse = f"'{edge.form}' can't join {types}"
@@ -903,13 +911,6 @@ def _fit_relations(g: Grounding, relations: dict[str, Relation],
         relations[pick] = relations[pick].said_as(edge.form)
         g.edges[g.edges.index(edge)] = _edge(relations[pick], edge.pos, form=edge.form)
         g.notes.append(f"'{edge.form}' → relation {pick} instead: it joins {types}")
-
-
-def _targets(rel: Relation, source: str | None = None) -> set[str]:
-    """The types `rel` can point at (from `source`, if given); empty when unknown."""
-    if not rel.ends:
-        return set(rel.range)
-    return {t for m, ts in rel.ends if source in (None, m) for t in ts}
 
 
 def _wrong_end(anchor: Node, form: str, targets: set[str]) -> str:
@@ -928,9 +929,9 @@ def _check_anchors(g: Grounding, relations: dict[str, Relation]) -> None:
             continue
         a = e.target
         if not rel.joins(e.source.type, a.type):
-            g.refuse = _wrong_end(a, e.form, _targets(rel, e.source.type))
+            g.refuse = _wrong_end(a, e.form, rel.targets(e.source.type))
             return
-        if not _targets(rel, e.source.type):
+        if not rel.targets(e.source.type):
             g.field_of = e
 
 
@@ -1049,7 +1050,7 @@ def _either_records(g: Grounding, vocab: Vocabulary, words, names, consumed: set
     one type, is one anchor that may be either record."""
     for i, ws, we, w in words:
         if (w != "or" or i in consumed or not 0 < i < len(words) - 1
-                or any(s <= ws and we <= e for s, e in names)):
+                or _inside(ws, we, names)):
             continue
         before = [s for s, e in names if e == words[i - 1][2]]
         after = [e for s, e in names if s == words[i + 1][1]]

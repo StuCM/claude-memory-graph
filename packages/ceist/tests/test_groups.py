@@ -17,7 +17,7 @@ from ceist.alizarin import Tiles, evaluate
 from ceist.arches import ArchesVocabulary
 from ceist.arches_search import compile_checked
 from ceist.readback import check
-from ceist.rosmadair import compile_plan, read_back, to_query
+from ceist.rosmadair import compile_plan, read_back
 
 BUNDLE = {"format": "ceist.vocab/2", "models": {"Building": {
     "nodes": {"construction_date": {"kind": "date"}},
@@ -101,7 +101,7 @@ def test_destruction_and_fire_on_different_tiles_do_not_match(vocab, data, snaps
         plan = interpret(vocab, q).plan
         assert isinstance(plan.where[0], OnTile), q
         assert evaluate(plan, Tiles(vocab)) == {ids["tower"]}, q
-        assert _resolve(snapshot, vocab, to_query(plan, vocab)) == {ids["tower"]}, q
+        assert _resolve(snapshot, vocab, compile_plan(plan, vocab).query) == {ids["tower"]}, q
     loose = Plan("Building", plan.where[0].conditions)
     assert evaluate(loose, Tiles(vocab)) == {ids["tower"], ids["warehouse"]}
 

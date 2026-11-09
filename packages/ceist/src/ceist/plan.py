@@ -43,7 +43,7 @@ from dataclasses import dataclass, field, replace
 
 from .ground import DATE_WORDS, NEG, WORD_RE, Edge, Grounding, Node, ground, is_question
 from .text import ALNUM, terms
-from .vocabulary import Entity, Value, Vocabulary
+from .vocabulary import Entity, Vocabulary
 
 
 @dataclass
@@ -627,7 +627,3 @@ def _within(c, fn):
     if isinstance(c, LinkTo) and isinstance(c.target, Plan):
         return replace(c, target=_replace(c.target, fn))
     return c
-
-
-def describe(value: Value) -> str:
-    return f"{value.field} = {value.label}"
