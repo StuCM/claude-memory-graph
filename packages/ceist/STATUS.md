@@ -91,6 +91,11 @@ One picture of the system, what is proven, what isn't, and the plan we work from
 
 After that, builds run only when the schema changes or the capture log repeats a phrase, and they run automatically. Work on the ontology layer carries across every site.
 
+## 5a. Schema assembly (049): decisions
+- **Adopted as the design** to port, once 050 wins back same-type links. Reordered and fragment questions: 9 → 28 of 30 right, 0 wrong.
+- **A value held by several fields means any of them** (Stu, 2026-11-09). "rath" is monument type *or* functional type, and the narration says so. This replaces strict mode's silent first-field pick.
+- **Word order decides direction only for links between two records of the same type** (a tale's parent tale, a figure's father). The schema can't tell those apart.
+
 ## 6. Parked (deliberately not now)
 - the TypeScript / browser port (spike done; waits for A and B; leave bge out of the browser build, or load it only after a refusal for "did you mean");
 - the question-capture loop (designed);
