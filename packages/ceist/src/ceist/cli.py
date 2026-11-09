@@ -29,6 +29,8 @@
                          [--review-only] [--skip demo|her]   # rules (no LLM) → review → gate → the layers
     ceist vocab fill <graphs dir> [<graphs dir> …] [as generate] [--estimate] [--llm-cmd CMD] [--model M]
                      [--max-calls N]   # the LLM on the gaps the rules left, then generate's review and gate
+    ceist vocab crm-first <base graphs> [<client graphs>] [<more graph sets> …] [--base …] [--client …] -o <dir>
+                          [--review-only] [--skip demo|her]   # base/client phrasings a CRM path carries → ontology
     ceist vocab profile <graphs dir> [--reference <dir>] [--json]   # the sizes that drive LLM cost
     ceist vocab estimate <graphs dir> --stages base,data,questions,ontology [--model M] [--rounds N]
                          [--ledger <run dir> …] [--json]   # calls, tokens and dollars before a run
@@ -277,10 +279,13 @@ def _layers(a):
 
 def _coverage(a):
     from . import vocab_rules as vr
-    elements = vr.checklist(_layers(a), vr.read_reasons(Path(a.out) / f"rules-{a.name}.json") if a.out else None)
+    from .crm_first import LEDGER
+    layers = _layers(a)
+    elements = vr.checklist(layers, vr.read_reasons(Path(a.out) / f"rules-{a.name}.json") if a.out else None)
+    tail = vr.where_md(layers, Path(a.out) / LEDGER if a.out else None)
     if a.out:
-        vr.write_report(elements, Path(a.out), a.name, a.name)
-    print(vr.report_md(elements, a.name))
+        vr.write_report(elements, Path(a.out), a.name, a.name, tail)
+    print(vr.report_md(elements, a.name) + tail)
     return 0
 
 
@@ -292,6 +297,12 @@ def _generate(a):
 def _fill(a):
     from . import vocab_rules as vr
     return vr.fill(_layers(a), Path(a.out), a.name, a.llm_cmd, a.model, a.max_calls, a.estimate, a.skip or ())
+
+
+def _crm_first(a):
+    from . import crm_first
+    ontology = a.ontology or Path(a.base).parent / "ontology" / "cidoc-crm"
+    return crm_first.run(a.graphs, a.base, a.client, ontology, Path(a.out), a.review_only, a.skip or ())
 
 
 def _profile(a):
@@ -496,6 +507,16 @@ def main(argv=None):
         p.add_argument("--model")
         p.add_argument("--max-calls", type=int, default=300)
         p.set_defaults(fn=fn)
+
+    p = vocab.add_parser("crm-first", help="move the phrasings a CRM path carries into the ontology layer, gated")
+    p.add_argument("graphs", nargs="+", help="graph sets a path must mean one thing in; the base's graphs first")
+    p.add_argument("--base", default="vocabularies/base")
+    p.add_argument("--client", help="the client layer (a site's vocab dir); its graphs among the sets")
+    p.add_argument("--ontology", help="default: ontology/cidoc-crm beside --base")
+    p.add_argument("-o", "--out", required=True, help="the ledger's and report's dir")
+    p.add_argument("--skip", action="append", choices=["demo", "her"])
+    p.add_argument("--review-only", action="store_true", help="classify and write the ledger; no gate, no move")
+    p.set_defaults(fn=_crm_first)
 
     p = vocab.add_parser("profile", help="the sizes that drive a build's LLM cost, per graph")
     p.add_argument("graphs")
