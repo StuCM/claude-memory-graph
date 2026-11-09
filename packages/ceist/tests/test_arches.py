@@ -14,7 +14,7 @@ from ceist.plan import EntityRef
 from ceist.arches import ArchesVocabulary
 from ceist.arches_search import compile_checked, read_back as as_read_back, to_payload  # noqa: E501
 from ceist.readback import check
-from ceist.rosmadair import Unsupported, compile_plan, read_back, to_query
+from ceist.rosmadair import Unsupported, compile_plan, read_back
 
 
 @pytest.fixture(scope="module")
@@ -46,7 +46,7 @@ def test_vocabulary_reads_types_relations_values_and_names(vocab):
 
 def test_listed_buildings_on_a_site(vocab, data):
     m = interpret(vocab, "which listed buildings are on site Leeds Dock?")
-    q = to_query(m.plan, vocab, 25)
+    q = compile_plan(m.plan, vocab, 25).query
     listed = data[1]["concepts"]["Listed"]
     assert q["model"] == fx.BUILDING and q["measures"] == ["select_ids"]
     assert {"has_link": {"path": "site", "target": data[1]["ids"]["dock"]}} in q["where"]["all"]
@@ -56,7 +56,7 @@ def test_listed_buildings_on_a_site(vocab, data):
 
 def test_count_and_multi_hop(vocab):
     m = interpret(vocab, "how many buildings designed by Ada Lovelace are on site Salts Mill?")
-    q = to_query(m.plan, vocab)
+    q = compile_plan(m.plan, vocab).query
     assert q["measures"] == ["count_records"] and "limit" not in q
     paths = {next(iter(p.values()))["path"] for p in q["where"]["all"]}
     assert paths == {"architect", "site"}
@@ -65,7 +65,7 @@ def test_count_and_multi_hop(vocab):
 def test_backwards_link_compiles_to_on_backlink(vocab, data):
     m = interpret(vocab, "which sites have buildings designed by Ada Lovelace?")
     assert m.plan.type == "Site" and m.plan.where[0].direction == "in"
-    q = to_query(m.plan, vocab)
+    q = compile_plan(m.plan, vocab).query
     assert q["where"] == {"on_backlink": {"path": "site", "model": fx.BUILDING, "where": {
         "has_link": {"path": "architect", "target": data[1]["ids"]["ada"]}}}}
     assert check(m.plan, read_back(compile_plan(m.plan, vocab), vocab)).ok
@@ -74,7 +74,7 @@ def test_backwards_link_compiles_to_on_backlink(vocab, data):
 def test_backwards_link_from_one_record_is_refused_by_name(vocab, data):
     tower = EntityRef(vocab.entity(data[1]["ids"]["tower"]))
     with pytest.raises(Unsupported, match="backwards"):
-        to_query(Plan("Site", [LinkTo("site", tower, "in", style="field")]), vocab)
+        compile_plan(Plan("Site", [LinkTo("site", tower, "in", style="field")]), vocab)
 
 
 def _classed(root, site_class="E53_Place"):
@@ -203,7 +203,7 @@ def test_alizarin(vocab, question, expect, absent):
 
 def test_rosmadair_dates_and_not(vocab):
     m = interpret(vocab, "which listed buildings were not built in the 1840s?")
-    q = to_query(m.plan, vocab)
+    q = compile_plan(m.plan, vocab).query
     (concept, neg) = q["where"]["all"]
     assert concept["concept"]["path"] == "heritage_status"
     def day(*ymd):                     # proleptic Gregorian days since 1970, as quantize_date
@@ -211,14 +211,12 @@ def test_rosmadair_dates_and_not(vocab):
     assert neg == {"not": {"range": {"path": "construction_date",
                                      "lo": day(1840, 1, 1), "hi": day(1849, 12, 31)}}}
     m = interpret(vocab, "which buildings were built before 1900?")
-    r = to_query(m.plan, vocab)["where"]["range"]
+    r = compile_plan(m.plan, vocab).query["where"]["range"]
     assert r["hi"] == day(1899, 12, 31) and r["lo"] <= -10 ** 9   # open below
 
 
 def test_rosmadair_negated_link_subtracts(vocab, data):
     m = interpret(vocab, "which buildings were not designed by Ada Lovelace?")
-    with pytest.raises(Unsupported, match="compile_plan"):
-        to_query(m.plan, vocab)
     c = compile_plan(m.plan, vocab)
     assert "where" not in c.query                                 # every Building …
     assert c.minus == [{"model": fx.BUILDING, "measures": ["select_ids"],
@@ -404,7 +402,7 @@ def test_end_to_end_chain_through_another_model(vocab, data, snapshot):
     by_isambard = Plan("Building", [LinkTo("architect", isambard, style="field")])
     on_that_site = Plan("Site", [LinkTo("site", by_isambard, "in", style="field")])
     plan = Plan("Building", [LinkTo("site", on_that_site, style="field")])
-    q = to_query(plan, vocab)
+    q = compile_plan(plan, vocab).query
     assert linked_models(q) == [fx.SITE]
     assert _resolve(snapshot, vocab, q) == {ids["tower"], ids["warehouse"]}
     import ros_madair
@@ -514,7 +512,7 @@ def test_qualified_link_on_the_same_entry(roles, question, expect, absent):
 
 def test_qualified_link_to_rosmadair_on_tile(roles, data):
     m = interpret(roles, "which buildings were designed by Ada Lovelace?")
-    q = to_query(m.plan, roles)
+    q = compile_plan(m.plan, roles).query
     assert q["where"] == {"on_tile": [
         {"has_link": {"path": "actor", "target": data[1]["ids"]["ada"]}},
         {"concept": {"path": "actor_role", "op": "descendant_or_self_of",
@@ -597,11 +595,11 @@ def test_values_on_different_tiles_do_not_match(roles, data, snapshot):
     ids = data[1]["ids"]
     plan = Plan("Building", [_entry(roles, data, "ada", "Architect")])
     assert evaluate(plan, Tiles(roles)) == {ids["tower"]}
-    assert _resolve(snapshot, roles, to_query(plan, roles)) == {ids["tower"]}
+    assert _resolve(snapshot, roles, compile_plan(plan, roles).query) == {ids["tower"]}
     # the same two conditions anywhere on the record match the warehouse too
     loose = Plan("Building", plan.where[0].conditions)
     assert evaluate(loose, Tiles(roles)) == {ids["tower"], ids["warehouse"]}
-    assert _resolve(snapshot, roles, to_query(loose, roles)) == {ids["tower"], ids["warehouse"]}
+    assert _resolve(snapshot, roles, compile_plan(loose, roles).query) == {ids["tower"], ids["warehouse"]}
 
 
 @pytest.mark.parametrize("question", [
@@ -652,7 +650,7 @@ def test_or_joins_values_of_one_field_or_records_of_one_link(vocab, data):
     ids, concepts = data[1]["ids"], data[1]["concepts"]
     m = interpret(vocab, "which grade ii or candidate buildings are there?")
     assert narrate(m.plan) == "Find Buildings whose heritage status is Grade II or Candidate."
-    assert to_query(m.plan, vocab)["where"] == {"any": [
+    assert compile_plan(m.plan, vocab).query["where"] == {"any": [
         {"concept": {"path": "heritage_status", "op": "descendant_or_self_of",
                      "value": concepts[label]}} for label in ("Grade II", "Candidate")]}
     m = interpret(vocab, "how many buildings are designed by Ada Lovelace or Isambard Brunel?")

@@ -19,7 +19,7 @@ from ceist.alizarin import Tiles, ask, evaluate
 from ceist.arches import ArchesVocabulary
 from ceist.arches_search import compile_checked, to_payload
 from ceist.plan import EntityRef
-from ceist.rosmadair import to_query
+from ceist.rosmadair import compile_plan
 
 MONUMENT, PERSON = "5e000000-0000-4000-8000-0000000000c1", "5e000000-0000-4000-8000-0000000000c2"
 STATUS_LIST, PHASE_LIST = (str(_id(f"list/{n}")) for n in ("status", "phase"))
@@ -204,7 +204,7 @@ def test_arches_search_takes_list_values_as_reference_items(vocab, data):
 
 def test_ros_madair_takes_list_values_by_item_id(vocab, data):
     _, _, S, _ = data
-    q = to_query(interpret(vocab, "which listed monuments are there?").plan, vocab, 25)
+    q = compile_plan(interpret(vocab, "which listed monuments are there?").plan, vocab, 25).query
     assert q["where"] == {"concept": {"path": "heritage_status", "op": "descendant_or_self_of",
                                       "value": S["Listed"][0]}}
 
@@ -326,7 +326,7 @@ def test_one_tile_backends_refuse_a_condition_on_another_tile(vocab, data):
     _, ids, _, P = data
     plan = _phase(vocab, ids, P, "phase_actor")
     with pytest.raises(Unsupported, match="'phase_type' is on a phases tile"):
-        to_query(plan, vocab)
+        compile_plan(plan, vocab).query
     with pytest.raises(Unsupported, match="'phase_type' is on a phases tile"):
         to_payload(plan, vocab)
 

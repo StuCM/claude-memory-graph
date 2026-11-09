@@ -1,7 +1,7 @@
 """Plans → Rós Madair's Query IR, read back, and run over a Rós Madair snapshot.
 
     from ceist.arches import ArchesVocabulary
-    from ceist.rosmadair import ask, compile_plan, to_query
+    from ceist.rosmadair import ask, compile_plan
     vocab = ArchesVocabulary.from_data_dir("data")
     print(ask("how many listed buildings are on site Leeds Dock?", vocab, "snapshot",
               explain=True))
@@ -68,7 +68,6 @@ from .plan import (AnyOf, Contains, DateRange, Detail, EntityRef, GroupBy, HasVa
                    Mention, NameMatch, Near, Not, OnTile, Plan, as_tile, interpret)
 from .readback import check
 
-DEFAULT_LIMIT = 1000
 GROUP_CAP = 50
 
 
@@ -239,10 +238,9 @@ def group_values(plan: Plan, vocab) -> list[str]:
     types, else (targets unknown) every record the plan's type links to by it.
     Raises Unsupported over GROUP_CAP: each is a query of its own."""
     from .alizarin import _links
-    from .ground import _targets
     path = plan.group.relation
     rel = next(r for r in vocab.relations() if r.name == path)
-    ids = set().union(*(vocab.ids_of(t) for t in _targets(rel, plan.type)))
+    ids = set().union(*(vocab.ids_of(t) for t in rel.targets(plan.type)))
     if not ids:
         node = vocab.node(plan.type, path)["nodeid"]
         graph_id = vocab.model(plan.type).graph_id
@@ -255,15 +253,6 @@ def group_values(plan: Plan, vocab) -> list[str]:
         raise Unsupported(f"counting by {path.replace('_', ' ')}: {len(ids)} records it can "
                           f"point at, over the {GROUP_CAP} a count per record runs")
     return sorted(ids, key=lambda i: vocab.names.get(i, i))
-
-
-def to_query(plan: Plan, vocab, limit: int | None = None) -> dict:
-    """The single Rós Madair Query for a plan (raises Unsupported — also for a
-    negated link, which needs compile_plan's subtraction)."""
-    compiled = compile_plan(plan, vocab, limit)
-    if compiled.minus:
-        raise Unsupported("a negated link needs a second query to subtract: use compile_plan")
-    return compiled.query
 
 
 # ── read-back: the IR → a plan again ─────────────────────────────────────
