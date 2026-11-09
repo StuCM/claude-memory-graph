@@ -50,6 +50,16 @@ Make the ontology layer the **default home** for a phrasing, and the graph and c
   - `CRM-LID-CHECK.md`;
   - the Worker notes of 023, 025, 033, 035 and 039;
   - the graph Patterns "Ceist link phrases have no direction" and "ontology gate proves grounding, not usage".
+- **The check's numbers** (CRM-FIRST-CHECK.md):
+  - **base layer:** 7,505 phrasings; 1,272 promotable, 1,122 on a longer path, 3,360 ambiguous, 770 clash, 138 already in the ontology layer, 54 non-CRM, 789 site-specific;
+  - **Catalina:** about 2,800 new phrase applications, an upper bound;
+  - **lingo:** only 32, because its custom properties block the rest.
+
+  Its scripts are in `/home/stuart/.cache/tmp-053/` (`crmfirst.py`, `report.py`), and §7 has the method. **Include two key changes the check found:**
+  - let the ontology layer carry plain fields (`crm.py:190`, 808 more phrasings);
+  - key dates hung on a P82b, P81b or P3 end (`crm.py:174`, 52 phrasings).
+
+  Leave the client layer's uncommitted working-tree files in the main checkout alone: they are Stu's live data run.
 - Assembly is the default after 051. Run every measurement in the default mode, and note anything that differs in strict mode.
 - **No `claude -p` or live LLM runs.**
 - Run `ponytail-review` before the review round. Follow Stu's code style rules (`~/.claude/CLAUDE.md`).
