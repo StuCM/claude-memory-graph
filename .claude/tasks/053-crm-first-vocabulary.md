@@ -28,6 +28,10 @@ Make the ontology layer the **default home** for a phrasing, and the graph and c
    - send it through the **existing gate** (`ceist vocab ontology --accept`, or 039's route): each one alone on the fresh-graph bench, then all together on the bench, the demo bank and HER plans;
    - remove it from the graph or client layer **only once its ontology form is accepted**;
    - a phrasing the gate rejects stays where it is, with the gate's reason recorded.
+   **Path meaning, not single links.** Stu, 2026-11-09: "reading more than just a single link in the crm to understand meaning… the ontology with a unified base understanding and then the graph builds on top of that to add its additional meaning through the node structure."
+   - The base meaning of a multi-hop path is composed from its CRM labels. For example, `P108i E12 P4` is "was produced by" + "Production" + "has time-span", which gives "produced when", "date of production", and so on. Extend 039's rule generators to compose these for every path the graphs use, and gate them as usual.
+   - A graph's node names then add only what the path doesn't already say: the **delta**, such as "Construction phase" on that path giving "built".
+   - Record, per graph, how much of its vocabulary is base (from the ontology) and how much is delta (from its own nodes).
 2. **The exceptions keep a reason.** Every phrasing left in a graph or client layer carries a one-line reason: ambiguous path, non-CRM property, site-specific term, or gate-rejected. Extend 039's coverage report (`ceist vocab coverage`) to show, per layer, how much lives where and why.
 3. **Make CRM-first the playbook default.** Update `VOCAB-TRAINING.md` so new vocabulary (rules, LLM fill, review) is proposed on the CRM path first and lands in a graph layer only for the listed reasons. Update STATUS.md §2.
 4. **Measure** (tables in Worker notes, before and after):

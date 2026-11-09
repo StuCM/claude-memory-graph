@@ -96,6 +96,11 @@ After that, builds run only when the schema changes or the capture log repeats a
 - **A value held by several fields means any of them** (Stu, 2026-11-09). "rath" is monument type *or* functional type, and the narration says so. This replaces strict mode's silent first-field pick.
 - **Word order decides direction only for links between two records of the same type** (a tale's parent tale, a figure's father). The schema can't tell those apart.
 
+## 5b. Direction: an ontology base, with graphs as the delta (Stu, 2026-11-09)
+- **The ontology gives the base meaning.** A path's meaning is composed from the labels along it, across several hops, not one link. Anything built on that ontology starts with it.
+- **A graph adds only its delta,** through its node structure and names. The graph and client layers hold what the ontology can't say, each with a reason (task 053).
+- **Ontologies are pluggable.** CIDOC-CRM is the first. The same machinery can build a base vocabulary for any RDFS or OWL ontology (task 054, draft), so Ceist works for any domain whose data sits on a shared ontology, not only heritage.
+
 ## 6. Parked (deliberately not now)
 - the TypeScript / browser port (spike done; waits for A and B; leave bge out of the browser build, or load it only after a refusal for "did you mean");
 - the question-capture loop (designed);
