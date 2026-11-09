@@ -10,7 +10,6 @@ class Node:
     kind: str                 # "var" | "anchor"
     type: str
     pos: float                # word index, for word-order rules
-    var: str = ""             # variable name (vars)
     entity: Entity | None = None
     match_terms: list[str] = field(default_factory=list)
     implicit: bool = False    # a var only a relation's end implied, not named
@@ -115,7 +114,6 @@ class Grounding:
     name: NameGround | None = None
     negation_unplaced: str = ""   # a negator with nothing after it to negate
     subject: Node | None = None
-    anchor: Node | None = None            # the first named record
     anchors: list[Node] = field(default_factory=list)
     coverage: float = 0.0
     uncovered: list[str] = field(default_factory=list)
@@ -126,12 +124,15 @@ class Grounding:
     group: Edge | None = None # "by county": count per record this link points at
     group_order: str = ""     # "most" | "fewest": only the top or bottom one
     loose: str = ""           # relation phrases dropped to list a type
-    about: bool = False       # "what do we know about X"
     notes: list[str] = field(default_factory=list)
     suggestions: list[tuple[str, list[str]]] = field(default_factory=list)   # (words, did-you-mean)
     # phrases no layer placed, for the learning log (ceist.learn.from_grounding):
     # {"phrase", "model", "slot", "options": [{"node", "qualifier", "end_node", "label"}]}
     unplaced: list[dict] = field(default_factory=list)
+
+    @property
+    def anchor(self) -> Node | None:
+        return self.anchors[0] if self.anchors else None
 
     def vars(self) -> list[Node]:
         return [n for n in self.nodes if n.kind == "var"]

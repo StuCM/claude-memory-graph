@@ -99,7 +99,6 @@ def _anchors(s: Scan) -> None:
             g.anchors = [n for n in g.anchors if n is not a]
             g.nodes = [n for n in g.nodes if n is not a]
             g.notes.append(f"'{g.near.phrase}' → within {g.near.km:g} km of {a.type} '{a.name}'")
-    g.anchor = g.anchors[0] if g.anchors else None
 
 
 def _either_records(s: Scan) -> None:
@@ -191,7 +190,7 @@ def _imply_model(s: Scan) -> None:
     """No type named ("how many raths are there?"): values that only one model
     holds name it. Values two models hold refuse with "did you mean" each."""
     g = s.g
-    if g.nodes or g.edges or g.about:
+    if g.nodes or g.edges or s.about:
         return
     named = [(v.phrase, v.pos, {o for c in v.candidates for o in c.owners},
               all(c.owners for c in v.candidates)) for v in g.values]

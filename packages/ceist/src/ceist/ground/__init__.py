@@ -67,7 +67,7 @@ def pieces(vocab: Vocabulary, text: str, today=None, matcher=None, fit: bool = T
     if fit:
         _fit_relations(s)  # after anchors: fitting needs both ends named
     _imply_model(s)
-    if matcher is not None and not s.g.about:
+    if matcher is not None and not s.about:
         _match_leftovers(s, matcher)   # after fit (edges removed) and imply model (types it adds)
     _fill_groups(s)       # after the matcher: it fills the groups the matcher adds
     _text_filter(s)       # after fill groups: words held in a group's clause stay out

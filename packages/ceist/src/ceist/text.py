@@ -33,6 +33,10 @@ def terms(text: str) -> list[str]:
     return [w for _, w in terms_pos(text)]
 
 
+def overlaps(start: int, end: int, spans) -> bool:
+    return any(start < e and end > s for s, e in spans)
+
+
 def plural(word: str) -> str:
     """A noun's plural, keeping its case ("Site" → "Sites", "property" → "properties")."""
     if word.endswith("y") and len(word) > 2 and word[-2].lower() not in "aeiou":

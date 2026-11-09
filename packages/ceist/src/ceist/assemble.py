@@ -113,8 +113,7 @@ def readings(s: Scan) -> list[Grounding] | None:
             if isinstance(x, Node):
                 return x
             if x not in implicit:
-                implicit[x] = Node("var", x, pos + 0.5, var=f"?v{len(s.seen) + len(implicit)}",
-                                   implicit=True)
+                implicit[x] = Node("var", x, pos + 0.5, implicit=True)
             return implicit[x]
 
         edges = []

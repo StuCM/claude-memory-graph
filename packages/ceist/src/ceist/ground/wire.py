@@ -110,10 +110,10 @@ def _assign_edges(s: Scan) -> None:
                     # type-fitting candidate is its OTHER end is misgrounded
                     existing = seen[t]
                     return existing if existing is not present else None
-                cand = Node("var", t, edge.pos + 0.5, var=f"?v{len(seen)}", implicit=True)
+                cand = Node("var", t, edge.pos + 0.5, implicit=True)
                 seen[t] = cand
                 g.nodes.append(cand)
-                g.notes.append(f"relation {edge.relation} → implicit {t} variable {cand.var}")
+                g.notes.append(f"relation {edge.relation} → implicit {t} variable")
             return cand
 
         if left is None:
