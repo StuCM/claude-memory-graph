@@ -2,11 +2,15 @@
 
 from test_ceist import Toy
 
-from ceist import Relation, interpret, narrate
+from ceist import Relation, Value, interpret, narrate
 
 
 def schema(vocab, text):
     return interpret(vocab, text, assembly="schema")
+
+
+def strict(vocab, text):
+    return interpret(vocab, text, assembly="strict")
 
 
 class Nested(Toy):
@@ -22,31 +26,63 @@ LISTED_ON_DOCK = ("Find Buildings that on site Site 'Leeds Dock' and whose herit
 
 
 def test_a_reordered_question_reads_as_the_plain_one():
-    plain = interpret(Toy(), "which listed buildings are on site Leeds Dock?")
+    plain = strict(Toy(), "which listed buildings are on site Leeds Dock?")
     assert narrate(plain.plan) == LISTED_ON_DOCK
     q = "on site Leeds Dock, which buildings are listed?"
-    assert interpret(Toy(), q).plan is None
+    assert strict(Toy(), q).plan is None
     assert narrate(schema(Toy(), q).plan) == LISTED_ON_DOCK
 
 
 def test_a_fragment_is_a_question_once_it_names_a_subject():
-    assert interpret(Toy(), "listed buildings on site Leeds Dock").statement
+    assert strict(Toy(), "listed buildings on site Leeds Dock").statement
     assert narrate(schema(Toy(), "listed buildings on site Leeds Dock").plan) == LISTED_ON_DOCK
 
 
 def test_a_filler_word_is_ignored():
     q = "which of these listed buildings are on site Leeds Dock?"
-    assert interpret(Toy(), q).refused.startswith("couldn't place 'these'")
+    assert strict(Toy(), q).refused.startswith("couldn't place 'these'")
     assert narrate(schema(Toy(), q).plan) == LISTED_ON_DOCK
 
 
+def test_word_order_decides_a_same_type_link_either_way():
+    for q, want in (("which sites are part of Salts Mill?",
+                     "Find Sites that parent_site Site 'Salts Mill'."),
+                    ("which sites is Salts Mill part of?",
+                     "Find Sites that Site 'Salts Mill' parent_site.")):
+        assert narrate(strict(Nested(), q).plan, forms=False) == want
+        assert narrate(schema(Nested(), q).plan, forms=False) == want
+
+
+class Owned(Toy):
+    """Toy, with a second link from buildings to people said the same way."""
+
+    def relations(self):
+        return super().relations() + [Relation("owner", ("designed by",), frozenset({"Building"}),
+                                               frozenset({"Person"}))]
+
+
 def test_two_readings_ask_which():
-    m = schema(Nested(), "which sites are part of Salts Mill?")
+    m = schema(Owned(), "which buildings are designed by Ada Lovelace?")
     assert m.plan is None
     assert m.refused.startswith("2 readings fit; did you mean")
-    assert m.grounding.suggestions == [("the question", [
-        "Find Sites that parent_site Site 'Salts Mill'.",
-        "Find Sites that Site 'Salts Mill' parent_site."])]
+    assert sorted(m.grounding.suggestions[0][1]) == [
+        "Find Buildings that architect Person 'Ada Lovelace'.",
+        "Find Buildings that owner Person 'Ada Lovelace'."]
+
+
+class Designated(Toy):
+    """Toy, where 'listed' is also a value of a second field on buildings."""
+
+    def values(self):
+        return super().values() + [Value("listed", "designation", "d-listed", "Listed",
+                                         frozenset({"Building"}))]
+
+
+def test_a_value_in_two_fields_means_either():
+    for mode in ("strict", "schema"):
+        m = interpret(Designated(), "which listed buildings are on site Leeds Dock?", assembly=mode)
+        assert narrate(m.plan) == ("Find Buildings that on site Site 'Leeds Dock' and whose "
+                                   "heritage status or designation is Listed.")
 
 
 def test_no_reading_refuses():

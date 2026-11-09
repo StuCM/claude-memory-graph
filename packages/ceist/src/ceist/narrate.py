@@ -95,7 +95,7 @@ def _condition(c, forms: bool, canonical: bool) -> str:
 
 
 def _any_of(c: AnyOf, forms: bool, canonical: bool, negated: bool) -> str:
-    """"whose monument type is Rath or Cairn": one field, its values joined."""
+    """"whose monument type is Rath or Cairn": the fields and their values joined."""
     first = c.conditions[0]
     if all(isinstance(x, LinkTo) and isinstance(x.target, EntityRef)
            and (x.relation, x.direction, x.style, x.qualifier)
@@ -105,11 +105,15 @@ def _any_of(c: AnyOf, forms: bool, canonical: bool, negated: bool) -> str:
         if canonical:
             targets.sort()
         return _link(first, forms, canonical, negated, " or ".join(targets))
-    if all(isinstance(x, HasValue) and x.field == first.field for x in c.conditions):
-        labels = [x.label for x in c.conditions]
-        if canonical:
-            labels.sort()
-        return f"whose {_field(first.field)} is {'not ' if negated else ''}{' or '.join(labels)}"
+    if all(isinstance(x, HasValue) for x in c.conditions):
+        names = list(dict.fromkeys(x.field for x in c.conditions))
+        labels = list(dict.fromkeys(x.label for x in c.conditions))
+        if len(c.conditions) == len(names) * len(labels):
+            if canonical:
+                names.sort()
+                labels.sort()
+            return (f"whose {' or '.join(_field(n) for n in names)} is "
+                    f"{'not ' if negated else ''}{' or '.join(labels)}")
     parts = [_condition(x, forms, canonical) for x in c.conditions]
     if canonical:
         parts.sort()
