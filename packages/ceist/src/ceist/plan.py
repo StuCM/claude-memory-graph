@@ -38,6 +38,7 @@ link). And it refuses — with the reason — when the grounding is too thin to
 trust: the planner never guesses.
 """
 
+import os
 import re
 from dataclasses import dataclass, field, replace
 
@@ -184,7 +185,13 @@ class Interpretation:
     partial: Partial | None = None     # on a refusal only; the refusal stays the answer
 
 
-def interpret(vocab: Vocabulary, text: str, today=None, matcher=None) -> Interpretation:
+def interpret(vocab: Vocabulary, text: str, today=None, matcher=None,
+              assembly: str | None = None) -> Interpretation:
+    """`assembly="schema"` (or CEIST_ASSEMBLY=schema) puts the question together by the
+    schema instead of by word order: ceist.assemble, a prototype."""
+    if (assembly or os.environ.get("CEIST_ASSEMBLY")) == "schema":
+        from .assemble import interpret as assembled
+        return assembled(vocab, text, today, matcher)
     out = _interpret(vocab, text, today, matcher)
     if out.refused and not out.statement:
         out.partial = _partial(vocab, out.grounding)
@@ -195,7 +202,11 @@ def _interpret(vocab: Vocabulary, text: str, today, matcher) -> Interpretation:
     if not is_question(text):
         return Interpretation(Grounding(text=text), statement=True,
                               refused="statement-shaped, not a question")
-    g = ground(vocab, text, today, matcher)
+    return _finish(vocab, ground(vocab, text, today, matcher))
+
+
+def _finish(vocab: Vocabulary, g: Grounding) -> Interpretation:
+    """A wired grounding's plan, or why there is none."""
     out = Interpretation(g)
     if g.refuse:
         out.refused = f"out of grammar ({g.refuse})"
@@ -217,9 +228,7 @@ def _interpret(vocab: Vocabulary, text: str, today, matcher) -> Interpretation:
     if g.uncovered:
         # words nothing placed would be dropped from the answer: a wider
         # question answered as if it were the one asked. Refuse, naming them.
-        out.refused = (f"couldn't place {_quoted(g.uncovered)} — answering without "
-                       f"{'it' if len(g.uncovered) == 1 else 'them'} would widen the question"
-                       + _did_you_mean(g))
+        out.refused = _unplaced(g)
         return out
     if not g.coverage:
         out.refused = "nothing in it names anything this vocabulary knows"
@@ -497,6 +506,12 @@ def _plans(plan: Plan):
             todo[:0] = c.conditions
         elif isinstance(c, LinkTo) and isinstance(c.target, Plan):
             yield from _plans(c.target)
+
+
+def _unplaced(g: Grounding) -> str:
+    return (f"couldn't place {_quoted(g.uncovered)} — answering without "
+            f"{'it' if len(g.uncovered) == 1 else 'them'} would widen the question"
+            + _did_you_mean(g))
 
 
 def _quoted(words) -> str:
