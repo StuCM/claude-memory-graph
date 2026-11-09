@@ -1,0 +1,155 @@
+{
+ "about": "Task 049: 30 variants of demo-bank questions that are right (bench/demo/questions.json): clauses moved, fragments, filler added. Written from the demo bank only, never from the generated sets. Each is right when it reads as its `from` question does (canonical narration) with the same count.",
+ "questions": [
+  {
+   "q": "tales that feature Cú Chulainn",
+   "from": "which tales feature Cú Chulainn?",
+   "count": 11
+  },
+  {
+   "q": "which of the tales feature Cú Chulainn?",
+   "from": "which tales feature Cú Chulainn?",
+   "count": 11
+  },
+  {
+   "q": "how many tales are there that belong to the Fenian Cycle?",
+   "from": "how many tales belong to the Fenian Cycle?",
+   "count": 3
+  },
+  {
+   "q": "tales that belong to the Ulster Cycle",
+   "from": "which tales belong to the Ulster Cycle?",
+   "count": 12
+  },
+  {
+   "q": "monuments at Emain Macha",
+   "from": "which monuments are at Emain Macha?",
+   "count": 1
+  },
+  {
+   "q": "how many monuments in County Down?",
+   "from": "how many monuments are in County Down?",
+   "count": 3586
+  },
+  {
+   "q": "in County Antrim, which monuments are there?",
+   "from": "which monuments are in County Antrim?",
+   "count": 5638
+  },
+  {
+   "q": "monuments located in County Down",
+   "from": "which monuments are located in County Down?",
+   "count": 3586
+  },
+  {
+   "q": "figures in Táin Bó Cúailnge",
+   "from": "which figures are in Táin Bó Cúailnge?",
+   "count": 11
+  },
+  {
+   "q": "bronze age cairns in County Antrim",
+   "from": "which bronze age cairns are in County Antrim?",
+   "count": 43
+  },
+  {
+   "q": "which monuments in County Antrim are medieval mottes?",
+   "from": "which monuments are medieval mottes in County Antrim?",
+   "count": 31
+  },
+  {
+   "q": "in County Armagh, which early christian raths are there?",
+   "from": "which early christian raths are in County Armagh?",
+   "count": 275
+  },
+  {
+   "q": "scheduled monuments in County Down that are medieval raths",
+   "from": "which scheduled monuments in County Down are medieval raths?",
+   "count": 4
+  },
+  {
+   "q": "medieval raths in County Down",
+   "from": "which medieval raths are in County Down?",
+   "count": 4
+  },
+  {
+   "q": "how many monuments are not scheduled in County Antrim?",
+   "from": "how many monuments in County Antrim are not scheduled?",
+   "count": 5108
+  },
+  {
+   "q": "how many monuments in County Antrim are scheduled?",
+   "from": "how many scheduled monuments are in County Antrim?",
+   "count": 530
+  },
+  {
+   "q": "early christian monuments in County Armagh",
+   "from": "which early christian monuments are in County Armagh?",
+   "count": 399
+  },
+  {
+   "q": "raths that are not medieval",
+   "from": "which raths are not medieval?",
+   "count": 2892
+  },
+  {
+   "q": "cairns that are bronze age",
+   "from": "which cairns are bronze age?",
+   "count": 73
+  },
+  {
+   "q": "standing stones in County Tyrone",
+   "from": "which standing stones are in County Tyrone?",
+   "count": 205
+  },
+  {
+   "q": "how many crannogs in County Fermanagh?",
+   "from": "how many crannogs are in County Fermanagh?",
+   "count": 141
+  },
+  {
+   "q": "neolithic monuments in County Antrim",
+   "from": "which neolithic monuments are in County Antrim?",
+   "count": 120
+  },
+  {
+   "q": "which of those monuments are in state care in County Fermanagh?",
+   "from": "which monuments in County Fermanagh are in state care?",
+   "count": 12
+  },
+  {
+   "q": "how many mottes are there that are not scheduled?",
+   "from": "how many mottes are not scheduled?",
+   "count": 8
+  },
+  {
+   "q": "monuments not in County Antrim",
+   "from": "which monuments are not in County Antrim?",
+   "count": 12870
+  },
+  {
+   "q": "monuments built after 1600",
+   "from": "which monuments were built after 1600?",
+   "count": 0
+  },
+  {
+   "q": "how many churches are there in County Down?",
+   "from": "how many churches are in County Down?",
+   "count": 0
+  },
+  {
+   "q": "monuments near Armagh",
+   "from": "which monuments are near Armagh?",
+   "count": 161
+  },
+  {
+   "q": "monuments whose name starts with Cat",
+   "from": "show all monuments whose name starts with Cat",
+   "count": 3
+  },
+  {
+   "q": "Navan Fort, what period is it?",
+   "from": "what period is Navan Fort?",
+   "count": 1
+  }
+ ]
+}
