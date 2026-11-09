@@ -172,33 +172,53 @@ def is_controlled(node: dict) -> bool:
 
 
 _TIME_SPAN_ENDS = {"P82a": "P82b", "P82": None}
+_ENDS = ("P82b", "P81b", "P3")
+
+
+def keyed(graph: dict) -> dict[str, tuple[str, list[str]]]:
+    """{alias: (kind, tokens)} for each node the ontology layer can phrase: a link or field
+    by its CRM path with its class; a date's begin by the path down to its event's time-span
+    ("… O18i E11 P4"), and an end by the path to that end ("… P93i E81 P4 E52 P82b"), so it
+    never takes its begin's phrasings.
+    A plain (not controlled) field is kind "field", so a "property" path, written for a
+    controlled one, never reaches a note beside it."""
+    g = graph["graph"][0] if "graph" in graph else graph
+    paths = chains(g)
+    out = {}
+    for n in g["nodes"]:
+        tokens, kind = paths.get(n.get("alias") or ""), _bundle.kind_of(n)
+        if not tokens or n["datatype"] == "semantic":
+            continue
+        if kind == "property" and not is_controlled(n):
+            kind = "field"
+        if kind == "date":
+            if len(tokens) < 3 or tokens[-3] != "E52" or tokens[-2] not in (*_TIME_SPAN_ENDS, *_ENDS):
+                continue
+            tokens = tokens[:-3] if tokens[-2] in _TIME_SPAN_ENDS else tokens[:-1]
+        out[n["alias"]] = (kind, tokens)
+    return out
 
 
 def ontology_entries(graph: dict, ontology: dict) -> list[dict]:
-    """The ontology layer's entries for one graph: a link, date or controlled (concept or
-    reference) node gets the phrases of every ontology path its CRM path ends with. A
-    date is matched by the event its time-span hangs from ("O18i E11 P4"), and carries
-    its begin and end.
+    """The ontology layer's entries for one graph: each node `keyed` gives a path gets the
+    phrases of every ontology path of its kind its CRM path ends with. A date carries its
+    span's end when the begin keys it.
     "who" before a date's phrase ("who made") names the one actor (P14) of that event."""
     g = graph["graph"][0] if "graph" in graph else graph
     paths = chains(g)
     up = {e["rangenode_id"]: e["domainnode_id"] for e in g.get("edges", [])}
+    keys = keyed(g)
     out = []
     for n in g["nodes"]:
-        kind = _bundle.kind_of(n)
-        tokens = paths.get(n.get("alias") or "")
-        if not tokens or (kind == "property" and not is_controlled(n)):
+        if n.get("alias") not in keys:
             continue
-        entry = {"kind": kind, "node": n["alias"]}
-        if kind == "date":
-            if len(tokens) < 3 or tokens[-3] != "E52" or tokens[-2] not in _TIME_SPAN_ENDS:
-                continue
-            end = _TIME_SPAN_ENDS[tokens[-2]]
-            tokens = tokens[:-3]
-            mate = next((m["alias"] for m in g["nodes"] if end and m.get("alias")
-                         and up.get(m["nodeid"]) == up.get(n["nodeid"]) and paths[m["alias"]][-2] == end), None)
-            if mate:
-                entry["end_node"] = mate
+        kind, tokens = keys[n["alias"]]
+        entry = {"kind": "property" if kind == "field" else kind, "node": n["alias"]}
+        end = _TIME_SPAN_ENDS.get(paths[n["alias"]][-2]) if kind == "date" else None
+        mate = next((m["alias"] for m in g["nodes"] if end and m.get("alias")
+                     and up.get(m["nodeid"]) == up.get(n["nodeid"]) and paths[m["alias"]][-2] == end), None)
+        if mate:
+            entry["end_node"] = mate
         phrases = [p for o in ontology["entries"] if o["kind"] == kind
                    and _ends_with(tokens, o["path"].split()) for p in o["phrases"]]
         if not phrases:
