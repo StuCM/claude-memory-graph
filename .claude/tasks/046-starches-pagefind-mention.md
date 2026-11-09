@@ -11,7 +11,7 @@ files:
   - packages/ceist-web/
 ---
 
-> Held (Stu, 2026-11-09) until the schema-assembly prototype (049) is measured: if it wins, this spec is rewritten for the new design.
+> Rewritten for schema assembly (2026-11-09). Draft until Stu has reviewed the code after 053 and 055; he approves it then.
 
 # In Starches, leftover words become a labelled Pagefind mention on top of the structured answer
 

@@ -11,7 +11,7 @@ files:
   - packages/ceist/
 ---
 
-> Held (Stu, 2026-11-09) until the schema-assembly prototype (049) is measured: if it wins, this spec is rewritten for the new design.
+> Rewritten for schema assembly (2026-11-09). Draft until Stu has reviewed the code after 053 and 055; he approves it then.
 
 # Fallbacks off by default and switched on per site; every suggestion clearly marked as not a match
 

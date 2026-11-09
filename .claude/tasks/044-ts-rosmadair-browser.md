@@ -11,7 +11,7 @@ files:
   - packages/ceist-web/
 ---
 
-> Held (Stu, 2026-11-09) until the schema-assembly prototype (049) is measured: if it wins, this spec is rewritten for the new design.
+> Rewritten for schema assembly (2026-11-09). Draft until Stu has reviewed the code after 053 and 055; he approves it then.
 
 # TypeScript compile to Rós Madair, and Ceist answering in the browser from the frozen vocabulary
 
@@ -31,6 +31,7 @@ Replace `packages/ceist-web/spike` with the real page, or keep the spike only if
 
 ## Background
 - 043 must be merged first.
+- Port only assembly; there is no strict mode in TypeScript.
 - The 021 spike's notes cover WASM loading, the wasm-opt problem (`wasm-pack build --no-opt`) and the service worker.
 - **Read first:** `packages/ceist/STATUS.md`, `packages/ceist/PORT-AUDIT.md`, and the Worker notes of the earlier `ceist-port` tasks. Follow Stu's code style rules in `~/.claude/CLAUDE.md`: plainest construct, reuse before writing, the comment test.
 - **The port rule:** simplify the code's shape freely, but keep its behaviour identical, proven by the golden fixtures (040, 041). A behaviour change belongs in its own later task, never inside a port step.

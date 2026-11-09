@@ -1,7 +1,7 @@
 ---
 id: 041
 slug: frozen-vocab-and-fixtures
-status: approved
+status: draft
 branch: crew/041-frozen-vocab-and-fixtures
 model: opus
 env: laptop
@@ -10,6 +10,8 @@ files:
   - packages/ceist/
   - packages/ceist-js/fixtures/
 ---
+
+> Rewritten for schema assembly (2026-11-09). Draft until Stu has reviewed the code after 053 and 055; he approves it then.
 
 # Python writes the vocabulary and the golden fixtures as JSON; TypeScript will only read them
 
@@ -26,12 +28,13 @@ Step 2 of the TypeScript port. PORT-AUDIT.md §1 found the biggest cut: the Type
 2. **A loader round trip in Python:** `FrozenVocabulary.from_json` gives the same groundings as the live `ArchesVocabulary`. Prove it by running 040's golden dump through the frozen vocabulary; it must be byte for byte identical.
 3. **The conformance fixtures** for the TypeScript tasks, in `packages/ceist-js/fixtures/`:
    - the frozen vocabulary for the demo, HER and the memory-graph test graph;
-   - 040's golden groundings, plus each question's plan, narration, read-back and compiled Rós Madair query (and the SPARQL plan input, for the memory graph).
+   - the golden groundings and `pieces()`, plus each question's "did you mean" readings, plan, narration, read-back and compiled Rós Madair query (and the SPARQL plan input, for the memory graph).
 
    Add one script that regenerates all of them.
 
 ## Background
-- 040 must be merged first. Its golden dump is the source of truth.
+- 040, 051, 053 and 055 must be merged first. The golden dump (`bench/golden/`, assembly as default) is the source of truth; regenerate it only if a later merge changed it, and say so.
+- The fixtures are produced in **assembly mode only**: TypeScript ports only assembly.
 - **Read first:** `packages/ceist/STATUS.md`, `packages/ceist/PORT-AUDIT.md`, and the Worker notes of the earlier `ceist-port` tasks. Follow Stu's code style rules in `~/.claude/CLAUDE.md`: plainest construct, reuse before writing, the comment test.
 - **The port rule:** simplify the code's shape freely, but keep its behaviour identical, proven by the golden fixtures (040, 041). A behaviour change belongs in its own later task, never inside a port step.
 - **Run `ponytail-review`** on your diff before opening the review round. Act on its findings and list them in Worker notes.

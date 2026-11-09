@@ -12,7 +12,7 @@ files:
   - packages/ceist/
 ---
 
-> Held (Stu, 2026-11-09) until the schema-assembly prototype (049) is measured: if it wins, this spec is rewritten for the new design.
+> Rewritten for schema assembly (2026-11-09). Draft until Stu has reviewed the code after 053 and 055; he approves it then.
 
 # The memory graph asks through the TypeScript runtime; Python's question-time runtime retires
 
@@ -25,7 +25,7 @@ Stu, 2026-11-08: one version of Ceist. `memory_ask` switches to the TypeScript r
    - keep the glue small, around 100 to 200 lines.
 2. **Without Node** (or if the process fails), `memory_ask` says so once and falls back to `memory_search`, as the plugin already does for missing pieces. Never a crash.
 3. **The embedding gate** (`claude_memory_graph/gate/semantic.py`) only borrows `ceist.vectors`' ONNX encoder. Move what it needs into `claude_memory_graph`, so it no longer imports `ceist`.
-4. **Retire Python's question-time runtime.** Delete `ground`, `plan`, `narrate`, `matching` and the rest of the question-time modules from `packages/ceist` once nothing imports them. The build tools stay: pipeline, bundle, ontology_vocab, questions, cost, learn, cli, `vocab freeze`. The vocabulary gate (`bench/ontology/gate.py`), `run_bank.py` and `her_plans.py` call the TypeScript runtime through the same Node process, or a batch CLI. starches-demo's `ask.py` moves to the TypeScript runtime or is retired; say which.
+4. **Retire Python's question-time runtime, strict mode included.** Delete `ground`, `plan`, `narrate`, `matching` and the rest of the question-time modules from `packages/ceist` once nothing imports them. The build tools stay: pipeline, bundle, ontology_vocab, questions, cost, learn, cli, `vocab freeze`. The vocabulary gate (`bench/ontology/gate.py`), `run_bank.py` and `her_plans.py` call the TypeScript runtime through the same Node process, or a batch CLI. starches-demo's `ask.py` moves to the TypeScript runtime or is retired; say which.
 
 ## Background
 - 044 and 045 must be merged first.
