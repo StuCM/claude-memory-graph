@@ -40,9 +40,6 @@ DEMO = Path("/home/stuart/git/personal/starches-demo/ask")
 HER_PLANS = run.REPO / "packages" / "ceist" / "bench" / "her_plans.py"
 # Stu's machine-load limit
 PROCESSES = 2
-# grounding compiles a pattern per phrase per question; the bench's ~1,400 overflow re's 512 and
-# recompiling was two thirds of the gate's time
-re._MAXCACHE = 4096
 
 
 def key(c: dict) -> str:
