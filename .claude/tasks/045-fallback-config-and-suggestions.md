@@ -44,6 +44,7 @@ Stu, 2026-11-08: "Still would like a config to turn it on or off. It needs to be
 ## Background
 - 044 must be merged first.
 - **Read first:** `packages/ceist/STATUS.md`, `packages/ceist/PORT-AUDIT.md`, and the Worker notes of the earlier `ceist-port` tasks. Follow Stu's code style rules in `~/.claude/CLAUDE.md`: plainest construct, reuse before writing, the comment test.
+- **Descriptive names** (Stu, 2026-11-10): no single-letter or cryptic variables (`s`, `g`, `c`, `d`). Name things for what they are (`scan`, `grounding`, `candidate`), so the code explains itself. The Python uses short names; the TypeScript must not copy them.
 - **The port rule:** simplify the code's shape freely, but keep its behaviour identical, proven by the golden fixtures (040, 041). A behaviour change belongs in its own later task, never inside a port step.
 - **Run `ponytail-review`** on your diff before opening the review round. Act on its findings and list them in Worker notes.
 - **No `claude -p` or live LLM runs.**

@@ -33,10 +33,12 @@ For example, "which people hold copyright on images of Conand?" becomes "Figures
    Run the demo bank's must-refuse questions too: list each that now gets a suggestion, and say whether its notice makes clear it isn't an answer.
 
 ## Background
+- **Stu's test case (2026-11-10): "show me all castles in belfast".** Belfast Castle (record "Belfast Castle, Town Parks", described "C17TH CASTLE") isn't typed Castle, and there's no Belfast place, so the structured query can't find it. A labelled mention ("records whose text mentions 'castle' and 'Belfast'") should offer it as "Not an exact match". Include it in the measurements.
 - 045 must be merged first.
 - The demo site's Pagefind index is built by Starches. Find it in `/home/stuart/git/personal/starches-demo` (read only). Use Pagefind's JS API in the browser or Node.
 - Stu ruled earlier that answering what a story is about is out of scope. A mention says "text mentions 'love'", never "is about love". Keep the wording that way.
 - **Read first:** `packages/ceist/STATUS.md`, `packages/ceist/PORT-AUDIT.md`, and the Worker notes of the earlier `ceist-port` tasks. Follow Stu's code style rules in `~/.claude/CLAUDE.md`: plainest construct, reuse before writing, the comment test.
+- **Descriptive names** (Stu, 2026-11-10): no single-letter or cryptic variables (`s`, `g`, `c`, `d`). Name things for what they are (`scan`, `grounding`, `candidate`), so the code explains itself. The Python uses short names; the TypeScript must not copy them.
 - **The port rule:** simplify the code's shape freely, but keep its behaviour identical, proven by the golden fixtures (040, 041). A behaviour change belongs in its own later task, never inside a port step.
 - **Run `ponytail-review`** on your diff before opening the review round. Act on its findings and list them in Worker notes.
 - **No `claude -p` or live LLM runs.**

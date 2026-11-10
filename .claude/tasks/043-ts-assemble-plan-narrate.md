@@ -35,6 +35,7 @@ Step 4 of the port. On top of 042's `pieces()`, port:
 - Read the graph Patterns "same-type links need word order for direction", "dataclasses.replace shares list fields" (copy every list a reading appends to) and "memory graph needs strict-only planner behaviours".
 - **Read first:** `packages/ceist/STATUS.md` (§5a, §5b), `packages/ceist/PORT-AUDIT.md`, and the Worker notes of 040, 049, 050, 051 and the earlier `ceist-port` tasks. Follow Stu's code style rules in `~/.claude/CLAUDE.md`: plainest construct, reuse before writing, the comment test.
 - **Port only schema assembly**, the default since 051. Strict mode's wiring is **not ported**; it stays in Python only for comparison until 047 deletes it.
+- **Descriptive names** (Stu, 2026-11-10): no single-letter or cryptic variables (`s`, `g`, `c`, `d`). Name things for what they are (`scan`, `grounding`, `candidate`), so the code explains itself. The Python uses short names; the TypeScript must not copy them.
 - **The port rule:** simplify the code's shape freely, but keep its behaviour identical, proven by 041's fixtures. A behaviour change belongs in its own later task.
 - **Credit:** a module that implements a borrowed method (PRECISE in assembly) names the source in one docstring line pointing to `packages/ceist/PRIOR-ART.md`.
 - **Run `ponytail-review`** on your diff before the review round, and list its findings and what you did about each in Worker notes.

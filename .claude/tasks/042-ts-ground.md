@@ -27,10 +27,12 @@ The wiring passes that only strict mode uses are **not** ported. If a pass is sh
 **Conformance:** a vitest suite loads 041's fixtures and checks that `pieces()` equals Python's on every question: the pieces, the notes, the suggestions, the unplaced words and the coverage.
 
 ## Background
+- **Phrase matching:** Python's `_phrase_spans` regex-searches the question once for every known phrasing, longest first (thousands per question). In TypeScript, find all phrasings in one pass (a trie or Aho–Corasick), but keep exactly the same results: longest first, the first occurrence per phrasing, the shared `taken` spans, and record-name containment. The fixtures prove it.
 - 041 must be merged first. Use the fixtures as they are; if one looks wrong, say so in Worker notes and don't edit it.
 - `packages/ceist-web/spike` is the earlier proof that the stack runs in a browser. Read it for loading, not as code to keep.
 - **Read first:** `packages/ceist/STATUS.md` (§5a, §5b), `packages/ceist/PORT-AUDIT.md`, and the Worker notes of 040, 049, 050, 051 and the earlier `ceist-port` tasks. Follow Stu's code style rules in `~/.claude/CLAUDE.md`: plainest construct, reuse before writing, the comment test.
 - **Port only schema assembly**, the default since 051. Strict mode's wiring is **not ported**; it stays in Python only for comparison until 047 deletes it.
+- **Descriptive names** (Stu, 2026-11-10): no single-letter or cryptic variables (`s`, `g`, `c`, `d`). Name things for what they are (`scan`, `grounding`, `candidate`), so the code explains itself. The Python uses short names; the TypeScript must not copy them.
 - **The port rule:** simplify the code's shape freely, but keep its behaviour identical, proven by 041's fixtures. A behaviour change belongs in its own later task.
 - **Credit:** a module that implements a borrowed method (PRECISE in assembly) names the source in one docstring line pointing to `packages/ceist/PRIOR-ART.md`.
 - **Run `ponytail-review`** on your diff before the review round, and list its findings and what you did about each in Worker notes.

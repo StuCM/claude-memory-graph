@@ -36,6 +36,7 @@ Step 2 of the TypeScript port. PORT-AUDIT.md §1 found the biggest cut: the Type
 - 040, 051, 053 and 055 must be merged first. The golden dump (`bench/golden/`, assembly as default) is the source of truth; regenerate it only if a later merge changed it, and say so.
 - The fixtures are produced in **assembly mode only**: TypeScript ports only assembly.
 - **Read first:** `packages/ceist/STATUS.md`, `packages/ceist/PORT-AUDIT.md`, and the Worker notes of the earlier `ceist-port` tasks. Follow Stu's code style rules in `~/.claude/CLAUDE.md`: plainest construct, reuse before writing, the comment test.
+- **Descriptive names** (Stu, 2026-11-10): no single-letter or cryptic variables (`s`, `g`, `c`, `d`). Name things for what they are (`scan`, `grounding`, `candidate`), so the code explains itself. The Python uses short names; the TypeScript must not copy them.
 - **The port rule:** simplify the code's shape freely, but keep its behaviour identical, proven by the golden fixtures (040, 041). A behaviour change belongs in its own later task, never inside a port step.
 - **Run `ponytail-review`** on your diff before opening the review round. Act on its findings and list them in Worker notes.
 - **No `claude -p` or live LLM runs.**
