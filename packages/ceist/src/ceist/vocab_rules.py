@@ -43,7 +43,12 @@ AGENTS = {"holder": "hold", "owner": "own", "maker": "make", "builder": "build",
           "engraver": "engrave", "printer": "print", "seller": "sell", "buyer": "buy", "user": "use"}
 # a value's last word that marks it as no count noun: "listed", "neolithic", "bronze age"
 NOT_COUNT = ("ed", "ic", "al", "ian", "ish", "ive", "ous", "ern", "ary", "ing")
-NOT_COUNT_WORDS = {"age", "period", "era", "care", "uncertain", "unknown", "other", "none"}
+NOT_COUNT_WORDS = {"age", "period", "era", "care", "uncertain", "unknown", "other", "none", "urban", "rural",
+                   "heritage", "education", "health", "healthcare", "agriculture", "retail", "transport",
+                   "finance", "construction", "manufacturing", "hospitality", "energy", "research"}
+# ponytail: count nouns that end like an adjective, by list; add as sites need
+COUNT_NOUNS = {"hospital", "animal", "canal", "festival", "memorial", "cathedral", "terminal", "arsenal",
+               "tribunal", "portal", "building", "dwelling"}
 # an event noun in a date's label → the verbs a question uses for it
 EVENTS = {"death": ["died", "die"], "birth": ["born"], "construction": ["built", "constructed"],
           "production": ["made", "produced"], "creation": ["created"], "formation": ["formed"],
@@ -77,6 +82,17 @@ def plural(noun: str) -> str:
     else:
         last += "s"
     return " ".join(words[:-1] + [last])
+
+
+def word_like(label: str) -> bool:
+    """A label short and plain enough to be said as a word ("hospital", not "F — construction" or "CR/LFM")."""
+    return not re.search(r"[^\w\s'-]|\d", label) and len(label.split()) <= 3
+
+
+def count_noun(label: str) -> bool:
+    """Whether a value's label can be counted ("hospital", not "listed", "heritage", "peri-urban")."""
+    last = re.split(r"[\s-]+", label.lower().strip())[-1]
+    return last in COUNT_NOUNS or not (last.endswith(NOT_COUNT) or last in NOT_COUNT_WORDS)
 
 
 def noun_forms(label: str) -> list[str]:
@@ -410,10 +426,9 @@ def _client_elements(L: Layers) -> list[dict]:
         low = label.lower()
         have = phrases | said.get((m, alias, low), set())
         items = [_item("alternative label", p, True) for p in sorted(phrases - {low})]
-        last = low.split()[-1] if low.split() else ""
-        if not re.search(r"[\d()/,;:]", low) and len(low.split()) <= 3 and not low.endswith("s"):
+        if word_like(low) and not low.endswith("s"):
             items.append(_item("plural", plural(low), plural(low) in have,
-                               "not a count noun" if last.endswith(NOT_COUNT) or last in NOT_COUNT_WORDS else ""))
+                               "" if count_noun(low) else "not a count noun"))
         if items:
             group = v.group_of(m, alias)
             out.append({"layer": "client", "key": f"value {m}.{alias}={low}", "weight": 1, "label": label,
@@ -633,6 +648,8 @@ def apply(cands: list[dict], ontology_dir: Path, base_dir: Path, client_dir: Pat
                 e["phrases"] = list(dict.fromkeys(e["phrases"] + c["phrases"]))
             _dump(path, doc)
         elif c["layer"] == "client" and client_dir is not None:
+            if not (Path(client_dir) / _bundle.MANIFEST).exists():
+                _dump(Path(client_dir) / _bundle.MANIFEST, {"format": _bundle.LAYOUT, "models": {}})
             path = Path(client_dir) / c["model"] / f"{c['nodegroup']}.json"
             doc = json.loads(path.read_text()) if path.exists() else {
                 "model": c["model"], "nodegroup": c["nodegroup"], "entries": []}
