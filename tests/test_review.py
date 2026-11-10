@@ -5,9 +5,9 @@ import time
 
 import pytest
 
-from claude_memory_graph.hookcore import HookContext
 import claude_memory_graph.hookcore.state as kit_state
 from claude_memory_graph.gate.review import ReviewExtension
+from claude_memory_graph.hookcore import HookContext
 from claude_memory_graph.store import MemoryStore
 
 

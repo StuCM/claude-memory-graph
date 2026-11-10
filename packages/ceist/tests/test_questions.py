@@ -4,12 +4,12 @@ import json
 from types import SimpleNamespace
 
 import pytest
+from test_pipeline import project
 
 from ceist import interpret, pipeline
 from ceist.arches import ArchesVocabulary
 from ceist.cli import main
 from ceist.questions import check, fill, held_out, score
-from test_pipeline import project
 
 ON_SITE = {"q": "which listed buildings are on site {Site}?", "shape": "link", "wording": "direct",
            "target": {"model": "Building", "count": False, "conditions": [

@@ -66,8 +66,8 @@ def build(days: int = 14) -> str:
 
     gaps_line = ""
     try:
-        from ..store import MemoryStore
         from .. import gaps as gaps_mod
+        from ..store import MemoryStore
         from .runtime import store_dir
         g = gaps_mod.analyse(MemoryStore.open_or_create(store_dir()), limit=5)
         gaps_line = (f"{len(g.orphans)} orphan(s) · {len(g.conceptless)} without a "
@@ -81,8 +81,8 @@ def build(days: int = 14) -> str:
         gap_items = ""
 
     try:
-        from ..distill import context_dir
         from ..context_entries import undistilled_files
+        from ..distill import context_dir
         backlog = len(undistilled_files(context_dir()))
     except Exception:
         backlog = 0

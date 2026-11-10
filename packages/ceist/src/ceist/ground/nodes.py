@@ -4,8 +4,18 @@ a type the values imply."""
 from ..text import terms_pos
 from ..vocabulary import Relation
 from .model import Node, _edge
-from .scan import (AUX, DATE_WORDS, FILLER, MAX_ANCHORS, NEG, RECENT, _SUBJECT_LEAD, Scan,
-                   _inside, _phrase_spans)
+from .scan import (
+    _SUBJECT_LEAD,
+    AUX,
+    DATE_WORDS,
+    FILLER,
+    MAX_ANCHORS,
+    NEG,
+    RECENT,
+    Scan,
+    _inside,
+    _phrase_spans,
+)
 
 
 def _words(s: Scan) -> None:

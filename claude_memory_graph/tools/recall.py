@@ -4,7 +4,7 @@ import subprocess
 
 from claude_memory_graph.hookcore import terms
 
-from ..store import MemoryStore, LinkedResource
+from ..store import LinkedResource, MemoryStore
 
 _NOISE = {"name", "label", "createdAt", "updatedAt",
           "invalidated", "invalidatedAt", "invalidationReason"}

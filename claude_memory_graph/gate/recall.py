@@ -31,8 +31,14 @@ import os
 import re
 from pathlib import Path
 
-from claude_memory_graph.hookcore import (HookContext, HookExtension, append_jsonl, bigrams,
-                                          log_error, terms_pos)
+from claude_memory_graph.hookcore import (
+    HookContext,
+    HookExtension,
+    append_jsonl,
+    bigrams,
+    log_error,
+    terms_pos,
+)
 
 from .runtime import config, store_dir
 
@@ -88,6 +94,7 @@ def _corpus(store, include_concepts: bool = False) -> list[dict]:
     the corpus too (label as name, gid=None) — memory_search wants them
     as entry points; the gate's injection path does not use them."""
     import pyoxigraph as ox
+
     from ..namespaces import GRAPH_CONCEPTS, GRAPH_RESOURCE_BASE, MEM, RDF_TYPE
     from ..tools.recall import _CONTENT_KEYS, _DISPLAY_SKIP
 
@@ -299,6 +306,7 @@ def gate_index(project: str, opener) -> tuple[list[dict], dict, set[str], dict[s
     the MemoryStore, called only on a miss. Fail open: any cache problem
     means a normal rebuild."""
     import pickle
+
     from claude_memory_graph.hookcore import state_home
 
     path = state_home() / "gate-index.pickle"

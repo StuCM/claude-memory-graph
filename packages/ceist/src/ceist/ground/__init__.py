@@ -26,13 +26,40 @@ it into a query plan, and refuses rather than guesses when it is thin.
 
 from ..vocabulary import Vocabulary
 from .leftovers import _coverage, _fill_groups, _match_leftovers, _text_filter
-from .model import (DateGround, Edge, GroupGround, Grounding, NameGround, NearGround, Node,
-                    ValueMatch)
+from .model import (
+    DateGround,
+    Edge,
+    Grounding,
+    GroupGround,
+    NameGround,
+    NearGround,
+    Node,
+    ValueMatch,
+)
 from .nodes import _anchors, _fit_relations, _imply_model, _words
-from .phrases import (_dates, _field_phrases, _group_by, _near, _relations, _shape,
-                      _tile_phrases, _values)
-from .scan import (AUX, DATE_WORDS, IMPERATIVE, MILE_KM, NEG, PREPS, WH, WORD_RE, Scan, _scan,
-                   is_question)
+from .phrases import (
+    _dates,
+    _field_phrases,
+    _group_by,
+    _near,
+    _relations,
+    _shape,
+    _tile_phrases,
+    _values,
+)
+from .scan import (
+    AUX,
+    DATE_WORDS,
+    IMPERATIVE,
+    MILE_KM,
+    NEG,
+    PREPS,
+    WH,
+    WORD_RE,
+    Scan,
+    _scan,
+    is_question,
+)
 from .wire import _or, _scope_negations, _subject, _wire
 
 __all__ = ["AUX", "DATE_WORDS", "IMPERATIVE", "MILE_KM", "NEG", "PREPS", "WH", "WORD_RE",

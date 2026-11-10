@@ -25,8 +25,22 @@ import alizarin
 
 from . import dates, geo
 from .narrate import narrate
-from .plan import (AnyOf, Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, NameMatch,
-                   Near, Not, OnTile, Plan, as_tile, interpret)
+from .plan import (
+    AnyOf,
+    Contains,
+    DateRange,
+    EntityRef,
+    HasValue,
+    LinkTo,
+    Mention,
+    NameMatch,
+    Near,
+    Not,
+    OnTile,
+    Plan,
+    as_tile,
+    interpret,
+)
 
 __all__ = ["RecordTiles", "Tiles", "ask", "evaluate"]
 

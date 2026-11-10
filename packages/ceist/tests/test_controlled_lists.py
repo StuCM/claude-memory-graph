@@ -210,9 +210,11 @@ def test_ros_madair_takes_list_values_by_item_id(vocab, data):
 
 
 def test_legacy_concepts_still_need_their_operator_on_arches_search():
-    import arches_fixture as fx
     import tempfile
     from pathlib import Path
+
+    import arches_fixture as fx
+
     from ceist.rosmadair import Unsupported
     root = Path(tempfile.mkdtemp())
     fx.write(root)

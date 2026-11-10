@@ -17,8 +17,22 @@ Arches Search). See docs/QUERY-PLANNING.md.
 import os
 import re
 
-from ceist import (Contains, DateField, DateRange, Entity, EntityRef, HasValue, LinkTo, Mention,
-                   Not, Plan, Relation, Value, interpret, narrate)
+from ceist import (
+    Contains,
+    DateField,
+    DateRange,
+    Entity,
+    EntityRef,
+    HasValue,
+    LinkTo,
+    Mention,
+    Not,
+    Plan,
+    Relation,
+    Value,
+    interpret,
+    narrate,
+)
 from ceist import ground as _ceist_ground
 
 from .gate.recall import _corpus, _idf, _score
@@ -146,6 +160,7 @@ def entity_index(store: MemoryStore) -> tuple[list[dict], dict]:
     read-only from disk (the gate), never the MCP server's live one. Fail
     open: any cache problem means a normal rebuild."""
     import pickle
+
     from .hookcore import state_home
 
     nq = store._data_path
@@ -376,6 +391,7 @@ def matcher():
     global _matcher
     if _matcher is None:
         from ceist import config
+
         from .gate import semantic
         from .gate.runtime import config as gate_config
         cfg = config.load(None)

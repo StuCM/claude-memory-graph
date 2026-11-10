@@ -1,6 +1,6 @@
+import logging
 import re
 import uuid
-import logging
 from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -9,13 +9,23 @@ from typing import Callable, Optional
 
 import pyoxigraph as ox
 
-from .namespaces import (
-    MEM, RDF, RDFS, GRAPH_SCHEMA, GRAPH_LINKS, GRAPH_CONCEPTS, GRAPH_RESOURCE_BASE,
-    SPARQL_PREFIXES, RDF_TYPE, XSD_DATETIME, XSD_BOOLEAN,
-    mem_node, resource_graph_node,
-)
 from . import ontology
 from .capture_rules import names_similar, normalize_name
+from .namespaces import (
+    GRAPH_CONCEPTS,
+    GRAPH_LINKS,
+    GRAPH_RESOURCE_BASE,
+    GRAPH_SCHEMA,
+    MEM,
+    RDF,
+    RDF_TYPE,
+    RDFS,
+    SPARQL_PREFIXES,
+    XSD_BOOLEAN,
+    XSD_DATETIME,
+    mem_node,
+    resource_graph_node,
+)
 
 
 def _lit(value: str) -> str:

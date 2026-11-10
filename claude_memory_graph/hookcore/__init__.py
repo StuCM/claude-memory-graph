@@ -4,10 +4,17 @@ package; its dispatcher and extension registry were retired when the
 plugin's mod took over routing and session state (see hooks/register.js and
 claude_memory_graph/hookrun.py)."""
 
-from .state import (STATE_HOME_ENV, HOOK_KIT_HOME_ENV, advance_core, append_jsonl,
-                    log_error, project_of, state_home)
-from .extension import HookExtension, HookContext, EVENT_METHODS
-from .text import terms, terms_pos, bigrams, user_text
+from .extension import EVENT_METHODS, HookContext, HookExtension
+from .state import (
+                    HOOK_KIT_HOME_ENV,
+                    STATE_HOME_ENV,
+                    advance_core,
+                    append_jsonl,
+                    log_error,
+                    project_of,
+                    state_home,
+)
+from .text import bigrams, terms, terms_pos, user_text
 
 __all__ = [
     "HookExtension", "HookContext", "EVENT_METHODS",

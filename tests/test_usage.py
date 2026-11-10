@@ -5,8 +5,8 @@ import json
 import pytest
 
 import claude_memory_graph.hookcore.state as kit_state
-from claude_memory_graph.hookcore import state_home
 from claude_memory_graph.gate import usage
+from claude_memory_graph.hookcore import state_home
 from claude_memory_graph.store import MemoryStore
 
 

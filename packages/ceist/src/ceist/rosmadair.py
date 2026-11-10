@@ -64,8 +64,24 @@ from dataclasses import dataclass, field
 
 from . import dates, geo
 from .narrate import narrate
-from .plan import (AnyOf, Contains, DateRange, Detail, EntityRef, GroupBy, HasValue, LinkTo,
-                   Mention, NameMatch, Near, Not, OnTile, Plan, as_tile, interpret)
+from .plan import (
+    AnyOf,
+    Contains,
+    DateRange,
+    Detail,
+    EntityRef,
+    GroupBy,
+    HasValue,
+    LinkTo,
+    Mention,
+    NameMatch,
+    Near,
+    Not,
+    OnTile,
+    Plan,
+    as_tile,
+    interpret,
+)
 from .readback import check
 
 GROUP_CAP = 50

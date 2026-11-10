@@ -76,6 +76,7 @@ def her(pkg: str, bundle: str):
 def bench(name: str):
     sys.path.insert(0, str(HERE.parent / "ontology"))
     import run
+
     from ceist.arches import ArchesVocabulary
     from ceist.questions import templated
     graphs = run.graph_docs(run.SETS[name])

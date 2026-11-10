@@ -38,8 +38,8 @@ def _read_jsonl(name: str, cutoff: float) -> list[dict]:
 
 def _graph_counts() -> tuple[int, int]:
     try:
-        from ..store import MemoryStore
         from ..namespaces import GRAPH_LINKS, GRAPH_RESOURCE_BASE
+        from ..store import MemoryStore
         store = MemoryStore.open_or_create(store_dir())
         nodes = sum(1 for _ in store.query(
             f'SELECT ?n WHERE {{ GRAPH ?g {{ ?n rdf:type ?t }} '
@@ -70,8 +70,8 @@ def report(days: int = 7) -> str:
     top_nodes = Counter(n for e in fired for n in e.get("nodes", [])).most_common(3)
 
     try:
-        from ..distill import context_dir
         from ..context_entries import undistilled_files
+        from ..distill import context_dir
         undistilled = len(undistilled_files(context_dir()))
     except Exception:
         undistilled = -1

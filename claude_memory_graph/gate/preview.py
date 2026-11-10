@@ -16,8 +16,15 @@ Differences from a live session, stated in the output:
 `claude-memory-graph gate "why did we pick pyoxigraph?" [--project P]`
 """
 
-from .recall import (_bigrams, _corpus, _idf, _project_neighbourhood, decide,
-                     query_views, score_views)
+from .recall import (
+    _bigrams,
+    _corpus,
+    _idf,
+    _project_neighbourhood,
+    decide,
+    query_views,
+    score_views,
+)
 from .runtime import config, store_dir
 
 

@@ -18,6 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path.cwd()))
 import ask  # noqa: E402  (the demo's ask.py, from the current directory)
+
 from ceist import interpret, narrate  # noqa: E402
 from ceist.assemble import FILLER, assemble  # noqa: E402
 from ceist.ground import is_question  # noqa: E402

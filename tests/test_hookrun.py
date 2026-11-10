@@ -8,10 +8,9 @@ import subprocess
 import pytest
 
 from claude_memory_graph import hookrun
-from claude_memory_graph.hookcore import (HookExtension, advance_core, project_of,
-                                          state as hc_state, terms)
 from claude_memory_graph.gate.logview import format_log_entry, print_log
-
+from claude_memory_graph.hookcore import HookExtension, advance_core, project_of, terms
+from claude_memory_graph.hookcore import state as hc_state
 
 # ---------------------------------------------------------------- tokenizer
 

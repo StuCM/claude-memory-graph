@@ -21,7 +21,7 @@ from pathlib import Path
 
 from claude_memory_graph.hookcore import state_home
 
-from .pulse import _read_jsonl, _graph_counts
+from .pulse import _graph_counts, _read_jsonl
 from .runtime import store_dir
 
 
@@ -227,8 +227,8 @@ def report() -> str:
     orphans = -1
     try:
         if nodes != -2:
-            from ..store import MemoryStore
             from .. import gaps as gaps_mod
+            from ..store import MemoryStore
             g = gaps_mod.analyse(MemoryStore.open_or_create(store_p), limit=1)
             orphans = len(g.orphans)
     except Exception:

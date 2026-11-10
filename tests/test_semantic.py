@@ -4,7 +4,6 @@ only add — off, missing or broken, the gate is exactly the lexical gate."""
 import json
 
 import pytest
-
 from test_retrieval_benchmark import _inject, graph  # noqa: F401  (fixture)
 
 from claude_memory_graph.gate import runtime, semantic

@@ -12,8 +12,8 @@ pyproject.toml; manage with `claude-hooks enable/disable <name>` or the
 /hook-kit:install skill. See runtime.py's docstring for debugging notes.
 """
 
-from .runtime import config, store_dir
-from .recall import RecallExtension
 from .nudge import ContextCounterExtension
+from .recall import RecallExtension
+from .runtime import config, store_dir
 
 __all__ = ["config", "store_dir", "RecallExtension", "ContextCounterExtension"]

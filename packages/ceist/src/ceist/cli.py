@@ -344,6 +344,7 @@ def _embed(a):
     """Every phrasing of a bundle through the configured transformer, once,
     into the vector cache — so no question pays for it."""
     import time
+
     from . import bundle as _bundle
     from . import config
     cfg = config.load(a.config, **({"model": a.model} if a.model else {}))

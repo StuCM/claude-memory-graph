@@ -1,7 +1,7 @@
 import pytest
 
-from claude_memory_graph.store import MemoryStore
 from claude_memory_graph import viz
+from claude_memory_graph.store import MemoryStore
 
 
 @pytest.fixture

@@ -13,8 +13,14 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-from ceist.arches import (CONCEPT_TYPES, REFERENCE_TYPES, ArchesVocabulary, collection_of,
-                          graph_doc, load_reference_data)
+from ceist.arches import (
+    CONCEPT_TYPES,
+    REFERENCE_TYPES,
+    ArchesVocabulary,
+    collection_of,
+    graph_doc,
+    load_reference_data,
+)
 from ceist.arches_describe import reference_files
 
 

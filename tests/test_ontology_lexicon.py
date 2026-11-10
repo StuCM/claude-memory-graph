@@ -1,10 +1,9 @@
+import pyoxigraph as ox
 import pytest
 
+from claude_memory_graph.namespaces import GRAPH_SCHEMA, RDF_TYPE, mem_node
 from claude_memory_graph.store import MemoryStore
 from claude_memory_graph.tools import link, store_resource
-from claude_memory_graph.namespaces import GRAPH_SCHEMA, RDF_TYPE, mem_node
-
-import pyoxigraph as ox
 
 
 @pytest.fixture

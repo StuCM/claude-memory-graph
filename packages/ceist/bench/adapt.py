@@ -89,6 +89,7 @@ def main():
     import jax
     import jax.numpy as jnp
     import optax
+
     from claude_memory_graph.gate import semantic
 
     enc = semantic.encoder()

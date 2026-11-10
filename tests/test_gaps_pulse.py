@@ -6,10 +6,10 @@ import time
 import pytest
 
 import claude_memory_graph.hookcore.state as kit_state
-from claude_memory_graph.hookcore import HookContext, state_home
 from claude_memory_graph import gaps as gaps_mod
 from claude_memory_graph.gate.nudge import ContextCounterExtension
 from claude_memory_graph.gate.pulse import report as pulse_report
+from claude_memory_graph.hookcore import HookContext, state_home
 from claude_memory_graph.store import MemoryStore
 from claude_memory_graph.tools import reflect as reflect_tool
 

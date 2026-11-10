@@ -6,8 +6,8 @@ import time
 import pytest
 
 import claude_memory_graph.hookcore.state as kit_state
-from claude_memory_graph.hookcore import state_home
 from claude_memory_graph.gate.doctor import report
+from claude_memory_graph.hookcore import state_home
 from claude_memory_graph.store import MemoryStore
 
 

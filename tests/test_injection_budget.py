@@ -7,11 +7,11 @@ import subprocess
 import pytest
 
 import claude_memory_graph.hookcore.state as kit_state
-from claude_memory_graph.hookcore import HookContext
 from claude_memory_graph.gate import recall as gate_recall
 from claude_memory_graph.gate import runtime
 from claude_memory_graph.gate.preview import preview
 from claude_memory_graph.gate.recall import RecallExtension, decide
+from claude_memory_graph.hookcore import HookContext
 from claude_memory_graph.store import MemoryStore
 from claude_memory_graph.tools import recall as recall_tool
 

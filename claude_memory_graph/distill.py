@@ -25,8 +25,8 @@ from pathlib import Path
 from .context_entries import Entry, fold, parse_file, undistilled_files
 from .ontology import CONCEPT_TYPES
 from .store import MemoryStore
-from .tools.store_resource import handle_resource, handle_concept
 from .tools.link import handle_link
+from .tools.store_resource import handle_concept, handle_resource
 
 
 def context_dir() -> Path:

@@ -1,10 +1,10 @@
 """The matcher chain: layers, the order they decide in, and "did you mean"."""
 
 import pytest
+from fakes import FakeEncoder
 
 from ceist import config
 from ceist.matching import Ambiguous, Chain, Exact, Item, Match, NoMatch, Vectors
-from fakes import FakeEncoder
 
 needs_numpy = pytest.mark.skipif(not FakeEncoder.ready(), reason="needs numpy")
 

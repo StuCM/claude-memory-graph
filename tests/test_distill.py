@@ -138,8 +138,8 @@ def test_auto_distill_promotes_without_archiving(store, tmp_path, monkeypatch):
     active (never marked/archived headlessly); a second run duplicates
     nothing; the run is logged for pulse/dashboard."""
     import claude_memory_graph.hookcore.state as kit_state
-    from claude_memory_graph.hookcore import state_home
     from claude_memory_graph.distill import auto_distill
+    from claude_memory_graph.hookcore import state_home
     monkeypatch.setenv(kit_state.STATE_HOME_ENV, str(tmp_path / "kit"))
     ctx = tmp_path / "ctx"
     ctx.mkdir()

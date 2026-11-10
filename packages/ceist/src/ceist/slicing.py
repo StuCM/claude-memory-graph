@@ -18,7 +18,13 @@ import json
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from .arches import CONTROLLED_TYPES, LINK_TYPES, ArchesVocabulary, graph_doc, read_resources
+from .arches import (
+    CONTROLLED_TYPES,
+    LINK_TYPES,
+    ArchesVocabulary,
+    graph_doc,
+    read_resources,
+)
 from .bundle import MANIFEST, nodegroups
 
 

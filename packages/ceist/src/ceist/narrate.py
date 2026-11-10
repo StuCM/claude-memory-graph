@@ -3,8 +3,22 @@ understood before trusting the answer. Every output shares it."""
 
 from .dates import label as date_label
 from .ground import MILE_KM
-from .plan import (AnyOf, Contains, DateRange, Detail, EntityRef, HasValue, LinkTo, Mention,
-                   NameMatch, Near, Not, OnTile, Partial, Plan)
+from .plan import (
+    AnyOf,
+    Contains,
+    DateRange,
+    Detail,
+    EntityRef,
+    HasValue,
+    LinkTo,
+    Mention,
+    NameMatch,
+    Near,
+    Not,
+    OnTile,
+    Partial,
+    Plan,
+)
 from .text import plural
 
 

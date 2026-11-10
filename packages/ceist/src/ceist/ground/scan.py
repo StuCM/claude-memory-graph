@@ -8,7 +8,6 @@ from ..text import ALNUM, overlaps, terms_pos
 from ..vocabulary import Group, Relation, Value, Vocabulary
 from .model import Grounding, Node
 
-
 WH = {"what", "which", "who", "whom", "whose", "why", "when", "how", "where"}
 AUX = {"is", "are", "was", "were", "do", "does", "did", "has", "have", "had",
        "can", "could", "should", "would", "any"}

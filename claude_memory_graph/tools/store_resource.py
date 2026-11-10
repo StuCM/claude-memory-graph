@@ -1,6 +1,6 @@
-from ..store import MemoryStore
-from ..ontology import name_property
 from ..capture_rules import check_name, check_required_properties, name_warning
+from ..ontology import name_property
+from ..store import MemoryStore
 
 
 def handle_resource(

@@ -5,8 +5,8 @@ Zep/Graphiti)."""
 import pyoxigraph as ox
 import pytest
 
-from claude_memory_graph.store import MemoryStore
 from claude_memory_graph.namespaces import GRAPH_LINKS
+from claude_memory_graph.store import MemoryStore
 from claude_memory_graph.tools import link as link_tool
 
 

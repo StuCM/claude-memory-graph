@@ -1,9 +1,8 @@
 import pytest
 
+from claude_memory_graph.capture_rules import check_name, name_warning, names_similar
 from claude_memory_graph.store import MemoryStore
-from claude_memory_graph.capture_rules import (check_name, name_warning,
-                                               names_similar)
-from claude_memory_graph.tools import store_resource, link
+from claude_memory_graph.tools import link, store_resource
 
 
 @pytest.fixture

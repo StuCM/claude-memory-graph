@@ -238,8 +238,18 @@ def fill(q: str, vocab) -> str | None:
 
 
 def _conditions(where, tile: str = "", negated: bool = False) -> list[dict]:
-    from .plan import (AnyOf, Contains, DateRange, HasValue, LinkTo, Mention, NameMatch, Near, Not,
-                       OnTile)
+    from .plan import (
+        AnyOf,
+        Contains,
+        DateRange,
+        HasValue,
+        LinkTo,
+        Mention,
+        NameMatch,
+        Near,
+        Not,
+        OnTile,
+    )
     out = []
 
     def add(c: dict):

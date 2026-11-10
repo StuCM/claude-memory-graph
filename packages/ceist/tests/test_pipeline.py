@@ -4,9 +4,9 @@ import json
 import shutil
 import sys
 
+import arches_fixture as fx
 import pytest
 
-import arches_fixture as fx
 from ceist import pipeline
 from ceist.cli import main
 

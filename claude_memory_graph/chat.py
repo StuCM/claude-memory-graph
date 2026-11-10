@@ -263,8 +263,12 @@ def chat_routes(service: ChatService, auth, public_url: str = "", read_only: boo
     from importlib import resources
 
     from starlette.requests import Request
-    from starlette.responses import (HTMLResponse, JSONResponse, RedirectResponse,
-                                     StreamingResponse)
+    from starlette.responses import (
+        HTMLResponse,
+        JSONResponse,
+        RedirectResponse,
+        StreamingResponse,
+    )
     from starlette.routing import Route
 
     sessions = Sessions()

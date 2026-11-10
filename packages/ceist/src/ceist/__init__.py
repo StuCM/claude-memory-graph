@@ -13,9 +13,25 @@ ceist.rosmadair, ceist.arches_search. See packages/ceist/README.md.
 
 from .ground import Grounding, ground, is_question
 from .narrate import narrate
-from .plan import (AnyOf, Contains, DateRange, Detail, EntityRef, GroupBy, HasValue,
-                   Interpretation, LinkTo, Mention, NameMatch, Not, OnTile, Partial, Plan, Relaxation,
-                   interpret)
+from .plan import (
+                   AnyOf,
+                   Contains,
+                   DateRange,
+                   Detail,
+                   EntityRef,
+                   GroupBy,
+                   HasValue,
+                   Interpretation,
+                   LinkTo,
+                   Mention,
+                   NameMatch,
+                   Not,
+                   OnTile,
+                   Partial,
+                   Plan,
+                   Relaxation,
+                   interpret,
+)
 from .readback import Check, check
 from .text import plurals, terms, terms_pos
 from .vocabulary import DateField, Entity, Relation, Value, Vocabulary

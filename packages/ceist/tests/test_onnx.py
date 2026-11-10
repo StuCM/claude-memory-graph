@@ -35,7 +35,8 @@ def test_without_weights_the_layer_is_left_out_with_a_note(tmp_path):
 
 
 def test_eval_halves_split_the_questions(tmp_path):
-    from test_bundle import project                  # the tiny project those tests build
+    from test_bundle import project  # the tiny project those tests build
+
     from ceist.cli import main
     p = project(tmp_path)
     assert main(["vocab", "assemble", str(p / "desc"), str(p / "vocab"), "-o", str(p / "b.json"),
@@ -54,8 +55,9 @@ needs_bge = pytest.mark.skipif(weights is not None, reason=f"bge-small: {weights
 
 @needs_bge
 def test_bge_reads_a_phrase_whole_and_caches_what_it_made(tmp_path):
-    from ceist.vectors import default_cache_dir
     import shutil
+
+    from ceist.vectors import default_cache_dir
     cache = tmp_path / "cache"
     shutil.copytree(onnx.model_dir("bge-small-en-v1.5"), onnx.model_dir("bge-small-en-v1.5", cache))
     enc = onnx.OnnxEncoder("bge-small-en-v1.5", cache)

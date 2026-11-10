@@ -6,8 +6,22 @@ import re
 from .. import dates
 from ..text import ALNUM, overlaps
 from .model import DateGround, GroupGround, NameGround, NearGround, ValueMatch, _edge
-from .scan import (ABOUT_RE, IMPERATIVE, MILE_KM, MOST, NAME_RES, NEAR_KM, NEAR_RE, WH, WORD_RE,
-                   _LEAD_WORDS, _SUBJECT_LEAD, Scan, _opens, _phrase_spans)
+from .scan import (
+    _LEAD_WORDS,
+    _SUBJECT_LEAD,
+    ABOUT_RE,
+    IMPERATIVE,
+    MILE_KM,
+    MOST,
+    NAME_RES,
+    NEAR_KM,
+    NEAR_RE,
+    WH,
+    WORD_RE,
+    Scan,
+    _opens,
+    _phrase_spans,
+)
 
 
 def _shape(s: Scan) -> None:

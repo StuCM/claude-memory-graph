@@ -17,8 +17,16 @@ import re
 import time
 from pathlib import Path
 
-from compare import (GgufChooser, OnnxBiEncoder, OnnxCrossEncoder, Skip, Threshold, WordLlama,
-                     describe as _describe, _norm)
+from compare import (
+    GgufChooser,
+    OnnxBiEncoder,
+    OnnxCrossEncoder,
+    Skip,
+    Threshold,
+    WordLlama,
+    _norm,
+)
+from compare import describe as _describe
 
 HER = Path(__file__).parent / "her"
 DATE = {"date", "edtf"}

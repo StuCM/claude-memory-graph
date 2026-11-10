@@ -25,7 +25,6 @@ import json
 import os
 from pathlib import Path
 
-
 # Set when the gate runs inside the memory server, on its live store.
 _live_store = None
 # Set (by hookrun) when the gate's lookups go to a memory server: this

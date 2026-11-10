@@ -1,7 +1,12 @@
 """The shared entry parser: context-file bullets -> Entry objects."""
 
 from claude_memory_graph.context_entries import (
-    Entry, fold, frontmatter, parse, parse_file, undistilled_files,
+    Entry,
+    fold,
+    frontmatter,
+    parse,
+    parse_file,
+    undistilled_files,
 )
 
 SAMPLE = """---

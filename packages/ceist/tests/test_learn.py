@@ -104,6 +104,7 @@ def test_merge_adds_approved_phrasings_to_the_right_entries(tmp_path):
 def test_the_loop_end_to_end_on_arches_data(tmp_path):
     """try → log → learn → approve → merge → the next build places the phrase."""
     import arches_fixture as fx
+
     from ceist import config
     from ceist.arches import ArchesVocabulary
     from ceist.plan import interpret

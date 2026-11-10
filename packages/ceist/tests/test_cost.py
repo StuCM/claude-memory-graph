@@ -6,13 +6,14 @@ import shutil
 import sys
 from collections import Counter
 from pathlib import Path
-import pytest
 
+import pytest
 from test_ontology import data  # noqa: F401  (the module fixture)
 from test_ontology_vocab import graphs_dir, ontology_dir, stub
 from test_pipeline import project
 
-from ceist import cost, ontology_vocab as ov, pipeline, questions
+from ceist import cost, pipeline, questions
+from ceist import ontology_vocab as ov
 
 TRAINING = Path(__file__).resolve().parents[1] / "bench" / "training" / "run.py"
 

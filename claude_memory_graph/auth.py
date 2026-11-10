@@ -36,8 +36,14 @@ import secrets
 import time
 from pathlib import Path
 
-from mcp.server.auth.provider import (AccessToken, AuthorizationCode, AuthorizationParams,
-                                      RefreshToken, TokenError, construct_redirect_uri)
+from mcp.server.auth.provider import (
+    AccessToken,
+    AuthorizationCode,
+    AuthorizationParams,
+    RefreshToken,
+    TokenError,
+    construct_redirect_uri,
+)
 from mcp.shared.auth import OAuthClientInformationFull, OAuthToken
 
 log = logging.getLogger(__name__)

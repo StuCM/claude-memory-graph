@@ -22,7 +22,7 @@ from pathlib import Path
 
 from claude_memory_graph.hookcore import terms_pos
 
-from ..context_entries import undistilled_files, parse_file
+from ..context_entries import parse_file, undistilled_files
 
 
 def _context_dir() -> Path:

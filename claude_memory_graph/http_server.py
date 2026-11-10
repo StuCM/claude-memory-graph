@@ -60,6 +60,7 @@ def graph_bytes(store: MemoryStore) -> bytes:
     """The store as NQuads — what a client's ambient gate reads. Dumped from
     memory, so it is current even between saves (and on a read-only share)."""
     import io
+
     import pyoxigraph as ox
     out = io.BytesIO()
     store._store.dump(out, ox.RdfFormat.N_QUADS)
@@ -158,6 +159,7 @@ def api_routes(store: MemoryStore, read_only: bool):
 
     async def gaps(request: Request):
         from dataclasses import asdict
+
         from .gaps import analyse
         def report():
             with _gate_lock:
@@ -287,8 +289,11 @@ def build_app(store: MemoryStore, instructions: str, token: str = "",
               auth_path: Path | None = None, chat=True):
     """The ASGI app, separate from serve() so tests can drive it in-process."""
     from mcp.server.auth.middleware.bearer_auth import BearerAuthBackend
-    from mcp.server.auth.routes import (build_resource_metadata_url, create_auth_routes,
-                                        create_protected_resource_routes)
+    from mcp.server.auth.routes import (
+        build_resource_metadata_url,
+        create_auth_routes,
+        create_protected_resource_routes,
+    )
     from mcp.server.auth.settings import ClientRegistrationOptions, RevocationOptions
     from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
     from pydantic import AnyHttpUrl

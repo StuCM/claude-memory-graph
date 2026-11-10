@@ -18,7 +18,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .ontology import RESOURCE_MODELS, CONCEPT_TYPES
+from .ontology import CONCEPT_TYPES, RESOURCE_MODELS
 
 _HEAD = re.compile(r"^- \[([\d:. -]+)\]\s+([A-Z][A-Za-z ]*?):\s+(.+)$")
 # Keys are lowercase by convention — camelCase properties (anchorPath,

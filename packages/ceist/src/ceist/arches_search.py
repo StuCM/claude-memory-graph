@@ -48,8 +48,20 @@ refuses by name (Unsupported):
 compiles and refuses if the payload reads back differently from the plan.
 """
 
-from .plan import (AnyOf, Contains, DateRange, EntityRef, HasValue, LinkTo, Mention, NameMatch,
-                   Not, OnTile, Plan, as_tile)
+from .plan import (
+    AnyOf,
+    Contains,
+    DateRange,
+    EntityRef,
+    HasValue,
+    LinkTo,
+    Mention,
+    NameMatch,
+    Not,
+    OnTile,
+    Plan,
+    as_tile,
+)
 from .readback import Check, check
 from .rosmadair import Unsupported, one_tile, tile_fields
 

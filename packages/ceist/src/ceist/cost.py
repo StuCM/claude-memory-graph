@@ -162,8 +162,17 @@ def plan(graphs, stages, reference=None, seeds=None, base=None, client=None, que
     from . import ontology_vocab as ov
     from .arches_describe import describe
     from .learn import mask
-    from .pipeline import (base_seed, build_model, field_phrases, load_seeds, model_roles, name_model,
-                           read_questions, value_variants, write_cases)
+    from .pipeline import (
+        base_seed,
+        build_model,
+        field_phrases,
+        load_seeds,
+        model_roles,
+        name_model,
+        read_questions,
+        value_variants,
+        write_cases,
+    )
     from .questions import prompt_for
     graphs = Path(graphs)
     real, bank, _ = read_questions(questions, set())

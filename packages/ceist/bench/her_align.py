@@ -24,7 +24,7 @@ import re
 from collections import Counter
 
 import compare as c
-from her_compare import _covers, _entry_fits, _target, judge, load, VocabWordLlama
+from her_compare import VocabWordLlama, _covers, _entry_fits, _target, judge, load
 
 FROM = {"from", "leaving", "departing", "departed", "left", "out"}
 TO = {"to", "towards", "toward", "into", "bound", "arriving", "arrived", "reaching"}

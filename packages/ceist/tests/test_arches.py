@@ -9,10 +9,21 @@ from datetime import date
 import arches_fixture as fx
 import pytest
 
-from ceist import DateRange, Detail, HasValue, LinkTo, Not, OnTile, Plan, interpret, narrate
-from ceist.plan import EntityRef
+from ceist import (
+    DateRange,
+    Detail,
+    HasValue,
+    LinkTo,
+    Not,
+    OnTile,
+    Plan,
+    interpret,
+    narrate,
+)
 from ceist.arches import ArchesVocabulary
-from ceist.arches_search import compile_checked, read_back as as_read_back, to_payload  # noqa: E501
+from ceist.arches_search import compile_checked, to_payload  # noqa: E501
+from ceist.arches_search import read_back as as_read_back
+from ceist.plan import EntityRef
 from ceist.readback import check
 from ceist.rosmadair import Unsupported, compile_plan, read_back
 
@@ -329,7 +340,12 @@ def test_arches_search_readback_catches_a_wrong_payload(vocab):
 
 def test_a_named_records_own_fields_read_from_its_tiles(vocab, data):
     from ceist.alizarin import RecordTiles, ask
-    from ceist.rosmadair import compile_detail, detail_lines, read_back_detail, read_detail
+    from ceist.rosmadair import (
+        compile_detail,
+        detail_lines,
+        read_back_detail,
+        read_detail,
+    )
     assert ask("what is the heritage status of Clock Tower?", vocab) == (
         "Building 'Clock Tower': heritage status Listed")
     tower = vocab.entity(data[1]["ids"]["tower"])
@@ -560,6 +576,7 @@ def _entry(vocab, data, who, role):
 def _resolve(snapshot, vocab, query, type_name="Building"):
     """The records of the type a query selects (a vacuous filter selects every record)."""
     import ros_madair
+
     from ceist.rosmadair import linked_models
     graph = ros_madair.Graph(json.dumps(vocab.model(type_name).doc))
     linked = [ros_madair.Graph(json.dumps(vocab.model(vocab.by_graph[m].name).doc))

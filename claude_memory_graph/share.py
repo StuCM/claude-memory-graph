@@ -26,8 +26,14 @@ from pathlib import Path
 
 import pyoxigraph as ox
 
-from .namespaces import (GRAPH_CONCEPTS, GRAPH_LINKS, GRAPH_RESOURCE_BASE, GRAPH_SCHEMA,
-                         MEM, RDF_TYPE)
+from .namespaces import (
+    GRAPH_CONCEPTS,
+    GRAPH_LINKS,
+    GRAPH_RESOURCE_BASE,
+    GRAPH_SCHEMA,
+    MEM,
+    RDF_TYPE,
+)
 from .store import MemoryStore
 
 # Nodes that bridge into unrelated work: shared as endpoints, never walked through.

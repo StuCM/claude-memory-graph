@@ -2,8 +2,8 @@ from typing import Optional
 
 import pyoxigraph as ox
 
+from ..namespaces import GRAPH_CONCEPTS, GRAPH_LINKS, GRAPH_RESOURCE_BASE, MEM
 from ..store import MemoryStore
-from ..namespaces import MEM, GRAPH_RESOURCE_BASE, GRAPH_CONCEPTS, GRAPH_LINKS
 
 
 def _local(term) -> str:

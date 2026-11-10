@@ -4,11 +4,11 @@ import time
 
 import pytest
 
-from claude_memory_graph.hookcore import HookContext, terms, terms_pos, state_home
 import claude_memory_graph.hookcore.state as kit_state
 from claude_memory_graph.gate import runtime
-from claude_memory_graph.gate.recall import RecallExtension, _bigrams, _score
 from claude_memory_graph.gate.nudge import ContextCounterExtension
+from claude_memory_graph.gate.recall import RecallExtension, _bigrams, _score
+from claude_memory_graph.hookcore import HookContext, state_home, terms, terms_pos
 from claude_memory_graph.store import MemoryStore
 
 

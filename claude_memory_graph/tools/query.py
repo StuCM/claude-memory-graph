@@ -2,9 +2,8 @@ import json
 
 import pyoxigraph as ox
 
-from ..store import MemoryStore
 from ..namespaces import MEM, RDF, RDFS, XSD
-
+from ..store import MemoryStore
 
 _PREFIXES = [(MEM, "mem:"), (RDF, "rdf:"), (RDFS, "rdfs:"), (XSD, "xsd:")]
 

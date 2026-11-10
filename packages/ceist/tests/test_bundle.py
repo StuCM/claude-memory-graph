@@ -3,11 +3,11 @@
 import json
 
 import pytest
+from fakes import FakeEncoder
 
 from ceist import bundle, config
 from ceist.cli import main
 from ceist.evaluate import evaluate, items_for, judge
-from fakes import FakeEncoder
 
 DESC = {"name": "Building", "graphid": "g-b", "nodes": [
     {"alias": "built_start", "name": "Construction Start", "datatype": "edtf"},

@@ -2,8 +2,20 @@
 
 import pytest
 
-from ceist import (Contains, Entity, EntityRef, HasValue, LinkTo, Plan, Relation, Value,
-                   interpret, narrate, plurals, terms)
+from ceist import (
+    Contains,
+    Entity,
+    EntityRef,
+    HasValue,
+    LinkTo,
+    Plan,
+    Relation,
+    Value,
+    interpret,
+    narrate,
+    plurals,
+    terms,
+)
 from ceist.vocabulary import Group
 
 
@@ -150,8 +162,12 @@ def test_plurals(word, forms):
 
 from datetime import date  # noqa: E402
 
-from ceist import DateField, DateRange, Not  # noqa: E402
-from ceist import dates  # noqa: E402
+from ceist import (  # noqa: E402
+    DateField,
+    DateRange,
+    Not,
+    dates,  # noqa: E402
+)
 from ceist.readback import check  # noqa: E402
 
 TODAY = date(2026, 10, 27)
@@ -267,8 +283,9 @@ def test_readback_check():
 
 # ── leftover words, matched by the configured chain ─────────────────────────
 
-from ceist.matching import Chain, Exact, Vectors  # noqa: E402
 from fakes import FakeEncoder  # noqa: E402
+
+from ceist.matching import Chain, Exact, Vectors  # noqa: E402
 
 FakeEncoder.SAME.update({"drawn": "designed", "sketched": "designed"})
 

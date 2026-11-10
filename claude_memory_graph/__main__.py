@@ -7,8 +7,8 @@ from pathlib import Path
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 
-from .store import MemoryStore
 from . import tools
+from .store import MemoryStore
 
 log = logging.getLogger(__name__)
 
@@ -318,7 +318,7 @@ def main() -> None:
         print(coverage.report(store, prompts))
         return
 
-    from .tools import recall, reflect, query, search
+    from .tools import query, recall, reflect, search
 
     store = MemoryStore.open_or_create(_store_path())
     if args.cmd == "recall":
