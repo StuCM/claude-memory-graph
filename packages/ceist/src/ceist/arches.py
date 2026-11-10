@@ -189,6 +189,7 @@ class ArchesVocabulary:
         self._concept_of: dict[str, str] = {}    # label value id / item URI → item id
         self._labels: dict[str, str] = {}        # item id → label
         self._items: dict[str, dict] = {}        # item id → {collection, uri, labels}
+        self._tile_label_index: dict[str, dict[str, None]] | None = None   # node id → labels its tiles hold
         self.resources = list(resources)
         self._geometry: dict[str, list[dict]] | None = None
         entities, unnamed = [], {}
@@ -397,16 +398,19 @@ class ArchesVocabulary:
 
     def values(self) -> list[Value]:
         """Every item of every controlled list (and legacy concept collection)
-        a node draws from, by preferred and alternative label."""
-        if self.rdm is None:
-            return []
+        a node draws from, by preferred and alternative label; a concept node with
+        no collection by the labels its tiles hold."""
         out = []
         for m in self.models.values():
             for n in m.nodes:
                 if n.get("datatype") not in CONTROLLED_TYPES or not n.get("alias"):
                     continue
                 cid = collection_of(n)
-                coll = self.rdm.get_collection(cid) if cid and self.rdm.has_collection(cid) else None
+                if cid is None:
+                    out += [Value(label.lower(), n["alias"], label, label, frozenset({m.name}), "concept")
+                            for label in self._tile_labels(n["nodeid"])]
+                    continue
+                coll = self.rdm.get_collection(cid) if self.rdm is not None and self.rdm.has_collection(cid) else None
                 if coll is None:
                     continue
                 for item_id in coll.get_concept_ids():
@@ -423,6 +427,27 @@ class ArchesVocabulary:
                             out.append(Value(phrase, n["alias"], item_id, label,
                                              frozenset({m.name}), "concept"))
         return out
+
+    def _tile_labels(self, node_id: str) -> list[str]:
+        """The labels a collection-less concept node's tiles hold (pipelines such as Rós Madair's
+        emitters write the label itself): each is its own item id."""
+        if self._tile_label_index is None:
+            loose = {n["nodeid"] for m in self.models.values() for n in m.nodes
+                     if n.get("datatype") in CONTROLLED_TYPES and n.get("alias") and collection_of(n) is None}
+            self._tile_label_index = {}
+            for r in self.resources:
+                for t in r.get("tiles") or []:
+                    for k, v in (t.get("data") or {}).items():
+                        if k in loose:
+                            for label in v if isinstance(v, list) else [v]:
+                                if isinstance(label, str) and label:
+                                    self._tile_label_index.setdefault(k, {})[label] = None
+            for label in {x for labels in self._tile_label_index.values() for x in labels}:
+                self._concept_of[label] = label
+                self._narrower[label] = []
+                self._labels[label] = label
+                self._items[label] = {"collection": None, "uri": "", "labels": []}
+        return sorted(self._tile_label_index.get(node_id, {}))
 
     def _index_item(self, collection_id: str, item_id: str, c) -> None:
         """What read-back and the backends need about one list item: its

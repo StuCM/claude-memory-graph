@@ -821,3 +821,28 @@ def test_a_partial_match_reads_back_exactly(vocab, data):
     plan = m.partial.plan
     assert narrate(plan) == "Find Buildings linked to or from Site 'Leeds Dock' and whose heritage status is Listed."
     assert check(plan, read_back(compile_plan(plan, vocab), vocab)).ok
+
+
+def test_a_concept_node_with_no_collection_is_read_by_the_labels_its_tiles_hold(tmp_path):
+    from ceist.alizarin import ask
+    fx.write(tmp_path)
+    question = "how many grade ii buildings are there?"     # a label has no narrower items, so not "listed"
+    want = ask(question, ArchesVocabulary.from_data_dir(tmp_path))
+    label_of = {i: label for label, i in fx.collection_ids()[2].items()}
+    for p in (tmp_path / "graphs").glob("*.json"):
+        doc = json.loads(p.read_text())
+        for n in doc["graph"][0]["nodes"]:
+            if n["alias"] == "heritage_status":
+                n["config"] = {}
+        p.write_text(json.dumps(doc))
+    for p in (tmp_path / "resources").rglob("*.json"):
+        doc = json.loads(p.read_text())
+        for r in doc["business_data"]["resources"]:
+            for t in r["tiles"]:
+                t["data"] = {k: label_of.get(v, v) if isinstance(v, str) else v for k, v in t["data"].items()}
+        p.write_text(json.dumps(doc))
+    shutil.rmtree(tmp_path / "vocabularies")
+    v = ArchesVocabulary.from_data_dir(tmp_path)
+    assert {(x.phrase, x.value) for x in v.values() if x.field == "heritage_status"} >= {("grade ii", "Grade II")}
+    assert want.endswith("Building records") and want != "0 Building records"
+    assert ask(question, v) == want
