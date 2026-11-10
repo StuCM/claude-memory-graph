@@ -72,7 +72,13 @@ checkout fails the gate, and nothing merges.
   `proposed.json`. Survivors are marked `"reviewed": "auto"`.
 - **Gate:** `bench/ontology/gate.py`. Each proposal alone on 026's bench must add a right answer and
   make nothing worse. Then the passing ones together on the bench, the demo bank (must be unchanged)
-  and the HER plans. Takes ~7 min or more, longer with more proposals. Run it on its own.
+  and the HER plans. When a question turns worse together, the gate rejects the proposals whose
+  phrase is written out in it. When none is (a phrase matched loosely, "how are they related" in
+  "what is related to …"), it halves the passing set, re-running that stage on each half, until it
+  has the proposals that make a question worse on their own; it rejects only those, each with the
+  question it made worse. If no half is worse alone, they do it together and all are rejected. The
+  HER plans read `bench/her/vocab`, not the proposals, so a change there rejects them all. The bench
+  sets run two processes at a time. Takes ~7 min or more, longer with more proposals. Run it on its own.
 - **Look at:** `vocabularies/ontology/cidoc-crm/build-report.md`. It lists what review dropped and
   why, what the gate rejected (with the score that failed), what was accepted, and the bench and
   demo bank before and after. It also lists **"Needs a hand phrasing"**: high-use date paths the LLM

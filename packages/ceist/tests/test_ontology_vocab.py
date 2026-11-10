@@ -186,6 +186,35 @@ def test_the_gate_rejects_a_proposal_that_adds_a_wrong_reading(data, tmp_path): 
         gate.gate([good], onto, {"fixture": str(data[0] / "graphs")}, tmp_path / "nowhere", None)
 
 
+def test_halving_finds_the_one_candidate_that_makes_a_question_worse():
+    gate = _gate()
+    cands = [{"path": f"E22 P{i}", "kind": "link", "phrases": [f"phrase {i}"]} for i in range(7)]
+    assert gate.culprits(cands, lambda cs: ["q"] if cands[4] in cs else [], ["q"]) == [(cands[4], ["q"])]
+    # two that are worse only together: no half is worse alone, so all are taken
+    both = gate.culprits(cands, lambda cs: ["q"] if cands[1] in cs and cands[5] in cs else [], ["q"])
+    assert [c for c, _ in both] == cands
+
+
+def test_the_gate_halves_a_together_stage_no_phrase_is_in(monkeypatch, tmp_path):
+    gate = _gate()
+    cands = [{"path": f"E22 P{i}", "kind": "link", "phrases": [f"phrase {i}"]} for i in range(6)]
+    bad = ["link E22 P2", "link E22 P5"]
+
+    def bench(sets, base, cs, together=False, base_dir=None, cache=None):
+        if not together:
+            return {gate.key(c): (1, []) for c in cs}
+        keys = {gate.key(c) for c in cs}
+        return {"*": (0, [f"fixture: what is related to Keldrith? ({k})" for k in bad if k in keys]), "tally": {}}
+
+    monkeypatch.setattr(gate, "bench", bench)
+    onto = tmp_path / "onto"
+    onto.mkdir()
+    (onto / "phrases.json").write_text(json.dumps(ONTOLOGY))
+    verdict = gate.gate(cands, onto, {"fixture": "unused"}, None, None)
+    assert verdict["accepted"] == ["link E22 P0", "link E22 P1", "link E22 P3", "link E22 P4"]
+    assert verdict["rejected"] == {k: f"bench, together: fixture: what is related to Keldrith? ({k})" for k in bad}
+
+
 def _proposal(path, kind, phrases, nodes=1, graphs=1):
     return {"path": path, "kind": kind, "phrases": phrases, "nodes": nodes, "graphs": graphs,
             "reason": "r", "reviewed": False}
