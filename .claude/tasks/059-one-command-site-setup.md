@@ -26,10 +26,11 @@ The reverse test on Phil's responder data (`/home/stuart/git/fat/aonach-responde
 1. **`ceist setup <data dir> -o <out>`.** One command that turns a site's Arches graphs and records into a ready vocabulary bundle:
    1. read the graphs and records;
    2. print the cost estimate;
-   3. use the shared ontology (CIDOC-CRM) layer and any base layer **as they are**;
-   4. generate the **client layer only**, with the rule generators and, optionally (`--llm`, with a call or dollar cap), the directed LLM fill;
-   5. gate the client candidates against **this site's own** benchmark (the fresh-graph template questions generated from the site's own schema), never against HER, lingo or Catalina;
-   6. write the coverage report and the frozen bundle (041's format, if it exists by then, else the bundle Ceist reads today).
+   3. use the shared ontology (CIDOC-CRM) layer **as it is**, and each graph's base layer as it is **where one exists**;
+   4. **for a graph with no base layer** (a new site's own models, like Phil's responder graphs), build one: first the rule generators over node names, aliases and descriptions; then, optionally (`--llm`, capped, estimate first), the existing `vocab pipeline --layer base` route. Gate it against the site's own benchmark. The reverse test skipped this layer entirely, so Ceist ran on the CRM layer plus a few rule plurals. The CRM layer gave Phil's Building model 0 phrasings, because his nodes are flat E55/E54 fields;
+   5. generate the **client layer**, with the rule generators and, optionally (`--llm`, with a call or dollar cap), the directed LLM fill;
+   6. gate the client candidates against **this site's own** benchmark (the fresh-graph template questions generated from the site's own schema), never against HER, lingo or Catalina;
+   7. write the coverage report and the frozen bundle (041's format, if it exists by then, else the bundle Ceist reads today).
 
    It must finish in minutes on a six-graph site. Measure it and report the time.
 2. **Ontology and base proposals become a separate, occasional build** (the existing `vocab ontology build`), run by the maintainers, not by each site. Document the split in `VOCAB-TRAINING.md`.
