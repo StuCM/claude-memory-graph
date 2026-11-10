@@ -49,6 +49,16 @@ The reverse test on Phil's responder data (`/home/stuart/git/fat/aonach-responde
      - **LLM paraphrase, `--llm`, capped:** batch the canonical sentences (about 50 per call) and ask for 3 to 5 everyday rewordings each. **Estimate first** (`ceist vocab estimate`), including the `claude -p` system-prompt overhead (about 33k tokens per call, so prefer few large batches, or the API directly), and show the estimate before any call. Tested with a stub here. No live calls in this task.
    - **Practice and exam sets.** Build a **practice** set from Phil's material, separate from the frozen 39-question exam (sha `ad2e6bba`), and use it for any checking. The frozen set is only scored at the end, once.
 
+7. **A gap and ambiguity audit, as part of `ceist setup`'s report.** Find whole *classes* of problem before any visitor hits one, rather than one instance at a time (Stu, 2026-11-10: "we keep hitting random issues… in a real life test more and more will come up"). For the site, list:
+   - **every value, type word or phrase that more than one model or field can mean** (the "shelter" class), with how it's settled: a site default, the subject type, or "did you mean". Count them;
+   - **every number, date and geometry field**, and whether Ceist's grammar can ask about it (numbers before 060, for example), so missing grammar shows as a count of fields, not as surprised users;
+   - **every link with no phrasing in any layer** (the 039 class: Figure's link to monuments), so "unphrased links" is a number that falls;
+   - **every controlled value with no plural or type-word form,** and every model with no type word;
+   - **every link two pieces of the same type can sit on** (direction set by word order, and "of" flips it);
+   - **records whose name is also a vocabulary phrase,** or contains only a generic word.
+
+   Each item gets a one-line fix or a reason. The report ends with totals per class, and a site is "set up" when each class is resolved or its remainder is accepted.
+
 ## Background
 - **Read first:**
   - the assessment report (§2b and §7);
@@ -63,6 +73,7 @@ The reverse test on Phil's responder data (`/home/stuart/git/fat/aonach-responde
 ## Definition of done
 - [ ] `ceist setup` and `ceist ask` exist and are tested. The setup time on the responder site and on the demo is in Worker notes.
 - [ ] The four bugs are fixed, with tests.
+- [ ] The audit runs in `ceist setup` and lists each class with counts, on the responder site and the demo.
 - [ ] Value-as-type words with site defaults, and both paraphrase sources, are tested. Gate survival counts per source are in Worker notes.
 - [ ] Cold reverse-test scores are in Worker notes; wrong answers stay at 0. The demo bank exits 0 and HER plans are 125/125.
 - [ ] The gate passes. Machine load: at most 2 processes, `TMPDIR=/home/stuart/.cache/tmp-059`, never `git add -A` or `git stash`, no servers left running, no pushes.
