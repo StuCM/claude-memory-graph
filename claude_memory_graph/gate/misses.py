@@ -11,12 +11,19 @@ is a revealed false negative — the model went to the shelf itself, so the
 memory existed, was wanted, and the gate didn't hand it over. Nobody labels
 anything; the model's own behaviour is the answer key.
 
-Exclusions (the two cases that are NOT gate misses):
+Exclusions (the cases that are NOT gate misses):
 - the recall found nothing        -> a CAPTURE GAP: nobody ever stored it;
                                      report separately, it indicts distill,
                                      not the gate
 - the gate FIRED for that node    -> the model drilled deeper into something
   shortly before                     already injected; the gate did its job
+- the recall shares no word with  -> the model exploring on its own in a long
+  the silent prompt                  turn ("approve run", then thirty searches):
+                                     nothing in the prompt could have pointed
+                                     at it, so it says nothing about the gate;
+                                     counted as `exploration`
+Only the graph layer's decisions are graded: the session-log layer, the
+prime and the planner's answers are other channels with their own logs.
 
 Each miss carries the silent decision's score, so the report can say WHICH
 fix the evidence points at:
@@ -32,7 +39,7 @@ logs are written live, this join happens when you ask for it).
 
 import json
 
-from claude_memory_graph.hookcore import state_home
+from claude_memory_graph.hookcore import state_home, terms
 
 from .runtime import config
 
@@ -66,6 +73,10 @@ def _name_of(target: str) -> str:
 
 def _classify(top: float, rest: float) -> str:
     abs_min, margin = config()["ABS_MIN"], config()["MARGIN"]
+    if top >= abs_min and top >= margin * rest:
+        # cleared both bars yet stayed silent: not a scoring problem
+        return (f"silent despite a clear top ({top} vs rest {rest}) — the node was already "
+                "injected earlier in the session, or the prompt was cut short; not a threshold issue")
     if top >= abs_min and top < margin * rest:
         return (f"margin miss — scored {top} but the rest scored {rest}, inside MARGIN {margin}; "
                 "the prompt matched too broadly. Give the node distinctive aliases")
@@ -80,14 +91,14 @@ def analyse(window: int = WINDOW_SECONDS) -> dict:
     decisions = _read_jsonl("injections.jsonl")
     recalls = _read_jsonl("explicit-recalls.jsonl")
 
-    misses, gaps = [], []
+    misses, gaps, exploration = [], [], 0
+    graph = [d for d in decisions if "kind" not in d]   # the graph layer's decisions only
     for recall in recalls:
         session, ts = recall.get("session", ""), recall.get("ts", 0)
         wanted = _name_of(recall.get("target", "")) or recall.get("sparql", "")
 
-        before = [d for d in decisions
-                  if d.get("kind") != "answer"     # planner answers aren't recall decisions
-                  and d.get("session", "") == session
+        before = [d for d in graph
+                  if d.get("session", "") == session
                   and 0 <= ts - d.get("ts", 0) <= window]
         if not before:
             continue  # recall with no gate decision in range — nothing to grade
@@ -109,20 +120,25 @@ def analyse(window: int = WINDOW_SECONDS) -> dict:
         nearest = max(silents, key=lambda d: d.get("ts", 0))
 
         record = {"recall": recall, "decision": nearest}
-        if recall.get("found"):
-            misses.append(record)
-        else:
-            gaps.append(record)
+        if not recall.get("found"):
+            gaps.append(record)               # never stored: a capture gap, whatever the prompt
+            continue
+        # a miss only if the prompt could have pointed at it: a shared word
+        if not set(terms(wanted)) & set(nearest.get("terms") or []):
+            exploration += 1
+            continue
+        misses.append(record)
 
-    return {"misses": misses, "gaps": gaps,
-            "decisions": len(decisions), "recalls": len(recalls)}
+    return {"misses": misses, "gaps": gaps, "exploration": exploration,
+            "decisions": len(graph), "recalls": len(recalls)}
 
 
 def report(window: int = WINDOW_SECONDS) -> str:
     result = analyse(window)
     lines = [f"gate decisions: {result['decisions']} · explicit recalls: "
              f"{result['recalls']} · misses: {len(result['misses'])} · "
-             f"capture gaps: {len(result['gaps'])}"]
+             f"capture gaps: {len(result['gaps'])} · exploration (shared no word with the "
+             f"prompt, not graded): {result['exploration']}"]
 
     for record in result["misses"]:
         d, r = record["decision"], record["recall"]

@@ -376,7 +376,7 @@ def test_silence_then_found_recall_is_a_miss():
 
 def test_low_score_miss_classified_as_vocabulary():
     _write_jsonl("injections.jsonl", [_with_ts(
-        {"fired": False, "top": 0.4, "top_node": "x", "session": "s1", "terms": ["db"]}, 1000)])
+        {"fired": False, "top": 0.4, "top_node": "x", "session": "s1", "terms": ["lock"]}, 1000)])
     _write_jsonl("explicit-recalls.jsonl", [_with_ts(
         {"session": "s1", "tool": "memory_recall",
          "target": "Pattern/RocksDB exclusive lock", "found": True}, 1030)])
@@ -674,3 +674,34 @@ def test_distill_nag_asks_for_a_batch_not_the_whole_backlog(context_dir):
     assert "proj__2026-01-07_00-00.md" not in reason  # newest is not
     assert reason.count("proj__") == 3
     assert "7 are stale in total" in reason
+
+
+def test_a_search_sharing_no_word_with_the_prompt_is_exploration_not_a_miss():
+    """'approve run', then a long turn of the model's own searches: nothing in
+    the prompt could have pointed at them."""
+    _write_jsonl("injections.jsonl", [_with_ts(
+        {"fired": False, "top": 12.7, "rest": 11.0, "top_node": "x", "session": "s1",
+         "terms": ["approve", "run"]}, 1000)])
+    _write_jsonl("explicit-recalls.jsonl", [
+        _with_ts({"session": "s1", "tool": "memory_search", "target": "Send Papers uses radio buttons",
+                  "found": True}, 1000 + 30 * i) for i in range(5)])
+    result = misses_mod.analyse()
+    assert not result["misses"] and result["exploration"] == 5
+    assert "exploration (shared no word with the prompt, not graded): 5" in misses_mod.report()
+
+
+def test_only_graph_layer_decisions_are_graded():
+    """A session-log decision (kind: log) or a planner answer is another
+    channel: its silence is not the graph gate's."""
+    _write_jsonl("injections.jsonl", [
+        _with_ts({"kind": "log", "fired": False, "top": 4.1, "session": "s1"}, 1000),
+        _with_ts({"kind": "answer", "fired": False, "q": "which?", "session": "s1"}, 1001)])
+    _write_jsonl("explicit-recalls.jsonl", [_with_ts(
+        {"session": "s1", "tool": "memory_search", "target": "querysets shim", "found": True}, 1030)])
+    result = misses_mod.analyse()
+    assert not result["misses"] and result["decisions"] == 0
+
+
+def test_a_clear_top_that_stayed_silent_is_not_called_a_threshold_miss():
+    assert "lowering ABS_MIN" not in misses_mod._classify(218.55, 2.0)
+    assert "silent despite a clear top" in misses_mod._classify(218.55, 2.0)

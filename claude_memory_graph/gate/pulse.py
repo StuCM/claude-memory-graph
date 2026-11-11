@@ -52,6 +52,29 @@ def _graph_counts() -> tuple[int, int]:
         return -1, -1
 
 
+def _used(fired: list[dict], recalls: list[dict]) -> tuple[int, int]:
+    """(opened, injected): injected node names the model later recalled or
+    searched for by name in the same session."""
+    asked: dict[str, list[tuple[float, str]]] = {}
+    for r in recalls:
+        text = (r.get("target") or r.get("sparql") or "").split("/", 1)[-1].lower()
+        asked.setdefault(r.get("session", ""), []).append((r.get("ts", 0), text))
+    offered = opened = 0
+    seen = set()
+    for e in fired:
+        sess = e.get("session", "")
+        for n in e.get("nodes", []) or []:
+            if not n or (sess, n) in seen:
+                continue
+            seen.add((sess, n))
+            offered += 1
+            name = n.lower()
+            if any(ts >= e.get("ts", 0) and (name in text or (text and text in name))
+                   for ts, text in asked.get(sess, [])):
+                opened += 1
+    return opened, offered
+
+
 def report(days: int = 7) -> str:
     cutoff = time.time() - days * 86400
     injections = _read_jsonl("injections.jsonl", cutoff)
@@ -99,6 +122,16 @@ def report(days: int = 7) -> str:
         lines.append("  → the gate never spoke. If the graph has nodes, prompts may "
                      "lack distinctive names, or ABS_MIN is too high — check "
                      "`claude-memory-graph misses` and `claude-hooks log`.")
+    used, offered = _used(fired, recalls)
+    if offered:
+        lines.append(f"  opened:    {used}/{offered} injected memories were then opened by the "
+                     f"model (memory_recall/search) in the same session — a floor on use: "
+                     "a pointer read and acted on without opening it doesn't count")
+    answers = [e for e in injections if e.get("kind") == "answer"]
+    if answers:
+        answered = sum(1 for e in answers if e.get("fired"))
+        lines.append(f"answers:     {answered}/{len(answers)} question(s) in prompts answered from "
+                     "the graph automatically; the rest stayed pointers")
     lines.append(f"log layer:   injected {len(log_fired)} undistilled entr"
                  f"{'y' if len(log_fired) == 1 else 'ies'}")
     lines.append(f"capture:     {len(blocks)} stop block(s) "
@@ -115,7 +148,8 @@ def report(days: int = 7) -> str:
                      f"{last.get('residue', 0)} residue")
     found = sum(1 for e in recalls if e.get("found"))
     lines.append(f"explicit:    {len(recalls)} memory tool call(s), {found} found")
-    lines.append(f"miss report: {n_miss} miss(es), {n_gap} capture gap(s) (all time)"
+    lines.append(f"miss report: {n_miss} miss(es), {n_gap} capture gap(s), "
+                 f"{miss_result.get('exploration', 0)} exploration (all time)"
                  + (" → `claude-memory-graph misses`" if n_miss or n_gap else ""))
     if undistilled >= 0:
         lines.append(f"distill:     {undistilled} undistilled context file(s)"

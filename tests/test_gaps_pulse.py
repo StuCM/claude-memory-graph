@@ -180,3 +180,16 @@ def test_pulse_flags_ignored_blocks(kit_home):
     _seed("injections.jsonl", [{"fired": False, "session": "s1"}])
     out = pulse_report(days=1)
     assert "no writes are ever observed" in out
+
+def test_pulse_reports_answers_and_injections_opened(kit_home):
+    _seed("injections.jsonl", [
+        {"fired": True, "session": "s1", "nodes": ["Use pinia stores", "Tile cache"]},
+        {"kind": "answer", "fired": True, "q": "which decisions?", "session": "s1"},
+        {"kind": "answer", "fired": False, "q": "which nag?", "session": "s1"},
+    ])
+    _seed("explicit-recalls.jsonl", [
+        {"session": "s1", "tool": "memory_recall", "target": "Decision/Use pinia stores",
+         "found": True}])
+    out = pulse_report(days=1)
+    assert "opened:    1/2 injected memories" in out
+    assert "answers:     1/2 question(s)" in out
