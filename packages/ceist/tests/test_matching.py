@@ -56,6 +56,9 @@ def test_chain_order_and_clarify():
     assert r.match.layer == "vectors" and r.match.item is BUILT and "vectors" in r.notes[0]
     r = chain.resolve("painted", [BUILT, GONE])
     assert r.match is None and len(r.options) == 2          # did you mean …
+    r = chain.resolve("erected", [BUILT, GONE], open_slot=True)
+    assert r.match is None and r.options[0] is BUILT
+    assert chain.resolve("built", [BUILT, GONE], open_slot=True).match.item is BUILT
     quiet = Chain([Exact(), Vectors(FakeEncoder(), low=0.6)], clarify_top=0)
     assert quiet.resolve("painted", [BUILT, GONE]).options == []
 

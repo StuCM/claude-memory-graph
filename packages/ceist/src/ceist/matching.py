@@ -177,13 +177,20 @@ class Chain:
     def __init__(self, layers: list, clarify_top: int = 3, clarify_min: float = 0.3):
         self.layers, self.clarify_top, self.clarify_min = layers, clarify_top, clarify_min
 
-    def resolve(self, phrase: str, items: list[Item]) -> Resolution:
+    def resolve(self, phrase: str, items: list[Item], open_slot: bool = False) -> Resolution:
+        """`open_slot`: the phrase may name none of `items`, which no vector score can weigh,
+        so only an exact match places it; another layer's pick is offered instead."""
         out = Resolution()
         if not items:
             return out
         pool: list[tuple[float, Item]] = []
         for layer in self.layers:
             d = layer.decide(phrase, items)
+            if isinstance(d, Match) and open_slot and d.layer != Exact.name:
+                out.notes.append(f"'{phrase}': {d.layer} only suggests {d.item.label or d.item.key}"
+                                 f" ({d.score:.2f}), not enough where the words may name none of these")
+                pool = [(d.score, d.item)] + pool
+                continue
             if isinstance(d, Match):
                 out.match = d
                 out.notes.append(f"'{phrase}' → {d.item.label or d.item.key} ({d.layer}"

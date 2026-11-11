@@ -82,7 +82,7 @@ def _match_leftovers(s: Scan, matcher) -> None:
              for (grp, preset), phrases in tiles.items()]
     for run in _leftover_runs(s):
         phrase = " ".join(w.text for w in run)
-        res = matcher.resolve(phrase, items)
+        res = matcher.resolve(phrase, items, open_slot=True)
         g.notes += res.notes
         if res.match:
             g.groups.append(GroupGround(phrase, float(run[0].i), [w.i for w in run],
