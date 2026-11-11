@@ -56,6 +56,8 @@ Add the bare-county questions to the demo bank with verified counts, plus "how m
 
 11. **`show me all castles in belfast`** refuses with "Monument 'Belfast, Belfast' isn't a Site or Tale, which 'in' points at". The demo has no Belfast *place* (no city or town Site). "Belfast" binds a **Monument** record named "Belfast, Belfast", and "in" wants a Site. Refusing is right, but the message is unhelpful. When "in X" names a record that has a location but isn't a place, add a **"did you mean near X?"** suggestion (a suggestion, never a silent swap). Record in Worker notes whether the demo data should gain town or city places.
 
+12. **The generated sets' remaining wrong readings** (4 on train, 2 on hold-out). They are identical under exact and bge, before and after 063, so they come from grounding, not the matcher. For example, "what is Slemish part of?" is read as a link, when a detail of Slemish was asked for. List all six with their cause, and fix them. **Wrong readings must reach 0** on both generated sets; for any that can't, record why refusing is right.
+
 ## Rules
 - **Never guess:** a fix must not turn any must-refuse question into an answer. The demo bank's must-refuse set, the reorder set and the fresh-graph bench must stay at 0 wrong.
 - **Add each fixed question to the demo bank** (`bench/demo/questions.json`) with its verified count, so it stays fixed. Where refusing is right, add it as a must-refuse question with the reason.
