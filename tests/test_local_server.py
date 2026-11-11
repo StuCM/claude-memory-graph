@@ -100,9 +100,14 @@ def test_a_server_from_an_older_version_is_replaced(machine, monkeypatch):
 
 def test_someone_elses_server_is_left_alone(machine, monkeypatch):
     assert localserver.ensure_running(machine.url) == "started"
+    started = localserver._ours()["pid"]
     localserver._pidfile().unlink()                          # e.g. systemd's, not ours
-    monkeypatch.setattr(localserver, "_version", lambda: "99.0.0")
-    assert localserver.ensure_running(machine.url) == "running"
+    try:
+        monkeypatch.setattr(localserver, "_version", lambda: "99.0.0")
+        assert localserver.ensure_running(machine.url) == "running"
+    finally:
+        # the fixture stops only the pidfile's server, and this test deleted it
+        os.kill(started, signal.SIGTERM)
 
 
 def test_the_gate_asks_the_server_and_falls_back_to_the_disk(machine):
