@@ -903,6 +903,58 @@
    "understood": "Show the from date of Object 'Gáe Bulg'.",
    "got": 1,
    "refused": null
+  },
+  {
+   "q": "objects with a dimension value over 100",
+   "expect": "answer",
+   "count": 0,
+   "note": "plan right; demo data has no numbers",
+   "want": "Find Objects whose dimension value is more than 100.",
+   "status": "right",
+   "understood": "Find Objects whose dimension value is more than 100.",
+   "got": 0,
+   "refused": null
+  },
+  {
+   "q": "monuments with a primary reference number of at least 1000",
+   "expect": "answer",
+   "count": 0,
+   "note": "plan right; demo data has no numbers",
+   "want": "Find Monuments whose primary reference number is at least 1000.",
+   "status": "right",
+   "understood": "Find Monuments whose primary reference number is at least 1000.",
+   "got": 0,
+   "refused": null
+  },
+  {
+   "q": "which objects are over 100?",
+   "expect": "refuse",
+   "count": null,
+   "note": "two number fields and no cue: did you mean",
+   "status": "right",
+   "understood": null,
+   "got": null,
+   "refused": "'over 100' could be the dimension value or the primary reference number of Object; did you mean dimension value over 100 or primary reference number over 100 for 'over 100'?"
+  },
+  {
+   "q": "monuments taller than 30 metres",
+   "expect": "refuse",
+   "count": null,
+   "note": "no height field",
+   "status": "right",
+   "understood": null,
+   "got": null,
+   "refused": "'taller than 30 metres' is a height, and no number field holds one"
+  },
+  {
+   "q": "how many objects have a dimension value under 2 metres?",
+   "expect": "refuse",
+   "count": null,
+   "note": "the dimension value has no unit recorded",
+   "status": "right",
+   "understood": null,
+   "got": null,
+   "refused": "'under 2 metres' gives a unit, but no unit is recorded for the dimension value of Object; ask without one"
   }
  ]
 }
