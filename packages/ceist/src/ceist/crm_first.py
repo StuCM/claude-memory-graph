@@ -334,11 +334,15 @@ def run(graph_dirs, base_dir: Path, client_dir: Path | None, ontology_dir: Path,
         if verdict is None:
             return 1
         passed = set(verdict["accepted"])
-        vocab_rules.apply([c for c in cands if f"{c['kind']} {c['path']}" in passed], ontology_dir, base_dir, client_dir)
+        vocab_rules.apply([dict(c, phrases=[p for p in c["phrases"] if p not in vocab_rules.gate_cut(c, verdict)])
+                           for c in cands if f"{c['kind']} {c['path']}" in passed], ontology_dir, base_dir, client_dir)
         for u in _promotable(units):
             k = f"{u['kind']} {u['path']}"
+            cut = vocab_rules.gate_cut(dict(u, layer="ontology"), verdict)
             if k not in passed:
                 u.update({"class": "gate-rejected", "why": verdict["rejected"].get(k, "?")})
+            elif u["phrase"].strip().lower() in cut:
+                u.update({"class": "gate-rejected", "why": cut[u["phrase"].strip().lower()]})
     back = [] if review_only else move(units, sets, base_dir, client_dir, ontology_dir)
     for u in back:
         u.update({"class": "not applied", "why": "the layered bundle would no longer give its node this phrase"})

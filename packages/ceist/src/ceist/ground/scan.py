@@ -154,7 +154,7 @@ def _scan(vocab: Vocabulary, text: str, filler: frozenset[str] = frozenset()) ->
         # a label with no content word ("S", "in": inch) matches a letter or
         # a function word in every question
         if terms_pos(v.phrase):
-            value_forms.setdefault(v.phrase, []).append(v)
+            value_forms.setdefault(v.phrase.replace("non-", "non "), []).append(v)
     s = Scan(vocab, text, raw, words, terms, Grounding(text=text), vocab.type_words(), groups,
              group_forms, value_forms, getattr(vocab, "any_of", False),
              getattr(vocab, "free_text", False))

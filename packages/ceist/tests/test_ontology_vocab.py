@@ -219,6 +219,40 @@ def test_the_gate_halves_a_together_stage_no_phrase_is_in(monkeypatch, tmp_path)
     assert verdict["rejected"] == {k: f"bench, together: fixture: what is related to Keldrith? ({k})" for k in bad}
 
 
+def test_a_rejected_candidate_keeps_its_good_phrases_and_one_bad_only_as_a_whole_is_rejected(monkeypatch, tmp_path):
+    gate = _gate()
+    mixed = {"path": "E22 P14", "kind": "link", "phrases": ["designed by", "covered by", "drawn by", "planned by"]}
+    pair = {"path": "E22 P108i", "kind": "link", "phrases": ["made", "by hand"]}
+    insurer = {"path": "E22 P52", "kind": "link", "phrases": ["insured by", "underwritten by", "held by"]}
+
+    def bench(sets, base, cs, together=False, base_dir=None, cache=None):
+        said = {p for c in cs for p in c["phrases"]}
+        if together:
+            # "held by" reads wrong only beside the other candidates
+            worse = ["fixture: which buildings are held by Ada?"] if {"held by", "designed by"} <= said else []
+            return {"*": (0, worse), "tally": {}}
+        out = {}
+        for c in cs:
+            worse = []
+            if "covered by" in c["phrases"]:
+                worse.append("fixture: what is covered by Keldrith?")
+            if {"made", "by hand"} <= set(c["phrases"]):
+                worse.append("fixture: what was made by hand?")
+            out[gate.key(c)] = (1, worse)
+        return out
+
+    monkeypatch.setattr(gate, "bench", bench)
+    onto = tmp_path / "onto"
+    onto.mkdir()
+    (onto / "phrases.json").write_text(json.dumps(ONTOLOGY))
+    verdict = gate.gate([mixed, pair, insurer], onto, {"fixture": "unused"}, None, None)
+    assert verdict["accepted"] == ["link E22 P14", "link E22 P52"]
+    assert verdict["phrases"]["link E22 P14"] == {"covered by": "bench: fixture: what is covered by Keldrith?"}
+    assert verdict["phrases"]["link E22 P52"] == {"held by": "bench, together: fixture: which buildings are held by Ada?"}
+    assert verdict["rejected"] == {"link E22 P108i": "bench: worse on 1, e.g. fixture: what was made by hand?"}
+    assert verdict["phrases"]["link E22 P108i"] == {p: "bench: fixture: what was made by hand?" for p in ("made", "by hand")}
+
+
 def _proposal(path, kind, phrases, nodes=1, graphs=1):
     return {"path": path, "kind": kind, "phrases": phrases, "nodes": nodes, "graphs": graphs,
             "reason": "r", "reviewed": False}

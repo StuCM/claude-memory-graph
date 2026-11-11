@@ -63,6 +63,21 @@ _XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
 _BASE_URI = "http://example.org/"
 
 
+_NEGATIVE = re.compile(r"(?:non-?|not |un-?)([a-z].{2,})")
+
+
+def said_as(label: str) -> set[str]:
+    """How a value's label is said: lowercased, and a negative label ("Non-listed", "Not listed",
+    "Unlisted") the other negative ways too, so the whole phrase binds the value before its "non" or
+    "not" is read as a negator. "un" counts only before a participle or "-able" adjective ("unit" doesn't)."""
+    said = label.lower()
+    m = _NEGATIVE.fullmatch(said)
+    if m is None or (said.startswith("un") and not m[1].endswith(("ed", "able", "ible"))):
+        return {said}
+    stem = m[1]
+    return {said, f"non-{stem}", f"not {stem}", f"un{stem}"}
+
+
 def collection_of(node: dict) -> str | None:
     """The list a controlled node draws from: `controlledList` (reference
     nodes) or `rdmCollection` (concept nodes) — Alizarin's rule."""
@@ -432,8 +447,8 @@ class ArchesVocabulary:
                     continue
                 cid = collection_of(n)
                 if cid is None:
-                    out += [Value(label.lower(), n["alias"], label, label, frozenset({m.name}), "concept")
-                            for label in self._tile_labels(n["nodeid"])]
+                    out += [Value(phrase, n["alias"], label, label, frozenset({m.name}), "concept")
+                            for label in self._tile_labels(n["nodeid"]) for phrase in sorted(said_as(label))]
                     continue
                 coll = self.rdm.get_collection(cid) if self.rdm is not None and self.rdm.has_collection(cid) else None
                 if coll is None:
@@ -446,7 +461,7 @@ class ArchesVocabulary:
                     native = getattr(c, "alt_labels", None) or {}
                     native = native.get(self.language, []) if isinstance(native, dict) else native
                     alts += [native] if isinstance(native, str) else list(native)
-                    phrases = {label.lower()} | {str(a).lower() for a in alts}
+                    phrases = said_as(label) | {str(a).lower() for a in alts}
                     for phrase in phrases:
                         if phrase:
                             out.append(Value(phrase, n["alias"], item_id, label,

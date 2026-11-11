@@ -121,6 +121,11 @@ What `setup` does, in order:
      shape, with expected counts where known. None may get worse, and none with an expected count may read
      wrong. **Never the frozen exam**: the exam scores the result once, at the end, and a question the setup
      has seen no longer measures anything.
+   A rejected element is then judged **phrase by phrase**: one bad phrasing ("covered by", read as the
+   insurer) no longer takes its good ones ("insured by") with it. Halving among the element's phrases finds the
+   ones that make something worse, alone or beside the other passing candidates; only those are rejected,
+   each with its question, and the element keeps the rest. Phrases worse only together are all rejected.
+   `setup.md` lists each rejected phrase, and `coverage.md` sets it aside with its reason.
 5. Writes `<out>/bundle.json`, `coverage.md`, `audit.md` and `setup.md` (what each source proposed and what
    survived, and why). `setup.md` opens with the status: compositions refused, by family, with examples; any
    wrong readings; any partial name binds; the audit totals. With a wrong reading or a partial bind, setup
@@ -176,7 +181,9 @@ checkout fails the gate, and nothing merges.
   phrase is written out in it. When none is (a phrase matched loosely, "how are they related" in
   "what is related to …"), it halves the passing set, re-running that stage on each half, until it
   has the proposals that make a question worse on their own; it rejects only those, each with the
-  question it made worse. If no half is worse alone, they do it together and all are rejected. The
+  question it made worse. If no half is worse alone, they do it together and all are rejected. A
+  proposal rejected alone or together is then judged phrase by phrase, the same way: only the phrases
+  to blame are rejected (the verdict's `"phrases"`), and it keeps the rest. The
   HER plans read `bench/her/vocab`, not the proposals, so a change there rejects them all. The bench
   sets run two processes at a time. Takes ~7 min or more, longer with more proposals. Run it on its own.
 - **Look at:** `vocabularies/ontology/cidoc-crm/build-report.md`. It lists what review dropped and
