@@ -108,8 +108,10 @@ def test_a_reply_naming_a_record_or_an_unknown_field_is_rejected(made):
         {**COUNT, "target": {"model": "Building", "conditions": [{"node": "colour"}]}},
         {**ON_SITE, "target": {"model": "Building", "conditions": [
             {"node": "heritage_status", "value": "Lovely"}]}},
-        {**STORY, "target": ON_SITE["target"]}]}, descriptions)
-    assert [e.split(":")[0] for e in errors] == [f"question {i}" for i in range(5)], errors
+        {**STORY, "target": ON_SITE["target"]},
+        {**ON_SITE, "target": {"model": "Building", "conditions": [{"node": "site", "link": ["Site"]}]}}]},
+        descriptions)
+    assert [e.split(":")[0] for e in errors] == [f"question {i}" for i in range(6)], errors
 
 
 def test_the_refine_loop_takes_a_generated_train_and_holdout(made, tmp_path):

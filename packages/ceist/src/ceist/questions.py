@@ -102,8 +102,8 @@ def _check_condition(c, model: str, descriptions: dict) -> str:
     if c.get("node") in (NAME, TEXT):
         return ""
     for key in ("link", "near"):
-        if c.get(key) is not None and c[key] not in descriptions:
-            return f"{key} '{c[key]}' is not a model"
+        if c.get(key) is not None and not (isinstance(c[key], str) and c[key] in descriptions):
+            return f"{key} {c[key]!r} is not a model"
     on = c.get("link") if c.get("link") in descriptions else None
     nodes = {n["alias"]: n for n in descriptions[model]["nodes"]}
     if on:                                  # a link of this model, or a backlink on the other
