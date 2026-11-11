@@ -35,7 +35,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 import run  # noqa: E402
 
-BAD = ("wrong reading", "wrong")
+from ceist.site import culprits, holding, judge  # noqa: E402
+from ceist.site import words as _words  # noqa: E402
+
 DEMO = Path("/home/stuart/git/personal/starches-demo/ask")
 HER_PLANS = run.REPO / "packages" / "ceist" / "bench" / "her_plans.py"
 # Stu's machine-load limit
@@ -83,25 +85,6 @@ def scores(name: str, graphs: list[dict], resources: list[dict], vocab, entries:
         items = [o for o in templated(vocab, ontology, b, only) if words is None or words & _words(o["q"])]
         out.update({(mode, q): s for _, q, _, s, _ in run.outcomes(graphs, resources, b, items)})
     return out
-
-
-_SMALL = {"the", "and", "for", "with", "from", "was", "were", "has", "have", "are", "who", "its"}
-
-
-def _words(text: str) -> set[str]:
-    """Its words' first four letters: a phrase can only change a question that has one."""
-    return {w[:4] for w in re.findall(r"[a-z]+", text.lower()) if len(w) > 2 and w not in _SMALL}
-
-
-def judge(before: dict, after: dict) -> tuple[int, list[str]]:
-    """(right answers added, questions made worse): a right answer or right refusal
-    lost, or a wrong reading or wrong that was not there before."""
-    gained = sum(1 for k, s in after.items() if s == "right" and before.get(k) != "right")
-    worse = [q for (mode, q), s in after.items()
-             if (s in BAD and before.get((mode, q)) not in BAD)]
-    worse += [q for (mode, q), s in before.items()
-              if s in ("right", "right refusal") and after.get((mode, q)) != s]
-    return gained, sorted(set(worse))
 
 
 def counts(scored: dict) -> dict:
@@ -169,27 +152,6 @@ def bench(sets: dict, base: list[dict], cands: list[dict], together: bool = Fals
                 g, w = out.get(k, (0, []))
                 out[k] = (g + gained, w + [f"{name}: {q}" for q in worse])
     return out
-
-
-def holding(cands: list[dict], questions: list[str]) -> list[dict]:
-    """The candidates with a phrase in one of these questions."""
-    text = " ".join(f" {q.lower()} " for q in questions)
-    return [c for c in cands if any(f" {p} " in text for p in c["phrases"])]
-
-
-def culprits(cands: list[dict], worse, lines: list[str]) -> list[tuple[dict, list[str]]]:
-    """(candidate, the questions it makes worse) for each of `cands` that makes a question
-    worse on its own, by halving: `worse(subset)` lists the questions a subset makes worse,
-    `lines` those all of `cands` do. If neither half is worse alone, it takes them together,
-    and every one of `cands` is returned."""
-    if len(cands) == 1:
-        return [(cands[0], lines)]
-    out = []
-    for half in (cands[:len(cands) // 2], cands[len(cands) // 2:]):
-        got = worse(half)
-        if got:
-            out += culprits(half, worse, got)
-    return out or [(c, lines) for c in cands]
 
 
 def demo_bank(demo: Path, base_dir: Path, client_dir: Path | None = None) -> str:

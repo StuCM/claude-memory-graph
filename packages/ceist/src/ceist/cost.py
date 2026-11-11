@@ -25,9 +25,10 @@ from . import prices
 
 USAGE = ("input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
 STAGES = {"values": "data", "phrases": "data", "generate": "questions", "refine": "refine",
-          "ontology": "ontology"}
-ORDER = ("ontology", "base", "data", "questions", "refine")
-MODELS = {"ontology": "opus", "base": "opus", "data": "sonnet", "questions": "opus"}
+          "ontology": "ontology", "paraphrase": "paraphrase"}
+ORDER = ("ontology", "base", "data", "questions", "paraphrase", "refine")
+MODELS = {"ontology": "opus", "base": "opus", "data": "sonnet", "questions": "opus", "paraphrase": "sonnet"}
+CLAUDE_P_SYSTEM = 33_000      # tokens of claude -p's own system prompt, on every call (not in the prompts sized here)
 DEFAULT_OUTPUT = 2000         # tokens a call writes, reply and thinking, before any run is measured
 DEFAULT_REFINE_INPUT = 8000   # a refine prompt holds the failures, which exist only once a run has
 NOTE = "Dollars are API list prices; on a Claude subscription they are usage, not a bill."
@@ -201,6 +202,13 @@ def plan(graphs, stages, reference=None, seeds=None, base=None, client=None, que
         if "questions" in stages:
             for name in sorted(descriptions):
                 run.sent.append({"stage": "questions", "prompt": prompt_for(name, descriptions, roles, per_model)[1]})
+        if "paraphrase" in stages:
+            from .arches import ArchesVocabulary, graph_doc, load_reference_data
+            from .paraphrase import canonical, prompts
+            files = sorted(p for p in Path(reference).rglob("*") if p.suffix in (".xml", ".json")) if reference else []
+            rdm, alts = load_reference_data(files) if files else (None, {})
+            v = ArchesVocabulary([graph_doc(p) for p in sorted(graphs.glob("*.json"))], rdm, alt_labels=alts)
+            run.sent += [{"stage": "paraphrase", "prompt": text} for _, text in prompts(canonical(v))]
         if "ontology" in stages:
             ontology, defs = ov.load(ontology_dir), ov.definitions(Path(ontology_dir) / "source")
             cands = ov.collect(ov.graph_docs([graphs]), ontology, defs)[0]
@@ -248,10 +256,22 @@ def estimate_lines(e: dict, rounds: int = 0) -> list[str]:
               "", f"Input sized by {e['sizing'] or 'the ledger'}; system prompt included.",
               "Not counted: base's collision passes (at most one call per model, only when phrases "
               "collide), and retries (at most one more per call)."]
+    lines.append(claude_p_overhead([(s["calls"], s["model"]) for s in e["stages"].values()]))
     if rounds:
         lines.append(f"Refine: {rounds} round(s) is the most; the loop stops early when nothing fails or a "
                      "round is rolled back.")
     return lines + [NOTE]
+
+
+def claude_p_overhead(calls: list[tuple[int, str]]) -> str:
+    """The line for claude -p's own system prompt, which the estimate's input leaves out: its range
+    from every call reading it from the cache to every call writing it."""
+    n = sum(c for c, _ in calls)
+    read = sum(prices.cost({"cache_read_input_tokens": CLAUDE_P_SYSTEM * c}, m) for c, m in calls)
+    write = sum(prices.cost({"cache_creation_input_tokens": CLAUDE_P_SYSTEM * c}, m) for c, m in calls)
+    return (f"claude -p adds its own system prompt, about {CLAUDE_P_SYSTEM // 1000}k tokens a call: {n} calls, "
+            f"+${read:.2f} if every call reads it from the cache, up to +${write:.2f} if every call writes it "
+            "(the API directly, or fewer and larger batches, avoid it).")
 
 
 def against(runs: list[dict]) -> list[str]:
