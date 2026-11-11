@@ -10,6 +10,11 @@ SKOS thesaurus with a narrower concept, construction date), and People.
 With `phases=True`, phases (type, cause and date on one tile each):
     Clock Tower      Destruction by Fire 1940
     Grain Warehouse  Destruction by Flood 1960 · Damage by Fire 1900
+
+With `numbers=True`, Building has Height (m), Occupant capacity and Insured value:
+    Clock Tower      30 m    200   50,000,000 (5 crore)
+    Grain Warehouse  12.5 m  500   2,500,000
+    Boat Shed        31 m    20    120,000
 """
 
 import json
@@ -141,7 +146,7 @@ def _point(lng, lat):
         {"type": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [lng, lat]}}]}
 
 
-def write(root: Path, phases: bool = False, places: bool = False) -> dict:
+def write(root: Path, phases: bool = False, places: bool = False, numbers: bool = False) -> dict:
     """`places`: a location node on Building and Site; Leeds Dock has none, Salts Mill
     is a polygon round the Boat Shed, the Warehouse is 1 km and the Shed 8 km from the Tower."""
     cid, concepts, values = collection_ids()
@@ -183,6 +188,9 @@ def write(root: Path, phases: bool = False, places: bool = False) -> dict:
             *([phase] if phases else []),
             *([_node(BUILDING, "location", "Location", "geojson-feature-collection")]
               if places else []),
+            *([_node(BUILDING, "height_m", "Height (m)", "number"),
+               _node(BUILDING, "capacity", "Occupant capacity", "number"),
+               _node(BUILDING, "insured_value", "Insured value", "number")] if numbers else []),
         ], nested={"associated_actor": [actor, actor_role],
                    **({"phase": phase_nodes} if phases else {})}),
     }
@@ -232,6 +240,9 @@ def write(root: Path, phases: bool = False, places: bool = False) -> dict:
     def at(lng, lat):
         return {"location": _point(lng, lat)} if places else {}
 
+    def sized(height, capacity, value):
+        return {"height_m": height, "capacity": capacity, "insured_value": value} if numbers else {}
+
     mill_area = {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {},
                  "geometry": {"type": "Polygon", "coordinates": [[[-1.51, 53.865], [-1.49, 53.865],
                                                                   [-1.49, 53.88], [-1.51, 53.88],
@@ -244,7 +255,8 @@ def write(root: Path, phases: bool = False, places: bool = False) -> dict:
     buildings = [
         resource(BUILDING, "tower", "Clock Tower", {
             "name": text("Clock Tower"), "heritage_status": values["Listed"],
-            "site": link("dock"), "architect": link("ada"), "construction_date": "1845-06-01", **at(-1.5, 53.8)},
+            "site": link("dock"), "architect": link("ada"), "construction_date": "1845-06-01", **at(-1.5, 53.8),
+            **sized(30, 200, 50000000)},
             entries=[("associated_actor", {"actor": link("ada"),
                                            "actor_role": role_values["Architect"]}),
                      *phase_of("Destruction", "Fire", "1940-05-01")]),
@@ -252,7 +264,8 @@ def write(root: Path, phases: bool = False, places: bool = False) -> dict:
         resource(BUILDING, "warehouse", "Grain Warehouse", {
             "name": text("Grain Warehouse"), "heritage_status": values["Grade II"],
             "site": link("dock"), "architect": link("isambard"),
-            "construction_date": "1872-03-15", **at(-1.5, 53.809)},
+            "construction_date": "1872-03-15", **at(-1.5, 53.809),
+            **sized(12.5, 500, 2500000)},
             entries=[("associated_actor", {"actor": link("ada"),
                                            "actor_role": role_values["Builder"]}),
                      ("associated_actor", {"actor": link("isambard"),
@@ -262,7 +275,8 @@ def write(root: Path, phases: bool = False, places: bool = False) -> dict:
                      *phase_of("Damage", "Fire", "1900-01-01")]),
         resource(BUILDING, "shed", "Boat Shed", {
             "name": text("Boat Shed"), "heritage_status": values["Candidate"],
-            "site": link("mill"), "architect": link("ada"), "construction_date": "1903-09-30", **at(-1.5, 53.872)}),
+            "site": link("mill"), "architect": link("ada"), "construction_date": "1903-09-30", **at(-1.5, 53.872),
+            **sized(31, 20, 120000)}),
     ]
     for folder, items in (("site", sites), ("person", people), ("building", buildings)):
         (root / "resources" / folder).mkdir(parents=True)

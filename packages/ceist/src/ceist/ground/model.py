@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 
-from ..vocabulary import DateField, Entity, Group, Relation, Value
+from ..vocabulary import DateField, Entity, Group, NumberField, Relation, Value
 
 
 @dataclass
@@ -66,6 +66,21 @@ class DateGround:
 
 
 @dataclass
+class NumberGround:
+    """"capacity over 200": a bound in the unit said, and the fields it may be on."""
+    phrase: str
+    pos: float
+    lo: float | None
+    hi: float | None
+    lo_inclusive: bool
+    hi_inclusive: bool
+    unit: str                     # as said ("metres", "crore"), or ""
+    fields: list[NumberField]     # the field the words picked, else every candidate
+    clash: str = ""               # why no field fits what the words say
+    negated: bool = False
+
+
+@dataclass
 class NearGround:
     """"near X" / "within 5 km of X": X is measured from, not linked to."""
     phrase: str
@@ -106,6 +121,7 @@ class Grounding:
     edges: list[Edge] = field(default_factory=list)
     values: list[ValueMatch] = field(default_factory=list)
     dates: list[DateGround] = field(default_factory=list)
+    numbers: list[NumberGround] = field(default_factory=list)
     groups: list[GroupGround] = field(default_factory=list)
     near: NearGround | None = None
     recent: bool = False

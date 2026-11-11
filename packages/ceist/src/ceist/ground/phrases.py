@@ -1,15 +1,25 @@
-"""Passes 1-7: the question's shape, then the phrases it says: relations, tile
-phrases, values, field phrases, "near" and dates."""
+"""Passes 1-9: the question's shape, then the phrases it says: relations, tile
+phrases, values, field phrases, "near", dates and numbers."""
 
 import re
+from typing import NamedTuple
 
-from .. import dates
-from ..text import ALNUM, overlaps
-from .model import DateGround, GroupGround, NameGround, NearGround, ValueMatch, _edge
+from .. import dates, numbers
+from ..text import ALNUM, overlaps, terms
+from .model import (
+    DateGround,
+    GroupGround,
+    NameGround,
+    NearGround,
+    NumberGround,
+    ValueMatch,
+    _edge,
+)
 from .scan import (
     _LEAD_WORDS,
     _SUBJECT_LEAD,
     ABOUT_RE,
+    AUX,
     IMPERATIVE,
     MILE_KM,
     MOST,
@@ -191,9 +201,13 @@ def _dates(s: Scan, today) -> None:
     date_fields = list(getattr(s.vocab, "date_fields", lambda: [])())
     if not date_fields:
         return
-    found = dates.find(s.raw, s.taken, today)
+    blocked = list(s.taken)
+    if getattr(s.vocab, "number_fields", lambda: [])():
+        blocked += numbers.not_dates(s.raw, s.taken)     # "capacity over 1500" is no year
+    found = dates.find(s.raw, blocked, today)
     if not found:
         return
+    s.taken += [(d.start, d.end) for d in found]
     picks = []
     # a word can pick a date field on several types ("built": a
     # monument's construction, an aircraft's start date); keep them
@@ -217,3 +231,96 @@ def _dates(s: Scan, today) -> None:
                        + (f" ('{pick[2]}' → "
                           f"{' / '.join(sorted({d.label for d in pick[1]}))})"
                           if pick else ""))
+
+
+
+def _numbers(s: Scan) -> None:
+    """"capacity over 200", "taller than 30 metres": only when the vocabulary has number
+    fields. Each comparison takes the field its unit or cue says ("30 metres", "room
+    for"), with the field word just before it; else the nearest field word before it,
+    else after it; else every number field, and the subject's type chooses."""
+    fields = list(getattr(s.vocab, "number_fields", lambda: [])())
+    if not fields:
+        return
+    found = [m for m in numbers.find(s.raw, s.taken + s.names) if not _counts_records(s, m)]
+    if not found:
+        return
+    forms: dict[str, list] = {}
+    for f in fields:
+        for form in f.forms:
+            forms.setdefault(form, []).append(f)
+    spans = s.taken + [(m.start, m.end) for m in found]
+    named = [FieldWord(s.words_in(m.start(), m.end()), fs, m)
+             for _form, fs, m in _phrase_spans(s.raw, list(forms.items()), list(spans), s.names)]
+    for nm in found:
+        at = s.words_in(nm.start, nm.end)
+        pos = s.consume_span(nm.start, nm.end)
+        s.taken.append((nm.start, nm.end))
+        pick = _field_word(s, named, at[0], at[-1], adjacent=bool(nm.unit or nm.cue))
+        if pick is not None:
+            s.taken.append((pick.match.start(), pick.match.end()))
+            s.consume_span(pick.match.start(), pick.match.end())
+        fits, clash = _number_fields(nm, pick.fields if pick else fields, picked=pick is not None)
+        s.g.numbers.append(NumberGround(nm.phrase, pos, nm.lo, nm.hi, nm.lo_inclusive,
+                                        nm.hi_inclusive, nm.unit, fits, clash))
+        s.g.notes.append(f"'{nm.phrase}' → number "
+                         f"{numbers.label(nm.lo, nm.hi, nm.lo_inclusive, nm.hi_inclusive)}"
+                         + (f" ('{pick.match.group()}' → "
+                            f"{' / '.join(sorted({f.label for f in pick.fields}))})" if pick else ""))
+
+
+def _counts_records(s: Scan, nm) -> bool:
+    """"more than 3 figures" counts linked records, which no number field holds."""
+    after = [w for w in s.words if w.start >= nm.end][:2]
+    if not after:
+        return False
+    valued = {i for v in s.g.values for i in v.words}
+    return (after[0].text in s.type_words or " ".join(w.text for w in after) in s.type_words
+            or after[0].i in valued)
+
+
+class FieldWord(NamedTuple):
+    words: list[int]
+    fields: list
+    match: re.Match
+
+
+def _field_word(s: Scan, named: list[FieldWord], first: int, last: int,
+                adjacent: bool) -> FieldWord | None:
+    """The field word nearest before the comparison, else after it. With a unit or cue
+    of its own, only one just before it counts: "height over 30 metres", "an insured value of
+    at least 1 crore"."""
+    near = max((x for x in named if x.words[-1] < first), key=lambda x: x.words[-1], default=None)
+    if adjacent:
+        between = range(near.words[-1] + 1, first) if near else ()
+        return near if near and all(s.words[i].text in AUX | {"a", "an", "the", "of"}
+                                    for i in between) else None
+    return near or min((x for x in named if x.words[0] > last), key=lambda x: x.words[0],
+                       default=None)
+
+
+def _number_fields(nm, candidates: list, picked: bool) -> tuple[list, str]:
+    """The candidates the comparison's unit and cue fit, or why none does. A picked field
+    word stands even against the unit: plan._attach_numbers refuses that, saying why."""
+    said = numbers.kind(nm.unit)
+    if isinstance(nm.cue, str) and said and nm.cue != said:
+        return [], f"'{nm.phrase}' says both {numbers.KINDS[nm.cue]} and {numbers.KINDS[said]}"
+
+    def fits(f) -> bool:
+        if said and not picked and numbers.kind(f.unit) != said:
+            return False
+        if isinstance(nm.cue, str):
+            return numbers.kind(f.unit) == nm.cue
+        if nm.cue:
+            return bool(nm.cue & {*terms(f.label), *f.field.split("_")})
+        return True
+
+    out = [f for f in candidates if fits(f)]
+    if out:
+        return out, ""
+    what = (numbers.KINDS[nm.cue] if isinstance(nm.cue, str) else
+            f"a {' or '.join(sorted(nm.cue))}" if nm.cue else numbers.KINDS[said])
+    if picked:
+        return [], (f"'{nm.phrase}' is {what}, and the "
+                    f"{' or the '.join(sorted({f.label for f in candidates}))} isn't")
+    return [], f"'{nm.phrase}' is {what}, and no number field holds one"

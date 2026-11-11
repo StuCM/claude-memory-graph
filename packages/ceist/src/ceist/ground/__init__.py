@@ -3,7 +3,8 @@
 Pipeline: shape → relations (longest phrase first, on the raw text, so
 "works on" keeps its stopword) → group phrases ("burnt down": a tile of a
 nodegroup) → controlled values ("listed", "active") →
-dates ("before 1900", with the word that picks the field: "built") → type
+dates ("before 1900", with the word that picks the field: "built") → numbers
+("capacity over 200", with the field word or unit that picks the field) → type
 nouns, modifiers, negators and hints → implied types (who → Person) → up to
 two named anchors (only a whole name or alias may bind; never a guess, and a
 shorter relation, group or value phrase inside one gives way to it) → each
@@ -34,6 +35,7 @@ from .model import (
     NameGround,
     NearGround,
     Node,
+    NumberGround,
     ValueMatch,
 )
 from .nodes import _anchors, _fit_relations, _imply_model, _words
@@ -42,6 +44,7 @@ from .phrases import (
     _field_phrases,
     _group_by,
     _near,
+    _numbers,
     _relations,
     _shape,
     _tile_phrases,
@@ -64,7 +67,7 @@ from .wire import _or, _scope_negations, _subject, _wire
 
 __all__ = ["AUX", "DATE_WORDS", "IMPERATIVE", "MILE_KM", "NEG", "PREPS", "WH", "WORD_RE",
            "DateGround", "Edge", "GroupGround", "Grounding", "NameGround", "NearGround", "Node",
-           "ValueMatch", "ground", "is_question", "pieces"]
+           "NumberGround", "ValueMatch", "ground", "is_question", "pieces"]
 
 
 def ground(vocab: Vocabulary, text: str, today=None, matcher=None) -> Grounding:
@@ -89,6 +92,7 @@ def pieces(vocab: Vocabulary, text: str, today=None, matcher=None, fit: bool = T
     _field_phrases(s)     # after values: a field phrase holds the value after it
     _near(s)              # before dates: "within 2000 miles of" is no year
     _dates(s, today)      # after relations: "built by" beats the date-field word "built"
+    _numbers(s)           # after near and dates: "within 20 km" stays a distance, "before 1900" a date
     _words(s)             # after dates: a date word is shape only once a date grounded
     _anchors(s)           # after words: ranks leftovers only; edges and near set its role and cap
     if fit:

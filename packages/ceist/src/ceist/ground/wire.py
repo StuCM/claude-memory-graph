@@ -185,7 +185,7 @@ def _subject(s: Scan) -> None:
 
 def _scope_negations(s: Scan) -> None:
     """Each negator negates the next thing named after it: a relation, a
-    value, a date, the text word — or a type, meaning the relation that
+    value, a date, a number, the text word — or a type, meaning the relation that
     joins it ("sites with no buildings"). Nothing within reach → unplaced,
     and the planner refuses: a dropped "not" inverts the answer."""
     g = s.g
@@ -193,6 +193,7 @@ def _scope_negations(s: Scan) -> None:
     items += [(e.pos, "edge", e) for e in g.edges]
     items += [(v.pos, "value", v) for v in g.values]
     items += [(d.pos, "date", d) for d in g.dates]
+    items += [(n.pos, "number", n) for n in g.numbers]
     items += [(t.pos, "group", t) for t in g.groups]
     if g.near is not None:
         items.append((g.near.pos, "near", g.near))
@@ -224,6 +225,7 @@ def _scope_negations(s: Scan) -> None:
         name = {"edge": lambda e: f"relation {e.relation}",
                 "value": lambda v: f"value '{v.phrase}'",
                 "date": lambda d: f"date '{d.phrase}'",
+                "number": lambda n: f"'{n.phrase}'",
                 "group": lambda t: f"the '{t.phrase}' entry",
                 "near": lambda n: f"'{n.phrase}'",
                 "name": lambda n: f"the name match '{n.term}'"}[kind](what)

@@ -26,6 +26,7 @@ from .plan import (
                    Mention,
                    NameMatch,
                    Not,
+                   NumberRange,
                    OnTile,
                    Partial,
                    Plan,
@@ -34,10 +35,10 @@ from .plan import (
 )
 from .readback import Check, check
 from .text import plurals, terms, terms_pos
-from .vocabulary import DateField, Entity, Relation, Value, Vocabulary
+from .vocabulary import DateField, Entity, NumberField, Relation, Value, Vocabulary
 
 __all__ = ["AnyOf", "Check", "Contains", "DateField", "DateRange", "Detail", "Entity",
            "EntityRef", "GroupBy", "Grounding", "HasValue", "Interpretation", "LinkTo", "Mention",
-           "NameMatch", "Not", "OnTile", "Partial", "Plan", "Relation", "Relaxation", "Value", "Vocabulary",
+           "NameMatch", "Not", "NumberField", "NumberRange", "OnTile", "Partial", "Plan", "Relation", "Relaxation", "Value", "Vocabulary",
            "check", "ground", "interpret", "is_question", "narrate", "plurals", "terms",
            "terms_pos"]
