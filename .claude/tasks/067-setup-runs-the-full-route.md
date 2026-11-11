@@ -45,7 +45,7 @@ So Phil's controlled lists never got everyday forms. The sector values are "q â€
 
 ## Running it
 - **Build and test with stub LLMs only** (`--llm-cmd`). Every new stage needs a stub test.
-- **Then one live run** on Phil's testbed corpus (`/home/stuart/.cache/tmp-aonach/testbed/corpus`), with **`--llm ant --model sonnet --max-dollars 10`**. Stu has approved API spend for this, with that cap. Reuse the existing cache for the base layer (copy `/home/stuart/.cache/tmp-062/sonnet-site/llm/cache` into your output dir). Use the same six Building defaults as `run.sh`, plus any role defaults setup asks for (list them). **If the printed estimate is over $10, stop and report** instead of running.
+- **Then one live run** on Phil's testbed corpus (`/home/stuart/.cache/tmp-aonach/testbed/corpus`), with **`--llm ant --model sonnet --max-dollars 30`**. Stu has approved API spend for this, with a $30 cap (raised from $10 on 2026-11-11). Reuse the existing cache for the base layer (copy `/home/stuart/.cache/tmp-062/sonnet-site/llm/cache` into your output dir). Use the same six Building defaults as `run.sh`, plus any role defaults setup asks for (list them). **If the printed estimate is over $30, stop and report** instead of running.
 - **Record the real spend** from the ledger in Worker notes.
 
 ## Measure (tables in Worker notes)
@@ -73,7 +73,7 @@ So Phil's controlled lists never got everyday forms. The sector values are "q â€
 ## Definition of done
 - [ ] The full route in setup is tested with stubs: list items, questions, rounds, and the checklist flag.
 - [ ] Both grammar rules are tested, including an intermediate link with two possible paths asking "did you mean".
-- [ ] One live run under the $10 cap, with the real spend recorded.
+- [ ] One live run under the $30 cap, with the real spend recorded.
 - [ ] The half-swap and plain-build scores, the responder set and the regression sets are in Worker notes. Wrong answers are at 0; every new right is read.
 - [ ] The gate passes. `TMPDIR=/home/stuart/.cache/tmp-067`, never `git add -A` or `git stash`, no servers left running, no pushes.
 
