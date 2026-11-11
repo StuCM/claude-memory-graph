@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass, field
 from typing import NamedTuple
 
-from ..text import ALNUM, overlaps, terms_pos
+from ..text import ALNUM, marks, overlaps, terms_pos
 from ..vocabulary import Group, Relation, Value, Vocabulary
 from .model import Grounding, Node
 
@@ -140,6 +140,8 @@ def _scan(vocab: Vocabulary, text: str, filler: frozenset[str] = frozenset()) ->
     raw = text.lower().replace("\u2019", "'").replace("non-", "non ")
     words = [Word(i, m.start(), m.end(), m.group()) for i, m in enumerate(WORD_RE.finditer(raw))]
     terms = {w for _, w in terms_pos(text)} | (MEANINGFUL & set(re.findall(ALNUM + "+", raw)))
+    # "v1.0" in "Flood model v1.0": only where a record's name has it, so other numbers stay as they were
+    terms |= {m for m in marks(text) if vocab.rank_entities({m})}
     terms -= filler
     groups = list(getattr(vocab, "groups", lambda: [])())
     group_forms: dict[str, list] = {}
