@@ -183,6 +183,7 @@ class ArchesVocabulary:
         # a bundle's phrasings, per (model, alias): HER reuses aliases such as
         # start_date and actor across models, each with its own meaning
         self._bundle_forms: dict[tuple[str, str], list[str]] = {}
+        self._role_forms: dict[tuple[str, str], list[str]] = {}   # "keyholders": the holder of the link
         self._blocks: dict[tuple[str, str], dict] = {}   # (model, nodegroup) → its group block
         self._qualified: list[Relation] | None = None
         self._groups: list[Group] = []
@@ -232,7 +233,7 @@ class ArchesVocabulary:
         """This vocabulary over another bundle, sharing the graphs, lists and records already read."""
         v = copy.copy(self)
         v.extra_type_words = dict(self._given_type_words)
-        v._bundle_forms, v._blocks, v._qualified, v._groups = {}, {}, None, []
+        v._bundle_forms, v._role_forms, v._blocks, v._qualified, v._groups = {}, {}, {}, None, []
         v.skipped, v.notes = [], list(self.notes)
         v._absorb(bundle)
         return v
@@ -269,8 +270,8 @@ class ArchesVocabulary:
                 if kind in ("link", "date") or (kind == "property" and (
                         e.get("layer") == "ontology" or number)):
                     key = (name, e["node"])
-                    self._bundle_forms[key] = list(dict.fromkeys(
-                        self._bundle_forms.get(key, []) + e["phrases"]))
+                    forms = self._role_forms if e.get("role") else self._bundle_forms
+                    forms[key] = list(dict.fromkeys(forms.get(key, []) + e["phrases"]))
 
     def _block(self, model: str, group: str) -> dict:
         return self._blocks.setdefault((model, group), {"phrases": [], "nodes": {}, "combos": {}})
@@ -315,12 +316,15 @@ class ArchesVocabulary:
                 targets = self._targets(n)
                 forms = {str(n.get("name") or "").lower(), n["alias"].replace("_", " ").lower()}
                 forms |= {f.lower() for f in self.relation_forms.get(n["alias"], [])}
-                said = {f.lower() for f in self._bundle_forms.get((m.name, n["alias"]), [])}
+                roles = {f.lower() for f in self._role_forms.get((m.name, n["alias"]), [])}
+                said = {f.lower() for f in self._bundle_forms.get((m.name, n["alias"]), [])} | roles
                 forms |= said
                 r = by_alias.setdefault(n["alias"], {"forms": set(), "domain": set(), "range": set(),
-                                                    "ends": set(), "said": set(), "by_model": {}})
+                                                    "ends": set(), "said": set(), "by_model": {},
+                                                    "roles": set()})
                 r["forms"] |= forms
                 r["said"] |= said
+                r["roles"] |= roles
                 r["by_model"][m.name] = forms
                 r["ends"].add((m.name, targets or self._crm_targets(m.name, n["alias"])))
                 r["domain"].add(m.name)
@@ -333,7 +337,8 @@ class ArchesVocabulary:
             out.append(Relation(alias, tuple(sorted(f for f in r["forms"] if f)), frozenset(r["domain"]),
                                 frozenset(r["range"]), style="field", ends=frozenset(r["ends"]),
                                 form_owners=frozenset((f, o) for f, o in owners.items()
-                                                      if o != r["domain"])))
+                                                      if o != r["domain"]),
+                                roles=frozenset(r["roles"])))
         self._load_groups()
         return out + self._qualified
 
@@ -354,7 +359,7 @@ class ArchesVocabulary:
         values = {(o, v.field, v.label.lower()): v for v in self.values() for o in v.owners}
         dates = {(d.field, o): d for d in self.date_fields() for o in d.owners}
         for (model, g), block in self._blocks.items():
-            forms, fields, date_nodes = [], set(), set()
+            forms, fields, date_nodes, type_forms = [], set(), set(), set()
             for (anchor, sets), phrases in block["combos"].items():
                 said = (f"{model}: '{phrases[0] if phrases else '?'}' → {anchor or g} + "
                         + ", ".join(f"{a} = {v}" for a, v in sets))
@@ -388,6 +393,9 @@ class ArchesVocabulary:
                     date_nodes.add(anchor)
                 fields |= {v.field for v in found}
                 forms += [(p.lower(), tuple(found)) for p in phrases]
+                if not anchor and len(found) == 1:
+                    label = found[0].label.lower()
+                    type_forms |= {p.lower() for p in phrases} & (plurals(label) - {label})
             forms += [(p.lower(), ()) for p in block["phrases"]]
             for a, role in block["nodes"].items():
                 kind = (self.node(model, a) or {}).get("datatype")
@@ -397,7 +405,7 @@ class ArchesVocabulary:
                     fields.add(a)
             if forms:
                 date = dates.get((next(iter(date_nodes)), model)) if len(date_nodes) == 1 else None
-                self._groups.append(Group(g, model, tuple(forms), frozenset(fields), date))
+                self._groups.append(Group(g, model, tuple(forms), frozenset(fields), date, frozenset(type_forms)))
 
     def _targets(self, link: dict) -> frozenset[str]:
         return frozenset(self.by_graph[g["graphid"]].name

@@ -1,7 +1,7 @@
 """Passes 8-11: type words, named records, the relation each phrase means, and
 a type the values imply."""
 
-from ..text import terms_pos
+from ..text import marks, terms_pos
 from ..vocabulary import Relation
 from .model import Node, _edge
 from .scan import (
@@ -47,6 +47,13 @@ def _words(s: Scan) -> None:
                 s.add_var(hints[w], float(i), f"'{w}' implies")
         elif w in AUX or w in FILLER or (g.dates and w in DATE_WORDS):
             s.consumed.add(i)
+    # a value plural ("hospitals") is a type word too; its value rides on the group, which
+    # attaches to the variable of its model wherever the reading puts it
+    for gm in g.groups:
+        models = {grp.model if gm.phrase in grp.type_forms else None for grp, _preset in gm.candidates}
+        model = models.pop() if len(models) == 1 else None
+        if model is not None and model not in s.seen:
+            s.add_var(model, gm.pos, f"'{gm.phrase}'")
     implied = s.vocab.implied_types()
     if g.wh in implied and implied[g.wh] not in s.seen:
         s.add_var(implied[g.wh], 0.0, f"'{g.wh}' implies")
@@ -109,6 +116,21 @@ def _anchors(s: Scan) -> None:
             g.anchors = [n for n in g.anchors if n is not a]
             g.nodes = [n for n in g.nodes if n is not a]
             g.notes.append(f"'{g.near.phrase}' → within {g.near.km:g} km of {a.type} '{a.name}'")
+    if not g.anchors:
+        _numbered_names(s)
+
+
+def _numbered_names(s: Scan) -> None:
+    """"the flood model": the records it names all but the number of ("Flood model v1.0"),
+    offered as "did you mean", never bound."""
+    named = []
+    for _score, e in s.vocab.rank_entities(s.terms):
+        words = e.name_terms - marks(e.name)
+        if words != e.name_terms and words and words <= s.terms:
+            named.append(e)
+    if named:
+        said = " ".join(w for _i, _s, _e, w in s.words if any(s.parts_of(w) & e.name_terms for e in named))
+        s.g.suggestions.append((said, [f"'{e.name}'" for e in named[:6]]))
 
 
 def _either_records(s: Scan) -> None:

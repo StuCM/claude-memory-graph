@@ -40,6 +40,8 @@ class Relation:
     form_owners: frozenset[tuple[str, frozenset[str]]] = frozenset()   # (a form, the types
                                                 # holding the link that are said with it), for
                                                 # a form only some of them are
+    roles: frozenset[str] = frozenset()         # forms naming the record holding the link, as a
+                                                # type word does: "keyholders" (of keyholder_for)
 
     def said_as(self, form: str) -> "Relation":
         """The link as `form` names it: only on the types said with that form."""
@@ -105,6 +107,7 @@ class Group:
     forms: tuple[tuple[str, tuple[Value, ...]], ...]   # (phrase, the values it sets)
     fields: frozenset[str] = frozenset()        # controlled nodes a word nearby may fill
     date: DateField | None = None               # where a date nearby goes
+    type_forms: frozenset[str] = frozenset()    # its value plurals ("hospitals"): type words
 
 
 @dataclass

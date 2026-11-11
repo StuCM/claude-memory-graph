@@ -186,8 +186,9 @@ def _link_options(s: Scan, e, every: list[Relation]) -> list:
         for x in nodes:
             # an implicit end opposite a variable says something only when the link has a
             # role ("architects", "surveyed by") or a value names it ("flew in the
-            # Lancaster"); "in County Nowhere" must not become "in any Site"
-            only = None if r.qualifier or x.kind == "anchor" else valued
+            # Lancaster"); "in County Nowhere" must not become "in any Site". A role noun
+            # ("keyholders") is a role too
+            only = None if r.qualifier or e.form in r.roles or x.kind == "anchor" else valued
             leads = x.pos <= e.pos and not _after_as(s, e)
             out += [(r, x, t) for t in sorted(r.targets(x.type))
                     if r.joins(x.type, t) and (only is None or t in only)
