@@ -35,6 +35,42 @@ for the graphs in hand, because they change with the graphs.
   site-specific (a value-qualified combo, a local word), or the gate rejected the path form. Step 8 moves
   what an older layer holds and records the reason for each phrasing left behind.
 
+## API credits: `--llm ant`, under a cap
+
+Every command that calls an LLM (`vocab pipeline`, `vocab ontology` and `build`, `vocab fill`,
+`questions generate`, `setup --llm`) sends through `claude -p` on the subscription by default. With
+`--llm ant --max-dollars N` it sends through the Anthropic CLI instead, `ant messages create`, on the
+account's API credits: the same prompts and the same short system prompt, without the ~33k tokens
+`claude -p` adds to every call.
+
+```sh
+ant auth status    # logged in once, outside Ceist; an ANTHROPIC_API_KEY in the environment overrides the profile
+.venv-ceist/bin/ceist vocab estimate $G --stages base --reference $R --llm ant --max-dollars 30
+.venv-ceist/bin/ceist vocab pipeline $G -o <out> --reference $R --layer base --base vocabularies/base \
+    --llm ant --max-dollars 30
+```
+
+The layers of safety, from the outside in:
+
+1. **The account's own spend limit and auto-reload setting** (console.anthropic.com). They are Stu's;
+   Ceist neither reads nor changes them. Keep auto-reload off, and the limit at what you are willing to lose.
+2. **`--max-dollars N`, required.** `--llm ant` refuses to start without it. Before every call, the call's
+   worst case (its input at one token a byte, which no prompt can exceed, plus all 16k output tokens it may
+   write, at `prices.py`'s price) is added to what this command has spent so far by the ledger; if the sum would pass
+   N, the command stops before that call (exit 1) and says what it did and what it did not. With `--jobs`,
+   the calls under way count at their worst case, and a call that failed (it may still have been
+   billed) counts at its worst case too. The cap is per command: a rerun starts again from $0, so
+   give each run the budget left.
+3. **The ledger.** After every call its real `usage` is priced and written to `audit.jsonl`, beside the
+   prompt; the report's cost table sums it.
+4. **The estimate and the cap are printed before the first call** (the pipeline and `questions generate`
+   print `vocab estimate`'s table; the others print their own line).
+
+Ceist never reads, stores or passes a token: `ant` holds the auth, and the request body goes to it on stdin.
+Replies are cached by prompt and model as before, so a run stopped by the cap resumes from the cache, and
+`claude -p` and `ant` share it. `--llm-cmd` still overrides both, for tests. `setup`'s `--llm` takes an
+optional value now, so put it after the data dir (`ceist setup <data dir> --llm ant …`).
+
 ## A new site: `ceist setup`, and who builds what
 
 Two builds, run by different people:

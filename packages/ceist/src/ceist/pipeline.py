@@ -27,7 +27,8 @@ it), never a record. Real questions (`--questions`) are masked with `learn`'s
 rules before they are sent; the raw text stays in cases.json, on this machine.
 Seeds (`--seed`) are phrasings already in use: the LLM extends them, never deletes.
 The default LLM is Claude Code headless (`claude -p`) over the user's
-subscription, run with no tools from an empty temporary directory.
+subscription, run with no tools from an empty temporary directory. With `--llm ant` it is
+`ant messages create` on API credits, under a hard dollar cap (`Cap`); ant holds the auth.
 """
 
 import hashlib
@@ -36,6 +37,7 @@ import math
 import shlex
 import subprocess
 import tempfile
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -54,10 +56,55 @@ CLAUDE = ["claude", "-p", "--output-format", "json", "--tools", "", "--strict-mc
           "--setting-sources", "project", "--no-session-persistence",
           "--system-prompt", "You write JSON for an offline search-vocabulary build. "
                              "Reply with the JSON asked for and nothing else."]
+ANT = ["ant", "--format", "json", "messages", "create"]   # the request body goes on stdin
+ANT_MAX_TOKENS = 16_000
 
 
 class LLMError(RuntimeError):
     pass
+
+
+class OverCap(RuntimeError):
+    """The next call could pass --max-dollars: the run stops before it."""
+
+
+class Cap:
+    """--llm ant's hard dollar limit for this process: a call is sent only when its worst case
+    (input + ANT_MAX_TOKENS of output) fits beside what every Runner's ledger has spent.
+    The input is bounded by its UTF-8 bytes, as no token is shorter than a byte; chars / 4 undercounts JSON."""
+
+    def __init__(self, max_dollars: float):
+        self.max_dollars = max_dollars
+        self.runners: list[Runner] = []
+        self.held = 0.0   # worst cases of calls under way (--jobs)
+        self.lock = threading.Lock()
+
+    def spent(self) -> float:
+        return sum(row["cost_usd"] or 0 for run in self.runners for row in run.ledger)
+
+    def reserve(self, prompt: str, model: str, what: dict) -> float:
+        input_tokens = len((CLAUDE[-1] + prompt).encode())
+        worst = prices.cost({"input_tokens": input_tokens, "output_tokens": ANT_MAX_TOKENS}, model)
+        with self.lock:
+            spent = self.spent()
+            if spent + self.held + worst <= self.max_dollars:
+                self.held += worst
+                return worst
+            paid = sum(not row["cached"] for run in self.runners for row in run.ledger)
+        call = " ".join(str(what[k]) for k in ("kind", "step", "model", "node") if what.get(k))
+        under_way = f", ${self.held:.2f} held for calls under way" if self.held else ""
+        raise OverCap(f"Stopped by --max-dollars ${self.max_dollars:.2f}: spent ${spent:.2f}{under_way}.\n"
+                      f"Done: {paid} paid call(s); every reply that passed its check is cached, so a rerun "
+                      "takes it from there.\n"
+                      f"Not done: the next call ({call}; worst case ${worst:.2f}, {input_tokens} input + "
+                      f"{ANT_MAX_TOKENS} output tokens) and the rest of this command.")
+
+    def release(self, worst: float) -> None:
+        with self.lock:
+            self.held -= worst
+
+
+CAP: Cap | None = None   # set by the CLI's --llm ant --max-dollars N; None is claude -p
 
 
 def outline(d: dict) -> dict:
@@ -290,8 +337,13 @@ class Runner:
         self.cache = out / "cache"
         self.cache.mkdir(parents=True, exist_ok=True)
         self.audit = out / "audit.jsonl"
-        self.argv = shlex.split(llm_cmd) if llm_cmd else CLAUDE + (["--model", model] if model else [])
-        self.claude = llm_cmd is None
+        self.cap = CAP if llm_cmd is None else None
+        if self.cap:
+            self.cap.runners.append(self)
+            self.argv = ANT
+        else:
+            self.argv = shlex.split(llm_cmd) if llm_cmd else CLAUDE + (["--model", model] if model else [])
+        self.claude = llm_cmd is None and not self.cap
         self.model = model or ""
         self.calls = self.hits = self.answered = 0
         self.failures: list[dict] = []
@@ -300,6 +352,8 @@ class Runner:
     def _send(self, prompt: str) -> dict:
         """claude -p's JSON result; a stub (--llm-cmd) may print the same shape, else its
         output is the reply."""
+        if self.cap:
+            return self._send_ant(prompt)
         with tempfile.TemporaryDirectory() as cwd:
             p = subprocess.run(self.argv, input=prompt, capture_output=True, text=True, cwd=cwd,
                                timeout=1800)
@@ -316,17 +370,37 @@ class Runner:
                            f"{(p.stderr or p.stdout).strip()[-300:]}")
         return env
 
-    def _spent(self, what: dict, sha: str, env: dict | None, prompt: str | None) -> None:
+    def _send_ant(self, prompt: str) -> dict:
+        """ant's message, in claude -p's result shape."""
+        body = {"model": prices.api_id(self.model), "max_tokens": ANT_MAX_TOKENS, "system": CLAUDE[-1],
+                "messages": [{"role": "user", "content": prompt}]}
+        p = subprocess.run(self.argv, input=json.dumps(body), capture_output=True, text=True, timeout=1800)
+        if p.returncode:
+            raise LLMError(f"ant exited {p.returncode}: {p.stderr.strip()[-300:]}")
+        try:
+            message = json.loads(p.stdout)
+        except ValueError:
+            raise LLMError(f"ant gave no JSON: {p.stdout.strip()[-300:]}") from None
+        text = "".join(block.get("text", "") for block in message.get("content") or [])
+        return {"result": text, "usage": message.get("usage") or {},
+                "modelUsage": {message.get("model") or body["model"]: {}}}
+
+    def _spent(self, what: dict, sha: str, env: dict | None, prompt: str | None, worst: float = 0.0) -> None:
         """The call's line in audit.jsonl: what was asked, the prompt sent, and the ledger
-        (stage, model, usage, dollars). A reply from the cache has no prompt and costs 0."""
+        (stage, model, usage, dollars). A reply from the cache has no prompt and costs 0; an ant
+        call that failed may still have been billed, so it costs its worst case."""
         usage = (env or {}).get("usage") or {}
         model = next(iter((env or {}).get("modelUsage") or {}), self.model)
         if prompt is None:
             dollars, source = 0.0, "cache"
         elif env and env.get("total_cost_usd") is not None:
             dollars, source = env["total_cost_usd"], "claude"
+        elif usage:
+            dollars, source = prices.cost(usage, model), "prices"
+        elif self.cap:
+            dollars, source = worst, "worst case (no usage reported)"
         else:
-            dollars, source = (prices.cost(usage, model), "prices") if usage else (None, None)
+            dollars, source = None, None
         row = dict(what, ts=int(time.time()), sha256=sha, **({"prompt": prompt} if prompt is not None else {}),
                    stage=cost.stage_of(what), llm=model, cached=prompt is None,
                    usage={k: usage.get(k, 0) for k in cost.USAGE}, cost_usd=dollars, cost_from=source)
@@ -345,6 +419,7 @@ class Runner:
             return json.loads(hit.read_text())
         text = prompt
         for _ in range(2):
+            worst = self.cap.reserve(text, self.model, what) if self.cap else 0.0
             self.calls += 1
             sha, env = hashlib.sha256(text.encode()).hexdigest(), None
             try:
@@ -355,7 +430,9 @@ class Runner:
                 errors = [str(e)]
                 break
             finally:
-                self._spent(what, sha, env, text)
+                self._spent(what, sha, env, text, worst)
+                if self.cap:
+                    self.cap.release(worst)
             raw = env.get("result") or ""
             try:
                 reply = _bundle.parse_reply(raw)
