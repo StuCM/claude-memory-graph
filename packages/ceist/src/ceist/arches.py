@@ -34,6 +34,7 @@ What a question can name, from that:
 Alizarin (`pip install alizarin`) is required.
 """
 
+import copy
 import json
 import re
 import xml.etree.ElementTree as ET
@@ -171,6 +172,7 @@ class ArchesVocabulary:
                      for m in self.models.values()}
         self.rdm = rdm_cache
         self.extra_type_words = dict(extra_type_words or {})
+        self._given_type_words = dict(self.extra_type_words)
         # extra phrasings per node alias: {"architect": ["designed by"]}
         self.relation_forms = relation_forms or {}
         # words that pick a date node: {"construction_date": ["built", "constructed"]}
@@ -222,6 +224,15 @@ class ArchesVocabulary:
                  if vocab_dir.is_dir() else [])
         rdm, alts = load_reference_data(files, language) if files else (None, {})
         return cls(graphs, rdm, resources, language, alt_labels=alts, **kw)
+
+    def with_bundle(self, bundle) -> "ArchesVocabulary":
+        """This vocabulary over another bundle, sharing the graphs, lists and records already read."""
+        v = copy.copy(self)
+        v.extra_type_words = dict(self._given_type_words)
+        v._bundle_forms, v._blocks, v._qualified, v._groups = {}, {}, None, []
+        v.skipped, v.notes = [], list(self.notes)
+        v._absorb(bundle)
+        return v
 
     def _absorb(self, bundle) -> None:
         """A vocabulary bundle's phrasings (ceist.bundle): unqualified link
