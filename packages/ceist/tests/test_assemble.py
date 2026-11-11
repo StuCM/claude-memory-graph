@@ -129,3 +129,16 @@ def test_an_unknown_content_word_still_refuses():
     m = schema(Toy(), "which buildings on site Leeds Dock are wonky?")
     assert m.plan is None
     assert m.refused.startswith("couldn't place 'wonky'")
+
+
+class Statused(Toy):
+    """Toy, where heritage status is also said "status"."""
+
+    def field_phrases(self):
+        return [("status", "Building", "heritage_status")]
+
+
+def test_a_field_name_inside_a_hyphenated_word_holds_nothing():
+    assert schema(Statused(), "which listed buildings have a sub-status?").refused.startswith("couldn't place")
+    assert narrate(schema(Statused(), "which buildings have status listed?").plan) == (
+        "Find Buildings whose heritage status is Listed.")

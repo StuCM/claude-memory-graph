@@ -172,6 +172,8 @@ def _field_phrases(s: Scan) -> None:
         by_phrase.setdefault(phrase, set()).add((model, alias))
     for phrase, owners, m in _phrase_spans(s.raw, list(by_phrase.items()), list(s.taken), s.names):
         at = s.words_in(m.start(), m.end())
+        if not at:       # inside a hyphenated word ("sub-status"): no word of its own
+            continue
         after = min((v for v in g.values if v.pos > at[-1]), key=lambda v: v.pos, default=None)
         before = max((v for v in g.values if v.words and v.words[-1] < at[0]), key=lambda v: v.pos, default=None)
         sides = [(after, at[-1], after.pos if after else 0), (before, before.words[-1] if before else 0, at[0])]
