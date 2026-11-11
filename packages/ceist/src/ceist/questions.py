@@ -419,7 +419,7 @@ def templated(vocab, ontology: dict, bundle: dict | None = None, only: set | Non
         entries = crm.ontology_entries(vocab.models[name].doc, ontology)
         mine = ((bundle or {}).get("models") or {}).get(name) or {"entries": []}
         entries += [e for e in mine["entries"] if e.get("layer") != "ontology" and not e.get("qualifier")
-                    and e["kind"] in ("link", "date") and (name, e["node"]) in (only or ())]
+                    and not e.get("role") and e["kind"] in ("link", "date") and (name, e["node"]) in (only or ())]
         many, said = _plural(name), {p for e in entries for p in e["phrases"]}
         for e in entries:
             node = e["node"]

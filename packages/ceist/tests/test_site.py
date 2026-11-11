@@ -53,12 +53,23 @@ def test_value_plurals_two_models_hold_go_only_to_the_site_default():
               "phrases": ["hospitals"]} for m in ("Building", "Organisation")]
     cands.append({"layer": "client", "model": "Building", "node": "role", "value": "Shelter",
                   "key": "value Building.role=shelter", "phrases": ["shelters"]})
-    kept, dropped, ask = site.settle_value_type_words(cands, {})
+    kept, dropped, ask = site.settle_type_words(cands, {})
     assert [c["key"] for c in kept] == ["value Building.role=shelter"] and ask == ["hospital"]
     assert "no site default" in dropped["value Organisation.role=hospital"]["hospitals"]
-    kept, dropped, ask = site.settle_value_type_words(cands, {"hospital": "Building"})
+    kept, dropped, ask = site.settle_type_words(cands, {"hospital": "Building"})
     assert [c["key"] for c in kept] == ["value Building.role=hospital", "value Building.role=shelter"] and not ask
     assert dropped["value Organisation.role=hospital"]["hospitals"] == "site default: hospital means Building"
+
+
+def test_a_role_noun_two_models_hold_goes_only_to_the_site_default():
+    cands = [{"layer": "client", "model": m, "node": "keyholder_for", "kind": "link", "role": "keyholder",
+              "key": f"role {m}.keyholder_for", "phrases": ["keyholders"]} for m in ("Person", "Organisation")]
+    kept, dropped, ask = site.settle_type_words(cands, {})
+    assert kept == [] and ask == ["keyholder"]
+    assert "no site default" in dropped["role Person.keyholder_for"]["keyholders"]
+    kept, dropped, ask = site.settle_type_words(cands, {"keyholder": "Person"})
+    assert [c["key"] for c in kept] == ["role Person.keyholder_for"] and not ask
+    assert kept == site.settle_type_words(cands[:1], {})[0]          # one model holds it: no default needed
 
 
 def test_canonical_sentences_narrate_values_links_and_dates_with_their_targets(data):  # noqa: F811
