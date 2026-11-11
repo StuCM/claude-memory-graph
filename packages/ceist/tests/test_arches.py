@@ -55,6 +55,18 @@ def test_vocabulary_reads_types_relations_values_and_names(vocab):
     assert vocab.rank_entities({"leeds", "dock"})[0][1].name == "Leeds Dock"
 
 
+def test_non_listed_binds_a_non_listed_value_and_stays_a_negation_without_one(vocab, tmp_path):
+    for q in ("how many non-listed buildings are there?", "how many buildings are not listed?"):
+        assert narrate(interpret(vocab, q).plan) == "Count Buildings whose heritage status is not Listed."
+    fx.write(tmp_path)
+    skos = tmp_path / "vocabularies" / "heritage.xml"
+    skos.write_text(skos.read_text().replace(">Candidate<", ">Non-listed<"))
+    negative = ArchesVocabulary.from_data_dir(tmp_path)
+    for q in ("how many non-listed buildings are there?", "how many unlisted buildings are there?",
+              "how many buildings are not listed?", "which non listed buildings are on site Salts Mill?"):
+        assert "heritage status is Non-listed" in narrate(interpret(negative, q).plan), q
+
+
 def test_listed_buildings_on_a_site(vocab, data):
     m = interpret(vocab, "which listed buildings are on site Leeds Dock?")
     q = compile_plan(m.plan, vocab, 25).query
