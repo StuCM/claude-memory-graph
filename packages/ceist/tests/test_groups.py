@@ -10,12 +10,14 @@ import subprocess
 
 import arches_fixture as fx
 import pytest
+from fakes import FakeEncoder
 from test_arches import _resolve, _tools
 
 from ceist import DateRange, HasValue, Not, OnTile, Plan, config, interpret, narrate
 from ceist.alizarin import Tiles, evaluate
 from ceist.arches import ArchesVocabulary
 from ceist.arches_search import compile_checked
+from ceist.matching import Chain, Exact, Vectors
 from ceist.readback import check
 from ceist.rosmadair import compile_plan, read_back
 
@@ -139,3 +141,14 @@ def test_the_matcher_finds_a_group_phrase_the_exact_pass_missed(vocab, data):
     (tile,) = m.plan.where
     assert tile.group == "phase" and len(tile.conditions) == 3
     assert evaluate(m.plan, Tiles(vocab)) == {data[1]["ids"]["tower"]}
+
+
+@pytest.mark.skipif(not FakeEncoder.ready(), reason="needs numpy")
+def test_a_vector_near_miss_on_a_leftover_run_offers_rather_than_answers(vocab):
+    # bge rates a run that names no tile as close to one (the responder set's "flood footprint" → muster points)
+    class Loose(FakeEncoder):
+        SAME = {**FakeEncoder.SAME, "footprint": "damaged"}
+    m = interpret(vocab, "which buildings are in the storm footprint?",
+                  matcher=Chain([Exact(), Vectors(Loose(), low=0.6)], clarify_min=0.0))
+    assert m.plan is None and "did you mean" in m.refused
+    assert m.grounding.suggestions == [("storm footprint", ["damaged (phase)"])]
