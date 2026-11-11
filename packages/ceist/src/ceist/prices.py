@@ -18,6 +18,11 @@ def family(model: str | None) -> str:
     return next((f for f in PRICES if f in m), DEFAULT)
 
 
+def api_id(model: str | None) -> str:
+    """The API's id for "opus" or "sonnet" (claude -p's default counts as opus); an id is kept."""
+    return API_IDS.get(model or DEFAULT, model)
+
+
 def cost(usage: dict, model: str | None) -> float:
     p = PRICES[family(model)]
     return (usage.get("input_tokens", 0) * p["input"] + usage.get("output_tokens", 0) * p["output"]

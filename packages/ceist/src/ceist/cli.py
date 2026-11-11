@@ -44,6 +44,10 @@
                [--half even|odd]                         # every other question: tune on one half
     ceist vectors fetch <model>                         # a transformer's weights (huggingface.co)
     ceist vectors embed <bundle.json> [--config ceist.toml]   # embed its phrasings ahead of time
+
+Every command that calls an LLM (and `vocab estimate`) takes --llm claude|ant: claude -p over the
+subscription (the default), or `ant messages create` on API credits, which needs --max-dollars N, a
+hard cap on what the command may spend. Exit 1 when the cap stops it.
 """
 
 import argparse
@@ -149,8 +153,18 @@ def _slice(a):
     return 0
 
 
+def _ant_estimate(a, stage: str, **plan_args) -> None:
+    """Under --llm ant, the estimate before the first call."""
+    from . import cost
+    if a.llm == "ant":
+        e = cost.estimate(a.graphs, [stage], {stage: a.model} if a.model else None, **plan_args)
+        print("\n".join(cost.estimate_lines(e, plan_args.get("rounds", 0))))
+
+
 def _pipeline(a):
     from .pipeline import run
+    _ant_estimate(a, "data" if a.layer == "data" else "base", rounds=a.rounds, reference=a.reference,
+                  seeds=a.seed, base=a.base if a.layer == "base" else None, client=a.client, questions=a.questions)
     return run(a.graphs, a.out, a.reference, a.questions, a.llm_cmd, a.model,
                a.models.split(",") if a.models else None, a.config, a.min_right, a.max_dangerous,
                a.jobs, seeds=a.seed, layer=a.layer, base=a.base, client=a.client, rounds=a.rounds,
@@ -159,6 +173,7 @@ def _pipeline(a):
 
 def _questions(a):
     from .questions import generate
+    _ant_estimate(a, "questions", reference=a.reference, per_model=a.per_model)
     return generate(a.graphs, a.out, a.reference, a.llm_cmd, a.model,
                     a.models.split(",") if a.models else None, a.per_model)
 
@@ -411,6 +426,16 @@ def _embed(a):
     return 0
 
 
+def _llm_args(p, setup: bool = False) -> None:
+    if setup:
+        p.add_argument("--llm", nargs="?", const="claude", choices=["claude", "ant"],
+                       help="also the LLM routes, after the estimate: claude -p (the default) or ant")
+    else:
+        p.add_argument("--llm", choices=["claude", "ant"], default="claude",
+                       help="claude: claude -p over your subscription; ant: the ant CLI on API credits")
+    p.add_argument("--max-dollars", type=float, help="--llm ant: the most this command may spend (required)")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="ceist")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -473,6 +498,7 @@ def main(argv=None):
                                                    "relation_forms, date_forms} JSON (repeatable)")
     p.add_argument("--llm-cmd", help="a command that reads a prompt on stdin and prints the reply "
                                      "(default: claude -p, no tools, over your subscription)")
+    _llm_args(p)
     p.add_argument("--model", help="passed to claude -p")
     p.add_argument("--models", help="only these models, comma-separated")
     p.add_argument("--config", help="the matching config the gate scores with")
@@ -525,6 +551,7 @@ def main(argv=None):
     p.add_argument("--ontology", default="vocabularies/ontology/cidoc-crm")
     p.add_argument("--llm-cmd", help="a command that reads a prompt on stdin and prints the reply "
                                      "(default: claude -p, no tools, over your subscription)")
+    _llm_args(p)
     p.add_argument("--model", help="passed to claude -p")
     p.add_argument("--max-calls", type=int, default=300)
     p.add_argument("--top", type=int, help="only the N most used paths")
@@ -551,6 +578,7 @@ def main(argv=None):
         p.add_argument("--estimate", action="store_true", help="fill: print the estimate, send nothing")
         p.add_argument("--llm-cmd")
         p.add_argument("--model")
+        _llm_args(p)
         p.add_argument("--max-calls", type=int, default=300)
         p.set_defaults(fn=fn)
 
@@ -586,6 +614,7 @@ def main(argv=None):
     p.add_argument("--ledger", action="append", help="a past run's out dir: replies sized from its usage, "
                                                      "and the estimate set beside its actuals")
     p.add_argument("--json", action="store_true")
+    _llm_args(p)
     p.set_defaults(fn=_estimate)
 
     p = sub.add_parser("setup", help="a new site's vocabulary from its data dir, gated on its own questions")
@@ -598,7 +627,7 @@ def main(argv=None):
                                                        "names as a type word (recorded in the client manifest)")
     p.add_argument("--docs", help="the site's own docs (*.md, *.txt): text for bge mining")
     p.add_argument("--config", help="the matching config the site answers with (ceist.toml); the gate uses it")
-    p.add_argument("--llm", action="store_true", help="also the LLM routes, after the estimate")
+    _llm_args(p, setup=True)
     p.add_argument("--max-calls", type=int, default=50)
     p.add_argument("--llm-cmd")
     p.add_argument("--model")
@@ -621,6 +650,7 @@ def main(argv=None):
     p.add_argument("--per-model", type=int, default=40, help="about this many questions per model")
     p.add_argument("--llm-cmd", help="a command that reads a prompt on stdin and prints the reply "
                                      "(default: claude -p)")
+    _llm_args(p)
     p.add_argument("--model", help="passed to claude -p")
     p.add_argument("--models", help="only these models, comma-separated")
     p.set_defaults(fn=_questions)
@@ -650,7 +680,20 @@ def main(argv=None):
     p.set_defaults(fn=_embed)
 
     a = ap.parse_args(argv)
-    return a.fn(a) or 0
+    if not hasattr(a, "llm"):
+        return a.fn(a) or 0
+    from . import pipeline
+    if a.llm == "ant" and a.max_dollars is None:
+        print("--llm ant needs --max-dollars N: the most this command may spend on API credits", file=sys.stderr)
+        return 2
+    pipeline.CAP = pipeline.Cap(a.max_dollars) if a.llm == "ant" else None
+    if pipeline.CAP:
+        print(f"--llm ant: API credits, capped at ${a.max_dollars:.2f} for this command (--max-dollars)")
+    try:
+        return a.fn(a) or 0
+    except pipeline.OverCap as e:
+        print(e, file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

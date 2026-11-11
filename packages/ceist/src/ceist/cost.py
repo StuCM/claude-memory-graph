@@ -109,6 +109,11 @@ def per_call_output(seen: dict, stage: str, model: str) -> tuple[int, str]:
     return DEFAULT_OUTPUT, "default (no history)"
 
 
+def _ant() -> bool:
+    from . import pipeline
+    return pipeline.CAP is not None
+
+
 def _system() -> str:
     from .pipeline import CLAUDE
     return CLAUDE[-1]
@@ -119,7 +124,10 @@ def by_chars(prompt: str) -> int:
 
 
 def input_tokens(prompts: list[str], model: str) -> tuple[list[int], str]:
-    """Each prompt's input tokens: messages.count_tokens when ANTHROPIC_API_KEY is set, else chars / 4."""
+    """Each prompt's input tokens: messages.count_tokens when ANTHROPIC_API_KEY is set, else chars / 4.
+    Under --llm ant the key is not read: ant holds the auth."""
+    if _ant():
+        return [by_chars(p) for p in prompts], "characters / 4 (--llm ant)"
     key = os.environ.get("ANTHROPIC_API_KEY")
     if key and prompts:
         try:
@@ -265,7 +273,9 @@ def estimate_lines(e: dict, rounds: int = 0) -> list[str]:
 
 def claude_p_overhead(calls: list[tuple[int, str]]) -> str:
     """The line for claude -p's own system prompt, which the estimate's input leaves out: its range
-    from every call reading it from the cache to every call writing it."""
+    from every call reading it from the cache to every call writing it; under --llm ant there is none."""
+    if _ant():
+        return "--llm ant: no claude -p system prompt on these calls."
     n = sum(c for c, _ in calls)
     read = sum(prices.cost({"cache_read_input_tokens": CLAUDE_P_SYSTEM * c}, m) for c, m in calls)
     write = sum(prices.cost({"cache_creation_input_tokens": CLAUDE_P_SYSTEM * c}, m) for c, m in calls)
