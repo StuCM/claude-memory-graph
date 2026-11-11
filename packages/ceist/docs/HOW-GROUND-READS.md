@@ -238,6 +238,8 @@ Example: "which tales are part of the Ulster Cycle?" → edge `parent_story`, ph
 ### `_values`: controlled values
 "scheduled", "rath", "neolithic". Each keeps **every field** it could belong to; that is where "monument type or functional type is Rath" comes from (a value in several fields means any of them).
 
+A value whose label is itself negative ("Non-listed", "Not listed", "Unlisted") also answers to its other negative forms. "non-listed", "unlisted" and "not listed" all bind **that value**, as the longest phrase, before the negator reader sees "non" (task 066). Where no such value exists, "non-X" stays a negation: "non-coastal" reads "is not Coastal".
+
 ### `_field_phrases`: a field named before its value
 "monument type rath", "made of bronze": narrows the following value to that field, if nothing meaningful sits between them.
 
