@@ -87,6 +87,16 @@ class DateField:
 
 
 @dataclass(frozen=True)
+class NumberField:
+    """A number a question can compare ("capacity over 200")."""
+    field: str                                  # what the backend calls it
+    label: str                                  # how it reads ("occupant capacity")
+    forms: tuple[str, ...] = ()                 # words that name it ("capacity")
+    owners: frozenset[str] = frozenset()        # types that have it; empty = any
+    unit: str = ""                              # "m" | "km" | "ft" | "money" | "count" | ""
+
+
+@dataclass(frozen=True)
 class Group:
     """A nodegroup a phrase can name ("burnt down"): one tile of it, its values
     set by the phrase and filled from the words around it."""
@@ -146,5 +156,7 @@ class Vocabulary(Protocol):
 
     # optional: def date_fields(self) -> list[DateField]
     #   Without it, years and dates in a question are ordinary words.
+    # optional: def number_fields(self) -> list[NumberField]
+    #   Without it, "over 200" is ordinary words.
     # optional: def groups(self) -> list[Group]
     #   Without it, no phrase names a tile.

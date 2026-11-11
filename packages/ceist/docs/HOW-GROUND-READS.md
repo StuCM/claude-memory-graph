@@ -1,6 +1,6 @@
 # How Ceist reads a question: the `ground/` package
 
-A walkthrough of `src/ceist/ground/`, file by file, with a small example for each step and the known weak spots. It is written for a reviewer reading the code for the first time. Last updated 2026-11-10, after tasks 040–055.
+A walkthrough of `src/ceist/ground/`, file by file, with a small example for each step and the known weak spots. It is written for a reviewer reading the code for the first time. Last updated 2026-11-11, after tasks 040–060.
 
 ## The three layers
 
@@ -19,7 +19,7 @@ A walkthrough of `src/ceist/ground/`, file by file, with a small example for eac
 
 | | Matches against | Found by | Examples |
 | --- | --- | --- | --- |
-| **Graph (schema) match** | the vocabulary: models, links, fields, values | readers 1–9 | "monuments", "built by", "scheduled", "rath" |
+| **Graph (schema) match** | the vocabulary: models, links, fields, values | readers 1–10 | "monuments", "built by", "scheduled", "rath", "capacity" |
 | **Record match** | the data: a record's name | found at the start, bound near the end | "County Down", "Cú Chulainn", "Hill of Tara" |
 
 Record names are **reserved first and bound last**:
@@ -122,17 +122,19 @@ The plan is also what is **narrated** back ("Count Monuments whose …") and **r
 | 6 | `_field_phrases` | phrases.py | a field named before its value | "monument type rath" |
 | 7 | `_near` | phrases.py | a distance | "near Belfast", "within 5 km of X" |
 | 8 | `_dates` | phrases.py | dates and their field word | "built before 1900" |
-| 9 | `_words` | nodes.py | type nouns, negators, hints | "monuments", "not" |
-| 10 | `_anchors` | nodes.py | named records | "County Down" |
-| 11 | `_fit_relations` | nodes.py | (strict only) one link per shared phrase | |
-| 12 | `_imply_model` | nodes.py | a type a value implies | "raths" → Monument |
-| 13 | `_match_leftovers` | leftovers.py | second chance for leftover words (roots, then bge) | |
-| 14 | `_fill_groups`, `_text_filter` | leftovers.py | clause groups; free text (memory graph only) | |
-| 15 | `_coverage` | leftovers.py | how many meaningful words were placed | |
+| 9 | `_numbers` | phrases.py | number comparisons and their field | "capacity over 200", "taller than 30 metres" |
+| 10 | `_words` | nodes.py | type nouns, negators, hints | "monuments", "not" |
+| 11 | `_anchors` | nodes.py | named records | "County Down" |
+| 12 | `_fit_relations` | nodes.py | (strict only) one link per shared phrase | |
+| 13 | `_imply_model` | nodes.py | a type a value implies | "raths" → Monument |
+| 14 | `_match_leftovers` | leftovers.py | second chance for leftover words (roots, then bge) | |
+| 15 | `_fill_groups`, `_text_filter` | leftovers.py | clause groups; free text (memory graph only) | |
+| 16 | `_coverage` | leftovers.py | how many meaningful words were placed | |
 
 **The order is how contested words are settled.** Each line in `pieces()` carries one comment saying why it sits where it does:
 - links come before dates, so "built **by**" is a link and "built **before**" a date;
 - `_near` comes before `_dates`, so "2000 miles" is no year;
+- `_numbers` comes after `_near` and `_dates`, so "within 20 km of X" stays a distance and "before 1900" a date. It takes only the comparisons they left; `_dates` itself leaves a year-shaped number after a number word ("capacity over 1500"), with a unit, or with a cue;
 - `_field_phrases` comes after `_values`, because it needs the values found.
 
 ## `model.py`: the shapes of what is found
@@ -145,6 +147,7 @@ Plain data classes, no logic. Each is a slot for one kind of meaning.
 | `Edge` | a link phrase, with two ends to fill (`source`, `target`) | "built by" → relation `actor` |
 | `ValueMatch` | a controlled value, with **every** field it could belong to | "rath" → monument type, functional type |
 | `DateGround` | a date range and the field the words picked | "built before 1900" → `hi=1900`, construction date |
+| `NumberGround` | a number's bounds (each strict or inclusive), the unit said, and the fields it may be on | "capacity over 200" → `lo=200`, strict, occupant capacity |
 | `NearGround` | a distance from a named record (measured, not linked) | "near Belfast" → 5 km |
 | `GroupGround` | a phrase naming one tile of a nodegroup | "burnt down" |
 | `NameGround` | a spelled-out name condition | "whose name starts with Cat" |
@@ -154,7 +157,7 @@ Plain data classes, no logic. Each is a slot for one kind of meaning.
 
 **How slots get filled:**
 - **From the vocabulary:** links, values, groups and type words. These are phrases in the layers, which can be added to and changed.
-- **From fixed grammar in code:** "near / within N km of" (`NEAR_RE`), dates (`dates.py`), "how many", "not", "called X". The vocabulary only says what they act on, such as which records have a location.
+- **From fixed grammar in code:** "near / within N km of" (`NEAR_RE`), dates (`dates.py`), number comparisons and units (`numbers.py`), "how many", "not", "called X". The vocabulary only says what they act on, such as which records have a location, or which number fields there are and their units.
 
 ### Weak spots
 - `Grounding.near` holds **one** distance, so "near Belfast and near Armagh" can't be said.
@@ -203,7 +206,7 @@ Runs of unclaimed words, trimmed to start and end at a meaningful word (or end a
 - **Short variable names** (`s`, `g`, `w`, `e`, `m`): the TypeScript port uses descriptive ones.
 - **Every known phrasing is regex-searched per question**, thousands of times. The port uses a one-pass matcher (a trie, or Aho–Corasick) with identical results (task 042).
 
-## `phrases.py`: readers 1–8
+## `phrases.py`: readers 1–9
 
 ### `_shape`: what kind of question
 - First word: a question word goes in `g.wh`. A command ("list", "show", "find") counts as "what", and is claimed, so "Find" isn't read as a value.
@@ -246,12 +249,28 @@ Example: "souterrains near Belfast" → within 5 km of Belfast (5 results on the
 
 Example: "built before 1900" → construction start date before 1900.
 
+### `_numbers`: number comparisons and their field
+Only when the vocabulary has number fields (`number_fields()`: Arches `number` nodes, with a unit read from the node's name, description, config or the bundle's phrasings, never guessed).
+1. `numbers.find` spots a comparison word and a number, with an optional unit or money word and a trailing "tall"/"high"/"long"/"wide": "over 200", "room for 200 people", "between 10 and 30 metres", "worth more than 5 crore". Each is strict ("over", "taller than") or inclusive ("at least", "room for", "between") as `numbers.py`'s table says, and the narration always says which.
+2. The field it is on:
+   - its own **unit or cue** decides first: "30 metres" is a length, "5 crore" money, "room for" a count, "taller than" a height. A field word just before it must agree ("height over 30 metres");
+   - otherwise the **nearest field word before it, else after it** ("capacity over 200"), as dates do;
+   - otherwise every number field stays possible, and the subject's type decides: **one** field answers, **several** ask "did you mean".
+3. A number followed by a type word ("more than 3 figures") counts linked records, which no field holds, so it is left for the leftovers to refuse.
+
+Example: "buildings taller than 30 metres" → height more than 30 metres (strict: a building of exactly 30 m is left out).
+
+`plan._attach_numbers` converts to the field's unit (feet to metres, crore to the amount) and refuses a unit that doesn't fit the field: "'over 30 metres' is a length, but the insured value of Building is an amount of money". A field with no unit takes only a bare number. A negated comparison is its complement: "not more than 200" is at most 200.
+
 ### Weak spots
+- **A year-shaped number after "between" or "of", with no unit or cue, is still a date** when the vocabulary has date fields: "capacity between 1800 and 1900" refuses, because "capacity" is left over.
+- **Units and cues are a short fixed list** (metres, km, feet; thousand to billion; people). Area units, currencies and words like "storeys" aren't read, so those questions refuse.
+- **"capacity of 200" is at least 200** (the table's reading of "capacity of"), not exactly 200.
 - **"in" and "within" are claimed too early,** as bare link phrases (from the CRM layer's `P89i` / `E53 P89 E53`). So "within 20 km of Belfast" never reaches `_near`, and "in state care" is read as a location (task 057: read "in" together with what follows).
 - **Only the first occurrence of each phrasing** is used, and **each link once**: "near A and near B" fails.
 - **Dates pair with the nearest field word.** That's fine in usual English, but fragile in long sentences with several dates.
 
-## `nodes.py`: readers 9–12
+## `nodes.py`: readers 10–13
 
 ### `_words`: type nouns, negators, hints
 It goes through the words nobody has claimed yet:
@@ -295,7 +314,7 @@ A phrase several links share ("in": a monument's location, a tale's parent story
 - **Names must be whole** (aliases are the fix, task 057).
 - **The "who" check** refused "who was the father of Cú Chulainn?" with a self-contradicting message ("Figure 'Cú Chulainn' isn't a Figure or Group"). It's on 057's list; `_wrong_end` and the "who" implied type are where to look.
 
-## `leftovers.py`: readers 13–15
+## `leftovers.py`: readers 14–16
 
 What happens to words no reader claimed. There are only two outcomes: **placed** or **refuse**. Nothing is silently dropped, except filler words.
 
@@ -387,6 +406,7 @@ For every combination (`itertools.product`) of:
 - **two groups of pieces no phrase joins → joined by any one plain link that fits** (`_joins`). Each candidate link is a reading. A named record beside a type with no link stays loose ("linked to or from");
 - **each value → a variable whose type holds that field** (`_value_options`). Within that type, a value in several fields means any of them;
 - **each date → a variable that has one of its date fields** (`_date_options`);
+- **each number comparison → a variable that has one of its number fields** (`_number_options`);
 
 then:
 - **reject** a combination where one named record ends two links ("a record is one piece");

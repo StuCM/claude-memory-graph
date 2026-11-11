@@ -135,9 +135,11 @@ def readings(s: Scan) -> list[Grounding] | None:
                 wired.notes.append(f"{j.source.type} → {j.target.type} joined by {j.relation}")
             _check_anchors(wired, {**s.relations, **chosen})
             _subject(replace(s, g=wired))
-            for values, dates in product(product(*(_value_options(v, wired) for v in g.values)),
-                                         product(*(_date_options(d, wired) for d in g.dates))):
-                r = replace(wired, values=list(values), dates=list(dates),
+            for values, dates, numbers in product(
+                    product(*(_value_options(v, wired) for v in g.values)),
+                    product(*(_date_options(d, wired) for d in g.dates)),
+                    product(*(_number_options(n, wired) for n in g.numbers))):
+                r = replace(wired, values=list(values), dates=list(dates), numbers=list(numbers),
                             groups=[replace(x) for x in g.groups], notes=list(wired.notes),
                             uncovered=list(g.uncovered),
                             near=replace(g.near) if g.near else None,
@@ -280,6 +282,17 @@ def _value_options(vm, g: Grounding) -> list:
         if on(vm).candidates:
             out.append(replace(on(vm), either=[on(x) for x in vm.either]))
     return out or [replace(vm)]
+
+
+def _number_options(nm, g: Grounding) -> list:
+    """The comparison on each variable that has one of its fields."""
+    out = []
+    for n in g.vars():
+        fits = [replace(f, owners=frozenset({n.type})) for f in nm.fields
+                if not f.owners or n.type in f.owners]
+        if fits:
+            out.append(replace(nm, fields=fits))
+    return out or [replace(nm)]
 
 
 def _date_options(dm, g: Grounding) -> list:

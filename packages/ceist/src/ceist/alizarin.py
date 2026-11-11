@@ -36,6 +36,7 @@ from .plan import (
     NameMatch,
     Near,
     Not,
+    NumberRange,
     OnTile,
     Plan,
     as_tile,
@@ -211,6 +212,8 @@ def _filter(c, hits: set[str], tiles: Tiles, type_name: str) -> set[str]:
         return {r for r in hits if _value_holds(c, tiles.values.get(r, {}), vocab)}
     if isinstance(c, DateRange):
         return {r for r in hits if _date_holds(c, tiles.values.get(r, {}))}
+    if isinstance(c, NumberRange):
+        return {r for r in hits if _number_holds(c, tiles.values.get(r, {}))}
     if isinstance(c, Mention):
         return {r for r in hits if all(t in tiles.text(r) for t in c.terms)}
     if isinstance(c, Contains):
@@ -240,6 +243,20 @@ def _date_holds(c: DateRange, values: dict) -> bool:
     return any(lo <= k <= hi for raw in values.get(c.field, []) for k in _date_keys(raw))
 
 
+def _number_holds(c: NumberRange, values: dict) -> bool:
+    for v in _atoms(values.get(c.field, [])):
+        try:
+            n = float(v)
+        except (TypeError, ValueError):
+            continue
+        if c.lo is not None and (n < c.lo or (n == c.lo and not c.lo_inclusive)):
+            continue
+        if c.hi is not None and (n > c.hi or (n == c.hi and not c.hi_inclusive)):
+            continue
+        return True
+    return False
+
+
 def _entry_holds(entry: dict, conditions: list, targets: dict, vocab) -> bool:
     """Every condition holds on one entry; `targets` has each link's target ids."""
     for c in conditions:
@@ -252,6 +269,8 @@ def _entry_holds(entry: dict, conditions: list, targets: dict, vocab) -> bool:
             held = _value_holds(inner, entry, vocab)
         elif isinstance(inner, DateRange):
             held = _date_holds(inner, entry)
+        elif isinstance(inner, NumberRange):
+            held = _number_holds(inner, entry)
         else:
             raise TypeError(f"{inner!r} can't be evaluated on one entry")
         if held == negated:

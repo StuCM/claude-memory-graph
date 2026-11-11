@@ -248,6 +248,7 @@ def _conditions(where, tile: str = "", negated: bool = False) -> list[dict]:
         NameMatch,
         Near,
         Not,
+        NumberRange,
         OnTile,
     )
     out = []
@@ -276,7 +277,7 @@ def _conditions(where, tile: str = "", negated: bool = False) -> list[dict]:
                 add({"node": c.qualifier.field, "value": c.qualifier.label})
         elif isinstance(c, HasValue):
             add({"node": c.field, "value": c.label})
-        elif isinstance(c, DateRange):
+        elif isinstance(c, (DateRange, NumberRange)):
             add({"node": c.field})
         elif isinstance(c, Near):
             add({"node": c.field, "near": c.entity.type})

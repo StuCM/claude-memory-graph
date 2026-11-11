@@ -11,6 +11,8 @@
                                                       Ada with role Architect
       HasValue(field, value)                          a controlled value
       DateRange(field, lo, hi)                        a date in an inclusive range
+      NumberRange(field, lo, hi, lo_inclusive,        a number within bounds, each strict
+                  hi_inclusive)                       or inclusive, in the field's unit
       Mention(terms)                                  its text mentions these words
       Contains(term)                                  its text contains this word
       Near(record, km, field)                         its location (field) lies within km of
@@ -42,6 +44,7 @@ import os
 import re
 from dataclasses import dataclass, field, replace
 
+from . import numbers
 from .ground import DATE_WORDS, NEG, WORD_RE, Edge, Grounding, Node, ground, is_question
 from .text import ALNUM, terms
 from .vocabulary import Entity, Vocabulary
@@ -77,6 +80,17 @@ class DateRange:
     lo: str | None                    # ISO date, inclusive; None = open
     hi: str | None
     label: str = ""                   # the field as it reads ("construction date")
+
+
+@dataclass
+class NumberRange:
+    field: str
+    lo: float | None                  # in the field's unit; None = open
+    hi: float | None
+    lo_inclusive: bool = True
+    hi_inclusive: bool = True
+    label: str = ""                   # the field as it reads ("occupant capacity")
+    unit: str = ""                    # the field's: "m" | "km" | "ft" | "money" | "count" | ""
 
 
 @dataclass
@@ -125,7 +139,7 @@ class AnyOf:
     conditions: list["Condition"]
 
 
-Condition = (LinkTo | HasValue | DateRange | Mention | Contains | NameMatch | Near | Not | OnTile
+Condition = (LinkTo | HasValue | DateRange | NumberRange | Mention | Contains | NameMatch | Near | Not | OnTile
              | AnyOf)
 
 
@@ -241,7 +255,8 @@ def _finish(vocab: Vocabulary, g: Grounding) -> Interpretation:
         return out
     if g.anchor is not None and g.anchor.entity.extra.get("recallable", True) and (
             g.subject is None or (not g.edges and g.subject.type == g.anchor.type)):
-        said = [x.phrase for x in (*g.values, *g.dates, *g.groups)] + ([g.contains] if g.contains else [])
+        said = ([x.phrase for x in (*g.values, *g.dates, *g.numbers, *g.groups)]
+                + ([g.contains] if g.contains else []))
         if said:
             # "is Navan Fort scheduled?": the record alone would drop 'scheduled'
             out.refused = (f"asks whether {g.anchor.type} '{g.anchor.name}' is {_quoted(said)}; "
@@ -266,7 +281,7 @@ def _finish(vocab: Vocabulary, g: Grounding) -> Interpretation:
             return out
         plan.group, plan.count = GroupBy(g.group.path, g.group_order), True
     why = (_attach_groups(g, plan) or _attach_values(g, plan) or _attach_dates(g, plan)
-           or _attach_near(vocab, g, plan))
+           or _attach_numbers(g, plan) or _attach_near(vocab, g, plan))
     if why:
         out.refused = why + _did_you_mean(g)
         return out
@@ -333,11 +348,12 @@ def _detail(vocab: Vocabulary, g: Grounding) -> "Detail | str | None":
         if own is None:
             return f"{asks}, which isn't a field a {a.type} has)"
         if (e.negated or g.uncovered or len(g.edges) > 1 or len(g.anchors) > 1
-                or g.values or g.dates or g.groups or g.contains or g.name):
+                or g.values or g.dates or g.numbers or g.groups or g.contains or g.name):
             return f"{asks}, and more besides; ask for the field alone)"
         return Detail(a.entity, [own])
     a = g.anchor
-    if (fields is None or len(g.anchors) != 1 or g.edges or g.values or g.dates or g.groups
+    if (fields is None or len(g.anchors) != 1 or g.edges or g.values or g.dates or g.numbers
+            or g.groups
             or g.contains or g.name or g.count or any(n.type != a.type for n in g.vars())):
         return None
     if g.wh == "where" and not g.uncovered:
@@ -605,6 +621,63 @@ def _attach_dates(g: Grounding, plan: Plan) -> str:
         if not placed:
             return f"'{dm.phrase}' names a date, but nothing asked for has one"
     return ""
+
+
+def _attach_numbers(g: Grounding, plan: Plan) -> str:
+    """Each comparison joins the first plan with a number field that fits, converted to
+    that field's unit. One that could be several fields asks which; one whose unit doesn't
+    fit the field refuses, saying why; a negated one is its complement ("not more than
+    200" is at most 200)."""
+    for nm in g.numbers:
+        if nm.clash:
+            return nm.clash
+        placed = False
+        for p in _plans(plan):
+            fit = [f for f in nm.fields if not f.owners or p.type in f.owners]
+            if len(fit) > 1:
+                g.suggestions = [*g.suggestions, (nm.phrase, [f"{f.label} {nm.phrase}" for f in fit])]
+                return (f"'{nm.phrase}' could be the "
+                        f"{' or the '.join(f.label for f in fit)} of {p.type}")
+            if fit:
+                f = fit[0]
+                why = _unit_fits(nm, f, p.type)
+                if why:
+                    return why
+                g.notes.append(f"'{nm.phrase}' → {f.label} of {p.type}")
+                lo, hi = (None if x is None else numbers.convert(x, nm.unit, f.unit)
+                          for x in (nm.lo, nm.hi))
+                p.where.append(_number_range(f, lo, hi, nm.lo_inclusive, nm.hi_inclusive,
+                                             nm.negated))
+                placed = True
+                break
+        if not placed:
+            return f"'{nm.phrase}' compares a number, but nothing asked for has a number field"
+    return ""
+
+
+def _unit_fits(nm, f, type_name: str) -> str:
+    said = numbers.kind(nm.unit)
+    if not said:
+        return ""
+    if not f.unit:
+        return (f"'{nm.phrase}' gives a unit, but no unit is recorded for the {f.label} of "
+                f"{type_name}; ask without one")
+    if said != numbers.kind(f.unit):
+        return (f"'{nm.phrase}' is {numbers.KINDS[said]}, but the {f.label} of {type_name} is "
+                f"{numbers.KINDS[numbers.kind(f.unit)]}")
+    return ""
+
+
+def _number_range(f, lo, hi, lo_inclusive: bool, hi_inclusive: bool, negated: bool):
+    def bound(a, b, a_inclusive, b_inclusive):
+        return NumberRange(f.field, a, b, a_inclusive, b_inclusive, f.label, f.unit)
+    if not negated:
+        return bound(lo, hi, lo_inclusive, hi_inclusive)
+    below = bound(None, lo, True, not lo_inclusive) if lo is not None else None
+    above = bound(hi, None, not hi_inclusive, True) if hi is not None else None
+    if below and above:
+        return AnyOf([below, above])
+    return below or above
 
 
 def _attach_near(vocab: Vocabulary, g: Grounding, plan: Plan) -> str:

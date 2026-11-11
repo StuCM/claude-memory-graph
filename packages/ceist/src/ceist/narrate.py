@@ -3,6 +3,7 @@ understood before trusting the answer. Every output shares it."""
 
 from .dates import label as date_label
 from .ground import MILE_KM
+from .numbers import label as number_label
 from .plan import (
     AnyOf,
     Contains,
@@ -15,6 +16,7 @@ from .plan import (
     NameMatch,
     Near,
     Not,
+    NumberRange,
     OnTile,
     Partial,
     Plan,
@@ -77,6 +79,10 @@ def _condition(c, forms: bool, canonical: bool) -> str:
     if isinstance(inner, DateRange):
         return (f"whose {_field(inner.field, '' if canonical else inner.label)} is {neg}"
                 f"{date_label(inner.lo, inner.hi)}")
+    if isinstance(inner, NumberRange):
+        unit = "" if canonical else inner.unit
+        return (f"whose {_field(inner.field, '' if canonical else inner.label)} is {neg}"
+                + number_label(inner.lo, inner.hi, inner.lo_inclusive, inner.hi_inclusive, unit))
     if isinstance(inner, Mention):
         return f"that {'do not ' if negated else ''}mention {' '.join(inner.terms)}"
     if isinstance(inner, Contains):

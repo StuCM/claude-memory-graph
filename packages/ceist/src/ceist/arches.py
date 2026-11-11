@@ -29,6 +29,8 @@ What a question can name, from that:
 - **dates**: each date node, by its name, and by the words `date_forms`
   adds ("built" → construction date); a model's only date node is the one
   meant when no word picks;
+- **numbers**: each number node, by its name and the bundle's phrasings, with the
+  unit its name, description, config or phrasings give ("Height (m)" → metres);
 - **records**: resource names, for anchors ("Leeds Dock").
 
 Alizarin (`pip install alizarin`) is required.
@@ -43,10 +45,10 @@ from pathlib import Path
 
 import alizarin
 
-from . import crm, geo
+from . import crm, geo, numbers
 from .index import NameIndex
-from .text import plurals
-from .vocabulary import DateField, Entity, Group, Relation, Value
+from .text import plurals, terms_pos
+from .vocabulary import DateField, Entity, Group, NumberField, Relation, Value
 
 LINK_TYPES = {"resource-instance", "resource-instance-list"}
 REFERENCE_TYPES = {"reference"}                  # controlled lists: the primary kind
@@ -54,6 +56,7 @@ CONCEPT_TYPES = {"concept", "concept-list"}      # SKOS concepts: legacy
 CONTROLLED_TYPES = REFERENCE_TYPES | CONCEPT_TYPES
 GEO_TYPES = {"geojson-feature-collection"}
 DATE_TYPES = {"date", "edtf"}     # HER keeps event dates (construction, loss) as EDTF
+NUMBER_TYPES = {"number"}
 _RDF = "{http://www.w3.org/1999/02/22-rdf-syntax-ns#}"
 _SKOS = "{http://www.w3.org/2004/02/skos/core#}"
 _XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
@@ -237,7 +240,8 @@ class ArchesVocabulary:
     def _absorb(self, bundle) -> None:
         """A vocabulary bundle's phrasings (ceist.bundle): unqualified link
         entries become relation phrasings, date entries date phrasings, the ontology
-        layer's property entries field phrasings, its type words type words. Group
+        layer's property entries field phrasings, a number node's entries (any layer)
+        number phrasings, its type words type words. Group
         blocks are kept for _load_groups; a v1 entry with a qualifier is read as a
         combo of its node's group."""
         from . import bundle as _bundle
@@ -261,7 +265,9 @@ class ArchesVocabulary:
                                                        "set": {q["node"]: q["value"]}})
                     continue
                 kind = (m["nodes"].get(e["node"]) or {}).get("kind")
-                if kind in ("link", "date") or (kind == "property" and e.get("layer") == "ontology"):
+                number = (self.node(name, e["node"]) or {}).get("datatype") in NUMBER_TYPES
+                if kind in ("link", "date") or (kind == "property" and (
+                        e.get("layer") == "ontology" or number)):
                     key = (name, e["node"])
                     self._bundle_forms[key] = list(dict.fromkeys(
                         self._bundle_forms.get(key, []) + e["phrases"]))
@@ -494,6 +500,30 @@ class ArchesVocabulary:
                 out.append(DateField(n["alias"], name, tuple(sorted(forms, key=len, reverse=True)),
                                      frozenset({m.name}), default=len(nodes) == 1))
         return out
+
+    def number_fields(self) -> list[NumberField]:
+        out = []
+        for m in self.models.values():
+            for n in m.nodes:
+                if n.get("datatype") not in NUMBER_TYPES or not n.get("alias"):
+                    continue
+                name = str(n.get("name") or n["alias"]).lower()
+                bare = re.sub(r"\s*\(.*?\)", "", name).strip() or name    # "height (m)"
+                said = [f.lower() for f in self._bundle_forms.get((m.name, n["alias"]), [])]
+                config = n.get("config") or {}
+                unit = numbers.field_unit(" ".join(
+                    [name, n["alias"].replace("_", " "), str(n.get("description") or ""), *said]
+                    + [str(config.get(k) or "") for k in ("suffix", "prefix", "unit", "units")]))
+                alias = n["alias"].replace("_", " ").lower()
+                trimmed = re.sub(r"\s+(m|km|ft)$", "", alias)                # "height m"
+                forms = {f for f in (name, bare, alias, trimmed, *said) if terms_pos(f)}
+                out.append(NumberField(n["alias"], bare, tuple(sorted(forms, key=len, reverse=True)),
+                                       frozenset({m.name}), unit))
+        return out
+
+    def number_field(self, type_name: str, alias: str) -> NumberField | None:
+        return next((f for f in self.number_fields() if f.field == alias and type_name in f.owners),
+                    None)
 
     def descendants(self, concept_id: str) -> list[str]:
         """Every narrower concept, transitively (from Alizarin's hierarchy)."""

@@ -23,6 +23,9 @@ Mapping (ros-madair-query's serde form; Rós Madair itself is unchanged):
     HasValue(concept)                {"concept": {"path", "op": "descendant_or_self_of", "value"}}
     DateRange(path, lo, hi)          {"range": {"path", "lo", "hi"}}   days since 1970, as
                                      Alizarin's quantize_date (the emitter's own encoding)
+    NumberRange(path, lo, hi, …)     {"range": {"path", "lo", "hi"}}   fixed point at the node's
+                                     `decimals` (default 6), as the emitter's quantize_number;
+                                     `range` is inclusive, so a strict bound is one step in
     Not(value or date)               {"not": …}
     Not(link)                        a second query, subtracted client-side: Rós Madair
                                      refuses `not` over a link (it is chunk-coarse)
@@ -61,6 +64,7 @@ if that differs from what the question was understood to mean, it doesn't run.
 
 import json
 from dataclasses import dataclass, field
+from decimal import ROUND_HALF_UP, Decimal
 
 from . import dates, geo
 from .narrate import narrate
@@ -77,6 +81,7 @@ from .plan import (
     NameMatch,
     Near,
     Not,
+    NumberRange,
     OnTile,
     Plan,
     as_tile,
@@ -85,6 +90,7 @@ from .plan import (
 from .readback import check
 
 GROUP_CAP = 50
+I64_MIN, I64_MAX = -2 ** 63, 2 ** 63 - 1     # a number range's open ends
 
 
 class Unsupported(Exception):
@@ -167,6 +173,11 @@ def _cond(c, type_name: str, vocab, in_tile: bool = False) -> dict:
         return {"range": {"path": c.field,
                           "lo": dates.days(c.lo) if c.lo else -dates.OPEN,
                           "hi": dates.days(c.hi) if c.hi else dates.OPEN}}
+    if isinstance(c, NumberRange):
+        scale = _scale(vocab, type_name, c.field)
+        lo = I64_MIN if c.lo is None else _quantize(c.lo, scale) + (not c.lo_inclusive)
+        hi = I64_MAX if c.hi is None else _quantize(c.hi, scale) - (not c.hi_inclusive)
+        return {"range": {"path": c.field, "lo": lo, "hi": hi}}
     if isinstance(c, Near):
         return {"bbox": _near_box(c.entity.id, c.km, c.field, vocab)}
     if isinstance(c, NameMatch):
@@ -177,6 +188,33 @@ def _cond(c, type_name: str, vocab, in_tile: bool = False) -> dict:
         raise Unsupported(f"a free-text condition ('{term}'): the substrate indexes "
                           "concepts, ranges, geometry and links, not text")
     raise Unsupported(f"the condition {c!r}")
+
+
+def _scale(vocab, type_name: str, alias: str) -> int:
+    """The decimal places the emitter stores a number node at (ros-madair-handlers'
+    number_scale): its config's `decimals`, else 6, at most 18."""
+    decimals = ((vocab.node(type_name, alias) or {}).get("config") or {}).get("decimals")
+    return min(int(decimals), 18) if isinstance(decimals, int) and decimals >= 0 else 6
+
+
+def _quantize(v: float, scale: int) -> int:
+    return int((Decimal(repr(v)) * 10 ** scale).to_integral_value(ROUND_HALF_UP))
+
+
+def _zeros(n: int) -> int:
+    if n == 0:
+        return 10 ** 9
+    return len(str(abs(n))) - len(str(abs(n)).rstrip("0"))
+
+
+def _bound(q: int, scale: int, step: int) -> tuple[float | None, bool]:
+    """A quantized end, read back: (value, inclusive). One step past a rounder number is that
+    number, strict: compile writes "more than 200" as 200 and one step."""
+    if q in (I64_MIN, I64_MAX):
+        return None, True
+    if _zeros(q - step) > _zeros(q):
+        return float(Decimal(q - step) / 10 ** scale), False
+    return float(Decimal(q) / 10 ** scale), True
 
 
 def _near_box(record: str, km: float, path: str, vocab) -> dict:
@@ -190,7 +228,7 @@ def tile_fields(conditions) -> list[str]:
         c = c.condition if isinstance(c, Not) else c
         if isinstance(c, LinkTo) and c.relation:
             out.append(c.relation)
-        elif isinstance(c, (HasValue, DateRange)):
+        elif isinstance(c, (HasValue, DateRange, NumberRange)):
             out.append(c.field)
     return out
 
@@ -304,6 +342,13 @@ def _conditions(expr: dict | None, type_name: str, vocab) -> list:
         return [OnTile(vocab.group_of(type_name, first) if first else "?", parts)]
     if kind == "concept":
         return [HasValue(body["path"], body["value"], vocab.concept_label(body["value"]))]
+    if kind == "range" and (vocab.node(type_name, body["path"]) or {}).get("datatype") == "number":
+        scale = _scale(vocab, type_name, body["path"])
+        (lo, lo_inclusive), (hi, hi_inclusive) = (_bound(body["lo"], scale, 1),
+                                                  _bound(body["hi"], scale, -1))
+        f = vocab.number_field(type_name, body["path"])
+        return [NumberRange(body["path"], lo, hi, lo_inclusive, hi_inclusive,
+                            f.label if f else "", f.unit if f else "")]
     if kind == "range":
         return [DateRange(body["path"], dates.from_days(body["lo"]), dates.from_days(body["hi"]),
                           vocab.date_label(type_name, body["path"]))]
