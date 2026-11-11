@@ -147,7 +147,8 @@ def _tile_phrases(s: Scan) -> None:
     """Group phrases ("burnt down"): filled from their clause by _fill_groups."""
     for phrase, cands, m in _phrase_spans(s.raw, list(s.group_forms.items()), s.taken, s.names):
         at = s.words_in(m.start(), m.end())
-        if s.consumed & set(at):                        # "how many": the question's shape
+        # "how many": the question's shape; inside a hyphenated word ("half-damaged"): no word of its own
+        if not at or s.consumed & set(at):
             s.taken.remove((m.start(), m.end()))
             continue
         s.g.groups.append(GroupGround(phrase, s.consume_span(m.start(), m.end()), at, cands))
