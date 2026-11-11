@@ -42,7 +42,7 @@ def _legacy_hook_settings() -> list[Path]:
     candidates = [Path.home() / ".claude" / name for name in ("settings.json", "settings.local.json")]
     candidates += [Path.cwd() / ".claude" / name for name in ("settings.json", "settings.local.json")]
     found = []
-    for path in candidates:
+    for path in dict.fromkeys(p.resolve() for p in candidates):   # run from ~: cwd's is the user's
         try:
             text = path.read_text(encoding="utf-8")
         except OSError:
