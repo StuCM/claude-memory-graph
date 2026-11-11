@@ -34,6 +34,9 @@
     ceist vocab profile <graphs dir> [--reference <dir>] [--json]   # the sizes that drive LLM cost
     ceist vocab estimate <graphs dir> --stages base,data,questions,ontology [--model M] [--rounds N]
                          [--ledger <run dir> …] [--json]   # calls, tokens and dollars before a run
+    ceist setup <data dir> -o <out> [--base <dir>] [--client <dir>] [--default <value>=<Model> …] [--docs <dir>]
+                [--config ceist.toml] [--llm [--max-calls N] [--llm-cmd CMD] [--model M]]   # a new site's vocabulary, gated on its own questions
+    ceist ask <data dir> "<question>" [--bundle <bundle.json>] [--config ceist.toml]   # narration, count, refusal
     ceist questions generate <graphs dir> -o <out dir> [--reference <dir>] [--per-model N]
                              [--llm-cmd CMD] [--model M] [--models A,B]   # → train.json, holdout.json
     ceist eval --bundle <bundle.json> --questions <cases.json> [--config ceist.toml] [--report out.md]
@@ -331,6 +334,48 @@ def _estimate(a):
     return 0
 
 
+def _setup(a):
+    from .site import defaults_arg, setup
+    return setup(a.data_dir, a.out, a.base, a.ontology, a.client, defaults_arg(a.default), a.docs, a.llm,
+                 a.llm_cmd, a.model, a.max_calls, a.config)
+
+
+def _ask(a):
+    """One question against a data dir, answered from its records in memory (ceist.alizarin)."""
+    from . import config
+    from .alizarin import Tiles, evaluate
+    from .arches import ArchesVocabulary
+    from .narrate import narrate
+    from .plan import interpret
+    cfg = config.load(a.config)
+    vocab = ArchesVocabulary.from_data_dir(a.data_dir, bundle=a.bundle or cfg.bundle)
+    m = interpret(vocab, a.question, matcher=config.chain(cfg))
+    for phrase, options in m.grounding.suggestions:
+        print(f"did you mean, for '{phrase}': {', '.join(o.replace('_', ' ') for o in options)}")
+    if m.refused or m.statement:
+        print(f"refused: {m.refused or 'a statement, not a question'}")
+        return 1
+    if m.direct is not None or m.detail is not None:
+        print(f"understood: {narrate(m.detail) if m.detail else f'{m.direct.type} {m.direct.name!r}'}")
+        print("results: 1")
+        return 0
+    if m.plan.group is not None:
+        print(f"understood: {narrate(m.plan)}")
+        print("refused: counting by a field is answered over Rós Madair, not from the data dir")
+        return 1
+    tiles = Tiles(vocab)
+    for plan, note in [(m.plan, "")] + [(r.plan, r.note) for r in m.relaxations]:
+        ids = evaluate(plan, tiles)
+        if ids or not note:
+            print(f"understood: {narrate(plan)}" + (f"\n{note}" if note else ""))
+            print(f"results: {len(ids)}")
+            if not plan.count:
+                for name in sorted(vocab.names.get(i, i) for i in ids)[:a.limit]:
+                    print(f"  - {name}")
+            return 0
+    return 0
+
+
 def _fetch(a):
     from . import onnx
     if a.model not in onnx.MODELS:
@@ -542,6 +587,30 @@ def main(argv=None):
                                                      "and the estimate set beside its actuals")
     p.add_argument("--json", action="store_true")
     p.set_defaults(fn=_estimate)
+
+    p = sub.add_parser("setup", help="a new site's vocabulary from its data dir, gated on its own questions")
+    p.add_argument("data_dir", help="graphs/, resources/ and vocabularies/ (optional)")
+    p.add_argument("-o", "--out", required=True)
+    p.add_argument("--base", default="vocabularies/base", help="the shared base layer, used as it is")
+    p.add_argument("--ontology", help="the shared ontology layer (default: ontology/cidoc-crm beside --base)")
+    p.add_argument("--client", help="the site's client layer so far, copied to <out>/client and added to")
+    p.add_argument("--default", action="append", help="<value>=<Model>: the model a value two models hold "
+                                                       "names as a type word (recorded in the client manifest)")
+    p.add_argument("--docs", help="the site's own docs (*.md, *.txt): text for bge mining")
+    p.add_argument("--config", help="the matching config the site answers with (ceist.toml); the gate uses it")
+    p.add_argument("--llm", action="store_true", help="also the LLM routes, after the estimate")
+    p.add_argument("--max-calls", type=int, default=50)
+    p.add_argument("--llm-cmd")
+    p.add_argument("--model")
+    p.set_defaults(fn=_setup)
+
+    p = sub.add_parser("ask", help="ask one question of a data dir")
+    p.add_argument("data_dir")
+    p.add_argument("question")
+    p.add_argument("--bundle", help="e.g. <out>/bundle.json from ceist setup")
+    p.add_argument("--config")
+    p.add_argument("--limit", type=int, default=10, help="names listed at most")
+    p.set_defaults(fn=_ask)
 
     qs = sub.add_parser("questions", help="a labelled starting question set").add_subparsers(
         dest="step", required=True)

@@ -170,6 +170,17 @@ clarify_top = 3
 clarify_min = 0.15
 ```
 
+### Setting up a new site, in one command
+
+```sh
+ceist setup <data dir> -o site/ [--default shelter=Building] [--config ceist.toml]   # minutes; no LLM unless --llm
+ceist ask <data dir> "which buildings are shelters?" --bundle site/bundle.json       # narration, count, refusal
+```
+
+`setup` uses the shared ontology and base layers as they are, builds the site's own layers by rule (and,
+with `--llm`, after an estimate), gates every candidate on the site's own questions, and writes the bundle,
+the coverage report and a gap and ambiguity audit. [VOCAB-TRAINING.md](VOCAB-TRAINING.md) §"A new site".
+
 ### Building a project's vocabulary, and measuring it
 
 The LLM-built route (ontology layer, graph base, question set, client layer, refine loop, cost and

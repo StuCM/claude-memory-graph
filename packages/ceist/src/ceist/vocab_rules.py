@@ -43,7 +43,12 @@ AGENTS = {"holder": "hold", "owner": "own", "maker": "make", "builder": "build",
           "engraver": "engrave", "printer": "print", "seller": "sell", "buyer": "buy", "user": "use"}
 # a value's last word that marks it as no count noun: "listed", "neolithic", "bronze age"
 NOT_COUNT = ("ed", "ic", "al", "ian", "ish", "ive", "ous", "ern", "ary", "ing")
-NOT_COUNT_WORDS = {"age", "period", "era", "care", "uncertain", "unknown", "other", "none"}
+NOT_COUNT_WORDS = {"age", "period", "era", "care", "uncertain", "unknown", "other", "none", "urban", "rural",
+                   "heritage", "education", "health", "healthcare", "agriculture", "retail", "transport",
+                   "finance", "construction", "manufacturing", "hospitality", "energy", "research"}
+# ponytail: count nouns that end like an adjective, by list; add as sites need
+COUNT_NOUNS = {"hospital", "animal", "canal", "festival", "memorial", "cathedral", "terminal", "arsenal",
+               "tribunal", "portal", "building", "dwelling", "paramedic", "medic", "mechanic", "clinic"}
 # an event noun in a date's label → the verbs a question uses for it
 EVENTS = {"death": ["died", "die"], "birth": ["born"], "construction": ["built", "constructed"],
           "production": ["made", "produced"], "creation": ["created"], "formation": ["formed"],
@@ -77,6 +82,17 @@ def plural(noun: str) -> str:
     else:
         last += "s"
     return " ".join(words[:-1] + [last])
+
+
+def word_like(label: str) -> bool:
+    """A label short and plain enough to be said as a word ("hospital", not "F — construction" or "CR/LFM")."""
+    return not re.search(r"[^\w\s'-]|\d", label) and len(label.split()) <= 3
+
+
+def count_noun(label: str) -> bool:
+    """Whether a value's label can be counted ("hospital", not "listed", "heritage", "peri-urban")."""
+    last = re.split(r"[\s-]+", label.lower().strip())[-1]
+    return last in COUNT_NOUNS or not (last.endswith(NOT_COUNT) or last in NOT_COUNT_WORDS)
 
 
 def noun_forms(label: str) -> list[str]:
@@ -173,7 +189,7 @@ def composed(path: str, kind: str, defs: dict) -> list[str]:
 class Layers:
     """A graph set with its three layers: the bundle `layered` builds, and the vocabulary over it."""
 
-    def __init__(self, graph_dirs, base_dir, client_dir=None, ontology_dir=None, reference=None):
+    def __init__(self, graph_dirs, base_dir, client_dir=None, ontology_dir=None, reference=None, resources=()):
         from .arches import graph_doc
         self.graph_dirs = [Path(d) for d in graph_dirs]
         self.graphs = [graph_doc(p) for d in self.graph_dirs for p in sorted(d.glob("*.json"))]
@@ -181,6 +197,7 @@ class Layers:
         self.client_dir = Path(client_dir) if client_dir else None
         self.ontology_dir = Path(ontology_dir) if ontology_dir else self.base_dir.parent / "ontology" / "cidoc-crm"
         self.reference = Path(reference) if reference else None
+        self.resources = list(resources)     # records: a concept node with no collection is read by their labels
         self.listed = ((_bundle._manifest(self.client_dir).get("models") or {}) if self.client_dir else {})
         self.defs = ontology_vocab.definitions(self.ontology_dir / "source")
         self._vocab = None
@@ -198,7 +215,7 @@ class Layers:
             bundle, _ = _bundle.layered(self.graphs, self.base_dir, self.client_dir, ontology_dir=self.ontology_dir)
             files = sorted(p for p in self.reference.rglob("*") if p.suffix in (".xml", ".json")) if self.reference else []
             rdm, alts = load_reference_data(files) if files else (None, {})
-            self._vocab = ArchesVocabulary(self.graphs, rdm, alt_labels=alts, bundle=bundle)
+            self._vocab = ArchesVocabulary(self.graphs, rdm, self.resources, alt_labels=alts, bundle=bundle)
             self.bundle = bundle
         return self._vocab
 
@@ -232,8 +249,8 @@ def _phrase_index(v) -> dict[str, set[tuple[str, str]]]:
 
 
 def _slot(c: dict) -> str:
-    return {"type": "type", "class": "type", "value": "value"}.get(c.get("kind") if c["layer"] != "client" else "value",
-                                                                  "phrase")
+    return {"type": "type", "class": "type", "value": "value"}.get(
+        "value" if c["layer"] == "client" and "value" in c else c.get("kind"), "phrase")
 
 
 def _scope(key: str) -> str:
@@ -410,10 +427,9 @@ def _client_elements(L: Layers) -> list[dict]:
         low = label.lower()
         have = phrases | said.get((m, alias, low), set())
         items = [_item("alternative label", p, True) for p in sorted(phrases - {low})]
-        last = low.split()[-1] if low.split() else ""
-        if not re.search(r"[\d()/,;:]", low) and len(low.split()) <= 3 and not low.endswith("s"):
+        if word_like(low) and not low.endswith("s"):
             items.append(_item("plural", plural(low), plural(low) in have,
-                               "not a count noun" if last.endswith(NOT_COUNT) or last in NOT_COUNT_WORDS else ""))
+                               "" if count_noun(low) else "not a count noun"))
         if items:
             group = v.group_of(m, alias)
             out.append({"layer": "client", "key": f"value {m}.{alias}={low}", "weight": 1, "label": label,
@@ -626,16 +642,18 @@ def apply(cands: list[dict], ontology_dir: Path, base_dir: Path, client_dir: Pat
             path = Path(base_dir) / c["graphid"] / f"{c['nodegroup']}.json"
             doc = json.loads(path.read_text()) if path.exists() else {
                 "model": c["model"], "nodegroup": c["nodegroup"], "entries": []}
-            e = next((e for e in doc["entries"] if e["node"] == c["node"] and not e.get("qualifier")), None)
-            if e is None:
-                doc["entries"].append({"phrases": list(c["phrases"]), "kind": c["kind"], "node": c["node"]})
-            else:
-                e["phrases"] = list(dict.fromkeys(e["phrases"] + c["phrases"]))
+            _add_entry(doc, c)
             _dump(path, doc)
         elif c["layer"] == "client" and client_dir is not None:
+            if not (Path(client_dir) / _bundle.MANIFEST).exists():
+                _dump(Path(client_dir) / _bundle.MANIFEST, {"format": _bundle.LAYOUT, "models": {}})
             path = Path(client_dir) / c["model"] / f"{c['nodegroup']}.json"
             doc = json.loads(path.read_text()) if path.exists() else {
                 "model": c["model"], "nodegroup": c["nodegroup"], "entries": []}
+            if "value" not in c:
+                _add_entry(doc, c)
+                _dump(path, doc)
+                continue
             block = doc.setdefault("group", {"phrases": [], "nodes": {}, "combos": []})
             combos = block.setdefault("combos", [])
             same = next((x for x in combos if x["set"] == {c["node"]: c["value"]} and not x.get("node")), None)
@@ -644,6 +662,15 @@ def apply(cands: list[dict], ontology_dir: Path, base_dir: Path, client_dir: Pat
             else:
                 same["phrases"] = list(dict.fromkeys(same["phrases"] + c["phrases"]))
             _dump(path, doc)
+
+
+def _add_entry(doc: dict, c: dict) -> None:
+    """A link or date candidate's phrases into its node's entry of a nodegroup file."""
+    e = next((e for e in doc["entries"] if e["node"] == c["node"] and not e.get("qualifier")), None)
+    if e is None:
+        doc["entries"].append({"phrases": list(c["phrases"]), "kind": c["kind"], "node": c["node"]})
+    else:
+        e["phrases"] = list(dict.fromkeys(e["phrases"] + c["phrases"]))
 
 
 def _dump(path: Path, doc: dict) -> None:
@@ -786,20 +813,18 @@ def fill(L: Layers, out: Path, name: str, llm_cmd: str | None = None, model: str
     `vocab ontology build`, base and client elements through FILL_PROMPT, then generate's
     review and gate. Prints the estimate and stops with `estimate`, or over `max_calls`."""
     from . import cost, prices
-    from .pipeline import Runner, _key
+    from .pipeline import Runner
     out = Path(out)
     elements = checklist(L, read_reasons(out / f"rules-{name}.json"))
     gaps = fill_gaps(elements)
     paths = sum(1 for e in elements if e["key"].startswith("path ")
                 and any(it["status"] == "missing" for it in e["items"]))
-    batches = [gaps[i:i + FILL_BATCH] for i in range(0, len(gaps), FILL_BATCH)]
-    texts = [FILL_PROMPT.format(elements=json.dumps([_ask(e) for e in b], ensure_ascii=False, indent=1))
-             for b in batches]
+    texts = fill_prompts(gaps)
     dollars = sum(prices.cost({"input_tokens": cost.by_chars(t), "output_tokens": cost.DEFAULT_OUTPUT},
                               model or "opus") for t in texts)
-    log(f"{len(gaps)} base and client elements in {len(batches)} calls, about ${dollars:.2f}; "
+    log(f"{len(gaps)} base and client elements in {len(texts)} calls, about ${dollars:.2f}; "
         f"{paths} CRM paths go to `vocab ontology build`, which prints its own estimate (--max-calls {max_calls})")
-    if estimate or len(batches) > max_calls:
+    if estimate or len(texts) > max_calls:
         if not estimate:
             log(f"over --max-calls {max_calls}: nothing sent")
         return 0 if estimate else 2
@@ -809,8 +834,30 @@ def fill(L: Layers, out: Path, name: str, llm_cmd: str | None = None, model: str
         if rc:
             return rc
     run = Runner(out / "llm", llm_cmd, model)
+    extra, reasons = fill_replies(gaps, texts, run)
+    if reasons:
+        path = out / f"rules-{name}.json"
+        doc = json.loads(path.read_text()) if path.exists() else {"format": "ceist.vocab-rules/1", "reasons": {}}
+        for k, d in reasons.items():
+            doc["reasons"].setdefault(k, {}).update(d)
+        out.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n")
+    log(f"LLM calls {run.calls}; {len(extra)} elements phrased, {len(reasons)} skipped; {len(run.failures)} failed")
+    return generate(L, out, name, skip=skip, gate_cmd=gate_cmd, extra=extra, log=log) or (1 if run.failures else 0)
+
+
+def fill_prompts(gaps: list[dict]) -> list[str]:
+    """FILL_PROMPT for each FILL_BATCH of gaps."""
+    return [FILL_PROMPT.format(elements=json.dumps([_ask(e) for e in gaps[i:i + FILL_BATCH]], ensure_ascii=False,
+                                                   indent=1)) for i in range(0, len(gaps), FILL_BATCH)]
+
+
+def fill_replies(gaps: list[dict], texts: list[str], run) -> tuple[list[dict], dict]:
+    """(candidates, {element key: {"": why skipped}}) from the LLM's replies to fill_prompts(gaps)."""
+    from .pipeline import _key
     extra, reasons = [], {}
-    for batch, text in zip(batches, texts):
+    for i, text in enumerate(texts):
+        batch = gaps[i * FILL_BATCH:(i + 1) * FILL_BATCH]
         reply = run.ask(_key("fill", FILL_VERSION, text), text, lambda r, b=batch: _fill_check(r, b),
                         {"kind": "fill", "elements": len(batch)})
         by_key = {e["key"]: e for e in batch}
@@ -821,15 +868,7 @@ def fill(L: Layers, out: Path, name: str, llm_cmd: str | None = None, model: str
                 continue
             extra.append(dict(e["target"], key=e["key"], phrases=[p.strip().lower() for p in x["phrases"]],
                               rule=["llm"]))
-    if reasons:
-        path = out / f"rules-{name}.json"
-        doc = json.loads(path.read_text()) if path.exists() else {"format": "ceist.vocab-rules/1", "reasons": {}}
-        for k, d in reasons.items():
-            doc["reasons"].setdefault(k, {}).update(d)
-        out.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n")
-    log(f"LLM calls {run.calls}; {len(extra)} elements phrased, {len(reasons)} skipped; {len(run.failures)} failed")
-    return generate(L, out, name, skip=skip, gate_cmd=gate_cmd, extra=extra, log=log) or (1 if run.failures else 0)
+    return extra, reasons
 
 
 def _ask(e: dict) -> dict:

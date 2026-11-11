@@ -210,6 +210,10 @@ def read_vocab(vocab_dir: str | Path) -> tuple[list[dict], list[str]]:
     root = Path(vocab_dir)
     files = sorted((p for p in root.glob("*.json") if p.name != MANIFEST), key=lambda p: p.stem)
     if not (root / MANIFEST).exists():
+        split = sorted(d.name for d in root.iterdir() if d.is_dir() and any(d.glob("*.json"))) if root.is_dir() else []
+        if split:
+            raise ValueError(f"{root}: model folders ({', '.join(split)}) but no {MANIFEST}, so they would not be "
+                             f'read; write {{"format": "{LAYOUT}", "models": {{}}}} to {root / MANIFEST}')
         return [dict({"groups": {}}, **json.loads(p.read_text())) for p in files], []
     listed = json.loads((root / MANIFEST).read_text()).get("models") or {}
     out = []

@@ -35,11 +35,55 @@ for the graphs in hand, because they change with the graphs.
   site-specific (a value-qualified combo, a local word), or the gate rejected the path form. Step 8 moves
   what an older layer holds and records the reason for each phrasing left behind.
 
+## A new site: `ceist setup`, and who builds what
+
+Two builds, run by different people:
+
+- **The shared layers** (the CIDOC-CRM ontology layer and the graph bases in `vocabularies/base`) are an
+  occasional build run by the maintainers: steps 1, 2, 7 and 8 below, gated on 026's bench, the demo bank
+  and the HER plans. A site never re-runs them.
+- **A site's own layers** come from one command, run by the site's developer:
+
+```sh
+.venv-ceist/bin/ceist setup <data dir> -o <out> [--client <its client layer so far>] [--default shelter=Building] \
+    [--docs <its docs>] [--config <its ceist.toml>] [--llm [--max-calls 50] [--model M]]
+.venv-ceist/bin/ceist ask <data dir> "which buildings are shelters?" --bundle <out>/bundle.json
+```
+
+What `setup` does, in order:
+
+1. Reads the data dir's graphs and records (a concept node with no collection is read by the labels its
+   tiles hold), and prints the estimate of every LLM route, with claude -p's ~33k-token system prompt per call.
+   Without `--llm` nothing is sent; with it, over `--max-calls` it stops and sends nothing.
+2. Uses the ontology layer and each graph's base as they are (copied to `<out>/base`). A graph with no base
+   (a new site's own models) gets one from the rules over its node names and aliases, and with `--llm` from
+   `vocab pipeline --layer base`.
+3. The client layer: the rules' value plurals, bge-mined phrasings from the site's own text (record text values
+   and `--docs`), and with `--llm` the directed fill and LLM paraphrases of the site's canonical sentences
+   (narrated plans up to one link plus one value or date; about 50 to a call). A value plural is a type word with
+   its value preset ("shelters" = Buildings whose service role is Shelter). Where two models hold the value,
+   only the model the site default names gets it (`--default hospital=Building`, recorded as `defaults` in the
+   client manifest); with no default none does, and Ceist keeps asking "did you mean".
+4. Gates every candidate on **this site's own questions only**: template questions from its schema, filled with
+   its record names, each candidate's own checks (a paraphrase is checked on its rewording against its known
+   plan), and its own prose asked of every model, which must stay refused. Alone, then together, as
+   `bench/ontology/gate.py` does, with the matcher the site answers with (`--config`). Never HER, lingo or Catalina.
+5. Writes `<out>/bundle.json`, `coverage.md`, `audit.md` and `setup.md` (what each source proposed and what
+   survived, and why).
+
+**The audit** lists whole classes of problem, each item with a fix or a reason, and totals per class: values
+and phrases more than one model or field can mean, number/date/geometry fields and whether the grammar can ask
+about them, links with no phrasing, values and models with no type word, links within one model, and records
+named by a vocabulary phrase. A site is set up when no class has an open item, or the client manifest's
+`"accepted": {"<class>": "<why>"}` accepts the remainder.
+
+**Checking:** a practice set, never the site's exam. Score the exam once, at the end.
+
 ## 0. Cost first: `vocab profile` and `vocab estimate`
 
 ```sh
 .venv-ceist/bin/ceist vocab profile $G --reference $R
-.venv-ceist/bin/ceist vocab estimate $G --stages ontology,base,data,questions --reference $R --rounds 2
+.venv-ceist/bin/ceist vocab estimate $G --stages ontology,base,data,questions,paraphrase --reference $R --rounds 2
 ```
 
 - **Model:** none; no call is made.

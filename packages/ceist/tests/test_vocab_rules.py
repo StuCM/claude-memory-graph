@@ -10,6 +10,9 @@ import arches_fixture as fx
 from test_ontology import ONTOLOGY, data  # noqa: F401  (the module fixture)
 from test_ontology_vocab import SOURCE, _gate
 
+import pytest
+
+from ceist import bundle as _bundle
 from ceist import vocab_rules as vr
 from ceist.bundle import _add_class_words, layered
 
@@ -182,6 +185,34 @@ def test_apply_writes_a_value_variant_as_a_client_combo(tmp_path):
                "value": "Fort", "phrases": ["forts", "fortresses"]}], tmp_path, tmp_path, client)
     doc = json.loads((client / "Monument" / "types.json").read_text())
     assert doc["group"]["combos"] == [{"phrases": ["forts", "fortresses"], "set": {"monument_type": "Fort"}}]
+
+
+def test_apply_into_an_empty_client_dir_writes_the_manifest_that_makes_it_read(tmp_path):
+    client = tmp_path / "client"
+    vr.apply([{"layer": "client", "model": "Building", "nodegroup": "heritage_status", "node": "heritage_status",
+               "value": "Listed", "phrases": ["listed ones"]}], tmp_path, tmp_path, client)
+    model, = _bundle.read_vocab(client)[0]
+    assert model["groups"]["heritage_status"]["combos"][0]["phrases"] == ["listed ones"]
+
+
+def test_a_client_dir_with_model_folders_and_no_manifest_is_an_error(tmp_path):
+    (tmp_path / "Building").mkdir()
+    (tmp_path / "Building" / "types.json").write_text("{}")
+    with pytest.raises(ValueError, match="no manifest.json"):
+        _bundle.read_vocab(tmp_path)
+
+
+def test_value_plurals_skip_codes_and_mass_nouns_and_keep_count_nouns_ending_like_adjectives():
+    said = {label: vr.count_noun(label) for label in ("Hospital", "Shelter", "Heritage", "Peri-urban", "Listed",
+                                                       "Education", "Memorial")}
+    assert said == {"Hospital": True, "Shelter": True, "Heritage": False, "Peri-urban": False, "Listed": False,
+                    "Education": False, "Memorial": True}
+    assert vr.plural("hospital") == "hospitals"
+
+
+def test_a_coded_label_is_not_said_as_a_word():
+    assert [vr.word_like(x) for x in ("f — construction", "cr/lfm", "contents / inventory", "peri-urban", "o'brien")] == [
+        False, False, False, True, True]
 
 
 def test_the_gate_counts_a_bank_question_turning_right_as_a_gain_not_a_change():

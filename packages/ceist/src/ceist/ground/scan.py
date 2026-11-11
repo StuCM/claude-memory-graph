@@ -165,6 +165,9 @@ def _phrase_spans(raw: str, phrases: list[tuple[str, object]], taken: list[tuple
     """Longest phrase first; each match must not overlap an earlier one, nor
     sit inside a longer record name (`names`)."""
     for phrase, payload in sorted(phrases, key=lambda x: -len(x[0])):
+        # ~1,400 phrases per question overflow re's 512-pattern cache: test the substring before compiling
+        if phrase not in raw:
+            continue
         m = next((m for m in re.finditer(rf"(?<!{ALNUM}){re.escape(phrase)}(?!{ALNUM})", raw)
                   if not any(s <= m.start() and m.end() <= e and m.end() - m.start() < e - s
                              for s, e in names)), None)

@@ -66,7 +66,7 @@ def _relations(s: Scan) -> None:
     # a longer group or value phrase wins over a relation phrase inside it:
     # "bronze age" is a period, not 'age' (cultural_period) and a stray "bronze"
     shape = s.taken + [(w.start, w.end) for w in s.words if w.i in s.consumed]
-    longer = [(m.start(), m.end()) for p in (*s.group_forms, *s.value_forms)
+    longer = [(m.start(), m.end()) for p in (*s.group_forms, *s.value_forms) if p in raw
               for m in re.finditer(rf"(?<!{ALNUM}){re.escape(p)}(?!{ALNUM})", raw)
               if not overlaps(m.start(), m.end(), shape)]
     s.relations = {r.name: r for r in s.vocab.relations()}
@@ -85,7 +85,7 @@ def _relations(s: Scan) -> None:
     # a phrasing two relations share ("part of": a tale's parent story, a
     # group's parent organisation) goes to one that joins the types the question names
     named = {t for w, t in s.type_words.items()
-             if re.search(rf"(?<!{ALNUM}){re.escape(w)}(?!{ALNUM})", raw)}
+             if w in raw and re.search(rf"(?<!{ALNUM}){re.escape(w)}(?!{ALNUM})", raw)}
     forms = sorted(((f, r.name) for r in s.relations.values() for f in r.forms),
                    key=lambda x: not s.types_of(*x) & named)
     for form, rel, m in ([] if s.about else _phrase_spans(raw, forms, s.taken, s.names + longer)):
