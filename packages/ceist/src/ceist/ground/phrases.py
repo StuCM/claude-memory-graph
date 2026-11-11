@@ -164,19 +164,25 @@ def _values(s: Scan) -> None:
 
 def _field_phrases(s: Scan) -> None:
     """A phrase naming a controlled field ("made of", "monument type") holds the value
-    that follows it to that field. With no such value after it, it places nothing."""
+    that follows it to that field, else the value just before it ("health sector"). With
+    neither, it places nothing."""
     g = s.g
     by_phrase: dict[str, set] = {}
     for phrase, model, alias in getattr(s.vocab, "field_phrases", lambda: [])():
         by_phrase.setdefault(phrase, set()).add((model, alias))
     for phrase, owners, m in _phrase_spans(s.raw, list(by_phrase.items()), list(s.taken), s.names):
-        last = max(s.words_in(m.start(), m.end()))
-        vm = min((v for v in g.values if v.pos > last), key=lambda v: v.pos, default=None)
-        if vm is None or any(s.parts_of(w) for i, _s, _e, w in s.words if last < i < vm.pos):
-            continue
-        fit = [v for v in vm.candidates if any(v.field == a and (not v.owners or t in v.owners)
-                                               for t, a in owners)]
-        if not fit:
+        at = s.words_in(m.start(), m.end())
+        after = min((v for v in g.values if v.pos > at[-1]), key=lambda v: v.pos, default=None)
+        before = max((v for v in g.values if v.words and v.words[-1] < at[0]), key=lambda v: v.pos, default=None)
+        sides = [(after, at[-1], after.pos if after else 0), (before, before.words[-1] if before else 0, at[0])]
+        for vm, lo, hi in sides:
+            if vm is None or any(s.parts_of(w) for i, _s, _e, w in s.words if lo < i < hi):
+                continue
+            fit = [v for v in vm.candidates if any(v.field == a and (not v.owners or t in v.owners)
+                                                   for t, a in owners)]
+            if fit:
+                break
+        else:
             continue
         vm.candidates = fit
         s.taken.append((m.start(), m.end()))
