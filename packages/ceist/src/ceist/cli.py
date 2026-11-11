@@ -623,8 +623,9 @@ def main(argv=None):
     p.add_argument("--base", default="vocabularies/base", help="the shared base layer, used as it is")
     p.add_argument("--ontology", help="the shared ontology layer (default: ontology/cidoc-crm beside --base)")
     p.add_argument("--client", help="the site's client layer so far, copied to <out>/client and added to")
-    p.add_argument("--default", action="append", help="<value>=<Model>: the model a value two models hold "
-                                                       "names as a type word (recorded in the client manifest)")
+    p.add_argument("--default", action="append", help="<value or role>=<Model>: the model a value or role "
+                                                       "noun two models hold names as a type word (recorded in "
+                                                       "the client manifest)")
     p.add_argument("--docs", help="the site's own docs (*.md, *.txt): text for bge mining")
     p.add_argument("--config", help="the matching config the site answers with (ceist.toml); the gate uses it")
     _llm_args(p, setup=True)

@@ -21,7 +21,7 @@ from .plan import (
     Partial,
     Plan,
 )
-from .text import plural
+from .text import PAST, plural
 
 
 def _target(c: LinkTo, forms: bool, canonical: bool) -> str:
@@ -42,6 +42,18 @@ def _singular(verb: str) -> str:
     return f"{first} {rest}".strip()
 
 
+def _passive(c: LinkTo) -> str:
+    """The link read from its far end, when the question said it as the verb its name is: "occupied by"
+    for "occupy" (the link "occupies"). A form already passive may be said of either end, so isn't used."""
+    if " " in c.form or not c.form.isalpha() or c.form == c.relation or _singular(c.form) != c.relation:
+        return ""
+    if c.form in PAST:
+        return f"{PAST[c.form]} by"
+    if c.form.endswith("y") and c.form[-2:-1] not in "aeiou":
+        return f"{c.form[:-1]}ied by"
+    return f"{c.form}{'d' if c.form.endswith('e') else 'ed'} by"
+
+
 def _field(name: str, label: str = "") -> str:
     return label or name.replace("_", " ")
 
@@ -56,6 +68,13 @@ def _link(c: LinkTo, forms: bool, canonical: bool, negated: bool, target: str = 
     if c.style == "field":
         # a node on a record: "whose site is X" / "that are the site of X"
         name = c.relation.replace("_", " ")
+        passive = _passive(c) if forms else ""
+        noun, _, prep = name.partition(" ")
+        if c.direction == "in" and passive:
+            return f"{'not ' if negated else ''}{passive} {target}"
+        if c.direction == "in" and forms and prep in ("for", "of"):
+            # "keyholder for": the noun names the far end
+            return f"whose {noun} is {'not ' if negated else ''}{target}"
         if c.direction == "in":
             return f"that are {'not ' if negated else ''}the {name} of {target}"
         return f"whose {name} is {'not ' if negated else ''}{target}"

@@ -1,6 +1,6 @@
 # How Ceist reads a question: the `ground/` package
 
-A walkthrough of `src/ceist/ground/`, file by file, with a small example for each step and the known weak spots. It is written for a reviewer reading the code for the first time. Last updated 2026-11-11, after tasks 040–060.
+A walkthrough of `src/ceist/ground/`, file by file, with a small example for each step and the known weak spots. It is written for a reviewer reading the code for the first time. Last updated 2026-11-11, after tasks 040–064.
 
 ## The three layers
 
@@ -198,6 +198,8 @@ Records are **ranked** against the question's words (`index.py` `rank`): each ma
 
 The fix is aliases, not looser matching (task 057): "Fermanagh" as an alias of County Fermanagh, made at build time, only when it is unique and not already a word or phrase. "Down" stays "did you mean".
 
+**A name's numbers and version tokens are name words** (task 064; `text.marks`): "Flood model v1.0" needs "v1" and "0" as well as "flood" and "model", though `terms` drops words of two letters or fewer. A question's own such tokens become meaningful words only when some record's name holds them, so other short numbers stay as they were. "the flood model" no longer binds 'Flood model v1.0' (a partial name passing as whole was a wrong answer); `_anchors` offers "did you mean 'Flood model v1.0' or 'Flood model v2.1'" instead (`_numbered_names`).
+
 ### Leftover runs (`_leftover_runs`)
 Runs of unclaimed words, trimmed to start and end at a meaningful word (or end at a preposition: "designed by"). They go to the matcher and to the "couldn't place" message.
 
@@ -223,6 +225,8 @@ Runs of unclaimed words, trimmed to start and end at a meaningful word (or end a
 6. Record the `Edge`, the phrasing that matched, and every link that phrasing could mean (`sharing`), for assembly to try.
 
 Example: "which tales are part of the Ulster Cycle?" → edge `parent_story`, phrasing "part of".
+
+**A role noun** ("keyholders", a bundle entry with `"role": true`; `Relation.roles`) names the record *holding* the link, as a type word does: it adds a variable of the holding model at its position, then stays a link phrase. "who are the keyholders of the hospitals" → a Person variable, `keyholder_for`, a Building variable. `ceist setup` proposes one for a link labelled `<noun> for` or `<noun> of` ("Keyholder for"); a label that is a noun alone ("Employer") names the record linked *to*, so it gets none. Where two models hold the same role, only the site default's (`--default keyholder=Person`) does.
 
 ### `_group_by`: count per something
 - "monuments **by county**" (at the end) → count per county;
@@ -278,7 +282,8 @@ It goes through the words nobody has claimed yet:
 - **negators** ("not", "without", "non") are kept with their position, for `_scope_negations` later;
 - **"recent", "latest"** → newest first;
 - **hint words** (a vocabulary's own: a word that implies a type) → that type;
-- helper verbs, filler, and date words once a date was found → claimed, as shape only.
+- helper verbs, filler, and date words once a date was found → claimed, as shape only;
+- **value plurals** (task 064): a group phrase that is the plural of its one preset value ("hospitals", `Group.type_forms`) adds a variable of its model, as a type noun does. The value rides on the group, which `plan._attach_groups` puts on the variable of that model wherever the reading puts it: "who are the keyholders **of the hospitals**", "**hospitals** maintained by …". Before, only `_imply_model` made the variable, and only when nothing else was named.
 
 Finally, **the question word's implied type:** "who" → the model whose CRM class is an Actor (E39), or among several, the Person one (E21).
 
@@ -308,7 +313,8 @@ A phrase several links share ("in": a monument's location, a tale's parent story
 **Only when nothing else is named** (no type, no link): "how many raths are there?" → the values that only Monument holds imply Monument. If several models hold them, it doesn't guess: it offers each as "did you mean".
 
 ### Weak spots
-- **`_imply_model` gives up when any link was found.** "souterrains within 10 km of Navan Fort" fails because "within" was claimed as a link, so "souterrains" never implies Monument (task 057).
+- **A role noun alone** ("list the keyholders") has its holder but no far end: one reading per type the link may point at, so it asks "did you mean" where the link's targets are coarse (CRM-guessed).
+- **`_imply_model` gives up when any link was found** (a value plural no longer needs it, see `_words`). "souterrains within 10 km of Navan Fort" fails because "within" was claimed as a link, so "souterrains" never implies Monument (task 057).
 - **The anchor cap is tied to the number of links:** with no link phrase, only one record can be named, and two records need a phrase between them.
 - **One var per type** (`seen`), as noted under `scan.py`.
 - **Names must be whole** (aliases are the fix, task 057).
@@ -380,7 +386,7 @@ Word order still decides two things the schema can't: **links between two pieces
 - **Names:** `_wire` and `_assign_edges` say *how* (wire up), not *what* (join links by word order). Moot, since they aren't ported.
 
 ## Where this fits
-`interpret()` runs `pieces()`, then **assembly** (`assemble.py`, the default; strict `wire.py` only on request), then `plan._finish` (plan, refusals, "did you mean", partial match). After that: `narrate.py` says it back, `rosmadair.py` compiles it, `readback.py` checks the compiled query means the same.
+`interpret()` runs `pieces()`, then **assembly** (`assemble.py`, the default; strict `wire.py` only on request), then `plan._finish` (plan, refusals, "did you mean", partial match). After that: `narrate.py` says it back, `rosmadair.py` compiles it, `readback.py` checks the compiled query means the same. A link read from its far end says the question's verb in the passive ("Buildings occupied by Organisation X", for "occupy" on the link `occupies`) or its noun ("Buildings whose keyholder is Person X", for `keyholder_for`); the canonical form read-back compares keeps the link's name.
 
 ## `assemble.py`: the jigsaw (the default)
 
@@ -417,7 +423,7 @@ then:
 For a link phrase, given the pieces:
 - **Both ends named:** every (link, piece A, piece B) whose types the link joins.
 - **Two pieces of the same type** (Figure–Figure, Tale–Tale): word order decides which is which (`_in_order`, the same rule strict uses). "X **as** father" makes X the target.
-- **One end missing:** the missing end becomes an *implicit* variable of the type the link wants, **but only** if the link has a role ("architects", "surveyed by") or a value names that type ("flew in **the Lancaster**" → Aircraft). Otherwise "in County Nowhere" would become "in any Site".
+- **One end missing:** the missing end becomes an *implicit* variable of the type the link wants, **but only** if the link has a role ("architects", "surveyed by", or a role noun: "keyholders") or a value names that type ("flew in **the Lancaster**" → Aircraft). Otherwise "in County Nowhere" would become "in any Site".
 - **A bare preposition** ("in", "at", no content word) **orders its ends like a same-type link.** "What is in Clock Tower" asks what Clock Tower holds, never what holds it.
 - **Nothing fits:**
   - a bare function word is set aside;

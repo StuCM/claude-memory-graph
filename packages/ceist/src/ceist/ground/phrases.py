@@ -108,6 +108,9 @@ def _relations(s: Scan) -> None:
         s.relations[rel] = s.relations[rel].said_as(form)
         g.edges.append(_edge(s.relations[rel], s.consume_span(m.start(), m.end()), form=form))
         g.notes.append(f"'{form}' → relation {rel}")
+        holders = sorted(s.relations[rel].domain)
+        if form in s.relations[rel].roles and len(holders) == 1 and holders[0] not in s.seen:
+            s.add_var(holders[0], g.edges[-1].pos, f"'{form}' names the holder of {rel}")
         s.sharing[form] = [r for f, r in forms if f == form]
     g.edges.sort(key=lambda e: e.pos)
 

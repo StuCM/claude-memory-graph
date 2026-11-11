@@ -150,6 +150,16 @@ def of_forms(label: str) -> list[str]:
     return []
 
 
+def role_noun(label: str) -> str | None:
+    """The noun a link's label calls the record holding it ("keyholder for" → "keyholder"), or None:
+    a label that is a noun alone ("employer") names the record linked to instead."""
+    words = label.lower().split()
+    if len(words) != 2 or words[1] not in ("for", "of") or words[0].endswith(("s", "ed", "en")) \
+            or words[0] in PAST.values():
+        return None
+    return words[0] if word_like(words[0]) and count_noun(words[0]) else None
+
+
 def date_forms(label: str) -> tuple[list[str], list[str]]:
     """(the label's other order, the event's verbs): "date of death" → (["death date"], ["died", "die"])."""
     low = label.lower().strip()
@@ -256,7 +266,7 @@ def _slot(c: dict) -> str:
 def _scope(key: str) -> str:
     """The model an element key belongs to ("link Monument.actor" → "Monument"), "" for the ontology's."""
     rest = key.split(" ", 1)[1]
-    return rest.split(".")[0] if " " in key and key.split()[0] in ("link", "date", "value") else (
+    return rest.split(".")[0] if " " in key and key.split()[0] in ("link", "date", "value", "role") else (
         rest if key.startswith("type ") else "")
 
 
@@ -435,6 +445,18 @@ def _client_elements(L: Layers) -> list[dict]:
             out.append({"layer": "client", "key": f"value {m}.{alias}={low}", "weight": 1, "label": label,
                         "target": {"layer": "client", "model": m, "nodegroup": group, "node": alias, "value": label},
                         "items": items})
+    roles = {r.name: r.roles for r in v.relations()}
+    for g in L.graphs:
+        m, (_, group_of) = L.name(g), _bundle.nodegroups(g)
+        for n in g["nodes"]:
+            noun = role_noun(str(n.get("name") or "")) if _bundle.kind_of(n) == "link" else None
+            if noun is None:
+                continue
+            said = plural(noun)
+            out.append({"layer": "client", "key": f"role {m}.{n['alias']}", "weight": 1, "label": n["name"],
+                        "target": {"layer": "client", "model": m, "nodegroup": group_of.get(n["alias"], ""),
+                                   "node": n["alias"], "kind": "link", "role": noun},
+                        "items": [_item("role noun", said, said in roles.get(n["alias"], ()))]})
     return out
 
 
@@ -665,10 +687,14 @@ def apply(cands: list[dict], ontology_dir: Path, base_dir: Path, client_dir: Pat
 
 
 def _add_entry(doc: dict, c: dict) -> None:
-    """A link or date candidate's phrases into its node's entry of a nodegroup file."""
-    e = next((e for e in doc["entries"] if e["node"] == c["node"] and not e.get("qualifier")), None)
+    """A link or date candidate's phrases into its node's entry of a nodegroup file; a role noun's
+    into the node's role entry."""
+    role = bool(c.get("role"))
+    e = next((e for e in doc["entries"] if e["node"] == c["node"] and not e.get("qualifier")
+              and bool(e.get("role")) == role), None)
     if e is None:
-        doc["entries"].append({"phrases": list(c["phrases"]), "kind": c["kind"], "node": c["node"]})
+        doc["entries"].append({"phrases": list(c["phrases"]), "kind": c["kind"], "node": c["node"],
+                               **({"role": True} if role else {})})
     else:
         e["phrases"] = list(dict.fromkeys(e["phrases"] + c["phrases"]))
 

@@ -3,7 +3,7 @@
 
 import math
 
-from .text import terms
+from .text import marks, terms
 from .vocabulary import Entity
 
 
@@ -20,7 +20,7 @@ class NameIndex:
 
     @staticmethod
     def entity(type_: str, id_: str, name: str, text: str = "", **extra) -> Entity:
-        name_terms = frozenset(terms(name))
+        name_terms = frozenset(terms(name)) | marks(name)
         return Entity(type_, id_, name, name_terms, name_terms | frozenset(terms(text)), extra)
 
     def rank(self, query: set[str]) -> list[tuple[float, Entity]]:

@@ -6,8 +6,9 @@
 The shared layers are used as they are: the CIDOC-CRM ontology layer, and each graph's base where
 vocabularies/base has one (copied to <out>/base). A graph with no base gets one from the rules
 (`vocab_rules`), and with --llm from `vocab pipeline --layer base`. The client layer gets the rules'
-value plurals (a plural naming a kind of thing is a type word with its value preset, on the one
-model the site's default names when two hold it), bge-mined phrasings and, with --llm, the directed
+value plurals and role nouns (a plural naming a kind of thing, "hospitals", or the holder of a link,
+"keyholders", is a type word with its value or link preset, on the one model the site's default names
+when two hold it), bge-mined phrasings and, with --llm, the directed
 fill and LLM paraphrases. Every candidate is gated on this site's own questions only: template
 questions from its schema, filled with its own record names. Writes <out>/bundle.json, the
 coverage report, the audit and setup.md. Ontology and base proposals for the shared layers are
@@ -78,6 +79,17 @@ def value_checks(c: dict) -> list[dict]:
     return [{"q": f"how many {p} are there?", "target": target} for p in c["phrases"]]
 
 
+def role_checks(c: dict, vocab) -> list[dict]:
+    """A role noun said of a record the link may point at: "list the keyholders of {Building}" finds
+    the records holding the link to it."""
+    if c["layer"] != "client" or "role" not in c:
+        return []
+    link = next((r for r in vocab.relations() if r.name == c["node"]), None)
+    other = sorted(link.targets(c["model"]))[:1] if link else []
+    target = {"model": c["model"], "count": False, "conditions": [{"node": c["node"], "link": t} for t in other]}
+    return [{"q": f"list the {p} of {{{t}}}", "target": target} for p in c["phrases"] for t in other]
+
+
 class SiteGate:
     """Candidates scored on the site's template questions, alone and then together, as
     bench/ontology/gate.py scores the shared layers on the bench sets, with the matcher the site
@@ -95,7 +107,7 @@ class SiteGate:
         self.items = templated(self.vocab.with_bundle(every), ontology, every, only)
         for c in cands:
             self.items += [dict(x, expect="answer", model=c["model"], shape="site check")
-                           for x in c.get("checks") or value_checks(c)]
+                           for x in c.get("checks") or value_checks(c) or role_checks(c, self.vocab)]
         self.items += [{"q": q, "expect": "refuse", "reason": "the site's prose, not its schema", "shape": "probe"}
                        for q in probes]
         self.items = list({o["q"]: o for o in self.items}.values())
@@ -163,29 +175,34 @@ def _counts(scored: dict) -> dict:
 
 
 # ── the client layer's own rules ─────────────────────────────────────────────
-def settle_value_type_words(cands: list[dict], defaults: dict[str, str]) -> tuple[list[dict], dict, list[str]]:
-    """Value plurals as type words with their value preset: where two models hold the value, only
-    the one the site default names keeps it; without a default none does, and grounding keeps
-    asking "did you mean". (kept, {key: {phrase: why}}, [values that need a default])."""
+def settle_type_words(cands: list[dict], defaults: dict[str, str]) -> tuple[list[dict], dict, list[str]]:
+    """Value plurals and role nouns as type words with their value or link preset: where two models
+    hold it, only the one the site default names keeps it; without a default none does, and grounding
+    keeps asking "did you mean". (kept, {key: {phrase: why}}, [values and roles that need a default])."""
+    def said(c: dict) -> str:
+        return (c.get("value") or c.get("role") or "").lower() if c["layer"] == "client" else ""
+
     owners: dict[str, set] = {}
     for c in cands:
-        if c["layer"] == "client" and "value" in c:
-            owners.setdefault(c["value"].lower(), set()).add(c["model"])
+        if said(c):
+            owners.setdefault(said(c), set()).add(c["model"])
     kept, dropped, ask = [], {}, []
     for c in cands:
-        held = owners.get(c.get("value", "").lower(), set()) if c["layer"] == "client" and "value" in c else set()
+        word = said(c)
+        held = owners.get(word, set())
         if len(held) < 2:
             kept.append(c)
             continue
-        default = defaults.get(c["value"].lower())
+        default = defaults.get(word)
         if default == c["model"]:
             kept.append(c)
             continue
-        why = (f"site default: {c['value'].lower()} means {default}" if default else
-               f"{c['value']} is held by {', '.join(sorted(held))}: no site default, so it stays a 'did you mean'")
+        why = (f"site default: {word} means {default}" if default else
+               f"{c.get('value') or word} is held by {', '.join(sorted(held))}: no site default, so it stays a "
+               "'did you mean'")
         dropped[c["key"]] = {p: why for p in c["phrases"]}
-        if not default and c["value"].lower() not in ask:
-            ask.append(c["value"].lower())
+        if not default and word not in ask:
+            ask.append(word)
     return kept, dropped, ask
 
 
@@ -369,7 +386,7 @@ def setup(data_dir, out, base_root="vocabularies/base", ontology_dir=None, clien
     everything = merged([dict(c, source=s) for s, cs in sources.items() for c in cs])
     generic = set(json.loads((L.ontology_dir / "generic.json").read_text())["phrases"])
     dropped = vr.review(everything, L.vocab(), generic)
-    kept, more, need = settle_value_type_words(everything, defaults)
+    kept, more, need = settle_type_words(everything, defaults)
     for k, d in more.items():
         dropped.setdefault(k, {}).update(d)
     todo = []
@@ -380,7 +397,7 @@ def setup(data_dir, out, base_root="vocabularies/base", ontology_dir=None, clien
     log(f"{len(everything)} candidates ({', '.join(f'{s} {len(cs)}' for s, cs in sources.items())}); "
         f"review dropped {sum(len(d) for d in dropped.values())} phrases; {len(todo)} to the site gate")
     for v in need:
-        log(f"  '{v}' is a value of more than one model: pass --default {v}=<Model> to make its plural a type word")
+        log(f"  '{v}' is held by more than one model: pass --default {v}=<Model> to make its plural a type word")
     proposed = {p for c in everything for p in c["phrases"]}
     prose = [gram for gram in ngrams(texts, PROBES * 4) if gram not in said and gram not in proposed][:PROBES]
     probes = [f"which {_plural(_name(graph))} are {gram}?" for gram in prose for graph in graphs]
@@ -441,7 +458,7 @@ def _report(data, out, unbased, cost_lines, survived, verdict, dropped, todo, ne
     lines += [f"| {c['key']} | {', '.join(c['phrases'])} | {c['source']} | "
               f"{'accepted' if c['key'] in passed else verdict['rejected'].get(c['key'], '?')} |" for c in todo]
     if need:
-        lines += ["", "## Values more than one model holds, with no site default", ""]
+        lines += ["", "## Values and roles more than one model holds, with no site default", ""]
         lines += [f"- {v}: `--default {v}=<Model>` makes its plural a type word on that model" for v in need]
     lines += ["", "## Dropped by review", "", "| element | phrase | why |", "| --- " * 3 + "|"]
     lines += [f"| {k} | {p} | {why} |" for k, d in sorted(dropped.items()) for p, why in d.items()]
