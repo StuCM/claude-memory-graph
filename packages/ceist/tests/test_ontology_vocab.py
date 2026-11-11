@@ -190,9 +190,13 @@ def test_halving_finds_the_one_candidate_that_makes_a_question_worse():
     gate = _gate()
     cands = [{"path": f"E22 P{i}", "kind": "link", "phrases": [f"phrase {i}"]} for i in range(7)]
     assert gate.culprits(cands, lambda cs: ["q"] if cands[4] in cs else [], ["q"]) == [(cands[4], ["q"])]
-    # two that are worse only together: no half is worse alone, so all are taken
+    # two that are worse only together: no half is worse alone, so the ones the rest need are taken
     both = gate.culprits(cands, lambda cs: ["q"] if cands[1] in cs and cands[5] in cs else [], ["q"])
-    assert [c for c, _ in both] == cands
+    assert [c for c, _ in both] == [cands[1], cands[5]]
+    # worse with all three only: each is needed
+    trio = cands[:3]
+    some = gate.culprits(trio, lambda cs: ["q"] if len(cs) == 3 else [], ["q"])
+    assert [c for c, _ in some] == trio
 
 
 def test_the_gate_halves_a_together_stage_no_phrase_is_in(monkeypatch, tmp_path):

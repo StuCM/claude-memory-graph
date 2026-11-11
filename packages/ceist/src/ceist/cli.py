@@ -35,7 +35,8 @@
     ceist vocab estimate <graphs dir> --stages base,data,questions,ontology [--model M] [--rounds N]
                          [--ledger <run dir> …] [--json]   # calls, tokens and dollars before a run
     ceist setup <data dir> -o <out> [--base <dir>] [--client <dir>] [--default <value>=<Model> …] [--docs <dir>]
-                [--config ceist.toml] [--llm [--max-calls N] [--llm-cmd CMD] [--model M]]   # a new site's vocabulary, gated on its own questions
+                [--config ceist.toml] [--questions <practice.json>] [--accept-risks]
+                [--llm [--max-calls N] [--llm-cmd CMD] [--model M]]   # a new site's vocabulary, gated on its own questions
     ceist ask <data dir> "<question>" [--bundle <bundle.json>] [--config ceist.toml]   # narration, count, refusal
     ceist questions generate <graphs dir> -o <out dir> [--reference <dir>] [--per-model N]
                              [--llm-cmd CMD] [--model M] [--models A,B]   # → train.json, holdout.json
@@ -352,7 +353,7 @@ def _estimate(a):
 def _setup(a):
     from .site import defaults_arg, setup
     return setup(a.data_dir, a.out, a.base, a.ontology, a.client, defaults_arg(a.default), a.docs, a.llm,
-                 a.llm_cmd, a.model, a.max_calls, a.config)
+                 a.llm_cmd, a.model, a.max_calls, a.config, questions=a.questions, accept_risks=a.accept_risks)
 
 
 def _ask(a):
@@ -628,6 +629,10 @@ def main(argv=None):
                                                        "the client manifest)")
     p.add_argument("--docs", help="the site's own docs (*.md, *.txt): text for bge mining")
     p.add_argument("--config", help="the matching config the site answers with (ceist.toml); the gate uses it")
+    p.add_argument("--questions", help="the site's practice questions (JSON, {\"questions\": [{\"q\", \"count\" or "
+                                       "\"accept\", \"expect\"}]}): none may get worse, none with a count read wrong. "
+                                       "Never the frozen exam")
+    p.add_argument("--accept-risks", action="store_true", help="exit 0 even with wrong readings or partial name binds")
     _llm_args(p, setup=True)
     p.add_argument("--max-calls", type=int, default=50)
     p.add_argument("--llm-cmd")

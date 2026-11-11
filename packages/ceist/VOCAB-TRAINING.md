@@ -82,7 +82,8 @@ Two builds, run by different people:
 
 ```sh
 .venv-ceist/bin/ceist setup <data dir> -o <out> [--client <its client layer so far>] [--default shelter=Building] \
-    [--docs <its docs>] [--config <its ceist.toml>] [--llm [--max-calls 50] [--model M]]
+    [--docs <its docs>] [--config <its ceist.toml>] [--questions <its practice set>] [--accept-risks] \
+    [--llm [--max-calls 50] [--model M]]
 .venv-ceist/bin/ceist ask <data dir> "which buildings are shelters?" --bundle <out>/bundle.json
 ```
 
@@ -104,8 +105,27 @@ What `setup` does, in order:
    its record names, each candidate's own checks (a paraphrase is checked on its rewording against its known
    plan), and its own prose asked of every model, which must stay refused. Alone, then together, as
    `bench/ontology/gate.py` does, with the matcher the site answers with (`--config`). Never HER, lingo or Catalina.
+   A one-piece template proves each word grounds alone, never that words combine, so the gate also asks
+   (`compose.py`):
+   - **compositions**, each from a known plan and checked against it exactly: type word + link + type word
+     ("which organisations occupy buildings?"), type word + link + value ("keyholders of hospitals", "which
+     coastal buildings …"), type word + value + number ("hospitals with occupant capacity over 10") and two
+     links in a chain. Every phrasing family the layers give (type words, value plurals, role nouns, link
+     forms from the holder, and "… by" forms from the far end), every link before any is asked twice, at most
+     600. A candidate that makes a composition worse is rejected.
+   - **name probes**: for up to 150 records with names of more than one word (numbered or versioned names, and
+     names that lead with a vocabulary word, first), each proper part of the name, which must never bind that
+     record, and the whole name, which should. A part that binds is a wrong-answer risk ("the flood model" →
+     'Flood model v1.0'), and a candidate that causes one is rejected.
+   - **the site's own questions** (`--questions`): a practice set in the testbed's or the responder sets' JSON
+     shape, with expected counts where known. None may get worse, and none with an expected count may read
+     wrong. **Never the frozen exam**: the exam scores the result once, at the end, and a question the setup
+     has seen no longer measures anything.
 5. Writes `<out>/bundle.json`, `coverage.md`, `audit.md` and `setup.md` (what each source proposed and what
-   survived, and why).
+   survived, and why). `setup.md` opens with the status: compositions refused, by family, with examples; any
+   wrong readings; any partial name binds; the audit totals. With a wrong reading or a partial bind, setup
+   prints that block to stderr and exits 1: the bundle is written, but the site isn't set up with a known
+   wrong-answer risk. `--accept-risks` exits 0 anyway.
 
 **The audit** lists whole classes of problem, each item with a fix or a reason, and totals per class: values
 and phrases more than one model or field can mean, number/date/geometry fields and whether the grammar can ask

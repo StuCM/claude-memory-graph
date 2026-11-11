@@ -38,17 +38,17 @@ Reply with JSON only:
 """
 
 
-def link_targets(vocab, tiles=None) -> dict[tuple[str, str], list[str]]:
+def link_targets(vocab, tiles=None, guessed: bool = True) -> dict[tuple[str, str], list[str]]:
     """{(model, link alias): the models its records point at}: from the records when the
     business data has them (a link with no target list may otherwise reach any CRM-compatible
-    model), else the vocabulary's ends."""
+    model), else (unless not `guessed`) the vocabulary's ends."""
     out: dict[tuple[str, str], set] = {}
     if tiles is not None:
         for rid, links in tiles.out.items():
             for alias, targets in links.items():
                 out.setdefault((tiles.type_of[rid], alias), set()).update(
                     tiles.type_of[t] for t in targets if t in tiles.type_of)
-    for r in vocab.relations():
+    for r in vocab.relations() if guessed else ():
         if "#" in r.name:
             continue
         for model, ends in r.ends:
