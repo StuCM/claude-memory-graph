@@ -218,3 +218,28 @@ def test_a_mined_phrase_the_rules_already_propose_for_the_element_is_one_candida
     got = site.merged([rule, mined, other])
     assert [c["key"] for c in got] == ["value Building.role=shelter", "value Building.role=shelter: refuges"]
     assert got[0]["checks"] == [{"q": "x"}]
+
+
+def test_the_site_gate_rejects_only_the_phrases_a_composition_reads_wrong_with():
+    insurer = {"key": "link Insurance policy.insurer: llm", "phrases": ["insured by", "covered by", "issued by"]}
+    policy = {"key": "type Insurance policy: llm", "phrases": ["policies", "contracts"]}
+    wrong = "which contracts have fire station organisations as covered by the policy?"
+    gate = object.__new__(site.SiteGate)
+    gate.cands = [insurer, policy]
+    gate.items = [{"q": wrong, "shape": "composition"}, {"q": "policies insured by Ada"}, {"q": "how many policies?"}]
+
+    def scores(cs, only=None):
+        said = {p for c in cs for p in c["phrases"]}
+        return {("site", wrong): "wrong reading" if {"contracts", "covered by"} <= said else "refused",
+                ("site", "policies insured by Ada"): "right" if "insured by" in said else "refused",
+                ("site", "how many policies?"): "right" if "policies" in said else "refused"}
+
+    gate.scores = scores
+    gate.before = scores([])
+    verdict = gate.run(log=lambda _: None)
+    assert verdict["accepted"] == [insurer["key"], policy["key"]] and verdict["rejected"] == {}
+    blame = f"site gate, together: {wrong}"
+    # the element with more phrases loses its phrase first; then the other is fine beside it
+    assert verdict["phrases"] == {insurer["key"]: {"covered by": blame}}
+    assert verdict["after"] == {("site", wrong): "refused", ("site", "policies insured by Ada"): "right",
+                                ("site", "how many policies?"): "right"}

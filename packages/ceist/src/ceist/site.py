@@ -76,6 +76,52 @@ def culprits(cands: list[dict], worse, lines: list[str]) -> list[tuple[dict, lis
     return [(c, lines) for c in needed or cands]
 
 
+def split(phrases: list[str], worse, lines: list[str]) -> tuple[list[str], dict[str, str]]:
+    """A rejected element judged phrase by phrase: (the phrases that make nothing worse, {phrase: the
+    question it makes worse}). `worse(phrases)` lists what the element with only those phrases makes
+    worse, `lines` what all of them do; `culprits` finds the phrases to blame, so phrases worse only
+    together are all rejected."""
+    kept, why = list(phrases), {}
+    while kept and lines:
+        for p, got in culprits(kept, worse, lines):
+            why[p] = got[0]
+            kept.remove(p)
+        lines = worse(kept) if kept else []
+    return kept, why
+
+
+def beside(worse, others: list[dict], c: dict):
+    """worse(phrases) for `split`: what c with only those phrases makes worse that `others` alone don't."""
+    already = set(worse(others))
+    return lambda phrases: sorted(set(worse(others + [dict(c, phrases=phrases)])) - already)
+
+
+def split_culprits(hit: list[tuple[dict, list[str]]], passing: list[dict], worse) -> tuple[list, list]:
+    """A together stage's culprits judged phrase by phrase beside the rest of `passing` (`worse(cands)`
+    lists the questions they make worse): in `passing`, each keeps only the phrases that make nothing
+    worse, and leaves if none do. Most phrases first, each beside the others as they now are, so a pair
+    worse together costs the larger one a phrase, not the smaller one ("muster points") its only one. If no
+    culprit has a phrase to blame, all leave, so the stage moves on.
+    ([(culprit, question)] removed, [(culprit, {phrase: question})] blamed)."""
+    removed, cut = [], []
+    for c, lines in sorted(hit, key=lambda h: -len(h[0]["phrases"])):
+        alone = beside(worse, [x for x in passing if x is not c], c)
+        kept, why = split(c["phrases"], alone, alone(c["phrases"]))
+        if not why:
+            continue
+        cut.append((c, why))
+        if kept:
+            passing[passing.index(c)] = dict(c, phrases=kept)
+        else:
+            passing.remove(c)
+            removed.append((c, lines[0]))
+    if not cut:
+        for c, lines in hit:
+            passing.remove(c)
+            removed.append((c, lines[0]))
+    return removed, cut
+
+
 # ── the site's own benchmark ─────────────────────────────────────────────────
 def value_checks(c: dict) -> list[dict]:
     """A value plural said as a type word: "how many shelters are there?" counts the model's records
@@ -155,20 +201,33 @@ class SiteGate:
                 out[("site", o["q"])] = score(o, interpret(v, q, matcher=self.matcher), ends)
         return out
 
+    def alone(self, c: dict) -> tuple[int, list[str]]:
+        return judge(self.before, {**self.before, **self.scores([c], words(" ".join(c["phrases"])))})
+
     def run(self, log=print) -> dict:
+        """{"accepted": [key], "rejected": {key: why}, "phrases": {key: {phrase: why}} (the phrases
+        rejected on their own, of an element accepted or not), "tally", "after"}."""
         from . import compose
-        rejected, runs = {}, {(): self.before}
+        rejected, cut, runs, passing = {}, {}, {(): self.before}, []
         for c in self.cands:
-            gained, worse = judge(self.before, {**self.before, **self.scores([c], words(" ".join(c["phrases"])))})
+            gained, worse = self.alone(c)
             if worse:
-                rejected[c["key"]] = f"site gate: worse on {len(worse)}, e.g. {worse[0]}"
-            elif not gained:
+                kept, why = split(c["phrases"], lambda ps, c=c: self.alone(dict(c, phrases=ps))[1], worse)
+                cut[c["key"]] = {p: f"site gate: {q}" for p, q in why.items()}
+                if not kept:
+                    rejected[c["key"]] = f"site gate: worse on {len(worse)}, e.g. {worse[0]}"
+                    continue
+                c = dict(c, phrases=kept)
+                gained, _ = self.alone(c)
+            if not gained:
                 rejected[c["key"]] = "site gate: adds no right answer"
-        passing = [c for c in self.cands if c["key"] not in rejected]
-        log(f"site gate: {len(self.items)} questions; {len(passing)} of {len(self.cands)} pass alone")
+                continue
+            passing.append(c)
+        log(f"site gate: {len(self.items)} questions; {len(passing)} of {len(self.cands)} pass alone"
+            f" ({sum(map(len, cut.values()))} phrases rejected on their own)")
 
         def together(cs: list[dict]) -> dict:
-            ks = tuple(sorted(c["key"] for c in cs))
+            ks = tuple(sorted((c["key"], *c["phrases"]) for c in cs))
             if ks not in runs:
                 runs[ks] = self.scores(cs)
             return runs[ks]
@@ -190,11 +249,14 @@ class SiteGate:
             suspects = holding(passing, worse) or list(passing)
             hit = [(c, one_piece) for c in holding(passing, one_piece)] or culprits(
                 suspects, worse_on(words(" ".join(worse))), worse)
-            for c, lines in hit:
-                rejected[c["key"]] = f"site gate, together: {lines[0]}"
-                passing.remove(c)
+            removed, blamed = split_culprits(hit, passing, worse_on(words(" ".join(
+                p for c, _ in hit for p in c["phrases"]))))
+            for c, line in removed:
+                rejected[c["key"]] = f"site gate, together: {line}"
+            for c, why in blamed:
+                cut.setdefault(c["key"], {}).update({p: f"site gate, together: {q}" for p, q in why.items()})
         after = together(passing)
-        return {"accepted": [c["key"] for c in passing], "rejected": rejected,
+        return {"accepted": [c["key"] for c in passing], "rejected": rejected, "phrases": cut,
                 "tally": {"before": _counts(self.before), "after": _counts(after)}, "after": after}
 
 
@@ -435,7 +497,9 @@ def setup(data_dir, out, base_root="vocabularies/base", ontology_dir=None, clien
     cfg = config.load(config_path)
     asked = site_questions(questions) if questions else []
     verdict = SiteGate(L, todo, config.chain(cfg), probes, asked, generic).run(log)
-    accepted = [c for c in todo if c["key"] in set(verdict["accepted"])]
+    cut = verdict["phrases"]
+    accepted = [dict(c, phrases=[p for p in c["phrases"] if p not in cut.get(c["key"], {})])
+                for c in todo if c["key"] in set(verdict["accepted"])]
     vr.apply(accepted, L.ontology_dir, site_base, site_client)
 
     # the bundle, the checklist and the audit
@@ -443,7 +507,8 @@ def setup(data_dir, out, base_root="vocabularies/base", ontology_dir=None, clien
     bundle, merge_report = _bundle.layered(L.graphs, site_base, site_client, ontology_dir=ontology_dir)
     (out / "bundle.json").write_text(json.dumps(bundle, ensure_ascii=False, separators=(",", ":")))
     after = vr.Layers([data / "graphs"], site_base, site_client, ontology_dir, reference, resources=resources)
-    vr.write_report(vr.checklist(after), out, "coverage", f"site {data.name}", vr.where_md(after, None))
+    reasons = {k.partition(": ")[0]: why for k, why in cut.items()}
+    vr.write_report(vr.checklist(after, reasons), out, "coverage", f"site {data.name}", vr.where_md(after, None))
     found = audit(after.vocab(), defaults, _bundle._manifest(site_client).get("accepted") or {}, generic)
     (out / "audit.json").write_text(json.dumps(found, ensure_ascii=False, indent=1) + "\n")
     (out / "audit.md").write_text(audit_md(found))
@@ -525,6 +590,11 @@ def _report(data, out, unbased, cost_lines, survived, verdict, dropped, todo, ne
     passed = set(verdict["accepted"])
     lines += [f"| {c['key']} | {', '.join(c['phrases'])} | {c['source']} | "
               f"{'accepted' if c['key'] in passed else verdict['rejected'].get(c['key'], '?')} |" for c in todo]
+    cut = verdict["phrases"]
+    if cut:
+        lines += ["", "Phrases rejected on their own (a rejected element is judged phrase by phrase, and keeps the "
+                  "rest if they pass):", "", "| element | phrase | why |", "| --- " * 3 + "|"]
+        lines += [f"| {k} | {p} | {why} |" for k, d in cut.items() for p, why in d.items()]
     if need:
         lines += ["", "## Values and roles more than one model holds, with no site default", ""]
         lines += [f"- {v}: `--default {v}=<Model>` makes its plural a type word on that model" for v in need]

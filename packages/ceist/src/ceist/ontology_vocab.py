@@ -293,6 +293,10 @@ def accept(ontology_dir: Path, gate_cmd: list[str] | None = None, skip=(), log=p
     for p in todo:
         k = f"{p['kind']} {p['path']}"
         p["gate"] = "merged" if k in passed else "rejected: " + verdict["rejected"].get(k, "?")
+        cut = (verdict.get("phrases") or {}).get(k)
+        if cut:
+            p["phrases_rejected"] = cut
+            p["phrases"] = [ph for ph in p["phrases"] if ph not in cut]
     write_phrases(ontology_dir, merge(load(ontology_dir), [p for p in todo if p["gate"] == "merged"]))
     _write_proposed(ontology_dir, doc)
     log(f"{len(passed)} of {len(todo)} reviewed proposals passed the gate and are in phrases.json")

@@ -10,14 +10,16 @@ vocab_rules.apply). On the ontology bench (run.py, the sets in SETS unless given
 is scored alone against the layers: it passes if it adds a right answer and makes no
 template question worse (a right one lost, a wrong reading or a wrong added). A client
 candidate, which no bench set reads, goes straight on. Then the passing ones together,
-on the bench and on the demo question bank: a question that turns worse rejects the
+on the bench and on the demo question bank: a question that turns worse blames the
 candidates whose phrases it holds; if it holds none, the passing set is halved until the
-candidates that make it worse on their own are found. Then the HER plans, which must not
+candidates that make it worse on their own are found. A candidate worse alone or blamed
+is judged phrase by phrase (`site.split`): only the phrases to blame are rejected, and it
+is rejected whole when its phrases are worse only together. Then the HER plans, which must not
 change (they read bench/her/vocab, not the candidates, so a failure rejects them all). The
 bench sets run two processes at a time. A missing checkout fails the gate unless its option
 is "skip". Prints the verdict as JSON on its last line, each candidate as "<kind> <path>"
 (or its "key"):
-{"accepted": [key], "rejected": {key: why}, "checks": [line],
+{"accepted": [key], "rejected": {key: why}, "phrases": {key: {phrase: why}}, "checks": [line],
  "bench": {"before"|"after": {set: {mode: [n per score]}}}, "demo": {"before"|"after": tally}}.
 """
 
@@ -35,7 +37,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 import run  # noqa: E402
 
-from ceist.site import culprits, holding, judge  # noqa: E402
+from ceist.site import culprits, holding, judge, split, split_culprits  # noqa: E402
 from ceist.site import words as _words  # noqa: E402
 
 DEMO = Path("/home/stuart/git/personal/starches-demo/ask")
@@ -217,28 +219,46 @@ def gate(cands: list[dict], ontology_dir: Path, sets: dict, demo: Path | None, h
 def _gate(cands: list[dict], ontology_dir: Path, sets: dict, demo: Path | None, her: Path | None,
           base_dir: Path, client_dir: Path | None, cache: Path) -> dict:
     base = run.load_ontology(ontology_dir)["entries"]
-    rejected, checks, runs = {}, [], {}
-    for k, (gained, worse) in bench(sets, base, cands, base_dir=base_dir, cache=cache).items():
-        if k in {key(c) for c in cands if _layer(c) == "client"}:
+    rejected, cut, checks, runs = {}, {}, [], {}
+
+    def alone(c: dict) -> tuple[int, list[str]]:
+        return bench(sets, base, [c], base_dir=base_dir, cache=cache)[key(c)]
+
+    scored, passing = bench(sets, base, cands, base_dir=base_dir, cache=cache), []
+    for c in cands:
+        k = key(c)
+        gained, worse = scored[k]
+        if _layer(c) == "client":
+            passing.append(c)
             continue
         if worse:
-            rejected[k] = f"bench: worse on {len(worse)}, e.g. {worse[0]}"
-        elif not gained:
+            kept, why = split(c["phrases"], lambda ps, c=c: alone(dict(c, phrases=ps))[1], worse)
+            cut[k] = {p: f"bench: {q}" for p, q in why.items()}
+            if not kept:
+                rejected[k] = f"bench: worse on {len(worse)}, e.g. {worse[0]}"
+                continue
+            c = dict(c, phrases=kept)
+            gained, _ = alone(c)
+        if not gained:
             rejected[k] = "bench: adds no right answer"
-    passing = [c for c in cands if key(c) not in rejected]
+            continue
+        passing.append(c)
 
     def together(cs: list[dict]) -> dict:
-        ks = tuple(sorted(key(c) for c in cs))
+        ks = tuple(sorted((key(c), *c["phrases"]) for c in cs))
         if ks not in runs:
             runs[ks] = bench(sets, base, cs, together=True, base_dir=base_dir, cache=cache)
         return runs[ks]
 
     def drop(questions: list[str], why: str, worse) -> bool:
-        """Reject the passing candidates these questions hold; if none, those `worse` finds by halving."""
+        """Judge phrase by phrase the passing candidates these questions hold, or if none, those `worse`
+        finds by halving; reject the phrases to blame, or the candidates if no phrase is."""
         hit = [(c, questions) for c in holding(passing, questions)] or culprits(list(passing), worse, questions)
-        for c, lines in hit:
-            rejected[key(c)] = f"{why}: {lines[0]}"
-            passing.remove(c)
+        removed, blamed = split_culprits(hit, passing, worse)
+        for c, line in removed:
+            rejected[key(c)] = f"{why}: {line}"
+        for c, lines in blamed:
+            cut.setdefault(key(c), {}).update({p: f"{why}: {q}" for p, q in lines.items()})
         return bool(passing)
 
     while passing:
@@ -274,7 +294,7 @@ def _gate(cands: list[dict], ontology_dir: Path, sets: dict, demo: Path | None, 
     else:
         checks.append("HER plans: not run (skipped, or nothing passed)")
     tally = together(passing)["tally"]
-    return {"accepted": [key(c) for c in passing], "rejected": rejected, "checks": checks,
+    return {"accepted": [key(c) for c in passing], "rejected": rejected, "phrases": cut, "checks": checks,
             "bench": {"before": {n: t["before"] for n, t in tally.items()},
                       "after": {n: t["after"] for n, t in tally.items()}},
             "demo": demo_tally}

@@ -647,6 +647,11 @@ def gate_key(c: dict) -> str:
     return c["key"]
 
 
+def gate_cut(c: dict, verdict: dict) -> dict[str, str]:
+    """{phrase: why} for the phrases of c the gate rejected on their own."""
+    return (verdict.get("phrases") or {}).get(gate_key(c), {})
+
+
 def apply(cands: list[dict], ontology_dir: Path, base_dir: Path, client_dir: Path | None) -> None:
     """Write candidates into their layers: ontology entries into phrases.json, type words into
     the base graph's manifest, link and date phrasings into its nodegroup file, value
@@ -743,11 +748,14 @@ def generate(L: Layers, out: Path, name: str, review_only: bool = False, skip=()
         if verdict is None:
             return 1
         passed = set(verdict["accepted"])
-        accepted = [c for c in todo if gate_key(c) in passed]
         for c in todo:
             if gate_key(c) not in passed:
                 why = "gate: " + verdict["rejected"].get(gate_key(c), "?")
                 reasons.setdefault(c["key"], {}).update({p: why for p in c["phrases"]})
+            elif gate_cut(c, verdict):
+                reasons.setdefault(c["key"], {}).update({p: "gate: " + why for p, why in gate_cut(c, verdict).items()})
+        accepted = [dict(c, phrases=[p for p in c["phrases"] if p not in gate_cut(c, verdict)])
+                    for c in todo if gate_key(c) in passed]
         apply(accepted, L.ontology_dir, L.base_dir, L.client_dir)
     old = read_reasons(out / f"rules-{name}.json")
     for k, d in reasons.items():
