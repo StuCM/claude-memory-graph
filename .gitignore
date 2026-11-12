@@ -4,3 +4,7 @@ target/
 __pycache__/
 dist/
 .venv-ceist/
+.claude/tasks/
+.claude/plans/
+.claude/crew/work/
+.claude/crew/log.jsonl
