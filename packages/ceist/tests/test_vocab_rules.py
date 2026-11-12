@@ -119,7 +119,12 @@ def test_review_drops_a_phrase_that_could_name_two_elements(data, tmp_path):  # 
              {"layer": "base", "kind": "date", "node": "phase_date", "key": "date Building.phase_date",
               "phrases": ["made"]},
              # a class word and a base type word for the same model don't compete
-             {"layer": "ontology", "kind": "class", "path": "E21", "key": "class E21", "phrases": ["people", "maker"]}]
+             {"layer": "ontology", "kind": "class", "path": "E21", "key": "class E21", "phrases": ["people", "maker"]},
+             # two sources proposing one phrase for one element agree; neither drops it
+             {"layer": "base", "kind": "date", "node": "phase_date", "key": "date Building.phase_date: llm",
+              "phrases": ["phased"]},
+             {"layer": "base", "kind": "date", "node": "phase_date", "key": "date Building.phase_date: llm refine",
+              "phrases": ["phased"]}]
     dropped = vr.review(cands, L.vocab(), {"type"})
     assert dropped == {
         "type Maker": {"buildings": "could name two elements: already type Building"},
