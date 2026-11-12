@@ -245,7 +245,7 @@ class SiteGate:
         while passing:
             worse = judge(self.before, last)[1]
             log(f"site gate, together: {len(passing)} candidates, {len(worse)} questions worse"
-                f" ({time.perf_counter() - started:.0f}s)")
+                f" ({time.perf_counter() - started:.0f}s)" + (f": {'; '.join(worse)}" if len(worse) <= 5 else ""))
             if not worse:
                 # rounds re-ask only questions holding a dropped phrase; confirm on every question
                 full = together(passing)
@@ -263,9 +263,11 @@ class SiteGate:
                 rejected[c["key"]] = f"site gate, together: {line}"
             for c, why in blamed:
                 cut.setdefault(c["key"], {}).update({p: f"site gate, together: {q}" for p, q in why.items()})
-            dropped = [words(p) for c, _ in removed for p in c["phrases"]]
-            dropped += [words(p) for _, why in blamed for p in why]
-            last = {**last, **self.scores(passing, dropped)}
+            changed = [words(p) for c, _ in removed for p in c["phrases"]]
+            changed += [words(p) for _, why in blamed for p in why]
+            # the worse questions too: one made worse by a dropped phrase it doesn't hold would stay stale
+            changed += [words(q) for q in worse]
+            last = {**last, **self.scores(passing, changed)}
         after = last if passing else self.before
         return {"accepted": [c["key"] for c in passing], "rejected": rejected, "phrases": cut,
                 "tally": {"before": _counts(self.before), "after": _counts(after)}, "after": after}
