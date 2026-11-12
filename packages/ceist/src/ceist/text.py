@@ -1,6 +1,7 @@
 """Tokenizing a question: meaningful words, with their positions."""
 
 import re
+from functools import lru_cache
 
 STOP = {
     "the", "a", "an", "and", "or", "to", "of", "in", "on", "for", "with", "is",
@@ -35,10 +36,11 @@ def terms(text: str) -> list[str]:
     return [w for _, w in terms_pos(text)]
 
 
-def marks(text: str) -> set[str]:
+@lru_cache(maxsize=1 << 16)
+def marks(text: str) -> frozenset[str]:
     """Its numbers and version tokens, which `terms` drops when short: "Flood model v1.0" →
     {"v1", "0"}, "Grade II" → {"ii"}. Part of a record's name, so a partial name doesn't pass as whole."""
-    return {w for w in _WORD.findall(text.lower()) if any(c.isdigit() for c in w) or _ROMAN.fullmatch(w)}
+    return frozenset(w for w in _WORD.findall(text.lower()) if any(c.isdigit() for c in w) or _ROMAN.fullmatch(w))
 
 
 _ROMAN = re.compile(r"[ivx]{2,}")
