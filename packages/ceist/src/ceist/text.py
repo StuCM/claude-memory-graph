@@ -19,6 +19,8 @@ STOP = {
 }
 # a letter of any script, diacritics included ("mātauranga", "táin"), or a digit
 ALNUM = r"[^\W_]"
+NEG = {"not", "no", "without", "never", "non", "isn't", "aren't", "wasn't", "weren't",
+       "don't", "doesn't", "didn't", "hasn't", "haven't", "hadn't", "lacking"}
 _WORD = re.compile(ALNUM + "+")
 
 
