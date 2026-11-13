@@ -8,3 +8,4 @@ dist/
 .claude/plans/
 .claude/crew/work/
 .claude/crew/log.jsonl
+packages/ceist/bench/out/
