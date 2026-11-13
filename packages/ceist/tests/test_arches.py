@@ -117,16 +117,19 @@ def _classed(root, site_class="E53_Place"):
     return ArchesVocabulary.from_data_dir(root)
 
 
-def test_a_link_naming_no_model_fits_by_its_cidoc_crm_class(tmp_path):
+def test_a_link_naming_no_model_is_read_from_the_records_then_the_cidoc_crm_class(tmp_path):
     vocab = _classed(tmp_path / "classed")
+    assert vocab.ends_of("Building", "architect") == (frozenset({"Person"}), "records")
     m = interpret(vocab, "which buildings have the architect Leeds Dock?")
     assert m.plan is None and "'architect' (architect) can't join Building and Site" in m.refused
     m = interpret(vocab, "which buildings have the architect Ada Lovelace?")
     assert narrate(m.plan) == "Find Buildings whose architect is Person 'Ada Lovelace'."
-    # a model with no class fits as before
+    # without records the class decides, and a model must be a kind of it: not a Site, nor one with no class
+    vocab.resources, vocab._record_ends = [], None
+    assert vocab.ends_of("Building", "architect") == (frozenset({"Person"}), "crm")
     unclassed = _classed(tmp_path / "unclassed", site_class=None)
-    m = interpret(unclassed, "which buildings have the architect Leeds Dock?")
-    assert narrate(m.plan) == "Find Buildings whose architect is Site 'Leeds Dock'."
+    unclassed.resources, unclassed._record_ends = [], None
+    assert unclassed.ends_of("Building", "architect") == (frozenset({"Person"}), "crm")
 
 
 def test_narration(vocab):

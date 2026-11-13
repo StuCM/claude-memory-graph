@@ -83,7 +83,9 @@ def _save(a):
 
 def _assemble(a):
     from .bundle import assemble
-    b, errors, warnings = assemble(a.descriptions, a.vocab, a.graphs)
+    from .arches import read_resources
+    records = read_resources(a.records) if a.records else None
+    b, errors, warnings = assemble(a.descriptions, a.vocab, a.graphs, records)
     for w in warnings:
         print(f"warning: {w}", file=sys.stderr)
     for e in errors:
@@ -467,6 +469,7 @@ def main(argv=None):
     p.add_argument("vocab")
     p.add_argument("-o", "--out", required=True)
     p.add_argument("--graphs", help="graph files, hashed so a stale bundle is caught")
+    p.add_argument("--records", help="business data (resources) dir: with --graphs, the bundle gets a link catalogue")
     p.add_argument("--force", action="store_true")
     p.set_defaults(fn=_assemble)
 

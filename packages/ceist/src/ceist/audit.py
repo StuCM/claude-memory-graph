@@ -4,7 +4,6 @@ a site is set up when no class has an open item, or the client manifest's "accep
 reason a class's remainder is accepted ({"accepted": {"<class>": "<why>"}})."""
 
 from . import vocab_rules as vr
-from .alizarin import Tiles
 from .arches import DATE_TYPES, GEO_TYPES, LINK_TYPES
 from .paraphrase import link_targets
 from .text import terms
@@ -114,7 +113,7 @@ def audit(v, defaults: dict[str, str] | None = None, accepted: dict[str, str] | 
             found["values and models with no type word"].append(_item(
                 f"model {m}", True, "its name is not a word people say: add type_words in the client manifest"))
 
-    for (m, alias), targets in sorted(link_targets(v, Tiles(v)).items()):
+    for (m, alias), targets in sorted(link_targets(v).items()):
         if targets == [m]:
             found["links within one model"].append(_item(
                 f"{m}.{alias}", False, "word order sets the direction, and 'of' flips it: check both in the practice set"))

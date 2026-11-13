@@ -105,7 +105,7 @@ def _uses(vocab, tiles) -> dict[tuple[str, str, str, str], list[str]]:
     from .paraphrase import link_targets
     relations = {r.name: r for r in vocab.relations()}
     out = {}
-    for (holder, alias), targets in sorted(link_targets(vocab, tiles, guessed=tiles is None).items()):
+    for (holder, alias), targets in sorted(link_targets(vocab, from_records=tiles is not None).items()):
         r = relations.get(alias)
         if r is None:
             continue

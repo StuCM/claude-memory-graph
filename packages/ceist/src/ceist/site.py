@@ -517,7 +517,8 @@ def setup(data_dir, out, base_root="vocabularies/base", ontology_dir=None, clien
 
     # the bundle, the checklist and the audit
     from .audit import audit, audit_md
-    bundle, merge_report = _bundle.layered(L.graphs, site_base, site_client, ontology_dir=ontology_dir)
+    bundle, merge_report = _bundle.layered(L.graphs, site_base, site_client, ontology_dir=ontology_dir,
+                                           records=resources)
     (out / "bundle.json").write_text(json.dumps(bundle, ensure_ascii=False, separators=(",", ":")))
     after = vr.Layers([data / "graphs"], site_base, site_client, ontology_dir, reference, resources=resources)
     reasons = {k.partition(": ")[0]: why for k, why in cut.items()}

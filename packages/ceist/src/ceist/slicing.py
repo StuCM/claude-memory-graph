@@ -164,7 +164,10 @@ def slice_bundle(bundle: dict, use: Usage) -> dict:
     built = dict(bundle.get("built") or {}, models=len(models),
                  entries=sum(len(m["entries"]) for m in models.values()),
                  phrasings=sum(len(e["phrases"]) for m in models.values() for e in m["entries"]))
-    return dict(bundle, built=built, models=models, sliced=sliced)
+    out = dict(bundle, built=built, models=models, sliced=sliced)
+    if "links" in bundle:
+        out["links"] = {k: v for k, v in bundle["links"].items() if k.rsplit(".", 1)[0] in models}
+    return out
 
 
 def slice_vocab(vocab_dir: str | Path, out_dir: str | Path, use: Usage) -> dict:

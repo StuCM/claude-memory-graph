@@ -136,7 +136,7 @@ def test_group_blocks_are_checked_split_and_assembled(tmp_path):
     bundle.split(p / "desc", p / "vocab", p / "vocab")
     assert json.loads((p / "vocab" / "Building" / "actors.json").read_text())["group"] == BLOCK
     b, errors, _ = bundle.assemble(p / "desc", p / "vocab", p / "graphs")
-    assert not errors and b["format"] == "ceist.vocab/2" and b["built"]["groups"] == 1
+    assert not errors and b["format"] == "ceist.vocab/3" and b["built"]["groups"] == 1
     assert b["models"]["Building"]["groups"] == {"actors": BLOCK}
     (p / "vocab" / "Building" / "actors.json").write_text(json.dumps(
         {"model": "Building", "nodegroup": "actors", "entries": [], "group": bad}))
