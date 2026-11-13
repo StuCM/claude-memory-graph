@@ -1,0 +1,71 @@
+# One block per question set. role: regression (must not change), development (tune freely),
+# exam (scored only with --exam, each use logged). kind says how bench/run.py collects it:
+#   bank        demo/questions.json through starches-demo's ask.answer
+#   structural  a generated set ({q, target}) through interpret, as demo/run_bank.py --set
+#   reorder     assembly/measure.py's reorder bank, strict mode
+#   her         her_plans.py over a HER package, against its reviewed plans
+#   testbed     questions run over a record corpus (bench/testbed.py)
+#   jsonl       rows already collected
+# Sets that omit `python` run in the python that runs run.py. `cwd` is where the runner imports `ask` from.
+
+[demo-bank]
+role = "regression"
+kind = "bank"
+cwd = "/home/stuart/git/personal/starches-demo/ask"
+python = ["uv", "run", "python"]
+
+[reorder]
+role = "regression"
+kind = "reorder"
+cwd = "/home/stuart/git/personal/starches-demo/ask"
+python = ["uv", "run", "python"]
+
+["her-2.0"]
+role = "regression"
+kind = "her"
+pkg = "/home/stuart/.cache/tmp-003/arches-her/arches_her/pkg"
+plans = "her/plans-2.0.json"
+
+["her-1.1"]
+role = "regression"
+kind = "her"
+pkg = "/home/stuart/.cache/tmp-060/her11/arches_her/pkg"
+plans = "her/plans-1.1.json"
+
+[demo-train]
+role = "development"
+kind = "structural"
+cwd = "/home/stuart/git/personal/starches-demo/ask"
+python = ["uv", "run", "python"]
+file = "/home/stuart/.cache/ceist-questions-demo/train.json"
+
+[demo-holdout]
+role = "exam"
+kind = "structural"
+cwd = "/home/stuart/git/personal/starches-demo/ask"
+python = ["uv", "run", "python"]
+file = "/home/stuart/.cache/ceist-questions-demo/holdout.json"
+
+[testbed]
+role = "development"
+kind = "testbed"
+corpus = "/home/stuart/.cache/tmp-aonach/testbed/corpus"
+questions = "/home/stuart/.cache/tmp-aonach/testbed-100.json"
+expect = "/home/stuart/.cache/tmp-aonach/testbed/h/expect.py"
+sha256 = "79bd5d89178715519a6ae3835bd34a350105f37264f4ddc91cb7373c8c8cef72"
+bundle = "/home/stuart/.cache/tmp-aonach/testbed/runs/20261111T142112Z/ceist-site/bundle.json"
+
+[responder-practice]
+role = "development"
+kind = "testbed"
+corpus = "/home/stuart/.cache/tmp-aonach/testbed/corpus"
+questions = "/home/stuart/.cache/tmp-aonach/responder-practice.json"
+bundle = "/home/stuart/.cache/tmp-aonach/testbed/runs/20261111T142112Z/ceist-site/bundle.json"
+
+[responder]
+role = "exam"
+kind = "testbed"
+corpus = "/home/stuart/.cache/tmp-aonach/testbed/corpus"
+questions = "/home/stuart/.cache/tmp-aonach/responder.json"
+sha256 = "ad2e6bba05463960b28f8a9c0107f47c4e6b1b44193e6a9c1004a79ffdc7d250"
+bundle = "/home/stuart/.cache/tmp-aonach/testbed/runs/20261111T142112Z/ceist-site/bundle.json"
