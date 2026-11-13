@@ -1,6 +1,66 @@
-# Ceist: where we are (2026-11-09)
+# Ceist: where we are (2026-11-13)
 
 One picture of the system, what is proven, what isn't, and the plan we work from. New work starts from here, not from the latest experiment.
+
+## 0. Realignment (Stu, 2026-11-12)
+
+From 11-10, the work followed Phil's responder data instead of this plan (059–067), and some rules slipped:
+- **The exam became the training set.** The testbed was scored 5 times, every new right was read question by question, and the specs fixed what those readings showed. The frozen responder set (`ad2e6bba`) was scored by 059 and again by 060. 067 planned to pass testbed halves to setup as `--questions`, which `VOCAB-TRAINING.md` forbids ("never the frozen exam").
+- **A disproven method came back.** 067 turned refine rounds on by default; §4 records them as disproven on casual wording.
+- **`ceist setup` (059) became a second route.** It ran only part of `VOCAB-TRAINING.md` (no list items, no generated questions), and 060–066 were tuned through it.
+- **Live API runs were used to find bugs.** 067's live run crashed three times on code bugs, then hung in the gate for 3 hours (stopped, $0 lost: every reply was cached).
+- **Results levelled off.** The testbed was unchanged from 064 to 066: 15 read right, 6 unread, 0 wrong.
+
+**What holds from now:**
+1. **No LLM at question time, until the no-LLM approach is concrete.** The hybrid (an LLM proposing at question time, 061) is later work, designed on top of a finished build-time route, not alongside it.
+2. **One route.** `VOCAB-TRAINING.md` steps 0–8 are the route. `ceist setup` runs those steps in order, calling the same code; it is not a separate version.
+3. **Every question set has one role:**
+
+   | Role | Sets | Rule |
+   | --- | --- | --- |
+   | Regression | demo bank, HER plans, reorder set, golden dump | must not change; every task runs them |
+   | Development | responder practice (`d716b5cf`), generated train sets, **Phil's testbed** (read too closely to stay an exam) | tune on these; specs may name their questions |
+   | Exam | frozen responder set (`ad2e6bba`), generated hold-outs, a fresh set on Phil's real corpus (to ask him for) | scored once per milestone by the orchestrator, never by a worker mid-task, never passed as `--questions` or `--seed` |
+4. **Fix by class, not by question.** A spec names a class of failure (a grammar rule, a vocabulary element), with development questions as examples; a fix for one question alone is not a task.
+5. **Stubs before spend.** The full route runs end to end with stub LLMs (`--llm-cmd`) before any live call; a live run is for data, never for finding bugs.
+6. **Refine rounds stay off** unless a run shows them gaining on a hold-out.
+
+## 0b. The reasoned build (Stu, 2026-11-13)
+
+**Why:** `ceist setup` (059–067) turned the build into a script. The LLM supplied bare phrase lists; mechanical review and a gate of the script's own template questions pruned them, and no reason was kept. Every testbed loss on 11-12 came from that pruning ("keyholders", "fire stations" dropped as clashes), not from the LLM. The LLM's value is the **broader vocabulary**: everyday words, synonyms and how people phrase each value, link and chain, which no rule produces. It is paid for once at build time and stored, so the runtime stays deterministic.
+
+**What we learnt measuring it:**
+- **Count-matching overstates.** Testbed #10 read Organisations for a Building question and matched by luck; #70 matched an expected 0; the gate passed Q11's wrong reading ("Non-listed and Listed"). 066's "21 right" is unjudged.
+- **The planner can't chain.** It tries a link only between the two named types. Phil's graphs declare no link targets, so each link looked like it reached 6 models; in the records each reaches exactly one. Tier 3–4 refusals: 12 vocabulary ("couldn't place 'run'"), 8 chaining ("'staff of' can't join Building and Organisation").
+- **Tier 4 needs 3+ links** in our schema (#77, #79, #87); "covered by a policy" alone is 2 (a join record).
+- **Phil's greasan-ask-bench** (same 100 questions, Claude judging the query, not running it): Qwen 1.5b faithful on 25 of our 55 answerable, 30 more widened or wrong; Ceist 21 right, 0 wrong; union 31. A small model at question time gets structure, misses details; Ceist the reverse.
+
+**The build:**
+1. **The script** reads the graphs and reference lists: every element (model, field, list value, link, join record), each link's real targets (schema, else the records, else the CRM range class, via `crm.py`), the mechanical forms (labels, plurals), and flags for judgement (coded labels, link direction).
+2. **The LLM supplies the words** per element, each with a short reason, stored per element and keyed by a hash of it (a rebuild pays only for what changed).
+3. **Words are checked, never silently dropped.** A word that could name two elements goes back to the LLM for a ruling with a reason.
+4. **The loop:** questions generated from the schema and its links (never the test sets) are asked; an LLM judge marks each reading from Ceist's narration (exact / wider / narrower / wrong / right refusal / missed); for each failure the LLM names the element at fault and supplies its words; repeat until it gains under ~2 on the generated hold-out. Grammar gaps come to us as tasks, never as vocabulary.
+5. **The planner** reads a **link catalogue** (links, inverses, join records) from the bundle and chains through it. No hop limit: every link in a chain must be accounted for by the question's words, except a join record, and exactly one chain must fit, else "did you mean".
+
+**Scoring** uses the same judge on the test sets plus the count; where they disagree, a person reads it. The test sets are only ever judged, never fed back.
+
+**Not used:** pyoxigraph (plain Python and `crm.py` cover the catalogue); an LLM at question time (061 waits until this is measured).
+
+**Cost (Phil's schema; Sonnet's measured token use from 11-11/12 runs, `prices.py`):**
+
+| Step | Calls | Sonnet | Opus |
+| --- | --- | --- | --- |
+| Words: models and fields, with reasons | 101 | $1.12 | $2.24 |
+| Words: list values, with reasons | 44 | $1.10 | $2.20 |
+| Words: links and join records | 5 | $0.18 | $0.36 |
+| Rulings on clashes (241 flags, 20 a call) | 13 | $0.25 | $0.49 |
+| Questions from the catalogue | 50 | $2.72 | $5.44 |
+| Judge: testbed, 93 readings | 5 | $0.07 | $0.13 |
+| Loop, per round: judge ~400 generated, diagnose ~150, words for faults | 38 | $0.63 | $1.27 |
+| **Whole build, 3 rounds** | | **$7.33** | **$14.65** |
+| Mixed: Opus for rulings and diagnosis only | | **$7.80** | |
+
+Estimates, ±50%: reasons lengthen replies, and flag and refusal counts will move. Each new stage goes into `vocab estimate`, and the first live run's ledger re-calibrates it. HER is about 4–5 times this schema.
 
 ## 1. The system in one line
 
@@ -45,8 +105,11 @@ production"), and review gives a phrase to the path rather than the node it reac
 | Fresh-graph bench (`bench/ontology/run.py`) | template questions built from the ontology layer's own phrases | does the ontology layer ground correctly | 0 wrong readings; flatters coverage |
 | Reorder set (`bench/assembly/reorder.json`, 30) | right demo-bank questions, reordered or as fragments | does assembly read word order freely | 30 right, 0 wrong (strict 9) |
 | HER plans (`bench/her_plans.py`) | 125 pinned plans | regression | 125/125 (3 re-pinned to refusals in 051) |
+| Responder practice (`~/.cache/tmp-aonach/responder-practice.json`, 20) | Phil's responder data, our wording | development | 6 right, 5 right refusals, 0 wrong (060) |
+| Phil's testbed (`~/.cache/tmp-aonach/testbed`, 93 scorable) | his 100 questions, four tiers, his wording | development (since 11-12) | 15 right + 6 unread, 0 wrong (064–066); aonach text 23 right / 33 wrong |
+| Frozen responder set (`~/.cache/tmp-aonach/responder.json`, `ad2e6bba`, 35 + 4 near-me) | Phil's tests and docs | **exam** | 10 right, 10 right refusals, 0 wrong (060) |
 
-**Missing: a realistic visitor question set,** and **one command that runs every benchmark** and prints one table.
+**Missing: a realistic visitor question set,** and **one command that runs every benchmark** and prints one table. Each set's roles are in §0.
 
 ## 4. What experiments proved and disproved
 
@@ -61,9 +124,29 @@ production"), and review gives a phrase to the path rather than the node it reac
 | bge-small on the words the awkward set leaves unplaced (no LLM; `~/.cache/tmp-demo/bgecheck/`) | 74 words in 41 refused questions: right and confident 3, right but too close to call 13, wrong or no right candidate near 58; would fix 2 questions. Wrong picks score as high as right ones (0.84–0.91 vs 0.65–0.75) | **disproven** as a question-time fix; looser thresholds would bring wrongs. A weak build-time hint (top pick right about 1 time in 4) |
 | Loosening: drop the unplaced words, accept fragments (`~/.cache/tmp-demo/bgecheck/loosen.py`) | of 109 refusals: 10 right, 11 right but wider, **26 wrong**, 62 still refused; demo bank: "which tales are about love?" answers with every tale | **disproven** as answers (wrong outnumber right); possible as a labelled "closest I can do" suggestion, an extension of 038 |
 | Schema assembly as the default (049–051) | demo bank unchanged (78 right incl. refusals, 0 wrong); reorder 9 → 30 of 30; train 10 → 16 right; hold-out 2 → 4; fresh-graph catalina 729 → 746, independent 74 → 95, HER 595 → 589; 0 wrong throughout; median time ~120 ms, worst cut from 822 to 174 ms on the bank | **proven**: the design to port |
-| Cost estimates | about 5–7 times low for small calls: `claude -p` writes ~33k tokens of system prompt per call | estimator needs fixing |
+| Cost estimates | about 5–7 times low for small calls: `claude -p` writes ~33k tokens of system prompt per call | estimator needs fixing; `--llm ant` (062) removes the overhead and caps spend |
+| aonach head-to-head and reverse test (assessment, `/home/stuart/git/fat/aonach-responder-assessment.md`) | demo bank: Ceist 71 right / 0 wrong, aonach 3 / 52. Testbed: Ceist 7 → 15 right / 0 wrong, aonach 23 / 33 | **proven**: keep Ceist as the grounding core; take aonach's UX ideas |
+| Numeric comparisons (060) | testbed 7 → 15 right; frozen responder 4 → 10 right; 0 wrong | **proven**, a grammar class |
+| One-command site setup with combination and name-probe gate (059, 065, 066) | catches wrong-answer risks a one-word gate missed ("covered by" read as insurer; partial name binds); testbed flat from 064 to 066 | **proven as a gate**; not yet the full route (067) |
+| bge on leftover words in an open slot (063) | five wrong readings at the open slot, all fixed by making it exact-only | **disproven** again at question time; vector picks are "did you mean" only |
 
 ## 5. The plan: three workstreams, in order
+
+**The next steps, in order (2026-11-13; §0b):**
+
+| Task | What | After | Done when |
+| --- | --- | --- | --- |
+| 068 | 067's fix commits only (gate speed, review agreement, negator, hyphen and question fixes); its route is not kept | — | regression sets unchanged |
+| 069 | one benchmark command, with the LLM judge; disagreements settled by a second LLM judgement, unclear ones to Stu; an exam needs a logged flag | 068 | reproduces 066's counts; the judged 066 score is the baseline |
+| 070 | link catalogue: real targets (schema → records → CRM), inverses, join records, in the bundle; a sense check in the planner | 069 | each testbed link has its one real target; regression unchanged |
+| 071 | chaining planner: words-accounted chains, no hop limit; takes 048 | 070 | the 8 chaining refusals; 0 wrong |
+| 072 | vocabulary one entry per element id, words appended with provenance; clashes queued, not dropped; site builds propose ontology words; reconcile | 070 | the words dropped on 11-12 stay; ontology untouched by a site build |
+| 073 | the LLM supplies words with reasons, and rules on clashes | 072 | stub build complete; the 12 vocabulary refusals are its target in the live run |
+| 074 | questions generated from the catalogue: tiered, chains, must-refuse, voices, target plans, train/hold-out | 070 | every tier and link covered |
+| 075 | the loop: judge, diagnose, supply, check; stop rule | 073, 074 | stub run with a stop reason; then Stu approves the live run |
+| later | ontology sweep for HER and the demo (class words, both directions, ambiguous CRM paths) | 075 | demo and HER sets |
+
+071 and 072 run in parallel (planner and vocabulary). 057's demo bugs and 058 follow 071. Every task states its expected effect and closes against it; `STATUS.md` is updated at each merge.
 
 **A. Systematic vocabulary coverage** (the biggest gap; replaces ad hoc building)
 1. A **coverage checklist** per element:
@@ -117,6 +200,7 @@ After that, builds run only when the schema changes or the capture log repeats a
 - **Ontologies are pluggable.** CIDOC-CRM is the first. The same machinery can build a base vocabulary for any RDFS or OWL ontology (task 054, draft), so Ceist works for any domain whose data sits on a shared ontology, not only heritage.
 
 ## 6. Parked (deliberately not now)
+- the hybrid: an LLM at question time proposing a rewording that Ceist then grounds (061, Qwen). It waits until the no-LLM route is concrete (§0), and Phil's `serve.py`;
 - the TypeScript / browser port (spike done; waits for A and B; leave bge out of the browser build, or load it only after a refusal for "did you mean");
 - the question-capture loop (designed);
 - the experiment matrix (budget pending; will be re-costed after the estimator fix);
