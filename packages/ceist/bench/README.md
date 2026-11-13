@@ -210,3 +210,16 @@ The ONNX files are the quantized ones transformers.js loads, and the GGUF files 
 - port it to TypeScript or Rust, compiled to WASM next to `ros-madair-wasm`.
 
 Whichever matcher wins has to fit alongside that.
+
+## One command for every set: `run.py`
+
+```
+.venv-ceist/bin/python packages/ceist/bench/run.py --no-judge --bundle <bundle.json>   # counts only
+.venv-ceist/bin/python packages/ceist/bench/run.py --llm ant --max-dollars 10          # judged (live: Stu approves the run)
+```
+
+`sets.toml` lists each question set with its role: **regression** (must not change), **development** (tune freely) and **exam** (run only with `--exam`; each use appends `{ts, set, bundle, commit}` to `exam-log.jsonl`). The default is regression plus development; `--sets` takes names or roles. `--bundle` is the vocabulary the testbed sets are scored with, `--src` the Ceist source all of them import.
+
+Each set runs through its own runner, in the python and directory `sets.toml` names (the demo sets need starches-demo's venv). Every question becomes a row of narration (or refusal) and count status. The LLM judge reads only the narration and marks it exact, wider, narrower, wrong, right refusal or missed. Where that disagrees with the count check, a second judgement settles it, and only the ones it calls unclear are listed under "To settle". `--no-judge` skips the LLM. Verdicts are cached in `verdicts.jsonl` by question, narration and prompt version, so a rerun asks only what is new. `--llm ant` needs `--max-dollars`. The summary and every row are written to `out/<UTC>/`.
+
+The testbed's expected counts come from Phil's `expect.py` in the corpus; run.py says when the question file is not the frozen one. The judged sets are never fed back into a build.
