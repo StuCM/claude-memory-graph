@@ -152,3 +152,8 @@ def test_a_vector_near_miss_on_a_leftover_run_offers_rather_than_answers(vocab):
                   matcher=Chain([Exact(), Vectors(Loose(), low=0.6)], clarify_min=0.0))
     assert m.plan is None and "did you mean" in m.refused
     assert m.grounding.suggestions == [("storm footprint", ["damaged (phase)"])]
+
+
+def test_a_group_phrase_inside_a_hyphenated_word_names_nothing(vocab):
+    m = interpret(vocab, "which buildings were half-damaged in 1900?")
+    assert m.plan is None and m.refused.startswith("couldn't place 'damaged', 'half'")

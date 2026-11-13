@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass, field
 from typing import NamedTuple
 
-from ..text import ALNUM, marks, overlaps, terms_pos
+from ..text import ALNUM, NEG, marks, overlaps, terms_pos
 from ..vocabulary import Group, Relation, Value, Vocabulary
 from .model import Grounding, Node
 
@@ -24,8 +24,6 @@ MEANINGFUL = {"make", "use", "get", "set", "need", "want", "know", "before", "af
 ABOUT_RE = re.compile(r"^\s*(?:what\s+(?:do|does|did)\s+(?:we|i|you)\s+(?:know|have|remember)"
                       r"|tell\s+me|what(?:'s| is)\s+(?:known|there))\s+about\s+", re.I)
 WORD_RE = re.compile(rf"{ALNUM}(?:{ALNUM}|['-])*")
-NEG = {"not", "no", "without", "never", "non", "isn't", "aren't", "wasn't", "weren't",
-       "don't", "doesn't", "didn't", "hasn't", "haven't", "hadn't", "lacking"}
 DATE_WORDS = {"date", "dated", "dates", "dating"}   # shape, once a date is grounded
 NEG_REACH = 4             # a negator scopes over the next thing named within this many words
 CLAUSE_END = {"and", "or", "but", "which", "that", "who", "whose", "where", "while"}

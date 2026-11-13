@@ -263,6 +263,13 @@ def _slot(c: dict) -> str:
         "value" if c["layer"] == "client" and "value" in c else c.get("kind"), "phrase")
 
 
+def _element(key: str) -> str:
+    """The element a candidate key names, without its source ("value Building.service_roles=fire station:
+    llm lists" → "value Building.service_roles=fire station"): two sources proposing one phrase for one
+    element is agreement, not a clash."""
+    return key.partition(": ")[0]
+
+
 def _scope(key: str) -> str:
     """The model an element key belongs to ("link Monument.actor" → "Monument"), "" for the ontology's."""
     rest = key.split(" ", 1)[1]
@@ -625,7 +632,7 @@ def review(cands: list[dict], v, generic: set[str]) -> dict[str, dict[str, str]]
             others = sorted(k for s_, k in index.get(p, ()) if s_ == _slot(c) and k != c["key"] and near(c, k)
                             and not carries(c, said_of(k)))
             twice = sorted(k for k in proposed[(p, _slot(c))] - {c["key"]} if near(c, k)
-                           and not carries(c, by_key[k]))
+                           and not carries(c, by_key[k]) and _element(k) != _element(c["key"]))
             path = next((k for k in twice if carries(by_key[k], c)), None)
             if path:
                 mine[p] = f"CRM-first: {path} carries it"

@@ -52,6 +52,7 @@ hard cap on what the command may spend. Exit 1 when the cap stops it.
 """
 
 import argparse
+import functools
 import json
 import sys
 from pathlib import Path
@@ -353,7 +354,8 @@ def _estimate(a):
 def _setup(a):
     from .site import defaults_arg, setup
     return setup(a.data_dir, a.out, a.base, a.ontology, a.client, defaults_arg(a.default), a.docs, a.llm,
-                 a.llm_cmd, a.model, a.max_calls, a.config, questions=a.questions, accept_risks=a.accept_risks)
+                 a.llm_cmd, a.model, a.max_calls, a.config, questions=a.questions, accept_risks=a.accept_risks,
+                 log=functools.partial(print, flush=True))
 
 
 def _ask(a):

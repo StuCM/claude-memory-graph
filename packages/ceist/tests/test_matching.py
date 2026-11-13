@@ -23,6 +23,10 @@ def test_exact_equal_and_covering():
     assert isinstance(ex.decide("turned up by metal detectorists", [metal]), NoMatch)
     both = Item("other", ("built",), "other")
     assert isinstance(ex.decide("built", [BUILT, both]), Ambiguous)
+    # a cover never drops a negator, either way round
+    unlisted = Item("non-listed", ("not heritage listed",), "Non-listed")
+    assert isinstance(ex.decide("heritage listed", [unlisted]), NoMatch)
+    assert isinstance(ex.decide("not heritage listed", [Item("listed", ("heritage listed",), "Listed")]), NoMatch)
 
 
 def test_exact_roots_and_direction():

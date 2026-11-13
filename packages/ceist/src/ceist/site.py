@@ -37,7 +37,7 @@ _SMALL = {"the", "and", "for", "with", "from", "was", "were", "has", "have", "ar
 
 # ── judging a candidate (shared with bench/ontology/gate.py) ───────────────
 def words(text: str) -> set[str]:
-    """Its words' first four letters: a phrase can only change a question that has one."""
+    """Its words' first four letters: a phrase can only change a question that holds them."""
     return {w[:4] for w in re.findall(r"[a-z]+", text.lower()) if len(w) > 2 and w not in _SMALL}
 
 
@@ -181,8 +181,8 @@ class SiteGate:
             vr.apply(cands, self.L.ontology_dir, base, client)
             return _bundle.layered(self.L.graphs, base, client, ontology_dir=self.L.ontology_dir)[0]
 
-    def scores(self, cands: list[dict], only: set[str] | None = None) -> dict:
-        """{("site", question): score} for the items (only those sharing one of `only`'s words)."""
+    def scores(self, cands: list[dict], only: list[set[str]] | None = None) -> dict:
+        """{("site", question): score} for the items (only those holding every word of one of `only`)."""
         from . import compose
         from .plan import interpret
         from .questions import fill, score
@@ -191,7 +191,7 @@ class SiteGate:
         ends = {e["node"]: e["end_node"] for m in b["models"].values() for e in m["entries"] if e.get("end_node")}
         out = {}
         for o in self.items:
-            if only is not None and not only & words(o["q"]):
+            if only is not None and not any(ws <= words(o["q"]) for ws in only):
                 continue
             if o.get("shape") in compose.SHAPES:
                 out[("site", o["q"])] = compose.score(o, interpret(v, o["q"], matcher=self.matcher), self.tiles)
@@ -202,14 +202,17 @@ class SiteGate:
         return out
 
     def alone(self, c: dict) -> tuple[int, list[str]]:
-        return judge(self.before, {**self.before, **self.scores([c], words(" ".join(c["phrases"])))})
+        return judge(self.before, {**self.before, **self.scores([c], [words(p) for p in c["phrases"]])})
 
     def run(self, log=print) -> dict:
         """{"accepted": [key], "rejected": {key: why}, "phrases": {key: {phrase: why}} (the phrases
         rejected on their own, of an element accepted or not), "tally", "after"}."""
         from . import compose
         rejected, cut, runs, passing = {}, {}, {(): self.before}, []
-        for c in self.cands:
+        started = time.perf_counter()
+        for i, c in enumerate(self.cands, 1):
+            if i % 50 == 0:
+                log(f"site gate: {i} of {len(self.cands)} judged alone ({time.perf_counter() - started:.0f}s)")
             gained, worse = self.alone(c)
             if worse:
                 kept, why = split(c["phrases"], lambda ps, c=c: self.alone(dict(c, phrases=ps))[1], worse)
@@ -232,30 +235,40 @@ class SiteGate:
                 runs[ks] = self.scores(cs)
             return runs[ks]
 
-        def worse_of(cs: list[dict]) -> list[str]:
-            return judge(self.before, together(cs))[1]
-
-        def worse_on(asked: set[str]):
-            """worse_of, re-asking only the questions sharing a word with these."""
+        def worse_on(asked: list[set[str]]):
+            """The questions `cs` make worse, re-asking only those holding every word of one of these."""
             return lambda cs: judge(self.before, {**self.before, **self.scores(cs, asked)})[1]
 
         # a composition holds several candidates' phrases: halving finds which of them, not holding
         composed = {o["q"] for o in self.items if o.get("shape") in compose.SHAPES}
+        last = together(passing)
         while passing:
-            worse = worse_of(passing)
+            worse = judge(self.before, last)[1]
+            log(f"site gate, together: {len(passing)} candidates, {len(worse)} questions worse"
+                f" ({time.perf_counter() - started:.0f}s)" + (f": {'; '.join(worse)}" if len(worse) <= 5 else ""))
             if not worse:
-                break
+                # rounds re-ask only questions holding a dropped phrase; confirm on every question
+                full = together(passing)
+                if full == last:
+                    break
+                last = full
+                continue
             one_piece = [q for q in worse if q not in composed]
             suspects = holding(passing, worse) or list(passing)
             hit = [(c, one_piece) for c in holding(passing, one_piece)] or culprits(
-                suspects, worse_on(words(" ".join(worse))), worse)
-            removed, blamed = split_culprits(hit, passing, worse_on(words(" ".join(
-                p for c, _ in hit for p in c["phrases"]))))
+                suspects, worse_on([words(q) for q in worse]), worse)
+            phrased = [words(p) for c, _ in hit for p in c["phrases"]]
+            removed, blamed = split_culprits(hit, passing, worse_on(phrased))
             for c, line in removed:
                 rejected[c["key"]] = f"site gate, together: {line}"
             for c, why in blamed:
                 cut.setdefault(c["key"], {}).update({p: f"site gate, together: {q}" for p, q in why.items()})
-        after = together(passing)
+            changed = [words(p) for c, _ in removed for p in c["phrases"]]
+            changed += [words(p) for _, why in blamed for p in why]
+            # the worse questions too: one made worse by a dropped phrase it doesn't hold would stay stale
+            changed += [words(q) for q in worse]
+            last = {**last, **self.scores(passing, changed)}
+        after = last if passing else self.before
         return {"accepted": [c["key"] for c in passing], "rejected": rejected, "phrases": cut,
                 "tally": {"before": _counts(self.before), "after": _counts(after)}, "after": after}
 

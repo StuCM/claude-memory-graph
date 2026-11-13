@@ -587,9 +587,16 @@ class ArchesVocabulary:
                 if n.get("alias") and n.get("datatype") != "semantic"]
 
     def field_phrases(self) -> list[tuple[str, str, str]]:
-        """(phrase, model, alias): the ontology layer's phrasings of the controlled fields ("made of" → material)."""
-        return [(p.lower(), m, a) for (m, a), phrases in self._bundle_forms.items()
-                if (self.node(m, a) or {}).get("datatype") in CONTROLLED_TYPES for p in phrases]
+        """(phrase, model, alias): a controlled field's own name ("sector") and the ontology layer's phrasings
+        of it ("made of" → material)."""
+        out = [(p.lower(), m, a) for (m, a), phrases in self._bundle_forms.items()
+               if (self.node(m, a) or {}).get("datatype") in CONTROLLED_TYPES for p in phrases]
+        for m in self.models.values():
+            for n in m.nodes:
+                if n.get("alias") and n.get("datatype") in CONTROLLED_TYPES:
+                    names = {str(n.get("name") or "").lower(), n["alias"].replace("_", " ").lower()}
+                    out += [(p, m.name, n["alias"]) for p in sorted(names) if p]
+        return out
 
     def place_fields(self, type_name: str) -> list[tuple[str, str]]:
         """The links to a CIDOC-CRM Place (E53) a model has, as `fields` gives them: what "where" asks for."""

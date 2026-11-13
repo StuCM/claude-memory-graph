@@ -295,6 +295,16 @@ def test_a_field_phrase_holds_the_value_after_it_to_that_field(data, tmp_path):
     assert m.plan is None and m.refused.startswith("couldn't place 'made'"), m.refused
 
 
+
+def test_a_fields_own_name_holds_the_value_before_or_after_it(data, tmp_path):
+    v, _, _ = vocab(data, tmp_path)
+    for q in ("which buildings have heritage status candidate?", "which buildings are in candidate heritage status?"):
+        m = interpret(v, q)
+        assert narrate(m.plan) == "Find Buildings whose heritage status is Candidate.", (q, m.refused)
+    # a value of another field: the name holds neither side, so it places nothing
+    m = interpret(v, "which buildings are architect heritage status?")
+    assert m.plan is None and m.refused.startswith("couldn't place 'heritage'"), m.refused
+
 def test_what_kind_of_x_is_y_is_its_type(data, tmp_path):
     v, _, _ = vocab(data, tmp_path, ontology=FIELDS)
     for q in ("what kind of building is the Clock Tower?", "what kind is the Clock Tower?"):

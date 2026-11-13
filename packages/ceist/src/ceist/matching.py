@@ -25,7 +25,7 @@ Layers (configured per project, see ceist.config):
 import re
 from dataclasses import dataclass, field
 
-from .text import ALNUM, PAST, UNPAST
+from .text import ALNUM, NEG, PAST, UNPAST
 
 FROM = {"from", "leaving", "departing", "departed", "left", "out"}
 TO = {"to", "towards", "toward", "into", "bound", "arriving", "arrived", "reaching"}
@@ -108,8 +108,12 @@ class Exact:
     @staticmethod
     def _covers(inner: str, outer: str) -> bool:
         """`inner` appears in `outer` as whole words and is most of it — so a
-        phrasing "metal" doesn't claim "turned up by metal detectorists"."""
-        return f" {inner} " in f" {outer} " and len(inner.split()) * 2 >= len(outer.split())
+        phrasing "metal" doesn't claim "turned up by metal detectorists" — and never across a
+        negator, so "heritage listed" doesn't claim "not heritage listed"."""
+        if f" {inner} " not in f" {outer} " or len(inner.split()) * 2 < len(outer.split()):
+            return False
+        left = f" {outer} ".replace(f" {inner} ", " ", 1).split()
+        return not NEG & set(left)
 
     def decide(self, phrase: str, items: list[Item]):
         p, pw = self.norm(phrase), set(words(phrase))

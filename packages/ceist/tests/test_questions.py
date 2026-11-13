@@ -22,7 +22,8 @@ COUNT = {"q": "how many buildings were built before 1900?", "shape": "date", "wo
                     "conditions": [{"node": "construction_date"}]}}
 STORY = {"q": "what happens in the story of {Building}?", "shape": "record detail",
          "wording": "awkward", "refuse": "story text"}
-GENERATED = {"generate:Building": {"questions": [ON_SITE, NOT_BY, COUNT, STORY]}}
+NAMED = {**ON_SITE, "q": "which listed buildings are on site Leeds Dock?"}
+GENERATED = {"generate:Building": {"questions": [ON_SITE, NOT_BY, COUNT, STORY, NAMED]}}
 
 
 @pytest.fixture
@@ -43,7 +44,7 @@ def generated(out) -> list[dict]:
 
 def test_a_generated_set_is_split_into_bank_files_with_targets(made):
     items = {o["q"]: o for o in generated(made.out)}
-    assert set(items) == {ON_SITE["q"], NOT_BY["q"], COUNT["q"], STORY["q"]}
+    assert set(items) == {ON_SITE["q"], NOT_BY["q"], COUNT["q"], STORY["q"]}      # NAMED dropped, the rest kept
     assert items[ON_SITE["q"]]["expect"] == "answer" and items[ON_SITE["q"]]["target"] == ON_SITE["target"]
     assert items[STORY["q"]]["expect"] == "refuse" and items[STORY["q"]]["reason"] == "story text"
     holdout = [o["q"] for o in json.loads((made.out / "holdout.json").read_text())["questions"]]
@@ -99,16 +100,17 @@ def test_the_score_compares_the_plan_with_the_target(made):
     assert scored(STORY, fill(ON_SITE["q"], made.vocab)) == "wrong"
 
 
-def test_a_reply_naming_a_record_or_an_unknown_field_is_rejected(made):
+def test_a_reply_naming_an_unknown_model_field_or_value_is_rejected(made):
     descriptions = {p.stem: json.loads(p.read_text()) for p in (made.out / "descriptions").glob("*.json")}
     assert check({"questions": [ON_SITE, NOT_BY, COUNT, STORY]}, descriptions) == []
     errors = check({"questions": [
-        {**ON_SITE, "q": "which listed buildings are on site Leeds Dock?"},
         {**ON_SITE, "q": "which buildings are in {Town}?"},
         {**COUNT, "target": {"model": "Building", "conditions": [{"node": "colour"}]}},
         {**ON_SITE, "target": {"model": "Building", "conditions": [
             {"node": "heritage_status", "value": "Lovely"}]}},
-        {**STORY, "target": ON_SITE["target"]}]}, descriptions)
+        {**STORY, "target": ON_SITE["target"]},
+        {**ON_SITE, "target": {"model": "Building", "conditions": [{"node": "site", "link": ["Site"]}]}}]},
+        descriptions)
     assert [e.split(":")[0] for e in errors] == [f"question {i}" for i in range(5)], errors
 
 
