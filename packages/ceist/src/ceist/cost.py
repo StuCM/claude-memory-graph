@@ -25,9 +25,10 @@ from . import prices
 
 USAGE = ("input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
 STAGES = {"values": "data", "phrases": "data", "generate": "questions", "refine": "refine",
-          "ontology": "ontology", "paraphrase": "paraphrase"}
-ORDER = ("ontology", "base", "data", "questions", "paraphrase", "refine")
-MODELS = {"ontology": "opus", "base": "opus", "data": "sonnet", "questions": "opus", "paraphrase": "sonnet"}
+          "ontology": "ontology", "paraphrase": "paraphrase", "judge": "judge", "settle": "settle"}
+ORDER = ("ontology", "base", "data", "questions", "paraphrase", "refine", "judge", "settle")
+MODELS = {"ontology": "opus", "base": "opus", "data": "sonnet", "questions": "opus", "paraphrase": "sonnet",
+          "judge": "opus", "settle": "opus"}
 CLAUDE_P_SYSTEM = 33_000      # tokens of claude -p's own system prompt, on every call (not in the prompts sized here)
 DEFAULT_OUTPUT = 2000         # tokens a call writes, reply and thinking, before any run is measured
 DEFAULT_REFINE_INPUT = 8000   # a refine prompt holds the failures, which exist only once a run has
