@@ -202,6 +202,8 @@ class ArchesVocabulary:
         self._blocks: dict[tuple[str, str], dict] = {}   # (model, nodegroup) → its group block
         self._qualified: list[Relation] | None = None
         self._groups: list[Group] = []
+        self._catalogue: dict[str, dict] = {}    # "<Model>.<alias>" → the bundle's catalogue entry
+        self._record_ends: dict[tuple[str, str], set[str]] | None = None
         self.skipped: list[str] = []             # bundle combos not used, and why
         self.notes: list[str] = []               # what loading found worth saying
         if bundle is not None:
@@ -228,6 +230,11 @@ class ArchesVocabulary:
         self.names = {e.id: e.name for e in self._index.entities}
 
     @property
+    def catalogued(self) -> bool:
+        """Whether a bundle gave this vocabulary its link catalogue."""
+        return bool(self._catalogue)
+
+    @property
     def skipped_qualified(self) -> int:
         self._load_groups()
         return len(self.skipped)
@@ -249,6 +256,7 @@ class ArchesVocabulary:
         v = copy.copy(self)
         v.extra_type_words = dict(self._given_type_words)
         v._bundle_forms, v._role_forms, v._blocks, v._qualified, v._groups = {}, {}, {}, None, []
+        v._catalogue = {}
         v.skipped, v.notes = [], list(self.notes)
         v._absorb(bundle)
         return v
@@ -262,6 +270,7 @@ class ArchesVocabulary:
         combo of its node's group."""
         from . import bundle as _bundle
         b = bundle if isinstance(bundle, dict) else _bundle.load(bundle)
+        self._catalogue = b.get("links") or {}
         for w, t in (b.get("extra_type_words") or {}).items():
             if t in self.models:
                 self.extra_type_words.setdefault(w, t)
@@ -328,7 +337,7 @@ class ArchesVocabulary:
             for n in m.nodes:
                 if n.get("datatype") not in LINK_TYPES or not n.get("alias"):
                     continue
-                targets = self._targets(n)
+                targets, source = self.ends_of(m.name, n["alias"])
                 forms = {str(n.get("name") or "").lower(), n["alias"].replace("_", " ").lower()}
                 forms |= {f.lower() for f in self.relation_forms.get(n["alias"], [])}
                 roles = {f.lower() for f in self._role_forms.get((m.name, n["alias"]), [])}
@@ -341,9 +350,9 @@ class ArchesVocabulary:
                 r["said"] |= said
                 r["roles"] |= roles
                 r["by_model"][m.name] = forms
-                r["ends"].add((m.name, targets or self._crm_targets(m.name, n["alias"])))
+                r["ends"].add((m.name, targets))
                 r["domain"].add(m.name)
-                r["range"] |= targets
+                r["range"] |= targets if source == "schema" else frozenset()
         out = []
         for alias, r in by_alias.items():
             # a bundle phrase is said of its own model's link: "part of" on one
@@ -401,8 +410,7 @@ class ArchesVocabulary:
                         f"{anchor}#{label}", tuple(sorted({p.lower() for p in phrases})),
                         frozenset({model}), self._targets(n), style="field", path=anchor,
                         qualifier=(a, found[0].value, label), group=self.group_of(model, anchor),
-                        ends=frozenset({(model, self._targets(n)
-                                         or self._crm_targets(model, anchor))})))
+                        ends=frozenset({(model, self.ends_of(model, anchor)[0])})))
                     continue
                 if n is not None and n.get("datatype") in DATE_TYPES:
                     date_nodes.add(anchor)
@@ -422,19 +430,55 @@ class ArchesVocabulary:
                 date = dates.get((next(iter(date_nodes)), model)) if len(date_nodes) == 1 else None
                 self._groups.append(Group(g, model, tuple(forms), frozenset(fields), date, frozenset(type_forms)))
 
-    def _targets(self, link: dict) -> frozenset[str]:
+    def _targets(self, link: dict | None) -> frozenset[str]:
         return frozenset(self.by_graph[g["graphid"]].name
-                         for g in (link.get("config") or {}).get("graphs") or []
+                         for g in ((link or {}).get("config") or {}).get("graphs") or []
                          if g.get("graphid") in self.by_graph)
 
+    def ends_of(self, model: str, alias: str) -> tuple[frozenset[str], str]:
+        """The models a link points at and where that came from: the bundle's catalogue, else the
+        graph's own target list ("schema"), else the records, else CIDOC-CRM; empty targets = unknown."""
+        entry = self._catalogue.get(f"{model}.{alias}")
+        if entry and entry["targets"]:
+            return frozenset(entry["targets"]), entry["from"]
+        schema = self._targets(self.node(model, alias))
+        if schema:
+            return schema, "schema"
+        seen = self._records_point_at().get((model, alias))
+        if seen:
+            return frozenset(seen), "records"
+        return self._crm_targets(model, alias), "crm"
+
+    def _records_point_at(self) -> dict[tuple[str, str], set[str]]:
+        """{(model, link alias): the models its records point at}, read once from the records."""
+        if self._record_ends is not None:
+            return self._record_ends
+        from .alizarin import _links
+        link_of = {(m.graph_id, n["nodeid"]): (m.name, n["alias"]) for m in self.models.values()
+                   for n in m.nodes if n.get("datatype") in LINK_TYPES and n.get("alias")}
+        type_of = {}
+        for r in self.resources:
+            ri = r.get("resourceinstance") or {}
+            if ri.get("graph_id") in self.by_graph:
+                type_of[ri["resourceinstanceid"]] = self.by_graph[ri["graph_id"]].name
+        out: dict[tuple[str, str], set[str]] = {}
+        for r in self.resources:
+            gid = (r.get("resourceinstance") or {}).get("graph_id")
+            for t in r.get("tiles") or []:
+                for nid, value in (t.get("data") or {}).items():
+                    key = link_of.get((gid, nid))
+                    if key:
+                        out.setdefault(key, set()).update(type_of[x] for x in _links(value) if x in type_of)
+        self._record_ends = out
+        return out
+
     def _crm_targets(self, model: str, alias: str) -> frozenset[str]:
-        """For a link that names no target models: the models whose root's CIDOC-CRM
-        class doesn't clash with the class it points at; empty (any) when that is unknown."""
+        """For a link that names no target models and has no records: the models whose root's
+        CIDOC-CRM class is a kind of the class it points at; empty (unknown) when there is none."""
         cls = self._crm[model][1].get(alias)
         if not cls:
             return frozenset()
-        return frozenset(name for name, (root, _) in self._crm.items()
-                         if not crm.clash(cls, root))
+        return frozenset(name for name, (root, _) in self._crm.items() if crm.is_a(root, cls))
 
     def values(self) -> list[Value]:
         """Every item of every controlled list (and legacy concept collection)

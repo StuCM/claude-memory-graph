@@ -38,22 +38,17 @@ Reply with JSON only:
 """
 
 
-def link_targets(vocab, tiles=None, guessed: bool = True) -> dict[tuple[str, str], list[str]]:
-    """{(model, link alias): the models its records point at}: from the records when the
-    business data has them (a link with no target list may otherwise reach any CRM-compatible
-    model), else (unless not `guessed`) the vocabulary's ends."""
+def link_targets(vocab, from_records: bool = False) -> dict[tuple[str, str], list[str]]:
+    """{(model, link alias): the models it points at}, as the vocabulary's relations say; with
+    `from_records`, only the links whose targets its records gave."""
     out: dict[tuple[str, str], set] = {}
-    if tiles is not None:
-        for rid, links in tiles.out.items():
-            for alias, targets in links.items():
-                out.setdefault((tiles.type_of[rid], alias), set()).update(
-                    tiles.type_of[t] for t in targets if t in tiles.type_of)
-    for r in vocab.relations() if guessed else ():
+    for r in vocab.relations():
         if "#" in r.name:
             continue
         for model, ends in r.ends:
-            if not out.get((model, r.name)):
-                out[(model, r.name)] = set(ends or r.range)
+            if from_records and vocab.ends_of(model, r.name)[1] != "records":
+                continue
+            out[(model, r.name)] = set(ends or r.range)
     return {k: sorted(v) for k, v in out.items() if v}
 
 
@@ -81,7 +76,7 @@ def canonical(vocab, tiles=None) -> list[dict]:
                 add(Plan(m, [DateRange(d.field, "1900-01-01", None, d.label)]),
                     {"layer": "client", "kind": "date", "model": m, "nodegroup": vocab.group_of(m, d.field),
                      "node": d.field, "key": f"date {m}.{d.field}"}, d.label)
-    for (m, alias), targets in sorted(link_targets(vocab, tiles).items()):
+    for (m, alias), targets in sorted(link_targets(vocab).items()):
         label = str((vocab.node(m, alias) or {}).get("name") or alias).lower()
         element = {"layer": "client", "kind": "link", "model": m, "nodegroup": vocab.group_of(m, alias),
                    "node": alias, "key": f"link {m}.{alias}"}

@@ -50,8 +50,8 @@ import hashlib
 import json
 from pathlib import Path
 
-FORMAT = "ceist.vocab/2"
-READS = {"ceist.vocab/1", FORMAT}
+FORMAT = "ceist.vocab/3"
+READS = {"ceist.vocab/1", "ceist.vocab/2", FORMAT}
 LAYOUT = "ceist.vocab-groups/1"
 MANIFEST = "manifest.json"
 DATE = {"date", "edtf"}
@@ -236,7 +236,8 @@ def _model_dir(d: Path) -> dict | None:
 
 
 def layered(graphs: list[dict], base_dir: str | Path, client_dir: str | Path | None = None,
-            language: str = "en", ontology_dir: str | Path | None = None) -> tuple[dict, list[str]]:
+            language: str = "en", ontology_dir: str | Path | None = None,
+            records: list[dict] | None = None) -> tuple[dict, list[str]]:
     """A bundle for these graphs from the base layer (base_dir/<graph id>/, split by
     nodegroup) plus an optional client layer (a vocabulary directory keyed by model
     name; its manifest's "base" names the base graph id when the client's differs).
@@ -246,7 +247,8 @@ def layered(graphs: list[dict], base_dir: str | Path, client_dir: str | Path | N
     whose node the client's graph lacks or holds as another kind is dropped and
     reported; "renamed": {old: new} carries the base phrases over to a renamed node.
     Beneath the base, the ontology layer (ontology_dir, by default ontology/cidoc-crm
-    beside base_dir) gives phrases by CIDOC-CRM path; a base phrase wins over it."""
+    beside base_dir) gives phrases by CIDOC-CRM path; a base phrase wins over it. The bundle's
+    "links" catalogue is built when `records` is given (an empty list: graphs and CRM only)."""
     from . import crm
     ontology_dir = Path(ontology_dir) if ontology_dir else Path(base_dir).parent / "ontology" / "cidoc-crm"
     ontology = {"entries": [e for p in sorted(ontology_dir.glob("*.json"))
@@ -278,9 +280,17 @@ def layered(graphs: list[dict], base_dir: str | Path, client_dir: str | Path | N
                               "not applied")
     report += _add_class_words(graphs, models, ontology, type_words)
     bundle = {"format": FORMAT, "models": models}
+    if records is not None:
+        bundle["links"] = _catalogue(graphs, records)
     if type_words:
         bundle["extra_type_words"] = type_words
     return bundle, report
+
+
+def _catalogue(graphs: list[dict], records) -> dict:
+    from . import catalogue
+    from .arches import ArchesVocabulary
+    return catalogue.build(ArchesVocabulary(graphs, resources=records))
 
 
 def _add_ontology(name: str, model: dict, entries: list[dict]) -> list[str]:
@@ -442,8 +452,10 @@ def _said(meaning: tuple) -> str:
 
 
 def assemble(descriptions_dir: str | Path, vocab_dir: str | Path,
-             graphs_dir: str | Path | None = None) -> tuple[dict, list[str], list[str]]:
-    """The bundle, plus (errors, warnings). A bundle with errors shouldn't ship.
+             graphs_dir: str | Path | None = None,
+             records: list[dict] | None = None) -> tuple[dict, list[str], list[str]]:
+    """The bundle, plus (errors, warnings). A bundle with errors shouldn't ship. With `records`,
+    the link catalogue is built from the graphs in graphs_dir and them.
     A model's entries are ordered by nodegroup, so both layouts give the same bundle."""
     descriptions = _descriptions(descriptions_dir)
     models, errors, type_words = {}, [], {}
@@ -481,6 +493,9 @@ def assemble(descriptions_dir: str | Path, vocab_dir: str | Path,
                                          for e in m["entries"]),
                         "groups": sum(len(m["groups"]) for m in models.values())},
              "models": models}
+    if records is not None and graphs_dir:
+        from .arches import graph_doc
+        bundle["links"] = _catalogue([graph_doc(p) for p in sorted(Path(graphs_dir).glob("*.json"))], records)
     if type_words:
         bundle["extra_type_words"] = type_words
     return bundle, errors, warnings

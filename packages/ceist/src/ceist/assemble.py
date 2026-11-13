@@ -31,6 +31,9 @@ def interpret(vocab: Vocabulary, text: str, today=None, matcher=None) -> Interpr
         s.g.suggestions.append(("the question", said))
         return Interpretation(s.g, refused=f"{len(said)} readings fit; did you mean "
                               + " or ".join(f"'{x}'" for x in said) + "?")
+    if not answers and (unlinked := _unlinked(s)):
+        s.g.refuse = unlinked
+        outs = [Interpretation(s.g, refused=unlinked)]
     if not outs:
         outs = [Interpretation(s.g, refused=_none(s))]
         _subject(s)
@@ -40,6 +43,29 @@ def interpret(vocab: Vocabulary, text: str, today=None, matcher=None) -> Interpr
     if not out.statement:
         out.partial = _agreed(vocab, outs)
     return out
+
+
+def _unlinked(s: Scan) -> str | None:
+    """With a link catalogue: why two named types can't be joined, when no chain of links
+    connects them; None otherwise."""
+    vocab = s.vocab
+    types = sorted({n.type for n in s.g.nodes if n.type})
+    if not getattr(vocab, "catalogued", False) or len(types) < 2:
+        return None
+    near: dict[str, set[str]] = {}
+    for r in vocab.relations():
+        for holder, targets in r.ends:
+            for t in targets or vocab.models:
+                near.setdefault(holder, set()).add(t)
+                near.setdefault(t, set()).add(holder)
+    reached, todo = set(), [types[0]]
+    while todo:
+        t = todo.pop()
+        if t not in reached:
+            reached.add(t)
+            todo += near.get(t, ())
+    lost = next((t for t in types if t not in reached), None)
+    return None if lost is None else f"'{types[0]}' and '{lost}' aren't linked in this data"
 
 
 def _agreed(vocab: Vocabulary, outs: list[Interpretation]) -> Partial | None:
